@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { FileUpload, Dropdown } from '@components';
+import { FileUpload, Button, Dropdown } from '../components';
 
-// sample industries data lol
+// sample industries data
 const industries = [
     { id: 1, label: 'Technology', value: 'tech' },
     { id: 2, label: 'Healthcare', value: 'healthcare' },
@@ -16,6 +16,8 @@ const Landing: React.FC = () => {
 
     return (
         <div className="max-w-2xl mx-auto p-6 space-y-8">
+            <h1>Landing</h1>
+            <FileUpload />
             <div>
                 <Dropdown
                     label="Industry"
@@ -23,6 +25,12 @@ const Landing: React.FC = () => {
                     value={selectedIndustry}
                     onChange={(value) => setSelectedIndustry(value as typeof industries[0])}
                 />
+            </div>
+            <div>
+                <Button>Click me</Button>
+                <Button variant="secondary">Secondary</Button>
+                <Button variant="outline">Outline</Button>
+                <Button liquid>Liquid</Button>
             </div>
         </div>
     );
