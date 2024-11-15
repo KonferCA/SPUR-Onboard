@@ -24,7 +24,7 @@ const Dropdown: React.FC<DropdownProps> = ({
     placeholder = 'Select'
 }) => {
     return (
-        <div className="w-[400px]">
+        <div className="max-w-[400px] w-full">
             {label && (
                 <label className="block text-2xl font-bold mb-2">
                     {label}
