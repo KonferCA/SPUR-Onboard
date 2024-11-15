@@ -39,14 +39,14 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
                         {...props}
                     />
                     {description && (
-                        <Field.Description className="mt-1 text-sm text-gray-500">
+                        <div className="mt-1 text-sm text-gray-500">
                             {description}
-                        </Field.Description>
+                        </div>
                     )}
                     {error && (
-                        <Field.Error className="mt-1 text-sm text-red-500">
+                        <div className="mt-1 text-sm text-red-500">
                             {error}
-                        </Field.Error>
+                        </div>
                     )}
                 </Field>
             </div>
