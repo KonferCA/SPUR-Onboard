@@ -1,28 +1,6 @@
 import { DashboardLayout, Section, Grid, Footer, Header, FormContainer } from '@components';
 import { Button } from '@components';
 
-// generic checklist items
-const checklistItems = [
-  {
-    id: '1',
-    label: 'Checklist Item 1',
-    description: 'Description for item 1',
-    completed: false
-  },
-  {
-    id: '2',
-    label: 'Checklist Item 2',
-    description: 'Description for item 2',
-    completed: false
-  },
-  {
-    id: '3',
-    label: 'Checklist Item 3',
-    description: 'Description for item 3',
-    completed: false
-  }
-];
-
 const DashboardPage = () => {
   return (
     <DashboardLayout>
