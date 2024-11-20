@@ -1,28 +1,29 @@
 import { forwardRef } from 'react';
-import { Field, Label, Input } from '@headlessui/react';
+import { Field, Label, Textarea } from '@headlessui/react';
 
-interface TextInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     label?: string;
     error?: string;
     description?: string;
     value?: string;
     required?: boolean;
-    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
-const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
+const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
     ({ label, error, description, className = '', value, required, onChange, ...props }, ref) => {
         const inputProps = onChange
             ? { value, onChange }
             : { defaultValue: value };
         
         const sharedClassNames = `
-            w-full px-4 py-3
+            w-full px-4 py-2
             bg-white 
             border border-gray-300 
             rounded-md
             focus:outline-none focus:ring-2 focus:ring-blue-500
             data-[invalid]:border-red-500
+            min-h-[100px] resize-y
             ${className}
         `;
 
@@ -41,8 +42,8 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
                             )}
                         </div>
                     )}
-                    
-                    <Input
+
+                    <Textarea
                         ref={ref}
                         className={sharedClassNames}
                         invalid={!!error}
@@ -56,7 +57,7 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
                             {description}
                         </div>
                     )}
-
+                    
                     {error && (
                         <div className="mt-1 text-sm text-red-500">
                             {error}
@@ -68,5 +69,5 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
     }
 );
 
-TextInput.displayName = 'TextInput';
-export { TextInput };
+TextArea.displayName = 'TextArea';
+export { TextArea };
