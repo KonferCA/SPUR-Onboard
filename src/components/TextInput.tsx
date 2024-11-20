@@ -31,7 +31,7 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
                 <Field>
                     {label && (
                         <div className="flex justify-between items-center mb-1">
-                            <Label className="block text-md font-bold">
+                            <Label className="block text-md font-normal">
                                 {label}
                             </Label>
                             {required && (
