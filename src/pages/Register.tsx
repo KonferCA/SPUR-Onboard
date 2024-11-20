@@ -1,7 +1,12 @@
-import { TextInput, TextArea, Button, FormContainer } from "@components";
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
+import { Button, TextInput, TextArea } from '@components';
 
-type RegistrationTab = 'basic-details' | 'id-verification';
+type RegistrationStep = 
+    | 'login-register'
+    | 'verify-email'
+    | 'signing-in'
+    | 'form-details'
+    | 'registration-complete';
 
 interface FormData {
     firstName: string;
@@ -9,20 +14,26 @@ interface FormData {
     position: string;
     bio: string;
     linkedIn: string;
+    email: string;
+    password: string;
 }
 
 interface FormErrors {
     linkedIn?: string;
+    email?: string;
+    password?: string;
 }
 
 const Register = () => {
-    const [activeTab, setActiveTab] = useState<RegistrationTab>('basic-details');
+    const [currentStep, setCurrentStep] = useState<RegistrationStep>('login-register');
     const [formData, setFormData] = useState<FormData>({
         firstName: '',
         lastName: '',
         position: '',
         bio: '',
-        linkedIn: ''
+        linkedIn: '',
+        email: '',
+        password: ''
     });
     const [errors, setErrors] = useState<FormErrors>({});
 
@@ -31,6 +42,26 @@ const Register = () => {
     const validateLinkedIn = (url: string): boolean => {
         if (!url) return false;
         return LINKEDIN_REGEX.test(url);
+    };
+
+    const handleLinkedInChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+
+        if (value && !validateLinkedIn(value)) {
+            setErrors(prev => ({
+                ...prev,
+                linkedIn: "Please enter a valid LinkedIn profile URL"
+            }));
+        } else {
+            setErrors(prev => ({
+                ...prev,
+                linkedIn: undefined
+            }));
+        }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -48,69 +79,120 @@ const Register = () => {
         }
     };
 
-    const validateForm = (): boolean => {
-        const newErrors: FormErrors = {};
-        let isValid = true;
-
-        if (formData.linkedIn && !validateLinkedIn(formData.linkedIn)) {
-            newErrors.linkedIn = "Please enter a valid LinkedIn profile URL";
-            isValid = false;
-        }
-
-        setErrors(newErrors);
-        return isValid;
-    };
-
-    const handleSubmit = (e: FormEvent) => {
+    const handleInitialSubmit = (e: FormEvent) => {
         e.preventDefault();
-        if (validateForm()) {
-            setActiveTab('id-verification');
-        }
+        setCurrentStep('verify-email');
     };
 
-    const isFormValid = (): boolean => {
+    const handleFormSubmit = (e: FormEvent) => {
+        e.preventDefault();
+        setCurrentStep('registration-complete');
+    };
+
+    const isFormDetailsValid = (): boolean => {
         return (
-            Object.values(formData).every(value => value.trim() !== '') &&
-            Object.keys(errors).length === 0 &&
-            validateLinkedIn(formData.linkedIn)
+            formData.firstName.trim() !== '' &&
+            formData.lastName.trim() !== '' &&
+            formData.position.trim() !== '' &&
+            formData.bio.trim() !== '' &&
+            formData.linkedIn.trim() !== '' && 
+            !errors.linkedIn
         );
     };
 
-    const renderTabs = () => (
-        <div className="flex justify-center space-x-8 mb-8">
-            <button
-                onClick={() => setActiveTab('basic-details')}
-                className={`pb-1 ${
-                    activeTab === 'basic-details'
-                        ? 'text-gray-900 border-b-2 border-gray-900'
-                        : 'text-gray-400'
-                }`}
-            >
-                Basic Details
-            </button>
-            <button
-                onClick={() => activeTab === 'id-verification' || isFormValid() ? setActiveTab('id-verification') : null}
-                className={`pb-1 ${
-                    activeTab === 'id-verification'
-                        ? 'text-gray-900 border-b-2 border-gray-900'
-                        : 'text-gray-400'
-                }`}
-            >
-                ID Verification
-            </button>
+    const renderLoginRegister = () => (
+        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg">
+            <h3 className="text-center mb-4 font-light">Register or Login</h3>
+            <hr className="border-gray-400" />
+            <h2 className="text-2xl mt-4 font-normal">Register for Spur+Konfer</h2>
+            
+            <form onSubmit={handleInitialSubmit} className="space-y-4 mt-4">
+                <TextInput 
+                    label="Email" 
+                    required
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                />
+                
+                <TextInput 
+                    label="Password" 
+                    required
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                />
+                
+                <Button
+                    type="submit"
+                    size="lg"
+                    liquid
+                    variant="primary"
+                    // TODO: onClick to handle register
+                >
+                    Register
+                </Button>
+
+                <div className="text-center mt-4">
+                    <p className="text-md mb-3">
+                        Already have an account? 
+                    </p>
+                    <Button
+                        type="button"
+                        liquid
+                        size="lg"
+                        // TODO: onClick to handle login
+                    >
+                        Login
+                    </Button>
+                </div>
+            </form>
         </div>
     );
 
-    const renderBasicDetails = () => (
-        <>
-            <div className="text-center space-y-4">
+    const renderVerifyEmail = () => (
+        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg">
+            <h2 className="text-2xl mb-4">Verify your account</h2>
+            <p className="font-light mb-6">
+                Your account and wallet has been linked. We just sent an email confirmation to <span className="font-semibold">{formData.email}</span>. Please verify your account to continue registering.
+            </p>
+            
+            <div className="font-light mt-4">
+                <span>Didn't get the email? </span>
+                <button className="text-blue-500 hover:underline">Resend Link</button>
+            </div>
+        </div>
+    );
+
+    const renderSigningIn = () => {
+        useEffect(() => {
+            const timer = setTimeout(() => {
+                setCurrentStep('form-details');
+            }, 2000);
+
+            return () => clearTimeout(timer);
+        }, []);
+
+        return (
+            <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg text-center">
+                <h2 className="text-xl mb-4">Signing you in....</h2>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
+            </div>
+        );
+    };
+
+    const renderFormDetails = () => (
+        <div className="w-full max-w-md mx-auto p-6">
+            <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold">Welcome to Spur+Konfer</h1>
-                <p className="text-gray-600">
+                <p className="text-gray-600 mt-2">
                     To begin your application, please enter your organization's details
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleFormSubmit} className="space-y-4">
                 <TextInput 
                     label="Your first name" 
                     required
@@ -118,7 +200,7 @@ const Register = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                 />
-                
+
                 <TextInput 
                     label="Your last name" 
                     required
@@ -126,7 +208,7 @@ const Register = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                 />
-                
+
                 <TextInput 
                     label="Your position/title" 
                     required
@@ -134,7 +216,7 @@ const Register = () => {
                     value={formData.position}
                     onChange={handleChange}
                 />
-                
+
                 <TextArea
                     label="Your bio" 
                     required
@@ -142,64 +224,76 @@ const Register = () => {
                     value={formData.bio}
                     onChange={handleChange}
                 />
-                
+
                 <TextInput 
                     label="Link to your LinkedIn" 
                     required
                     name="linkedIn"
                     value={formData.linkedIn}
-                    onChange={handleChange}
+                    onChange={handleLinkedInChange}
                     error={errors.linkedIn}
                 />
-                
+
                 <div className="pt-4">
                     <Button 
                         type="submit"
-                        disabled={!isFormValid()}
+                        disabled={!isFormDetailsValid()}
                         liquid
                         size="lg"
                         variant="primary"
                     > 
-                        Continue
+                        Register
                     </Button>
                 </div>
-            </form>
-        </>
-    );
 
-    const renderIdVerification = () => (
-        <>
-            <div className="text-center space-y-4">
-                <h1 className="text-2xl font-bold">Verify your Identity</h1>
-                <p className="text-gray-600">
-                    To continue, please verify your identity
+                <p className="text-center text-sm mt-4">
+                    By registering, you agree to Spur+Konfers'<br />
+                    <a href="#" className="text-blue-500">Terms of Service</a> and <a href="#" className="text-blue-500">Privacy Policy</a>
                 </p>
-            </div>
-
-            <div className="bg-gray-100 rounded-lg p-8 my-8 flex items-center justify-center min-h-[300px]">
-                <p className="text-gray-600 text-lg">KYC Platform embed?</p>
-            </div>
-
-            <div className="pt-4">
-                <Button 
-                    type="button"
-                    liquid
-                    size="lg"
-                    variant="primary"
-                > 
-                    Register
-                </Button>
-            </div>
-        </>
+            </form>
+        </div>
     );
+
+    const renderRegistrationComplete = () => {
+        useEffect(() => {
+            const timer = setTimeout(() => {
+                // TODO: Push to '/dashboard'
+            }, 2000);
+
+            return () => clearTimeout(timer);
+        }, []);
+
+        return (
+            <div className="w-full max-w-md mx-auto p-6 text-center">
+                <h2 className="text-xl mb-4">
+                    Thank you for registering, you will now be redirected to the dashboard
+                </h2>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
+            </div>
+        );
+    };
+
+    const renderCurrentStep = () => {
+        switch (currentStep) {
+            case 'login-register':
+                return renderLoginRegister();
+            case 'verify-email':
+                return renderVerifyEmail();
+            case 'signing-in':
+                return renderSigningIn();
+            case 'form-details':
+                return renderFormDetails();
+            case 'registration-complete':
+                return renderRegistrationComplete();
+        }
+    };
 
     return (
-        <FormContainer>
-            <div className="space-y-6">
-                {renderTabs()}
-                {activeTab === 'basic-details' ? renderBasicDetails() : renderIdVerification()}
+        <div className="min-h-screen bg-gray-50">
+            <div className="p-4">
+                {renderCurrentStep()}
             </div>
-        </FormContainer>
+        </div>
     );
 };
 
