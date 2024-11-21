@@ -6,27 +6,31 @@ interface TextInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     error?: string;
     description?: string;
     value?: string;
-    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+    multiline?: boolean;
+    rows?: number;
 }
 
 const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
-    ({ label, error, description, className = '', value, onChange, ...props }, ref) => {
+    ({ label, error, description, className = '', value, onChange, multiline = false, rows = 4, ...props }, ref) => {
         const inputProps = onChange
             ? { value, onChange }
             : { defaultValue: value };
 
+        const InputComponent = multiline ? 'textarea' : 'input';
+
         return (
-            <div className="max-w-[400px] w-full">
+            <div className="w-full">
                 <Field>
                     {label && (
-                        <Label className="block text-2xl font-bold">
+                        <Label className="block text-sm font-medium text-gray-900 mb-2">
                             {label}
                         </Label>
                     )}
-                    <Input
-                        ref={ref}
+                    <InputComponent
+                        ref={ref as any}
                         className={`
-                            w-full py-3 px-4 
+                            w-full py-2 px-3
                             bg-white 
                             border border-gray-300 
                             rounded-md
@@ -34,7 +38,7 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
                             data-[invalid]:border-red-500
                             ${className}
                         `}
-                        invalid={!!error}
+                        rows={multiline ? rows : undefined}
                         {...inputProps}
                         {...props}
                     />
