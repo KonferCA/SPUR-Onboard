@@ -1,50 +1,29 @@
-# React + TypeScript + Vite
+# Welcome to Konfer's :unicorn: Project SPUR
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Getting Started
 
-Currently, two official plugins are available:
+### Install Golang
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Follow the instructions from https://go.dev/doc/install
+Make sure to download **VERSION 1.23** for best compatibility.
 
-## Expanding the ESLint configuration
+### Install Pre-requisite tools
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- Air (auto-reload backend): go install github.com/air-verse/air@latest
+- SQLc (generate type-safe code from SQL queries): go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+- Goose (SQL migration management tool): go install github.com/pressly/goose/v3/cmd/goose@latest
+- Make
+- Docker
 
-- Configure the top-level `parserOptions` property like this:
+> Make commands only work on unix like systems.
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+### Setup Development Environment
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+1. Create a new PostgreSQL instance using docker with `make init-dev-db`
+2. Start PostgreSQL for development `make start-dev-db`
+   - Check health of DB `make health-dev-db`
+4. Run migrations when ready `make up`
+5. Start development server `make dev`
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+> Use `make query "SELECT ... FROM ..."` for quick query on the terminal.
+> You should also checkout the other available commands in the Makefile.
