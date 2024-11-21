@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Landing, DashboardPage, AdminDashboardPage } from '@pages';
+import { Landing, DashboardPage, AdminDashboardPage, SubmitProjectPage } from '@pages';
 
 const Router = () => (
     <BrowserRouter>
@@ -22,6 +22,7 @@ const Router = () => (
             <Route path="/admin/resources" element={ <AdminDashboardPage /> } />
             <Route path="/admin/users" element={ <AdminDashboardPage /> } />
             <Route path="/admin/settings" element={ <AdminDashboardPage /> } />
+            <Route path="/submit-project" element={<SubmitProjectPage />} />
         </Routes>
     </BrowserRouter>
 );
