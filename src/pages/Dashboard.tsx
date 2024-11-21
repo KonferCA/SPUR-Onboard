@@ -1,9 +1,9 @@
-import { DashboardLayout, Section, Grid, Footer, Header, FormContainer } from '@components';
+import { UserDashboard, Section, Grid, Footer, Header, FormContainer } from '@components';
 import { Button } from '@components';
 
 const DashboardPage = () => {
   return (
-    <DashboardLayout>
+    <UserDashboard>
       {/* header */}
       <Header>
         <Section 
@@ -92,8 +92,8 @@ const DashboardPage = () => {
           </div>
         </Section>
       </Footer>
-    </DashboardLayout>
+    </UserDashboard>
   );
 };
 
-export { DashboardPage }; 
+export { DashboardPage };
