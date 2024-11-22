@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/KonferCA/NoKap/db"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
@@ -91,6 +92,19 @@ func validateTimestamp(timeStr string, fieldName string) (*time.Time, error) {
 func validateTimeRange(startTime, endTime time.Time) error {
 	if endTime.Before(startTime) {
 		return echo.NewHTTPError(http.StatusBadRequest, "End time cannot be before start time :(")
+	}
+
+	return nil
+}
+
+var allowedSignupRoles = map[db.UserRole]bool{
+	db.UserRole("startup_owner"): true,
+	db.UserRole("investor"):      true,
+}
+
+func validateSignupRole(role db.UserRole) error {
+	if !allowedSignupRoles[role] {
+		return fmt.Errorf("invalid role for signup: %s", role)
 	}
 
 	return nil
