@@ -1,11 +1,17 @@
-name: Build and Deploy Preview
+name: Build and Deploy Preview / Frontend
 on:
   push:
     branches:
       - main
+    paths:
+      - 'frontend/**'
 jobs:
-  build-and-deploy:
+  build-and-deploy-frontend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: frontend
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
