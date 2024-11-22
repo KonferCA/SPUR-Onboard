@@ -1,4 +1,4 @@
-import { FC, ReactNode, useEffect, useState } from 'react';
+import React, { FC, ReactNode, useEffect, useState } from 'react';
 import { ScrollLink } from '@components';
 import { isElementInView } from '@utils';
 
@@ -19,9 +19,18 @@ type ControlledLink = AnchorLinkItem & {
 export interface AnchorLinksProps {
     links: AnchorLinkItem[];
     children: (link: ControlledLink) => ReactNode;
+    onClick?:
+        | ((
+              link: ControlledLink,
+              event: React.MouseEvent<HTMLLIElement>
+          ) => void)
+        | ((
+              link: ControlledLink,
+              event: React.MouseEvent<HTMLLIElement>
+          ) => Promise<void>);
 }
 
-const AnchorLinks: FC<AnchorLinksProps> = ({ links, children }) => {
+const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
     const [controlledLinks, setControlledLinks] = useState<ControlledLink[]>(
         []
     );
@@ -120,7 +129,12 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children }) => {
         <div className="flex flex-col gap-4">
             <ul>
                 {controlledLinks.map((link) => (
-                    <li>
+                    <li
+                        key={link.label}
+                        onClick={async (e) =>
+                            onClick && (await onClick(link, e))
+                        }
+                    >
                         <ScrollLink to={link.target} offset={link.offset}>
                             {children(link)}
                         </ScrollLink>
