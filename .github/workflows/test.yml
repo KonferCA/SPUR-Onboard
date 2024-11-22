@@ -11,9 +11,9 @@ jobs:
       run:
         working-directory: frontend
     steps:
+      - uses: actions/checkout@v4
       - name: Check ls
         run: ls
-      - uses: actions/checkout@v4
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -54,9 +54,9 @@ jobs:
         ports:
           - 5432:5432
     steps:
+      - uses: actions/checkout@v4
       - name: Check ls
         run: ls
-      - uses: actions/checkout@v4
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
