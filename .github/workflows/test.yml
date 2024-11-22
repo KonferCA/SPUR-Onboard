@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: ['main', 'staging', 'prod']
 jobs:
-  test-./frontend:
+  test-frontend:
     name: Test Frontend
     runs-on: ubuntu-latest
     defaults:
@@ -27,16 +27,19 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        working-directory: ./frontend
       - name: Run tests
         run: pnpm test:ci
+        working-directory: ./frontend
       - name: Generate coverage report
         run: pnpm coverage
+        working-directory: ./frontend
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-frontend
           path: coverage/
-  test-./backend:
+  test-backend:
     name: Test Backend
     runs-on: ubuntu-latest
     defaults:
