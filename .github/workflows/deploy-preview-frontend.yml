@@ -8,10 +8,6 @@ on:
 jobs:
   build-and-deploy-frontend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: frontend
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,21 +21,22 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
-          cache-dependency-path: 'frontend/pnpm-lock.yaml'
+          cache-dependency-path: '**/pnpm-lock.yaml'
       - name: Get pnpm store directory
-        shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
       - name: Setup pnpm cache
         uses: actions/cache@v3
         with:
           path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - name: Install dependencies
+        working-directory: frontend
         run: pnpm install --frozen-lockfile
       - name: Build
+        working-directory: frontend
         run: pnpm build
       - name: Deploy to server
         uses: appleboy/scp-action@master
