@@ -11,12 +11,13 @@ jobs:
       run:
         working-directory: ./frontend
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Check ls
         run: ls
       - name: Setup pnpm
-        working-directory: ./frontend
         uses: pnpm/action-setup@v4
+        working-directory: ./frontend
         with:
           version: 9
           run_install: false
