@@ -48,7 +48,7 @@ type SignupRequest struct {
 	Password  string      `json:"password" validate:"required,min=8"`
 	FirstName string      `json:"first_name" validate:"required"`
 	LastName  string      `json:"last_name" validate:"required"`
-	Role      db.UserRole `json:"role" validate:"required,valid_user_role"`
+	Role      db.UserRole `json:"role" validate:"required,oneof=startup_owner investor"`
 }
 
 type SigninRequest struct {
