@@ -4,49 +4,49 @@ on:
   pull_request:
     branches: ['main', 'staging', 'prod']
 jobs:
-  test-frontend:
+  test-./frontend:
     name: Test Frontend
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
       - name: Check ls
-        run: ls -la
+        run: ls
       - name: Setup pnpm
-        working-directory: frontend
+        working-directory: ./frontend
         uses: pnpm/action-setup@v4
         with:
           version: 9
           run_install: false
       - name: Setup Node.js
-        working-directory: frontend
+        working-directory: ./frontend
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
       - name: Install dependencies
-        working-directory: frontend
+        working-directory: ./frontend
         run: pnpm install --frozen-lockfile
       - name: Run tests
-        working-directory: frontend
+        working-directory: ./frontend
         run: pnpm test:ci
       - name: Generate coverage report
-        working-directory: frontend
+        working-directory: ./frontend
         run: pnpm coverage
       - name: Upload coverage report
-        working-directory: frontend
         uses: actions/upload-artifact@v4
+        working-directory: ./frontend
         with:
-          name: coverage-report-frontend
+          name: coverage-report-./frontend
           path: coverage/
-  test-backend:
+  test-./backend:
     name: Test Backend
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend
+        working-directory: ./backend
     services:
       postgres:
         image: postgres:16
@@ -65,21 +65,21 @@ jobs:
         run: ls
       - name: Set up Go
         uses: actions/setup-go@v4
-        working-directory: backend
+        working-directory: ./backend
         with:
           go-version: '1.23'
           cache: true
       - name: Install dependencies
-        working-directory: backend
+        working-directory: ./backend
         run: go mod download
       - name: Install Goose
-        working-directory: backend
+        working-directory: ./backend
         run: go install github.com/pressly/goose/v3/cmd/goose@v3.22.1
       - name: Run migrations
-        working-directory: backend
+        working-directory: ./backend
         run: goose -dir .sqlc/migrations postgres "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" up
       - name: Run tests
-        working-directory: backend
+        working-directory: ./backend
         id: tests
         continue-on-error: true
         run: |
@@ -88,24 +88,24 @@ jobs:
           # store the exit code explicitly
           echo "::set-output name=exit_code::${PIPESTATUS[0]}"
       - name: Generate coverage report
-        working-directory: backend
+        working-directory: ./backend
         run: go tool cover -html=coverage.out -o coverage.html
       - name: Upload coverage report
         if: ${{ !env.ACT && github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
-        working-directory: backend
+        working-directory: ./backend
         with:
-          name: coverage-report-backend
+          name: coverage-report-./backend
           path: coverage.html
       - name: Comment PR
         if: ${{ !env.ACT && github.event_name == 'pull_request' && always() }}
         uses: actions/github-script@v7
-        working-directory: backend
+        working-directory: ./backend
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: "const fs = require('fs');\n\n// Read test output\nconst testOutput = fs.readFileSync('test_output.txt', 'utf8');\n\n// Get coverage - look for the last coverage number in the output\nlet coverage = 'N/A';\nconst coverageMatches = testOutput.match(/coverage: (\\d+\\.\\d+)% of statements/g) || [];\nif (coverageMatches.length > 0) {\n  const lastMatch = coverageMatches[coverageMatches.length - 1];\n  coverage = lastMatch.match(/(\\d+\\.\\d+)%/)[1] + '%';\n}\n\n// Check if any tests failed\nconst hasFailed = testOutput.includes('FAIL') && !testOutput.includes('FAIL\\t[build failed]');\nconst testStatus = hasFailed ? 'failure' : 'success';\nconst color = testStatus === 'success' ? '✅' : '❌';\n\n// Parse test failures\nlet failureDetails = '';\nif (hasFailed) {\n  const errorTraces = testOutput.match(/\\s+.*?_test\\.go:\\d+:[\\s\\S]*?Test:\\s+.*$/gm) || [];\n  const failures = testOutput.match(/--- FAIL: .*?(?=(?:---|\\z))/gs) || [];\n  \n  failureDetails = `\n  <details>\n  <summary>❌ Test Failures</summary>\n  \n  \\`\\`\\`\n  ${failures.join('\\n')}\n  \n  Error Details:\n  ${errorTraces.map(trace => trace.trim()).join('\\n')}\n  \\`\\`\\`\n  </details>\n  `;\n}\n\nconst output = `### Test Results ${color}\n\n**Status**: ${testStatus}\n**Coverage**: ${coverage}\n**OS**: \\`${{ runner.os }}\\`\n\n${failureDetails}\n\n<details>\n<summary>Test Details</summary>\n\n* Triggered by: @${{ github.actor }}\n* Commit: ${{ github.sha }}\n* Branch: ${{ github.ref }}\n* Workflow: ${{ github.workflow }}\n</details>`;\n\n// Find existing comment\nconst { data: comments } = await github.rest.issues.listComments({\n  owner: context.repo.owner,\n  repo: context.repo.repo,\n  issue_number: context.issue.number,\n});\n\nconst botComment = comments.find(comment => \n  comment.user.type === 'Bot' && \n  comment.body.includes('### Test Results')\n);\n\nif (botComment) {\n  // Update existing comment\n  await github.rest.issues.updateComment({\n    owner: context.repo.owner,\n    repo: context.repo.repo,\n    comment_id: botComment.id,\n    body: output\n  });\n} else {\n  // Create new comment\n  await github.rest.issues.createComment({\n    owner: context.repo.owner,\n    repo: context.repo.repo,\n    issue_number: context.issue.number,\n    body: output\n  });\n}\n"
       - uses: actions/cache@v4
-        working-directory: backend
+        working-directory: ./backend
         with:
           path: |
             ~/.cache/go-build
