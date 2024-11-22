@@ -7,7 +7,9 @@ jobs:
   test-frontend:
     name: Test Frontend
     runs-on: ubuntu-latest
-    working-directory: ./frontend
+    defaults:
+      run:
+        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
       - name: Setup pnpm
@@ -34,7 +36,9 @@ jobs:
   test-backend:
     name: Test Backend
     runs-on: ubuntu-latest
-    working-directory: ./backend
+    defaults:
+      run:
+        working-directory: ./backend
     services:
       postgres:
         image: postgres:16
