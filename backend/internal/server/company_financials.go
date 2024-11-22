@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 
@@ -22,9 +21,10 @@ func (s *Server) handleCreateCompanyFinancials(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetCompanyByID(context.Background(), companyID)
+	_, err = queries.GetCompanyByID(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "verify", "company")
 	}
@@ -41,7 +41,7 @@ func (s *Server) handleCreateCompanyFinancials(c echo.Context) error {
 		GrantsReceived: numericFromFloat(req.GrantsReceived),
 	}
 
-	financials, err := queries.CreateCompanyFinancials(context.Background(), params)
+	financials, err := queries.CreateCompanyFinancials(ctx, params)
 	if err != nil {
 		return handleDBError(err, "create", "company financials")
 	}
@@ -55,6 +55,7 @@ func (s *Server) handleGetCompanyFinancials(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
 	year := c.QueryParam("year")
@@ -69,7 +70,7 @@ func (s *Server) handleGetCompanyFinancials(c echo.Context) error {
 			FinancialYear: int32(yearInt),
 		}
 
-		financials, err := queries.GetCompanyFinancialsByYear(context.Background(), params)
+		financials, err := queries.GetCompanyFinancialsByYear(ctx, params)
 		if err != nil {
 			return handleDBError(err, "fetch", "company financials")
 		}
@@ -77,7 +78,7 @@ func (s *Server) handleGetCompanyFinancials(c echo.Context) error {
 		return c.JSON(http.StatusOK, financials)
 	}
 
-	financials, err := queries.ListCompanyFinancials(context.Background(), companyID)
+	financials, err := queries.ListCompanyFinancials(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "fetch", "company financials")
 	}
@@ -107,9 +108,10 @@ func (s *Server) handleUpdateCompanyFinancials(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid year format")
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetCompanyByID(context.Background(), companyID)
+	_, err = queries.GetCompanyByID(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "verify", "company")
 	}
@@ -126,7 +128,7 @@ func (s *Server) handleUpdateCompanyFinancials(c echo.Context) error {
 		GrantsReceived: numericFromFloat(req.GrantsReceived),
 	}
 
-	financials, err := queries.UpdateCompanyFinancials(context.Background(), params)
+	financials, err := queries.UpdateCompanyFinancials(ctx, params)
 	if err != nil {
 		return handleDBError(err, "update", "company financials")
 	}
@@ -150,6 +152,7 @@ func (s *Server) handleDeleteCompanyFinancials(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid year format")
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
 	params := db.DeleteCompanyFinancialsParams{
@@ -157,7 +160,7 @@ func (s *Server) handleDeleteCompanyFinancials(c echo.Context) error {
 		FinancialYear: int32(yearInt),
 	}
 
-	err = queries.DeleteCompanyFinancials(context.Background(), params)
+	err = queries.DeleteCompanyFinancials(ctx, params)
 	if err != nil {
 		return handleDBError(err, "delete", "company financials")
 	}
@@ -171,9 +174,10 @@ func (s *Server) handleGetLatestCompanyFinancials(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
-	financials, err := queries.GetLatestCompanyFinancials(context.Background(), companyID)
+	financials, err := queries.GetLatestCompanyFinancials(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "fetch", "latest company financials")
 	}
