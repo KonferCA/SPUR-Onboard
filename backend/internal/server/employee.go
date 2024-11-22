@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/KonferCA/NoKap/db"
@@ -21,14 +20,15 @@ func (s *Server) handleCreateEmployee(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetCompanyByID(context.Background(), companyID)
+	_, err = queries.GetCompanyByID(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "verify", "company")
 	}
 
-	_, err = queries.GetEmployeeByEmail(context.Background(), req.Email)
+	_, err = queries.GetEmployeeByEmail(ctx, req.Email)
 	if err == nil {
 		return echo.NewHTTPError(http.StatusConflict, "Email already in use")
 	}
@@ -41,7 +41,7 @@ func (s *Server) handleCreateEmployee(c echo.Context) error {
 		Bio:       req.Bio,
 	}
 
-	employee, err := queries.CreateEmployee(context.Background(), params)
+	employee, err := queries.CreateEmployee(ctx, params)
 	if err != nil {
 		return handleDBError(err, "create", "employee")
 	}
@@ -55,8 +55,10 @@ func (s *Server) handleGetEmployee(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	employee, err := queries.GetEmployeeByID(context.Background(), employeeID)
+
+	employee, err := queries.GetEmployeeByID(ctx, employeeID)
 	if err != nil {
 		return handleDBError(err, "fetch", "employee")
 	}
@@ -65,6 +67,7 @@ func (s *Server) handleGetEmployee(c echo.Context) error {
 }
 
 func (s *Server) handleListEmployees(c echo.Context) error {
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
 	companyID := c.QueryParam("company_id")
@@ -74,14 +77,14 @@ func (s *Server) handleListEmployees(c echo.Context) error {
 			return err
 		}
 
-		employees, err := queries.ListEmployeesByCompany(context.Background(), companyUUID)
+		employees, err := queries.ListEmployeesByCompany(ctx, companyUUID)
 		if err != nil {
 			return handleDBError(err, "fetch", "employees")
 		}
 		return c.JSON(http.StatusOK, employees)
 	}
 
-	employees, err := queries.ListEmployees(context.Background())
+	employees, err := queries.ListEmployees(ctx)
 	if err != nil {
 		return handleDBError(err, "fetch", "employees")
 	}
@@ -101,9 +104,10 @@ func (s *Server) handleUpdateEmployee(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetEmployeeByID(context.Background(), employeeID)
+	_, err = queries.GetEmployeeByID(ctx, employeeID)
 	if err != nil {
 		return handleDBError(err, "verify", "employee")
 	}
@@ -115,7 +119,7 @@ func (s *Server) handleUpdateEmployee(c echo.Context) error {
 		Bio:  req.Bio,
 	}
 
-	employee, err := queries.UpdateEmployee(context.Background(), params)
+	employee, err := queries.UpdateEmployee(ctx, params)
 	if err != nil {
 		return handleDBError(err, "update", "employee")
 	}
@@ -129,14 +133,15 @@ func (s *Server) handleDeleteEmployee(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetEmployeeByID(context.Background(), employeeID)
+	_, err = queries.GetEmployeeByID(ctx, employeeID)
 	if err != nil {
 		return handleDBError(err, "verify", "employee")
 	}
 
-	err = queries.DeleteEmployee(context.Background(), employeeID)
+	err = queries.DeleteEmployee(ctx, employeeID)
 	if err != nil {
 		return handleDBError(err, "delete", "employee")
 	}
