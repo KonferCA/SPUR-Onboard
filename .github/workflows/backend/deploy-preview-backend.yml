@@ -40,7 +40,7 @@ jobs:
               echo "Failed to deploy preview"
               exit 1
             }
-            trap 'handler_error' ERR
+            trap 'handle_error' ERR
             echo "Cloning repository"
             cd ~
             rm -rf repo
