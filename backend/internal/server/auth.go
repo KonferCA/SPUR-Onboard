@@ -28,6 +28,10 @@ func (s *Server) handleSignup(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
+	if err := validateSignupRole(req.Role); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
 	ctx := c.Request().Context()
 	existingUser, err := s.queries.GetUserByEmail(ctx, req.Email)
 	if err == nil && existingUser.ID != "" {
