@@ -1,4 +1,4 @@
-name: Test
+name: Test Frontend
 on:
   push:
     branches: ['main', 'staging', 'prod']
@@ -9,7 +9,7 @@ on:
     paths:
       - 'frontend/**'
 jobs:
-  test:
+  test-frontend:
     runs-on: ubuntu-latest
     defaults:
       run:
