@@ -7,7 +7,6 @@ jobs:
   test-frontend:
     name: Test Frontend
     runs-on: ubuntu-latest
-    shell: bash
     working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
@@ -35,7 +34,6 @@ jobs:
   test-backend:
     name: Test Backend
     runs-on: ubuntu-latest
-    shell: bash
     working-directory: ./backend
     services:
       postgres:
