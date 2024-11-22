@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/KonferCA/NoKap/db"
@@ -21,14 +20,16 @@ func (s *Server) handleCreateCompany(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
+
 	params := db.CreateCompanyParams{
 		OwnerUserID: ownerUUID,
 		Name:        req.Name,
 		Description: req.Description,
 	}
 
-	company, err := queries.CreateCompany(context.Background(), params)
+	company, err := queries.CreateCompany(ctx, params)
 	if err != nil {
 		return handleDBError(err, "create", "company")
 	}
@@ -42,8 +43,10 @@ func (s *Server) handleGetCompany(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	company, err := queries.GetCompanyByID(context.Background(), companyID)
+
+	company, err := queries.GetCompanyByID(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "fetch", "company")
 	}
@@ -52,8 +55,10 @@ func (s *Server) handleGetCompany(c echo.Context) error {
 }
 
 func (s *Server) handleListCompanies(c echo.Context) error {
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	companies, err := queries.ListCompanies(context.Background())
+
+	companies, err := queries.ListCompanies(ctx)
 	if err != nil {
 		return handleDBError(err, "fetch", "companies")
 	}
@@ -67,13 +72,15 @@ func (s *Server) handleDeleteCompany(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	_, err = queries.GetCompanyByID(context.Background(), companyID)
+
+	_, err = queries.GetCompanyByID(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "verify", "company")
 	}
 
-	err = queries.DeleteCompany(context.Background(), companyID)
+	err = queries.DeleteCompany(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "delete", "company")
 	}
