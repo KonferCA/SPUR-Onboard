@@ -1,0 +1,7 @@
+.env
+tmp
+.DS_STORE
+
+*.pem
+
+static
