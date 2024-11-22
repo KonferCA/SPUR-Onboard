@@ -1,14 +1,39 @@
-name: Test Backend
 on:
   push:
     branches: ['main', 'staging', 'prod']
-    paths:
-      - 'backend/**'
   pull_request:
     branches: ['main', 'staging', 'prod']
-    paths:
-      - 'backend/**'
 jobs:
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run tests
+        run: pnpm test:ci
+      - name: Generate coverage report
+        run: pnpm coverage
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-frontend
+          path: coverage/
   test-backend:
     name: Test Backend
     runs-on: ubuntu-latest
@@ -55,7 +80,7 @@ jobs:
         if: ${{ !env.ACT && github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: coverage-report-backend
           path: coverage.html
       - name: Comment PR
         if: ${{ !env.ACT && github.event_name == 'pull_request' && always() }}
