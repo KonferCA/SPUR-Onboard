@@ -5,6 +5,7 @@ on:
       - main
     paths:
       - 'frontend/**'
+
 jobs:
   build-and-deploy-frontend:
     runs-on: ubuntu-latest
@@ -15,31 +16,43 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
           run_install: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
+
+      - name: Debug frontend directory
+        run: ls -la
+
       - name: Get pnpm store directory
-        shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Debug pnpm store path
+        run: echo "pnpm store path is: $STORE_PATH"
+
       - name: Setup pnpm cache
         uses: actions/cache@v3
         with:
           path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('frontend/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
       - name: Build
         run: pnpm build
+
       - name: Deploy to server
         uses: appleboy/scp-action@master
         with:
