@@ -9,7 +9,6 @@ interface ScrollLinkProps extends ComponentProps {
 
 const ScrollLink: FC<ScrollLinkProps> = ({ children, to, offset }) => {
     const onClick: React.MouseEventHandler = (e) => {
-        e.stopPropagation();
         e.preventDefault();
         let target: HTMLElement | null = null;
         // get element
