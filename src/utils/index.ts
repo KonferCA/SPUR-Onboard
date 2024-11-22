@@ -1,4 +1,8 @@
 export { Router } from './Router';
 
-export { scrollToWithOffset, scrollTo, scrollToTop } from './scroll';
-
+export {
+    scrollToWithOffset,
+    scrollTo,
+    scrollToTop,
+    isElementInView,
+} from './scroll';
