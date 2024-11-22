@@ -3,7 +3,7 @@ import type { ComponentProps } from '@t';
 import { scrollTo, scrollToWithOffset } from '@utils';
 
 interface ScrollLinkProps extends ComponentProps {
-    to: string;
+    to: string | HTMLElement;
     offset?: number;
 }
 
@@ -12,7 +12,11 @@ const ScrollLink: FC<ScrollLinkProps> = ({ children, to, offset }) => {
         e.preventDefault();
         let target: HTMLElement | null = null;
         // get element
-        target = document.querySelector(to);
+        if (typeof to === 'string') {
+            target = document.querySelector(to);
+        } else {
+            target = to;
+        }
         if (target) {
             if (offset !== undefined) {
                 scrollToWithOffset(target, offset);

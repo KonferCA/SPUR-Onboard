@@ -10,7 +10,7 @@ export interface AnchorLinkItem {
 }
 
 type ControlledLink = AnchorLinkItem & {
-    el: Element | null;
+    el: HTMLElement | null;
     isInView: boolean;
     active: boolean;
     index: number;
@@ -39,7 +39,7 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
     // able to trigger ui render when link's target is in view
     useEffect(() => {
         const controlled: ControlledLink[] = links.map((link, index) => {
-            const el = document.querySelector(link.target);
+            const el = document.querySelector<HTMLElement>(link.target);
             const isInView = isElementInView(el);
 
             return {
@@ -135,7 +135,10 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
                             onClick && (await onClick(link, e))
                         }
                     >
-                        <ScrollLink to={link.target} offset={link.offset}>
+                        <ScrollLink
+                            to={link.el ?? link.target}
+                            offset={link.offset}
+                        >
                             {children(link)}
                         </ScrollLink>
                     </li>
