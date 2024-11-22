@@ -1,32 +1,27 @@
-import { FC, useEffect, useState } from 'react';
-import clsx from 'clsx';
+import { FC, ReactNode, useEffect, useState } from 'react';
 import { ScrollLink } from '@components';
 import { isElementInView } from '@utils';
 
-export interface AnchorLinkProps {
-    active: boolean;
+export interface AnchorLinkItem {
     label: string;
     // provide the id of the target, or a query selector
     target: string;
     offset?: number;
-    numbered?: boolean;
-    index: number;
 }
 
-type AnchorLinkItem = Omit<AnchorLinkProps, 'active' | 'numbered' | 'index'>;
-
-type ControlledLink = AnchorLinkProps & {
+type ControlledLink = AnchorLinkItem & {
     el: Element | null;
     isInView: boolean;
+    active: boolean;
     index: number;
 };
 
 export interface AnchorLinksProps {
     links: AnchorLinkItem[];
-    numbered?: boolean;
+    children: (link: ControlledLink) => ReactNode;
 }
 
-const AnchorLinks: FC<AnchorLinksProps> = ({ links, numbered }) => {
+const AnchorLinks: FC<AnchorLinksProps> = ({ links, children }) => {
     const [controlledLinks, setControlledLinks] = useState<ControlledLink[]>(
         []
     );
@@ -40,7 +35,6 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, numbered }) => {
 
             return {
                 ...link,
-                numbered,
                 el,
                 isInView,
                 index,
@@ -74,7 +68,7 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, numbered }) => {
         }
 
         setControlledLinks(controlled);
-    }, [links, numbered]);
+    }, [links]);
 
     useEffect(() => {
         const handler = () => {
@@ -124,41 +118,16 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, numbered }) => {
 
     return (
         <div className="flex flex-col gap-4">
-            {numbered ? (
-                <ol>
-                    {controlledLinks.map((link) => (
-                        <AnchorLink key={link.label} {...link} />
-                    ))}
-                </ol>
-            ) : (
-                <ul>
-                    {controlledLinks.map((link) => (
-                        <AnchorLink key={link.label} {...link} />
-                    ))}
-                </ul>
-            )}
+            <ul>
+                {controlledLinks.map((link) => (
+                    <li>
+                        <ScrollLink to={link.target} offset={link.offset}>
+                            {children(link)}
+                        </ScrollLink>
+                    </li>
+                ))}
+            </ul>
         </div>
-    );
-};
-
-const AnchorLink: FC<AnchorLinkProps> = ({
-    label,
-    target,
-    offset,
-    active,
-    numbered,
-}) => {
-    const classes = clsx('text-gray-400', {
-        'list-decimal': numbered,
-        'text-gray-900': active,
-    });
-
-    return (
-        <li className={classes}>
-            <ScrollLink to={target} offset={offset}>
-                {label}
-            </ScrollLink>
-        </li>
     );
 };
 
