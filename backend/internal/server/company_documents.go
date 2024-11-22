@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/KonferCA/NoKap/db"
@@ -21,9 +20,9 @@ func (s *Server) handleCreateCompanyDocument(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-
-	_, err = queries.GetCompanyByID(context.Background(), companyID)
+	_, err = queries.GetCompanyByID(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "verify", "company")
 	}
@@ -34,7 +33,7 @@ func (s *Server) handleCreateCompanyDocument(c echo.Context) error {
 		FileUrl:      req.FileURL,
 	}
 
-	document, err := queries.CreateCompanyDocument(context.Background(), params)
+	document, err := queries.CreateCompanyDocument(ctx, params)
 	if err != nil {
 		return handleDBError(err, "create", "company document")
 	}
@@ -48,8 +47,9 @@ func (s *Server) handleGetCompanyDocument(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	document, err := queries.GetCompanyDocumentByID(context.Background(), documentID)
+	document, err := queries.GetCompanyDocumentByID(ctx, documentID)
 	if err != nil {
 		return handleDBError(err, "fetch", "company document")
 	}
@@ -63,8 +63,8 @@ func (s *Server) handleListCompanyDocuments(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-
 	documentType := c.QueryParam("document_type")
 	if documentType != "" {
 		params := db.ListDocumentsByTypeParams{
@@ -72,14 +72,15 @@ func (s *Server) handleListCompanyDocuments(c echo.Context) error {
 			DocumentType: documentType,
 		}
 
-		documents, err := queries.ListDocumentsByType(context.Background(), params)
+		documents, err := queries.ListDocumentsByType(ctx, params)
 		if err != nil {
 			return handleDBError(err, "fetch", "company documents")
 		}
+
 		return c.JSON(http.StatusOK, documents)
 	}
 
-	documents, err := queries.ListCompanyDocuments(context.Background(), companyID)
+	documents, err := queries.ListCompanyDocuments(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "fetch", "company documents")
 	}
@@ -99,9 +100,9 @@ func (s *Server) handleUpdateCompanyDocument(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-
-	_, err = queries.GetCompanyDocumentByID(context.Background(), documentID)
+	_, err = queries.GetCompanyDocumentByID(ctx, documentID)
 	if err != nil {
 		return handleDBError(err, "verify", "company document")
 	}
@@ -112,7 +113,7 @@ func (s *Server) handleUpdateCompanyDocument(c echo.Context) error {
 		FileUrl:      req.FileURL,
 	}
 
-	document, err := queries.UpdateCompanyDocument(context.Background(), params)
+	document, err := queries.UpdateCompanyDocument(ctx, params)
 	if err != nil {
 		return handleDBError(err, "update", "company document")
 	}
@@ -126,14 +127,14 @@ func (s *Server) handleDeleteCompanyDocument(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-
-	_, err = queries.GetCompanyDocumentByID(context.Background(), documentID)
+	_, err = queries.GetCompanyDocumentByID(ctx, documentID)
 	if err != nil {
 		return handleDBError(err, "verify", "company document")
 	}
 
-	err = queries.DeleteCompanyDocument(context.Background(), documentID)
+	err = queries.DeleteCompanyDocument(ctx, documentID)
 	if err != nil {
 		return handleDBError(err, "delete", "company document")
 	}
