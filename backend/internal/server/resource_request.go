@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/KonferCA/NoKap/db"
@@ -25,8 +24,10 @@ func (s *Server) handleCreateResourceRequest(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	_, err = queries.GetCompanyByID(context.Background(), companyID)
+
+	_, err = queries.GetCompanyByID(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "verify", "company")
 	}
@@ -38,7 +39,7 @@ func (s *Server) handleCreateResourceRequest(c echo.Context) error {
 		Status:       req.Status,
 	}
 
-	request, err := queries.CreateResourceRequest(context.Background(), params)
+	request, err := queries.CreateResourceRequest(ctx, params)
 	if err != nil {
 		return handleDBError(err, "create", "resource request")
 	}
@@ -52,8 +53,10 @@ func (s *Server) handleGetResourceRequest(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	request, err := queries.GetResourceRequestByID(context.Background(), requestID)
+
+	request, err := queries.GetResourceRequestByID(ctx, requestID)
 	if err != nil {
 		return handleDBError(err, "fetch", "resource request")
 	}
@@ -63,6 +66,7 @@ func (s *Server) handleGetResourceRequest(c echo.Context) error {
 
 func (s *Server) handleListResourceRequests(c echo.Context) error {
 	companyID := c.QueryParam("company_id")
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
 	if companyID != "" {
@@ -71,12 +75,12 @@ func (s *Server) handleListResourceRequests(c echo.Context) error {
 			return err
 		}
 
-		_, err = queries.GetCompanyByID(context.Background(), companyUUID)
+		_, err = queries.GetCompanyByID(ctx, companyUUID)
 		if err != nil {
 			return handleDBError(err, "verify", "company")
 		}
 
-		requests, err := queries.ListResourceRequestsByCompany(context.Background(), companyUUID)
+		requests, err := queries.ListResourceRequestsByCompany(ctx, companyUUID)
 		if err != nil {
 			return handleDBError(err, "fetch", "resource requests")
 		}
@@ -84,7 +88,7 @@ func (s *Server) handleListResourceRequests(c echo.Context) error {
 		return c.JSON(http.StatusOK, requests)
 	}
 
-	requests, err := queries.ListResourceRequests(context.Background())
+	requests, err := queries.ListResourceRequests(ctx)
 	if err != nil {
 		return handleDBError(err, "fetch", "resource requests")
 	}
@@ -104,13 +108,15 @@ func (s *Server) handleUpdateResourceRequestStatus(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	_, err = queries.GetResourceRequestByID(context.Background(), requestID)
+
+	_, err = queries.GetResourceRequestByID(ctx, requestID)
 	if err != nil {
 		return handleDBError(err, "verify", "resource request")
 	}
 
-	request, err := queries.UpdateResourceRequestStatus(context.Background(), db.UpdateResourceRequestStatusParams{
+	request, err := queries.UpdateResourceRequestStatus(ctx, db.UpdateResourceRequestStatusParams{
 		ID:     requestID,
 		Status: req.Status,
 	})
@@ -127,15 +133,17 @@ func (s *Server) handleDeleteResourceRequest(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	_, err = queries.GetResourceRequestByID(context.Background(), requestID)
+
+	_, err = queries.GetResourceRequestByID(ctx, requestID)
 	if err != nil {
 		return handleDBError(err, "verify", "resource request")
 	}
 
-	err = queries.DeleteResourceRequest(context.Background(), requestID)
+	err = queries.DeleteResourceRequest(ctx, requestID)
 	if err != nil {
-		handleDBError(err, "delete", "resource request")
+		return handleDBError(err, "delete", "resource request")
 	}
 
 	return c.NoContent(http.StatusNoContent)
