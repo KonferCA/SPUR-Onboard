@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -41,9 +40,10 @@ func (s *Server) handleCreateMeeting(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetProject(context.Background(), projectID)
+	_, err = queries.GetProject(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "verify", "project")
 	}
@@ -58,7 +58,7 @@ func (s *Server) handleCreateMeeting(c echo.Context) error {
 		Notes:             req.Notes,
 	}
 
-	meeting, err := queries.CreateMeeting(context.Background(), params)
+	meeting, err := queries.CreateMeeting(ctx, params)
 	if err != nil {
 		return handleDBError(err, "create", "meeting")
 	}
@@ -72,9 +72,10 @@ func (s *Server) handleGetMeeting(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
-	meeting, err := queries.GetMeeting(context.Background(), meetingID)
+	meeting, err := queries.GetMeeting(ctx, meetingID)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 			return echo.NewHTTPError(http.StatusNotFound, "meeting not found :(")
@@ -87,6 +88,7 @@ func (s *Server) handleGetMeeting(c echo.Context) error {
 }
 
 func (s *Server) handleListMeetings(c echo.Context) error {
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 	projectID := c.QueryParam("project_id")
 
@@ -96,7 +98,7 @@ func (s *Server) handleListMeetings(c echo.Context) error {
 			return err
 		}
 
-		meetings, err := queries.ListProjectMeetings(context.Background(), projectUUID)
+		meetings, err := queries.ListProjectMeetings(ctx, projectUUID)
 		if err != nil {
 			return handleDBError(err, "fetch", "meetings")
 		}
@@ -104,7 +106,7 @@ func (s *Server) handleListMeetings(c echo.Context) error {
 		return c.JSON(http.StatusOK, meetings)
 	}
 
-	meetings, err := queries.ListMeetings(context.Background())
+	meetings, err := queries.ListMeetings(ctx)
 	if err != nil {
 		return handleDBError(err, "fetch", "meetings")
 	}
@@ -138,9 +140,10 @@ func (s *Server) handleUpdateMeeting(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetMeeting(context.Background(), meetingID)
+	_, err = queries.GetMeeting(ctx, meetingID)
 	if err != nil {
 		return handleDBError(err, "verify", "meeting")
 	}
@@ -154,7 +157,7 @@ func (s *Server) handleUpdateMeeting(c echo.Context) error {
 		Notes:      req.Notes,
 	}
 
-	meeting, err := queries.UpdateMeeting(context.Background(), params)
+	meeting, err := queries.UpdateMeeting(ctx, params)
 	if err != nil {
 		return handleDBError(err, "update", "meeting")
 	}
@@ -168,14 +171,15 @@ func (s *Server) handleDeleteMeeting(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetMeeting(context.Background(), meetingID)
+	_, err = queries.GetMeeting(ctx, meetingID)
 	if err != nil {
 		return handleDBError(err, "verify", "meeting")
 	}
 
-	err = queries.DeleteMeeting(context.Background(), meetingID)
+	err = queries.DeleteMeeting(ctx, meetingID)
 	if err != nil {
 		return handleDBError(err, "delete", "meeting")
 	}
