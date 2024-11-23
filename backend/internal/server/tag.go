@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/KonferCA/NoKap/db"
@@ -16,8 +15,10 @@ func (s *Server) handleCreateTag(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	tag, err := queries.CreateTag(context.Background(), req.Name)
+
+	tag, err := queries.CreateTag(ctx, req.Name)
 	if err != nil {
 		return handleDBError(err, "create", "tag")
 	}
@@ -31,8 +32,10 @@ func (s *Server) handleGetTag(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	tag, err := queries.GetTag(context.Background(), tagID)
+
+	tag, err := queries.GetTag(ctx, tagID)
 	if err != nil {
 		return handleDBError(err, "fetch", "tag")
 	}
@@ -41,8 +44,10 @@ func (s *Server) handleGetTag(c echo.Context) error {
 }
 
 func (s *Server) handleListTags(c echo.Context) error {
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	tags, err := queries.ListTags(context.Background())
+
+	tags, err := queries.ListTags(ctx)
 	if err != nil {
 		return handleDBError(err, "fetch", "tags")
 	}
@@ -56,8 +61,10 @@ func (s *Server) handleDeleteTag(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	err = queries.DeleteTag(context.Background(), tagID)
+
+	err = queries.DeleteTag(ctx, tagID)
 	if err != nil {
 		return handleDBError(err, "delete", "tag")
 	}
