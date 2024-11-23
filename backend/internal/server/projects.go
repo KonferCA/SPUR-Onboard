@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -22,9 +21,10 @@ func (s *Server) handleCreateProject(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetCompanyByID(context.Background(), companyID)
+	_, err = queries.GetCompanyByID(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "verify", "company")
 	}
@@ -39,7 +39,7 @@ func (s *Server) handleCreateProject(c echo.Context) error {
 		Status:      req.Status,
 	}
 
-	project, err := queries.CreateProject(context.Background(), params)
+	project, err := queries.CreateProject(ctx, params)
 	if err != nil {
 		fmt.Printf("Error creating project: %v\n", err)
 		return handleDBError(err, "create", "project")
@@ -56,8 +56,9 @@ func (s *Server) handleGetProject(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	project, err := queries.GetProject(context.Background(), projectID)
+	project, err := queries.GetProject(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "fetch", "project")
 	}
@@ -66,6 +67,7 @@ func (s *Server) handleGetProject(c echo.Context) error {
 }
 
 func (s *Server) handleListProjects(c echo.Context) error {
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 	companyID := c.QueryParam("company_id")
 
@@ -74,14 +76,14 @@ func (s *Server) handleListProjects(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		projects, err := queries.ListProjectsByCompany(context.Background(), companyUUID)
+		projects, err := queries.ListProjectsByCompany(ctx, companyUUID)
 		if err != nil {
 			return handleDBError(err, "fetch", "projects")
 		}
 		return c.JSON(http.StatusOK, projects)
 	}
 
-	projects, err := queries.ListProjects(context.Background())
+	projects, err := queries.ListProjects(ctx)
 	if err != nil {
 		return handleDBError(err, "fetch", "projects")
 	}
@@ -94,13 +96,14 @@ func (s *Server) handleDeleteProject(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	_, err = queries.GetProject(context.Background(), projectID)
+	_, err = queries.GetProject(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "verify", "project")
 	}
 
-	err = queries.DeleteProject(context.Background(), projectID)
+	err = queries.DeleteProject(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "delete", "project")
 	}
@@ -120,8 +123,9 @@ func (s *Server) handleCreateProjectFile(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	_, err = queries.GetProject(context.Background(), projectID)
+	_, err = queries.GetProject(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "verify", "project")
 	}
@@ -132,7 +136,7 @@ func (s *Server) handleCreateProjectFile(c echo.Context) error {
 		FileUrl:   req.FileURL,
 	}
 
-	file, err := queries.CreateProjectFile(context.Background(), params)
+	file, err := queries.CreateProjectFile(ctx, params)
 	if err != nil {
 		return handleDBError(err, "create", "project file")
 	}
@@ -146,8 +150,9 @@ func (s *Server) handleListProjectFiles(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	files, err := queries.ListProjectFiles(context.Background(), projectID)
+	files, err := queries.ListProjectFiles(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "fetch", "project files")
 	}
@@ -161,8 +166,9 @@ func (s *Server) handleDeleteProjectFile(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	err = queries.DeleteProjectFile(context.Background(), fileID)
+	err = queries.DeleteProjectFile(ctx, fileID)
 	if err != nil {
 		return handleDBError(err, "delete", "project file")
 	}
@@ -187,8 +193,9 @@ func (s *Server) handleCreateProjectComment(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	_, err = queries.GetProject(context.Background(), projectID)
+	_, err = queries.GetProject(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "verify", "project")
 	}
@@ -199,7 +206,7 @@ func (s *Server) handleCreateProjectComment(c echo.Context) error {
 		Comment:   req.Comment,
 	}
 
-	comment, err := queries.CreateProjectComment(context.Background(), params)
+	comment, err := queries.CreateProjectComment(ctx, params)
 	if err != nil {
 		return handleDBError(err, "create", "project comment")
 	}
@@ -213,8 +220,9 @@ func (s *Server) handleListProjectComments(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	comments, err := queries.GetProjectComments(context.Background(), projectID)
+	comments, err := queries.GetProjectComments(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "fetch", "project comments")
 	}
@@ -228,11 +236,12 @@ func (s *Server) handleDeleteProjectComment(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	
+
 	// First check if the comment exists using a direct query
 	var exists bool
-	err = s.DBPool.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM project_comments WHERE id = $1)", commentID).Scan(&exists)
+	err = s.DBPool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM project_comments WHERE id = $1)", commentID).Scan(&exists)
 	if err != nil {
 		return handleDBError(err, "verify", "project comment")
 	}
@@ -240,7 +249,7 @@ func (s *Server) handleDeleteProjectComment(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, "project comment not found :(")
 	}
 
-	err = queries.DeleteProjectComment(context.Background(), commentID)
+	err = queries.DeleteProjectComment(ctx, commentID)
 	if err != nil {
 		return handleDBError(err, "delete", "project comment")
 	}
@@ -260,8 +269,9 @@ func (s *Server) handleCreateProjectLink(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	_, err = queries.GetProject(context.Background(), projectID)
+	_, err = queries.GetProject(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "verify", "project")
 	}
@@ -272,7 +282,7 @@ func (s *Server) handleCreateProjectLink(c echo.Context) error {
 		Url:       req.URL,
 	}
 
-	link, err := queries.CreateProjectLink(context.Background(), params)
+	link, err := queries.CreateProjectLink(ctx, params)
 	if err != nil {
 		return handleDBError(err, "create", "project link")
 	}
@@ -286,8 +296,9 @@ func (s *Server) handleListProjectLinks(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	links, err := queries.ListProjectLinks(context.Background(), projectID)
+	links, err := queries.ListProjectLinks(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "fetch", "project links")
 	}
@@ -301,8 +312,9 @@ func (s *Server) handleDeleteProjectLink(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	err = queries.DeleteProjectLink(context.Background(), linkID)
+	err = queries.DeleteProjectLink(ctx, linkID)
 	if err != nil {
 		return handleDBError(err, "delete", "project link")
 	}
@@ -327,9 +339,10 @@ func (s *Server) handleAddProjectTag(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetProject(context.Background(), projectID)
+	_, err = queries.GetProject(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "verify", "project")
 	}
@@ -339,7 +352,7 @@ func (s *Server) handleAddProjectTag(c echo.Context) error {
 		TagID:     tagID,
 	}
 
-	projectTag, err := queries.AddProjectTag(context.Background(), params)
+	projectTag, err := queries.AddProjectTag(ctx, params)
 	if err != nil {
 		return handleDBError(err, "create", "project tag")
 	}
@@ -353,8 +366,9 @@ func (s *Server) handleListProjectTags(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
-	tags, err := queries.ListProjectTags(context.Background(), projectID)
+	tags, err := queries.ListProjectTags(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "fetch", "project tags")
 	}
@@ -373,13 +387,14 @@ func (s *Server) handleDeleteProjectTag(c echo.Context) error {
 		return err
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 	params := db.DeleteProjectTagParams{
 		ProjectID: projectID,
 		TagID:     tagID,
 	}
 
-	err = queries.DeleteProjectTag(context.Background(), params)
+	err = queries.DeleteProjectTag(ctx, params)
 	if err != nil {
 		return handleDBError(err, "delete", "project tag")
 	}
@@ -399,10 +414,11 @@ func (s *Server) handleUpdateProject(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
+	ctx := c.Request().Context()
 	queries := db.New(s.DBPool)
 
 	// Verify project exists
-	_, err = queries.GetProject(context.Background(), projectID)
+	_, err = queries.GetProject(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "verify", "project")
 	}
@@ -415,7 +431,7 @@ func (s *Server) handleUpdateProject(c echo.Context) error {
 		Status:      req.Status,
 	}
 
-	project, err := queries.UpdateProject(context.Background(), params)
+	project, err := queries.UpdateProject(ctx, params)
 	if err != nil {
 		return handleDBError(err, "update", "project")
 	}
