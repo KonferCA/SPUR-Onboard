@@ -1,12 +1,20 @@
-name: Test
+name: Test Frontend
 on:
   push:
-    branches: ['main']
+    branches: ['main', 'staging', 'prod']
+    paths:
+      - 'frontend/**'
   pull_request:
-    branches: ['main']
+    branches: ['main', 'staging', 'prod']
+    paths:
+      - 'frontend/**'
 jobs:
-  test:
+  test-frontend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       - name: Setup pnpm
@@ -25,3 +33,9 @@ jobs:
         run: pnpm test:ci
       - name: Generate coverage report
         run: pnpm coverage
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7

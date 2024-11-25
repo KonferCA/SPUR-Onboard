@@ -1,0 +1,24 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: ".sqlc/queries"
+    schema: ".sqlc/migrations"
+    gen:
+      go:
+        package: "db"
+        out: "db"
+        sql_package: "pgx/v5"
+        emit_pointers_for_null_types: true
+        emit_enum_valid_method: true
+        emit_all_enum_values: true
+        overrides:
+          - db_type: "uuid"
+            go_type: "string"
+          - db_type: "text"
+            go_type: "string"
+          - db_type: "pg_catalog.varchar"
+            go_type: "string"
+          - db_type: "pg_catalog.bpchar"
+            go_type: "string"
+          - db_type: "pg_catalog.timestamp"
+            go_type: "time.Time"
