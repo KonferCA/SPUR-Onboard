@@ -26,29 +26,28 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: Check ls
-        run: ls
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.23'
           cache: true
       - name: Install dependencies
-        run: go mod download
+        run: cd backend && go mod download
       - name: Install Goose
-        run: go install github.com/pressly/goose/v3/cmd/goose@v3.22.1
+        run: cd backend && go install github.com/pressly/goose/v3/cmd/goose@v3.22.1
       - name: Run migrations
-        run: goose -dir .sqlc/migrations postgres "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" up
+        run: cd backend && goose -dir .sqlc/migrations postgres "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" up
       - name: Run tests
         id: tests
         continue-on-error: true
         run: |
           # run tests and capture output
+          cd backend
           go test -v -coverprofile=coverage.out ./... 2>&1 | tee test_output.txt
           # store the exit code explicitly
           echo "::set-output name=exit_code::${PIPESTATUS[0]}"
       - name: Generate coverage report
-        run: go tool cover -html=coverage.out -o coverage.html
+        run: cd backend && go tool cover -html=coverage.out -o coverage.html
       - name: Upload coverage report
         if: ${{ !env.ACT && github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
