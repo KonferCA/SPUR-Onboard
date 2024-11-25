@@ -44,8 +44,6 @@ jobs:
           # run tests and capture output
           cd backend
           go test -v -coverprofile=coverage.out ./... 2>&1 | tee test_output.txt
-          # store the exit code explicitly
-          echo "::set-output name=exit_code::${PIPESTATUS[0]}"
       - name: Generate coverage report
         run: cd backend && go tool cover -html=coverage.out -o coverage.html
       - name: Upload coverage report
@@ -53,18 +51,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-backend
-          path: coverage.html
+          path: backend/coverage.html
       - name: Comment PR
         if: ${{ !env.ACT && github.event_name == 'pull_request' && always() }}
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: "const fs = require('fs');\n\n// Read test output\nconst testOutput = fs.readFileSync('backend/test_output.txt', 'utf8');\n\n// Get coverage - look for the last coverage number in the output\nlet coverage = 'N/A';\nconst coverageMatches = testOutput.match(/coverage: (\\d+\\.\\d+)% of statements/g) || [];\nif (coverageMatches.length > 0) {\n  const lastMatch = coverageMatches[coverageMatches.length - 1];\n  coverage = lastMatch.match(/(\\d+\\.\\d+)%/)[1] + '%';\n}\n\n// Check if any tests failed\nconst hasFailed = testOutput.includes('FAIL') && !testOutput.includes('FAIL\\t[build failed]');\nconst testStatus = hasFailed ? 'failure' : 'success';\nconst color = testStatus === 'success' ? '✅' : '❌';\n\n// Parse test failures\nlet failureDetails = '';\nif (hasFailed) {\n  const errorTraces = testOutput.match(/\\s+.*?_test\\.go:\\d+:[\\s\\S]*?Test:\\s+.*$/gm) || [];\n  const failures = testOutput.match(/--- FAIL: .*?(?=(?:---|\\z))/gs) || [];\n  \n  failureDetails = `\n  <details>\n  <summary>❌ Test Failures</summary>\n  \n  \\`\\`\\`\n  ${failures.join('\\n')}\n  \n  Error Details:\n  ${errorTraces.map(trace => trace.trim()).join('\\n')}\n  \\`\\`\\`\n  </details>\n  `;\n}\n\nconst output = `### Test Results ${color}\n\n**Status**: ${testStatus}\n**Coverage**: ${coverage}\n**OS**: \\`${{ runner.os }}\\`\n\n${failureDetails}\n\n<details>\n<summary>Test Details</summary>\n\n* Triggered by: @${{ github.actor }}\n* Commit: ${{ github.sha }}\n* Branch: ${{ github.ref }}\n* Workflow: ${{ github.workflow }}\n</details>`;\n\n// Find existing comment\nconst { data: comments } = await github.rest.issues.listComments({\n  owner: context.repo.owner,\n  repo: context.repo.repo,\n  issue_number: context.issue.number,\n});\n\nconst botComment = comments.find(comment => \n  comment.user.type === 'Bot' && \n  comment.body.includes('### Test Results')\n);\n\nif (botComment) {\n  // Update existing comment\n  await github.rest.issues.updateComment({\n    owner: context.repo.owner,\n    repo: context.repo.repo,\n    comment_id: botComment.id,\n    body: output\n  });\n} else {\n  // Create new comment\n  await github.rest.issues.createComment({\n    owner: context.repo.owner,\n    repo: context.repo.repo,\n    issue_number: context.issue.number,\n    body: output\n  });\n}\n"
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
