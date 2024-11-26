@@ -73,7 +73,7 @@ start-testdb:
 	@goose -dir .sqlc/migrations postgres "$(TEST_DB_URL)" up
 
 run-tests:
-	@go test -v ./...
+	@go test -v -coverprofile=coverage.out ./...
 
 stop-testdb:
 	@echo "Stopping test db..."
