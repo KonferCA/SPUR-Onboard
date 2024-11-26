@@ -43,6 +43,8 @@ jobs:
           # run tests and capture output
           cd backend
           go test -v -coverprofile=coverage.out ./... 2>&1 | tee test_output.txt
+          # store the exit code explicitly
+          echo "::set-output name=exit_code::${PIPESTATUS[0]}"
       - name: Generate coverage report
         run: cd backend && go tool cover -html=coverage.out -o coverage.html
       - name: Upload coverage report
