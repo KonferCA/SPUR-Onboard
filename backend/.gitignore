@@ -5,3 +5,6 @@ tmp
 *.pem
 
 static
+
+# ignore test coverage
+coverage.out
