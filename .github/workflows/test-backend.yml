@@ -43,6 +43,9 @@ jobs:
           # run tests and capture output
           cd backend
           go test -v -coverprofile=coverage.out ./...
+          if [ $? -eq 1 ]; then
+            exit 1
+          fi
         # - name: Generate coverage report
         #   run: cd backend && go tool cover -html=coverage.out -o coverage.html
         # - name: Upload coverage report
