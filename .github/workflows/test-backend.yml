@@ -30,6 +30,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.23'
+          cache: true
       - name: Install dependencies
         run: cd backend && go mod download
       - name: Install Goose
@@ -43,6 +44,8 @@ jobs:
           # run tests and capture output
           cd backend
           go test -v -coverprofile=coverage.out ./...
+          # store the exit code explicitly
+          echo "::set-output name=exit_code::${PIPESTATUS[0]}"
       - name: Generate coverage report
         run: cd backend && go tool cover -html=coverage.out -o coverage.html
       - name: Upload coverage report
