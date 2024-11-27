@@ -1,10 +1,11 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Landing, DashboardPage, AdminDashboardPage } from '@pages';
+import { Landing, DashboardPage, AdminDashboardPage, Register } from '@pages';
 
 const Router = () => (
     <BrowserRouter>
         <Routes>
             <Route path="/" element={ <Landing /> } />
+            <Route path="/register" element={ <Register /> } />
             
             {/* User routes */}
             <Route path="/dashboard" element={ <DashboardPage /> } />

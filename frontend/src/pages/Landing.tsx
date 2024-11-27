@@ -1,6 +1,13 @@
 import { useState } from 'react';
-import { TextInput, FileUpload, Button, Dropdown } from '@components';
-import { PageLayout, Section } from '@components/layout';
+import {
+    TextInput,
+    FileUpload,
+    Button,
+    Dropdown,
+    AnchorLinks,
+    PageLayout,
+    Section
+} from '@components';
 
 // sample industries data
 const industries = [
@@ -28,19 +35,52 @@ const Landing: React.FC = () => {
                     
                     <FileUpload className="w-full" />
                     
-                    <Dropdown
-                        label="Industry"
-                        options={industries}
-                        value={selectedIndustry}
-                        onChange={(value) => setSelectedIndustry(value as typeof industries[0])}
-                    />
+                    <div id="dropdown">
+                        <Dropdown
+                            label="Industry"
+                            options={industries}
+                            value={selectedIndustry}
+                            onChange={(value) => setSelectedIndustry(value as typeof industries[0])}
+                        />
+                    </div>
                     
-                    <div className="flex flex-wrap gap-4">
+                    <div className="h-[1500px]"></div>
+                    
+                    <div id="buttons" className="flex flex-wrap gap-4">
                         <Button>Click me</Button>
                         <Button variant="secondary">Secondary</Button>
                         <Button variant="outline">Outline</Button>
                         <Button liquid>Liquid</Button>
                     </div>
+                </div>
+
+                <div className="fixed top-2 left-10">
+                    <AnchorLinks
+                        onClick={(l, e) => {
+                            console.log(l, e);
+                        }}
+                        links={[
+                            {
+                                label: 'dropdown',
+                                target: '#dropdown',
+                            },
+                            {
+                                label: 'buttons',
+                                target: '#buttons',
+                            },
+                        ]}
+                    >
+                        {(link) => (
+                            <span
+                                className={
+                                    'transition hover:text-gray-800 ' +
+                                    (link.active ? 'text-black' : 'text-gray-400')
+                                }
+                            >
+                                {link.label}
+                            </span>
+                        )}
+                    </AnchorLinks>
                 </div>
             </Section>
         </PageLayout>

@@ -1,11 +1,17 @@
-name: Build and Deploy Preview
+name: Build and Deploy Preview / Frontend
 on:
   push:
     branches:
       - main
+    paths:
+      - 'frontend/**'
 jobs:
-  build-and-deploy:
+  build-and-deploy-frontend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: frontend
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,15 +37,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: cd frontend && pnpm install --frozen-lockfile
       - name: Build
-        run: pnpm build
+        run: cd frontend && pnpm build
       - name: Deploy to server
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.PREVIEW_SERVER_IP }}
           username: ${{ secrets.PREVIEW_USER }}
           key: ${{ secrets.PREVIEW_SERVER_SSH_KEY }}
-          source: "dist/"
+          source: "frontend/dist/"
           target: "${{ secrets.TARGET_DIR }}"
           strip_components: 1
+
