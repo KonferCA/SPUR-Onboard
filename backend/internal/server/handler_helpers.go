@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/KonferCA/NoKap/db"
+	"KonferCA/SPUR/db"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"

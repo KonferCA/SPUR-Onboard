@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/KonferCA/NoKap/db"
-	"github.com/KonferCA/NoKap/internal/jwt"
-	mw "github.com/KonferCA/NoKap/internal/middleware"
+	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/jwt"
+	mw "KonferCA/SPUR/internal/middleware"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"

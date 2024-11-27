@@ -1,4 +1,4 @@
-module github.com/KonferCA/NoKap
+module KonferCA/SPUR
 
 go 1.23.2
 

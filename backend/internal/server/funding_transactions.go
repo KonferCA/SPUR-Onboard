@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/KonferCA/NoKap/db"
-	mw "github.com/KonferCA/NoKap/internal/middleware"
+	"KonferCA/SPUR/db"
+	mw "KonferCA/SPUR/internal/middleware"
 	"github.com/labstack/echo/v4"
 )
 
