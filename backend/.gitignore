@@ -1,0 +1,10 @@
+.env
+tmp
+.DS_STORE
+
+*.pem
+
+static
+
+# ignore test coverage
+coverage.out
