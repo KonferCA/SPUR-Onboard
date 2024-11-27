@@ -1,18 +1,21 @@
 import { useState, useRef } from 'react';
-import { FiUpload } from 'react-icons/fi';
+import { FiUpload, FiX } from 'react-icons/fi';
 
 interface FileUploadProps {
   onFilesChange?: (files: File[]) => void;
   children?: React.ReactNode;
   className?: string;
+  maxSizeMB?: number;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({ 
     onFilesChange,
     children,
-    className = ''
+    className = '',
+    maxSizeMB = 50
 }) => {
     const [isDragging, setIsDragging] = useState(false);
+    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // handle drag events
@@ -52,21 +55,52 @@ const FileUpload: React.FC<FileUploadProps> = ({
     };
 
     const handleFiles = (files: File[]) => {
+        // check file types
         const validFiles = files.filter(file => 
             ['application/pdf', 'image/png', 'image/jpeg'].includes(file.type)
         );
 
         if (validFiles.length !== files.length) {
-            alert('only pdf, png and jpeg files are allowed');
+            alert('Only PDF, PNG and JPEG files are allowed');
+            return;
         }
 
-        if (validFiles.length > 0 && onFilesChange) {
-            onFilesChange(validFiles);
+        // check file sizes
+        const oversizedFiles = validFiles.filter(
+            file => file.size > maxSizeMB * 1024 * 1024
+        );
+
+        if (oversizedFiles.length > 0) {
+            alert(`Files must be smaller than ${maxSizeMB}MB`);
+            return;
+        }
+
+        // update state and call onChange
+        const newFiles = [...uploadedFiles, ...validFiles];
+        setUploadedFiles(newFiles);
+        
+        if (onFilesChange) {
+            onFilesChange(newFiles);
         }
     };
 
+    const removeFile = (fileToRemove: File) => {
+        const newFiles = uploadedFiles.filter(file => file !== fileToRemove);
+        setUploadedFiles(newFiles);
+        
+        if (onFilesChange) {
+            onFilesChange(newFiles);
+        }
+    };
+
+    const formatFileSize = (bytes: number) => {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+
     return (
-        <div className={`w-full max-w-2xl mx-auto p-4 ${className}`}>
+        <div className={`w-full ${className}`}>
             <div 
                 className={`border-2 border-dashed rounded-lg p-6 ${
                     isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
@@ -77,23 +111,18 @@ const FileUpload: React.FC<FileUploadProps> = ({
                 onDrop={handleDrop}
             >
                 {children || (
-                    <div>
+                    <div className="text-center">
                         <div className="flex items-center justify-center gap-3">
                             <FiUpload className="text-gray-400 text-2xl" />
-                            <h3 className="text-lg font-medium">Drag and drop here</h3>
+                            <h3 className="text-sm font-medium">Drag and drop here</h3>
                         </div>
-                        <div className="text-center mt-2">
-                            <p className="text-gray-500">or</p>
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="mt-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-                            >
-                                Select File
-                            </button>
-                            <p className="mt-2 text-sm text-gray-500">
-                                Accepted file types: PDF, PNG, JPEG
-                            </p>
-                        </div>
+                        <p className="text-sm text-gray-500 mt-2">or</p>
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="mt-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
+                        >
+                            Select File
+                        </button>
                     </div>
                 )}
                 <input
@@ -105,6 +134,31 @@ const FileUpload: React.FC<FileUploadProps> = ({
                     multiple
                 />
             </div>
+
+            {/* File list */}
+            {uploadedFiles.length > 0 && (
+                <div className="mt-4 space-y-2">
+                    {uploadedFiles.map((file, index) => (
+                        <div 
+                            key={index}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                        >
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm font-medium">{file.name}</span>
+                                <span className="text-sm text-gray-500">
+                                    {formatFileSize(file.size)}
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => removeFile(file)}
+                                className="text-gray-400 hover:text-gray-600"
+                            >
+                                <FiX />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
