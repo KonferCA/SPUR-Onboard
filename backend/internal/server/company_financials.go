@@ -59,7 +59,7 @@ func (s *Server) handleGetCompanyFinancials(c echo.Context) error {
 
 	year := c.QueryParam("year")
 	if year != "" {
-		yearInt, err := strconv.Atoi(year)
+		yearInt, err := strconv.ParseInt(year, 10, 32)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, "Invalid year format")
 		}
@@ -102,7 +102,7 @@ func (s *Server) handleUpdateCompanyFinancials(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Year parameter is required")
 	}
 
-	yearInt, err := strconv.Atoi(year)
+	yearInt, err := strconv.ParseInt(year, 10, 32)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid year format")
 	}
@@ -145,7 +145,7 @@ func (s *Server) handleDeleteCompanyFinancials(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Year parameter is required")
 	}
 
-	yearInt, err := strconv.Atoi(year)
+	yearInt, err := strconv.ParseInt(year, 10, 32)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid year format")
 	}
