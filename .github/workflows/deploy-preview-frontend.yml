@@ -24,7 +24,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'pnpm'
       - name: Get pnpm store directory
         shell: bash
         run: |
@@ -49,4 +48,3 @@ jobs:
           source: "frontend/dist/"
           target: "${{ secrets.TARGET_DIR }}"
           strip_components: 1
-
