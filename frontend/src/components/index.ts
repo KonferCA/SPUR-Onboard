@@ -1,5 +1,4 @@
 export { TextInput } from './TextInput';
-export { TextArea } from './TextArea';
 export { Dropdown } from './Dropdown';
 export { FileUpload } from './FileUpload';
 export { InfoCard } from './InfoCard';
@@ -8,6 +7,7 @@ export { NotificationBanner } from './NotificationBanner';
 export { FormContainer } from './FormContainer';
 export { ScrollLink } from './ScrollLink';
 export { AnchorLinks } from './AnchorLinks';
+export { TextArea } from './TextArea';
 export { 
   PageLayout, 
   Section, 
