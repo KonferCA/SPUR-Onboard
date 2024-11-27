@@ -3,7 +3,7 @@ package server
 import (
 	"time"
 
-	"github.com/KonferCA/NoKap/db"
+	"KonferCA/SPUR/db"
 )
 
 // TODO: Reorder types

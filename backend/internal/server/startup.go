@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/KonferCA/NoKap/db"
+	"KonferCA/SPUR/db"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )

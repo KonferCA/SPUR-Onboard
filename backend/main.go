@@ -7,8 +7,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/KonferCA/NoKap/common"
-	"github.com/KonferCA/NoKap/internal/server"
+	"KonferCA/SPUR/common"
+	"KonferCA/SPUR/internal/server"
 	"github.com/joho/godotenv"
 )
 

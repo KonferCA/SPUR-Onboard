@@ -10,8 +10,8 @@ import (
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 
-	"github.com/KonferCA/NoKap/db"
-	"github.com/KonferCA/NoKap/internal/middleware"
+	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/middleware"
 )
 
 type Server struct {

@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/KonferCA/NoKap/db"
+	"KonferCA/SPUR/db"
 	golangJWT "github.com/golang-jwt/jwt/v5"
 )
 

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/KonferCA/NoKap/internal/jwt"
+	"KonferCA/SPUR/internal/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
