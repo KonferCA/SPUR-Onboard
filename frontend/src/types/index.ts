@@ -1,2 +1,2 @@
-import type { ComponentProps } from './common';
-export type { ComponentProps };
+export * from './common';
+export * from './form';
