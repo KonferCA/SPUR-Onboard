@@ -109,7 +109,7 @@ func (s *Server) handleDeleteProject(c echo.Context) error {
 }
 
 func (s *Server) handleCreateProjectFile(c echo.Context) error {
-	projectID, err := validateUUID(c.Param("project_id"), "project")
+	projectID, err := validateUUID(c.Param("id"), "project")
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func (s *Server) handleCreateProjectFile(c echo.Context) error {
 }
 
 func (s *Server) handleListProjectFiles(c echo.Context) error {
-	projectID, err := validateUUID(c.Param("project_id"), "project")
+	projectID, err := validateUUID(c.Param("id"), "project")
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func (s *Server) handleDeleteProjectFile(c echo.Context) error {
 }
 
 func (s *Server) handleCreateProjectComment(c echo.Context) error {
-	projectID, err := validateUUID(c.Param("project_id"), "project")
+	projectID, err := validateUUID(c.Param("id"), "project")
 	if err != nil {
 		return err
 	}
@@ -208,7 +208,7 @@ func (s *Server) handleCreateProjectComment(c echo.Context) error {
 }
 
 func (s *Server) handleListProjectComments(c echo.Context) error {
-	projectID, err := validateUUID(c.Param("project_id"), "project")
+	projectID, err := validateUUID(c.Param("id"), "project")
 	if err != nil {
 		return err
 	}
@@ -229,7 +229,7 @@ func (s *Server) handleDeleteProjectComment(c echo.Context) error {
 	}
 
 	queries := db.New(s.DBPool)
-	
+
 	// First check if the comment exists using a direct query
 	var exists bool
 	err = s.DBPool.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM project_comments WHERE id = $1)", commentID).Scan(&exists)
@@ -249,7 +249,7 @@ func (s *Server) handleDeleteProjectComment(c echo.Context) error {
 }
 
 func (s *Server) handleCreateProjectLink(c echo.Context) error {
-	projectID, err := validateUUID(c.Param("project_id"), "project")
+	projectID, err := validateUUID(c.Param("id"), "project")
 	if err != nil {
 		return err
 	}
@@ -281,7 +281,7 @@ func (s *Server) handleCreateProjectLink(c echo.Context) error {
 }
 
 func (s *Server) handleListProjectLinks(c echo.Context) error {
-	projectID, err := validateUUID(c.Param("project_id"), "project")
+	projectID, err := validateUUID(c.Param("id"), "project")
 	if err != nil {
 		return err
 	}
@@ -311,7 +311,7 @@ func (s *Server) handleDeleteProjectLink(c echo.Context) error {
 }
 
 func (s *Server) handleAddProjectTag(c echo.Context) error {
-	projectID, err := validateUUID(c.Param("project_id"), "project")
+	projectID, err := validateUUID(c.Param("id"), "project")
 	if err != nil {
 		return err
 	}
@@ -348,7 +348,7 @@ func (s *Server) handleAddProjectTag(c echo.Context) error {
 }
 
 func (s *Server) handleListProjectTags(c echo.Context) error {
-	projectID, err := validateUUID(c.Param("project_id"), "project")
+	projectID, err := validateUUID(c.Param("id"), "project")
 	if err != nil {
 		return err
 	}
@@ -363,7 +363,7 @@ func (s *Server) handleListProjectTags(c echo.Context) error {
 }
 
 func (s *Server) handleDeleteProjectTag(c echo.Context) error {
-	projectID, err := validateUUID(c.Param("project_id"), "project")
+	projectID, err := validateUUID(c.Param("id"), "project")
 	if err != nil {
 		return err
 	}

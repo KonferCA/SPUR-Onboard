@@ -178,11 +178,11 @@ func (s *Server) setupProjectRoutes() {
 
 	s.apiV1.POST("/projects/:id/comments", s.handleCreateProjectComment, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectCommentRequest{})))
 	s.apiV1.GET("/projects/:id/comments", s.handleListProjectComments)
-	s.apiV1.DELETE("/comments/:id", s.handleDeleteProjectComment)
+	s.apiV1.DELETE("/projects/comments/:id", s.handleDeleteProjectComment)
 
 	s.apiV1.POST("/projects/:id/links", s.handleCreateProjectLink, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectLinkRequest{})))
 	s.apiV1.GET("/projects/:id/links", s.handleListProjectLinks)
-	s.apiV1.DELETE("/links/:id", s.handleDeleteProjectLink)
+	s.apiV1.DELETE("/projects/links/:id", s.handleDeleteProjectLink)
 
 	s.apiV1.POST("/projects/:id/tags", s.handleAddProjectTag, middleware.ValidateRequestBody(reflect.TypeOf(AddProjectTagRequest{})))
 	s.apiV1.GET("/projects/:id/tags", s.handleListProjectTags)
