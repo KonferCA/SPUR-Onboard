@@ -18,6 +18,7 @@ interface DashboardTemplateProps {
     path: string;
   }>;
   actions?: ReactNode;
+  customSidebar?: ReactNode;
 }
 
 export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
@@ -26,6 +27,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
   logo = <h1 className="text-xl font-bold">Logo</h1>,
   navTabs = [],
   actions,
+  customSidebar,
 }) => {
   const location = useLocation();
 
@@ -72,27 +74,29 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
       {/* main content area */}
       <div className="w-full max-w-[1440px] mx-auto flex flex-1">
         {/* sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200">
-          <nav className="sticky top-0 py-4">
-            {menuItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`
-                  flex items-center gap-3 px-6 py-2 text-sm whitespace-nowrap
-                  ${
-                    location.pathname === item.path
-                      ? "bg-gray-50 text-gray-900 font-medium"
-                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                  }
-                `}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </nav>
-        </div>
+        {customSidebar || (
+          <div className="w-64 bg-white border-r border-gray-200">
+            <nav className="sticky top-0 py-4">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`
+                    flex items-center gap-3 px-6 py-2 text-sm whitespace-nowrap
+                    ${
+                      location.pathname === item.path
+                        ? "bg-gray-50 text-gray-900 font-medium"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                    }
+                  `}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </nav>
+          </div>
+        )}
 
         {/* main content */}
         <main className="flex-1 p-6">
