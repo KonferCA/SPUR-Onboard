@@ -65,6 +65,17 @@ func (q *Queries) CreateQuestion(ctx context.Context, questionText string) (Ques
 	return i, err
 }
 
+const deleteQuestion = `-- name: DeleteQuestion :exec
+UPDATE questions 
+SET deleted_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) DeleteQuestion(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, deleteQuestion, id)
+	return err
+}
+
 const getCompanyAnswer = `-- name: GetCompanyAnswer :one
 SELECT 
     cqa.id, cqa.company_id, cqa.question_id, cqa.answer_text, cqa.created_at, cqa.updated_at, cqa.deleted_at,
