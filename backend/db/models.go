@@ -234,4 +234,5 @@ type User struct {
 	CreatedAt     pgtype.Timestamp
 	UpdatedAt     pgtype.Timestamp
 	Role          UserRole
+	EmailVerified bool
 }

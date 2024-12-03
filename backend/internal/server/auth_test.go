@@ -39,11 +39,9 @@ func TestAuth(t *testing.T) {
 	// test signup
 	t.Run("signup", func(t *testing.T) {
 		payload := SignupRequest{
-			Email:     "test@example.com",
-			Password:  "password123",
-			FirstName: "Test",
-			LastName:  "User",
-			Role:      "startup_owner",
+			Email:    "test@example.com",
+			Password: "password123",
+			Role:     "startup_owner",
 		}
 		body, _ := json.Marshal(payload)
 
@@ -66,11 +64,9 @@ func TestAuth(t *testing.T) {
 	// test duplicate email
 	t.Run("duplicate email", func(t *testing.T) {
 		payload := SignupRequest{
-			Email:     "test@example.com",
-			Password:  "password123",
-			FirstName: "Test",
-			LastName:  "User",
-			Role:      "startup_owner",
+			Email:    "test@example.com",
+			Password: "password123",
+			Role:     "startup_owner",
 		}
 		body, _ := json.Marshal(payload)
 
