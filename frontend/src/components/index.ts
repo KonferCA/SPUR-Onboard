@@ -8,6 +8,9 @@ export { FormContainer } from './FormContainer';
 export { ScrollLink } from './ScrollLink';
 export { AnchorLinks } from './AnchorLinks';
 export { TextArea } from './TextArea';
+export { TeamMembers } from './TeamMembers';
+export { SocialLinks } from './SocialLinks';
+export { DateInput } from './DateInput';
 export { 
   PageLayout, 
   Section, 

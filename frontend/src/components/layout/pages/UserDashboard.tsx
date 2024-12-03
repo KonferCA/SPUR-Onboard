@@ -17,9 +17,10 @@ const userNavTabs = [
 
 interface UserDashboardProps {
   children: ReactNode;
+  customSidebar?: ReactNode;
 }
 
-export const UserDashboard: React.FC<UserDashboardProps> = ({ children }) => {
+export const UserDashboard: React.FC<UserDashboardProps> = ({ children, customSidebar }) => {
   const navigate = useNavigate();
 
   const userActions = (
@@ -44,6 +45,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ children }) => {
       menuItems={userMenuItems}
       navTabs={userNavTabs}
       actions={userActions}
+      customSidebar={customSidebar}
     >
       {children}
     </DashboardTemplate>

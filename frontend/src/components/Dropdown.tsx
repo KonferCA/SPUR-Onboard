@@ -24,17 +24,19 @@ const Dropdown: React.FC<DropdownProps> = ({
     placeholder = 'Select'
 }) => {
     return (
-        <div className="max-w-[400px] w-full">
+        <div className="w-full">
             {label && (
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                    {label}
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                    <label className="block text-sm font-medium text-gray-900">
+                        {label}
+                    </label>
+                </div>
             )}
             <Listbox value={value} onChange={onChange}>
                 <div className="relative">
-                    <Listbox.Button className="relative w-full py-3 px-4 text-left bg-white rounded-md border border-gray-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-                        <span className="block truncate">
-                            {value?.label || placeholder}
+                    <Listbox.Button className="relative w-full py-3 px-4 text-left bg-white rounded-lg border border-gray-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                        <span className="block truncate text-base">
+                            {value?.label || <span className="text-gray-500">{placeholder}</span>}
                         </span>
                         <span className="absolute inset-y-0 right-0 flex items-center pr-4">
                             <FiChevronDown
@@ -50,7 +52,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                         leaveFrom="opacity-100"
                         leaveTo="opacity-0"
                     >
-                        <Listbox.Options className="absolute w-full py-1 mt-1 overflow-auto bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
+                        <Listbox.Options className="absolute w-full py-1 mt-1 overflow-auto bg-white rounded-lg shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
                             {options.map((option) => (
                                 <Listbox.Option
                                     key={option.id}
