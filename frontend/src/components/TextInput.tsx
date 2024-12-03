@@ -7,17 +7,29 @@ interface TextInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     description?: string;
     value?: string;
     required?: boolean;
-    onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-    multiline?: boolean;
+    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     rows?: number;
 }
 
 const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
-    ({ label, error, description, className = '', value, required, onChange, multiline = false, rows = 4, ...props }, ref) => {
+    (
+        {
+            label,
+            error,
+            description,
+            className = '',
+            value,
+            required,
+            onChange,
+            rows = 4,
+            ...props
+        },
+        ref
+    ) => {
         const inputProps = onChange
             ? { value, onChange }
             : { defaultValue: value };
-        
+
         const sharedClassNames = `
             w-full px-4 py-3
             bg-white 
@@ -27,8 +39,6 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
             data-[invalid]:border-red-500
             ${className}
         `;
-
-        const InputComponent = multiline ? 'textarea' : 'input';
 
         return (
             <div className="w-full">
@@ -45,26 +55,19 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
                             )}
                         </div>
                     )}
-                    
-                    <InputComponent
+
+                    <Input
                         ref={ref as any}
                         className={sharedClassNames}
                         invalid={!!error}
                         required={required}
-                        rows={multiline ? rows : undefined}
                         {...inputProps}
                         {...props}
                     />
                 </Field>
-                {error && (
-                    <p className="mt-1 text-sm text-red-500">
-                        {error}
-                    </p>
-                )}
+                {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
                 {description && (
-                    <p className="mt-1 text-sm text-gray-500">
-                        {description}
-                    </p>
+                    <p className="mt-1 text-sm text-gray-500">{description}</p>
                 )}
             </div>
         );
