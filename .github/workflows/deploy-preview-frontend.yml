@@ -1,5 +1,6 @@
 name: Build and Deploy Preview / Frontend
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
