@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "SPUR",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
