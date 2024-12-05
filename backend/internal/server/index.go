@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 
+	"KonferCA/SPUR/common"
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/middleware"
 )
@@ -68,6 +69,19 @@ func New(testing bool) (*Server, error) {
 
 	// setup error handler and middlewares
 	e.HTTPErrorHandler = globalErrorHandler
+
+	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
+		// use default cors config, allow everything in development
+		e.Use(echoMiddleware.CORS())
+	} else if os.Getenv("APP_ENV") == common.PRODUCTION_ENV {
+		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
+			AllowOrigins: []string{"https://spur.konfer.ca"},
+		}))
+	} else {
+		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
+			AllowOrigins: []string{"https://nk-preview.konfer.ca"},
+		}))
+	}
 
 	e.Use(middleware.Logger())
 	e.Use(echoMiddleware.Recover())
