@@ -3,11 +3,9 @@ package server
 import (
 	"context"
 	"net/http"
-	"os"
 	"reflect"
 	"time"
 
-	"KonferCA/SPUR/common"
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/jwt"
 	mw "KonferCA/SPUR/internal/middleware"
@@ -85,13 +83,10 @@ func (s *Server) handleSignup(c echo.Context) error {
 			log.Error().Err(err).Str("email", email).Msg("Failed to generate signed verify email token.")
 			return
 		}
-		// only send the email in non test environments
-		if os.Getenv("APP_ENV") != common.TEST_ENV {
-			err = service.SendVerficationEmail(ctx, email, tokenStr)
-			if err != nil {
-				log.Error().Err(err).Str("email", email).Msg("Failed to send verification email.")
-				return
-			}
+		err = service.SendVerficationEmail(ctx, email, tokenStr)
+		if err != nil {
+			log.Error().Err(err).Str("email", email).Msg("Failed to send verification email.")
+			return
 		}
 	}(s.DBPool, user.Email)
 

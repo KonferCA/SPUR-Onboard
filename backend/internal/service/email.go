@@ -1,6 +1,7 @@
 package service
 
 import (
+	"KonferCA/SPUR/common"
 	"KonferCA/SPUR/internal/views"
 	"bytes"
 	"context"
@@ -33,6 +34,10 @@ The body should be an html body that has already been formatted using a templati
 It is important to call this function in a go routine to no block.
 */
 func SendEmail(ctx context.Context, subject string, from string, to []string, html string) error {
+	if os.Getenv("APP_ENV") == common.TEST_ENV {
+		return nil
+	}
+
 	apiKey := os.Getenv("RESEND_API_KEY")
 	client := resend.NewClient(apiKey)
 	params := &resend.SendEmailRequest{
