@@ -4,12 +4,17 @@ import (
 	"context"
 	"net/http"
 	"reflect"
+	"time"
 
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/jwt"
 	mw "KonferCA/SPUR/internal/middleware"
+	"KonferCA/SPUR/internal/service"
+
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -56,6 +61,34 @@ func (s *Server) handleSignup(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate token")
 	}
+
+	// send verification email
+	// db pool is passed to not lose reference to the s object once
+	// the function returns the response.
+	go func(pool *pgxpool.Pool, email string) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+		defer cancel()
+		q := db.New(pool)
+		token, err := q.CreateVerifyEmailToken(ctx, db.CreateVerifyEmailTokenParams{
+			Email: email,
+			// default expires after 30 minutes
+			ExpiresAt: time.Now().Add(time.Minute * 30),
+		})
+		if err != nil {
+			log.Error().Err(err).Str("email", email).Msg("Failed to create verify email token in db.")
+			return
+		}
+		tokenStr, err := jwt.GenerateVerifyEmailToken(ctx, email, token.ID, token.ExpiresAt)
+		if err != nil {
+			log.Error().Err(err).Str("email", email).Msg("Failed to generate signed verify email token.")
+			return
+		}
+		err = service.SendVerficationEmail(ctx, email, tokenStr)
+		if err != nil {
+			log.Error().Err(err).Str("email", email).Msg("Failed to send verification email.")
+			return
+		}
+	}(s.DBPool, user.Email)
 
 	return c.JSON(http.StatusCreated, AuthResponse{
 		AccessToken:  accessToken,
