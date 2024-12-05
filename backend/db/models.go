@@ -236,3 +236,10 @@ type User struct {
 	Role          UserRole
 	EmailVerified bool
 }
+
+type VerifyEmailToken struct {
+	ID        string
+	Email     string
+	ExpiresAt time.Time
+	CreatedAt pgtype.Timestamp
+}
