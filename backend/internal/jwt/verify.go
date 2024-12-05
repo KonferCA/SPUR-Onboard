@@ -22,3 +22,20 @@ func VerifyToken(token string) (*JWTClaims, error) {
 	}
 	return &claims, nil
 }
+
+/*
+VerifyEmailToken only verifies the tokens made for email verification.
+*/
+func VerifyEmailToken(token string) (*VerifyEmailJWTClaims, error) {
+	claims := VerifyEmailJWTClaims{}
+	_, err := golangJWT.ParseWithClaims(token, &claims, func(t *golangJWT.Token) (interface{}, error) {
+		if _, ok := t.Method.(*golangJWT.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
+		}
+		return []byte(os.Getenv("JWT_SECRET_VERIFY_EMAIL")), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &claims, nil
+}
