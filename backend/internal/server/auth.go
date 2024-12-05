@@ -23,6 +23,7 @@ func (s *Server) setupAuthRoutes() {
 	auth.Use(s.authLimiter.RateLimit()) // special rate limit for auth routes
 	auth.POST("/signup", s.handleSignup, mw.ValidateRequestBody(reflect.TypeOf(SignupRequest{})))
 	auth.POST("/signin", s.handleSignin, mw.ValidateRequestBody(reflect.TypeOf(SigninRequest{})))
+	auth.GET("/verify-email", s.handleVerifyEmail)
 }
 
 func (s *Server) handleSignup(c echo.Context) error {
@@ -141,6 +142,78 @@ func (s *Server) handleSignin(c echo.Context) error {
 			WalletAddress: user.WalletAddress,
 			EmailVerified: user.EmailVerified,
 		},
+	})
+}
+
+func (s *Server) handleVerifyEmail(c echo.Context) error {
+	// TODO: the returns should be a view instead of a normal json
+	// or at least redirect the user to the normal looking page
+
+	tokenStr := c.QueryParam("token")
+
+	if tokenStr == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "Missing token in url.")
+	}
+
+	claims, err := jwt.VerifyEmailToken(tokenStr)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid token. Please request a new verification email.")
+	}
+
+	q := db.New(s.DBPool)
+
+	// verify existance in the database
+	token, err := q.GetVerifyEmailTokenByID(c.Request().Context(), claims.ID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to fetch verify email token from database.")
+		return echo.NewHTTPError(http.StatusBadRequest, "Unable to verify email. Please request a new verification email.")
+	}
+
+	// match token claims email
+	if token.Email != claims.Email {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid token. Please request a new verification email.")
+	}
+
+	// find user
+	user, err := q.GetUserByEmail(c.Request().Context(), token.Email)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to fetch user from database.")
+		return echo.NewHTTPError(http.StatusBadRequest, "Unable to verify email. Please request a new verification email.")
+	}
+
+	// begin a transaction to update user's email status and also delete email token.
+	// make sure that both actions are performed and no ambiguous state remains if something goes wrong.
+	tx, err := s.DBPool.Begin(c.Request().Context())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to begin transaction to update user email verification status.")
+		return echo.NewHTTPError(http.StatusInternalServerError, "Unable to verify email. Please try again later.")
+	}
+	defer tx.Rollback(c.Request().Context())
+
+	qtx := q.WithTx(tx)
+	err = qtx.UpdateUserEmailVerifiedStatus(c.Request().Context(), db.UpdateUserEmailVerifiedStatusParams{
+		EmailVerified: true,
+		ID:            user.ID,
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to update user ")
+		return err
+	}
+
+	err = qtx.DeleteVerifyEmailTokenByID(c.Request().Context(), token.ID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to update user ")
+		return echo.NewHTTPError(http.StatusInternalServerError, "Unable to verify email. Please try again later.")
+	}
+
+	err = tx.Commit(c.Request().Context())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to commit transaction to update user email verification status.")
+		return echo.NewHTTPError(http.StatusInternalServerError, "Unable to verify email. Please try again later.")
+	}
+
+	return c.JSON(http.StatusOK, map[string]bool{
+		"success": true,
 	})
 }
 

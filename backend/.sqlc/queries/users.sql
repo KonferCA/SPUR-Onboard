@@ -14,3 +14,7 @@ WHERE email = $1 LIMIT 1;
 -- name: GetUserByID :one
 SELECT * FROM users
 WHERE id = $1 LIMIT 1; 
+
+-- name: UpdateUserEmailVerifiedStatus :exec
+UPDATE users SET email_verified = $1
+WHERE id = $2;
