@@ -116,4 +116,26 @@ func TestAuth(t *testing.T) {
 		s.echoInstance.ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 	})
+
+	// TODO: re-order this test when the verification for the email tests are merged.
+	// this tets has to run before it to pass
+	// Then a new test should be added to cover the status when it is 'true'
+	t.Run("email verified status", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/ami-verified?email=test@example.com", nil)
+		rec := httptest.NewRecorder()
+		s.echoInstance.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var response EmailVerifiedStatusResponse
+		err := json.Unmarshal(rec.Body.Bytes(), &response)
+		assert.Nil(t, err)
+		assert.False(t, response.Verified)
+	})
+
+	t.Run("email verified status - missing email query param", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/ami-verified", nil)
+		rec := httptest.NewRecorder()
+		s.echoInstance.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
 }

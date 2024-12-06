@@ -186,3 +186,7 @@ type UpdateMeetingRequest struct {
 	Location   *string `json:"location"`
 	Notes      *string `json:"notes"`
 }
+
+type EmailVerifiedStatusResponse struct {
+	Verified bool `json:"verified"`
+}
