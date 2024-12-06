@@ -64,35 +64,30 @@ func New(testing bool) (*Server, error) {
 	e := echo.New()
 	e.Debug = true
 
-	// create rate limiters
-	var authLimiter, apiLimiter *middleware.RateLimiter
+	// setup error handler and global middlewares first
+	e.HTTPErrorHandler = globalErrorHandler
 
-	if testing {
-		authLimiter = middleware.NewTestRateLimiter(20)
-		apiLimiter = middleware.NewTestRateLimiter(100)
+	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
+		// use default cors config, allow everything in development
+		e.Use(echoMiddleware.CORS())
+	} else if os.Getenv("APP_ENV") == common.PRODUCTION_ENV {
+		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
+			AllowOrigins: []string{"https://spur.konfer.ca"},
+		}))
 	} else {
-		authLimiter = middleware.NewRateLimiter(
-			20,             // 20 requests
-			5*time.Minute,  // per 5 minutes
-			15*time.Minute, // block for 15 minutes if exceeded
-		)
-		apiLimiter = middleware.NewRateLimiter(
-			100,           // 100 requests
-			time.Minute,   // per minute
-			5*time.Minute, // block for 5 minutes if exceeded
-		)
+		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
+			AllowOrigins: []string{"https://nk-preview.konfer.ca"},
+		}))
 	}
 
-	server := &Server{
-		DBPool:       dbPool,
-		queries:      queries,
-		echoInstance: e,
-		authLimiter:  authLimiter,
-		apiLimiter:   apiLimiter,
-		Storage:      storage,
-	}
+	e.Use(middleware.Logger())
+	e.Use(echoMiddleware.Recover())
+	e.Use(apiLimiter.RateLimit()) // global rate limit
 
-	// setup api routes first
+	customValidator := middleware.NewRequestBodyValidator()
+	e.Validator = customValidator
+
+	// setup api routes after middleware
 	server.setupV1Routes()
 	server.setupAuthRoutes()
 	server.setupCompanyRoutes()
@@ -107,46 +102,6 @@ func New(testing bool) (*Server, error) {
 	server.setupMeetingRoutes()
 	server.setupHealthRoutes()
 	server.setupStorageRoutes()
-
-	// setup error handler and middlewares after routes
-	e.HTTPErrorHandler = globalErrorHandler
-
-	// setup cors based on environment
-	if os.Getenv("APP_ENV") == common.PRODUCTION_ENV {
-		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
-			AllowOrigins: []string{"https://spur.konfer.ca"},
-			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
-			AllowHeaders: []string{
-				echo.HeaderOrigin,
-				echo.HeaderContentType,
-				echo.HeaderAccept,
-				echo.HeaderContentLength,
-				"X-Request-ID",
-			},
-		}))
-	} else if os.Getenv("APP_ENV") == common.STAGING_ENV {
-		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
-			AllowOrigins: []string{"https://nk-preview.konfer.ca"},
-			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
-			AllowHeaders: []string{
-				echo.HeaderOrigin,
-				echo.HeaderContentType,
-				echo.HeaderAccept,
-				echo.HeaderContentLength,
-				"X-Request-ID",
-			},
-		}))
-	} else {
-		// use default cors middleware for development
-		e.Use(echoMiddleware.CORS())
-	}
-
-	e.Use(middleware.Logger())
-	e.Use(echoMiddleware.Recover())
-	e.Use(apiLimiter.RateLimit()) // global rate limit
-
-	customValidator := middleware.NewRequestBodyValidator()
-	e.Validator = customValidator
 
 	// setup static routes last
 	server.setupStaticRoutes()
