@@ -6,8 +6,6 @@ package db
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -32,29 +30,4 @@ func (q *Queries) WithTx(tx pgx.Tx) *Queries {
 	return &Queries{
 		db: tx,
 	}
-}
-
-// Connect initializes and returns a new database connection pool
-func Connect() (*pgxpool.Pool, error) {
-	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_SSLMODE"),
-	)
-
-	config, err := pgxpool.ParseConfig(connStr)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse connection string: %v", err)
-	}
-
-	pool, err := pgxpool.NewWithConfig(context.Background(), config)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create connection pool: %v", err)
-	}
-
-	return pool, nil
 }
