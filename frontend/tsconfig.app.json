@@ -15,7 +15,8 @@
             "@pages": ["./src/pages/index"],
             "@utils": ["./src/utils/index"],
             "@assets": ["./src/assets/index"],
-            "@t": ["./src/types/index"]
+            "@t": ["./src/types/index"],
+            "@services": ["./src/services/index"]
         },
 
         /* Bundler mode */
