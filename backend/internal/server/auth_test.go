@@ -120,8 +120,8 @@ func TestAuth(t *testing.T) {
 		s.echoInstance.ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 	})
-  
-  t.Run("email verified status", func(t *testing.T) {
+
+	t.Run("email verified status", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/ami-verified?email=test@example.com", nil)
 		rec := httptest.NewRecorder()
 		s.echoInstance.ServeHTTP(rec, req)
@@ -157,7 +157,7 @@ func TestAuth(t *testing.T) {
 			ExpiresAt: exp,
 		})
 		assert.Nil(t, err)
-		tokenStr, err := jwt.GenerateVerifyEmailToken(ctx, token.Email, token.ID, exp)
+		tokenStr, err := jwt.GenerateVerifyEmailToken(token.Email, token.ID, exp)
 		assert.Nil(t, err)
 		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/auth/verify-email?token=%s", tokenStr), nil)
 		rec := httptest.NewRecorder()
@@ -168,7 +168,19 @@ func TestAuth(t *testing.T) {
 		user, err = q.GetUserByEmail(ctx, "test@example.com")
 		assert.Nil(t, err)
 		assert.True(t, user.EmailVerified)
-  })
+	})
+
+	t.Run("email verified status - true", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/ami-verified?email=test@example.com", nil)
+		rec := httptest.NewRecorder()
+		s.echoInstance.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var response EmailVerifiedStatusResponse
+		err := json.Unmarshal(rec.Body.Bytes(), &response)
+		assert.Nil(t, err)
+		assert.True(t, response.Verified)
+	})
 
 	t.Run("email verified status - missing email query param", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/ami-verified", nil)
