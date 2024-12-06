@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"reflect"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"KonferCA/SPUR/common"
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/middleware"
+	"KonferCA/SPUR/storage"
 )
 
 type Server struct {
@@ -22,11 +24,18 @@ type Server struct {
 	apiV1        *echo.Group
 	authLimiter  *middleware.RateLimiter
 	apiLimiter   *middleware.RateLimiter
+	Storage      *storage.Storage
 }
 
 // Create a new Server instance and registers all routes and middlewares.
 // Initialize database pool connection.
 func New(testing bool) (*Server, error) {
+	var dbPool *pgxpool.Pool
+	var queries *db.Queries
+	var storageClient *storage.Storage
+	var err error
+
+	// format connection string
 	connStr := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		os.Getenv("DB_HOST"),
@@ -36,16 +45,23 @@ func New(testing bool) (*Server, error) {
 		os.Getenv("DB_NAME"),
 		os.Getenv("DB_SSLMODE"),
 	)
-	pool, err := db.NewPool(connStr)
+
+	// initialize database connection using pool.go
+	dbPool, err = db.NewPool(connStr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to database: %v", err)
+	}
+	queries = db.New(dbPool)
+
+	if !testing {
+		// Initialize storage only for non-test environment
+		storageClient, err = storage.NewStorage()
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize storage: %v", err)
+		}
 	}
 
-	// Initialize queries
-	queries := db.New(pool)
-
 	e := echo.New()
-
 	e.Debug = true
 
 	// create rate limiters
@@ -67,38 +83,16 @@ func New(testing bool) (*Server, error) {
 		)
 	}
 
-	// setup error handler and middlewares
-	e.HTTPErrorHandler = globalErrorHandler
-
-	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
-		// use default cors config, allow everything in development
-		e.Use(echoMiddleware.CORS())
-	} else if os.Getenv("APP_ENV") == common.PRODUCTION_ENV {
-		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
-			AllowOrigins: []string{"https://spur.konfer.ca"},
-		}))
-	} else {
-		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
-			AllowOrigins: []string{"https://nk-preview.konfer.ca"},
-		}))
-	}
-
-	e.Use(middleware.Logger())
-	e.Use(echoMiddleware.Recover())
-	e.Use(apiLimiter.RateLimit()) // global rate limit
-
-	customValidator := middleware.NewRequestBodyValidator()
-	e.Validator = customValidator
-
 	server := &Server{
-		DBPool:       pool,
+		DBPool:       dbPool,
 		queries:      queries,
 		echoInstance: e,
 		authLimiter:  authLimiter,
 		apiLimiter:   apiLimiter,
+		Storage:      storageClient,
 	}
 
-	// setup api routes
+	// setup api routes first
 	server.setupV1Routes()
 	server.setupAuthRoutes()
 	server.setupCompanyRoutes()
@@ -112,8 +106,49 @@ func New(testing bool) (*Server, error) {
 	server.setupFundingTransactionRoutes()
 	server.setupMeetingRoutes()
 	server.setupHealthRoutes()
+	server.setupStorageRoutes()
 
-	// setup static routes
+	// setup error handler and middlewares after routes
+	e.HTTPErrorHandler = globalErrorHandler
+
+	// setup cors based on environment
+	if os.Getenv("APP_ENV") == common.PRODUCTION_ENV {
+		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
+			AllowOrigins: []string{"https://spur.konfer.ca"},
+			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
+			AllowHeaders: []string{
+				echo.HeaderOrigin,
+				echo.HeaderContentType,
+				echo.HeaderAccept,
+				echo.HeaderContentLength,
+				"X-Request-ID",
+			},
+		}))
+	} else if os.Getenv("APP_ENV") == common.STAGING_ENV {
+		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
+			AllowOrigins: []string{"https://nk-preview.konfer.ca"},
+			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
+			AllowHeaders: []string{
+				echo.HeaderOrigin,
+				echo.HeaderContentType,
+				echo.HeaderAccept,
+				echo.HeaderContentLength,
+				"X-Request-ID",
+			},
+		}))
+	} else {
+		// use default cors middleware for development
+		e.Use(echoMiddleware.CORS())
+	}
+
+	e.Use(middleware.Logger())
+	e.Use(echoMiddleware.Recover())
+	e.Use(apiLimiter.RateLimit()) // global rate limit
+
+	customValidator := middleware.NewRequestBodyValidator()
+	e.Validator = customValidator
+
+	// setup static routes last
 	server.setupStaticRoutes()
 
 	return server, nil
@@ -122,8 +157,9 @@ func New(testing bool) (*Server, error) {
 func (s *Server) setupV1Routes() {
 	s.apiV1 = s.echoInstance.Group("/api/v1")
 
+	fmt.Println("Registered routes:")
 	for _, route := range s.echoInstance.Routes() {
-		s.echoInstance.Logger.Printf("Route: %s %s", route.Method, route.Path)
+		fmt.Printf("Route: %s %s\n", route.Method, route.Path)
 	}
 }
 

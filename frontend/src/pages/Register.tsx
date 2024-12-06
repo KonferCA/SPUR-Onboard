@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { Button, TextInput, TextArea } from '@components';
 import { register, RegisterError, saveRefreshToken } from '@services';
+import { useAuth } from '@/contexts/AuthContext';
 
 type RegistrationStep =
     | 'login-register'
@@ -38,6 +39,7 @@ const Register = () => {
         password: '',
     });
     const [errors, setErrors] = useState<FormErrors>({});
+    const { setUser, setCompanyId } = useAuth();
 
     const LINKEDIN_REGEX =
         /^(https?:\/\/)?([\w]+\.)?linkedin\.com\/(pub|in|profile)\/([-a-zA-Z0-9]+)\/?$/;
@@ -87,21 +89,17 @@ const Register = () => {
     const handleInitialSubmit = async (e: FormEvent) => {
         e.preventDefault();
         try {
-            // user information and access token should be stored in an auth provider
             const regResp = await register(formData.email, formData.password);
             console.log(regResp);
 
-            // save the refresh token in local storage and use it to request a new
-            // access token later when the user reopens the web app.
-            // IMPORTANT: for now localstorage works, but by MVP we need a more proper
-            // way to handle authentication using HTTP-only cookies and adding
-            // fingerprint information to tokens to prevet XSS.
-            // for more info: https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html#token-storage-on-client-side
+            setUser(regResp.user);
             saveRefreshToken(regResp.refreshToken);
+
+            setCompanyId('mock-company-id');
+
             setCurrentStep('verify-email');
         } catch (error) {
             if (error instanceof RegisterError) {
-                // TODO: handle error with some kind of notification
                 console.log('do something here', error.statusCode, error.body);
             } else {
                 // TODO: handle error with some kind of notification

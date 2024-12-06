@@ -119,11 +119,36 @@ type UpdateCompanyAnswerRequest struct {
 	AnswerText string `json:"answer_text" validate:"required"`
 }
 
+type TeamMember struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Role   string `json:"role"`
+	Avatar string `json:"avatar,omitempty"`
+}
+
+type ProjectFile struct {
+	FileType string `json:"file_type" validate:"required"`
+	FileURL  string `json:"file_url" validate:"required,url,s3_url"`
+}
+
+type ProjectLink struct {
+	LinkType string `json:"link_type" validate:"required"`
+	URL      string `json:"url" validate:"required,url"`
+}
+
 type CreateProjectRequest struct {
-	CompanyID   string  `json:"company_id" validate:"required"`
-	Title       string  `json:"title" validate:"required"`
-	Description *string `json:"description"`
-	Status      string  `json:"status" validate:"required"`
+	CompanyID       string        `json:"company_id" validate:"required"`
+	Title           string        `json:"title" validate:"required"`
+	Description     *string       `json:"description"`
+	Status          string        `json:"status" validate:"required"`
+	FoundedDate     string        `json:"founded_date,omitempty"`
+	CompanyStage    string        `json:"company_stage,omitempty"`
+	InvestmentStage string        `json:"investment_stage,omitempty"`
+	Inspiration     string        `json:"inspiration,omitempty"`
+	Vision          string        `json:"vision,omitempty"`
+	TeamMembers     []TeamMember  `json:"team_members,omitempty" validate:"dive"`
+	Files           []ProjectFile `json:"files" validate:"dive"`
+	Links           []ProjectLink `json:"links" validate:"dive"`
 }
 
 type UpdateProjectRequest struct {
@@ -132,19 +157,9 @@ type UpdateProjectRequest struct {
 	Status      string `json:"status" validate:"required"`
 }
 
-type CreateProjectFileRequest struct {
-	FileType string `json:"file_type" validate:"required"`
-	FileURL  string `json:"file_url" validate:"required,url"`
-}
-
 type CreateProjectCommentRequest struct {
 	UserID  string `json:"user_id" validate:"required"`
 	Comment string `json:"comment" validate:"required"`
-}
-
-type CreateProjectLinkRequest struct {
-	LinkType string `json:"link_type" validate:"required"`
-	URL      string `json:"url" validate:"required,url"`
 }
 
 type AddProjectTagRequest struct {
@@ -185,4 +200,14 @@ type UpdateMeetingRequest struct {
 	MeetingURL *string `json:"meeting_url" validate:"omitempty,url"`
 	Location   *string `json:"location"`
 	Notes      *string `json:"notes"`
+}
+
+type CreateProjectFileRequest struct {
+	FileType string `json:"file_type" validate:"required"`
+	FileURL  string `json:"file_url" validate:"required,url,s3_url"`
+}
+
+type CreateProjectLinkRequest struct {
+	LinkType string `json:"link_type" validate:"required"`
+	URL      string `json:"url" validate:"required,url"`
 }
