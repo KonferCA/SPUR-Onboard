@@ -2,8 +2,12 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+	"io"
+	"fmt"
+	"time"
+	"path/filepath"
+	"strings"
 
 	"KonferCA/SPUR/db"
 	mw "KonferCA/SPUR/internal/middleware"
@@ -24,14 +28,15 @@ func (s *Server) handleCreateProject(c echo.Context) error {
 
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetCompanyByID(context.Background(), companyID)
+	// Start a transaction
+	tx, err := s.DBPool.Begin(context.Background())
 	if err != nil {
-		return handleDBError(err, "verify", "company")
+		return handleDBError(err, "begin", "transaction")
 	}
+	defer tx.Rollback(context.Background())
 
-	fmt.Printf("Creating project with params: company_id=%v, title=%s, status=%s\n",
-		companyID, req.Title, req.Status)
-
+	// Create project
+	qtx := queries.WithTx(tx)
 	params := db.CreateProjectParams{
 		CompanyID:   companyID,
 		Title:       req.Title,
@@ -39,13 +44,41 @@ func (s *Server) handleCreateProject(c echo.Context) error {
 		Status:      req.Status,
 	}
 
-	project, err := queries.CreateProject(context.Background(), params)
+	project, err := qtx.CreateProject(context.Background(), params)
 	if err != nil {
-		fmt.Printf("Error creating project: %v\n", err)
 		return handleDBError(err, "create", "project")
 	}
 
-	fmt.Printf("Created project: %+v\n", project)
+	// Create files
+	for _, file := range req.Files {
+		fileParams := db.CreateProjectFileParams{
+			ProjectID: project.ID,
+			FileType:  file.FileType,
+			FileUrl:   file.FileURL,
+		}
+		_, err := qtx.CreateProjectFile(context.Background(), fileParams)
+		if err != nil {
+			return handleDBError(err, "create", "project file")
+		}
+	}
+
+	// Create links
+	for _, link := range req.Links {
+		linkParams := db.CreateProjectLinkParams{
+			ProjectID: project.ID,
+			LinkType:  link.LinkType,
+			Url:      link.URL,
+		}
+		_, err := qtx.CreateProjectLink(context.Background(), linkParams)
+		if err != nil {
+			return handleDBError(err, "create", "project link")
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit(context.Background()); err != nil {
+		return handleDBError(err, "commit", "transaction")
+	}
 
 	return c.JSON(http.StatusCreated, project)
 }
@@ -114,30 +147,61 @@ func (s *Server) handleCreateProjectFile(c echo.Context) error {
 		return err
 	}
 
-	var req *CreateProjectFileRequest
-	req, ok := c.Get(mw.REQUEST_BODY_KEY).(*CreateProjectFileRequest)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
-	}
-
-	queries := db.New(s.DBPool)
-	_, err = queries.GetProject(context.Background(), projectID)
+	// Get the file from form data
+	file, err := c.FormFile("file")
 	if err != nil {
-		return handleDBError(err, "verify", "project")
+		return echo.NewHTTPError(http.StatusBadRequest, "file is required")
 	}
 
+	fileType := c.FormValue("file_type")
+	if fileType == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "file_type is required")
+	}
+
+	// Upload file to storage
+	src, err := file.Open()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to read file")
+	}
+	defer src.Close()
+
+	// Read file contents
+	fileBytes, err := io.ReadAll(src)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to read file contents")
+	}
+
+	// Generate unique file key
+	fileExt := filepath.Ext(file.Filename)
+	fileKey := fmt.Sprintf("uploads/%d%s", time.Now().UnixNano(), fileExt)
+
+	fileURL, err := s.Storage.UploadFile(c.Request().Context(), fileKey, fileBytes)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to upload file")
+	}
+
+	// Create database record
+	queries := db.New(s.DBPool)
 	params := db.CreateProjectFileParams{
 		ProjectID: projectID,
-		FileType:  req.FileType,
-		FileUrl:   req.FileURL,
+		FileType:  fileType,
+		FileUrl:   fileURL,
 	}
 
-	file, err := queries.CreateProjectFile(context.Background(), params)
+	projectFile, err := queries.CreateProjectFile(context.Background(), params)
 	if err != nil {
+		// Try to cleanup the uploaded file if database record creation fails
+		if fileURL != "" {
+			// Extract key from URL
+			parts := strings.Split(fileURL, ".amazonaws.com/")
+			if len(parts) == 2 {
+				_ = s.Storage.DeleteFile(c.Request().Context(), parts[1])
+			}
+		}
 		return handleDBError(err, "create", "project file")
 	}
 
-	return c.JSON(http.StatusCreated, file)
+	return c.JSON(http.StatusCreated, projectFile)
 }
 
 func (s *Server) handleListProjectFiles(c echo.Context) error {
