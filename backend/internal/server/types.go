@@ -202,6 +202,10 @@ type UpdateMeetingRequest struct {
 	Notes      *string `json:"notes"`
 }
 
+type EmailVerifiedStatusResponse struct {
+	Verified bool `json:"verified"`
+}
+
 type CreateProjectFileRequest struct {
 	FileType string `json:"file_type" validate:"required"`
 	FileURL  string `json:"file_url" validate:"required,url,s3_url"`
