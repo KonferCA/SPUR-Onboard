@@ -13,3 +13,7 @@ WHERE id = $1 LIMIT 1;
 -- name: DeleteVerifyEmailTokenByID :exec
 DELETE FROM verify_email_tokens
 WHERE id = $1;
+
+-- name: DeleteVerifyEmailTokenByEmail :exec
+DELETE FROM verify_email_tokens
+WHERE email = $1;
