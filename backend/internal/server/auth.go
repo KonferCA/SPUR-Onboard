@@ -78,7 +78,7 @@ func (s *Server) handleSignup(c echo.Context) error {
 			log.Error().Err(err).Str("email", email).Msg("Failed to create verify email token in db.")
 			return
 		}
-		tokenStr, err := jwt.GenerateVerifyEmailToken(ctx, email, token.ID, token.ExpiresAt)
+		tokenStr, err := jwt.GenerateVerifyEmailToken(email, token.ID, token.ExpiresAt)
 		if err != nil {
 			log.Error().Err(err).Str("email", email).Msg("Failed to generate signed verify email token.")
 			return
