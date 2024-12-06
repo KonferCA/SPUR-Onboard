@@ -36,6 +36,26 @@ func (q *Queries) CreateVerifyEmailToken(ctx context.Context, arg CreateVerifyEm
 	return i, err
 }
 
+const deleteVerifyEmailTokenByEmail = `-- name: DeleteVerifyEmailTokenByEmail :exec
+DELETE FROM verify_email_tokens
+WHERE email = $1
+`
+
+func (q *Queries) DeleteVerifyEmailTokenByEmail(ctx context.Context, email string) error {
+	_, err := q.db.Exec(ctx, deleteVerifyEmailTokenByEmail, email)
+	return err
+}
+
+const deleteVerifyEmailTokenByID = `-- name: DeleteVerifyEmailTokenByID :exec
+DELETE FROM verify_email_tokens
+WHERE id = $1
+`
+
+func (q *Queries) DeleteVerifyEmailTokenByID(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, deleteVerifyEmailTokenByID, id)
+	return err
+}
+
 const getVerifyEmailTokenByID = `-- name: GetVerifyEmailTokenByID :one
 SELECT id, email, expires_at, created_at FROM verify_email_tokens
 WHERE id = $1 LIMIT 1

@@ -1,13 +1,17 @@
 package server
 
 import (
+	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/jwt"
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -117,9 +121,6 @@ func TestAuth(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 	})
 
-	// TODO: re-order this test when the verification for the email tests are merged.
-	// this tets has to run before it to pass
-	// Then a new test should be added to cover the status when it is 'true'
 	t.Run("email verified status", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/ami-verified?email=test@example.com", nil)
 		rec := httptest.NewRecorder()
@@ -130,6 +131,55 @@ func TestAuth(t *testing.T) {
 		err := json.Unmarshal(rec.Body.Bytes(), &response)
 		assert.Nil(t, err)
 		assert.False(t, response.Verified)
+	})
+
+	t.Run("verify email", func(t *testing.T) {
+		// taking a shortcut here
+		// make use of the already created user before this test
+		// we are going to directly fetch the user from the database here
+		// to generate a new email token and verify that email verified is set to true
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+		defer cancel()
+		q := db.New(s.DBPool)
+
+		// since the signup test will trigger the creating of a new email token
+		// when registration sends a verification email, we delete it here
+		err := q.DeleteVerifyEmailTokenByEmail(ctx, "test@example.com")
+		assert.Nil(t, err)
+
+		user, err := q.GetUserByEmail(ctx, "test@example.com")
+		assert.Nil(t, err)
+		assert.False(t, user.EmailVerified)
+
+		exp := time.Now().Add(time.Second * 30)
+		token, err := q.CreateVerifyEmailToken(ctx, db.CreateVerifyEmailTokenParams{
+			Email:     "test@example.com",
+			ExpiresAt: exp,
+		})
+		assert.Nil(t, err)
+		tokenStr, err := jwt.GenerateVerifyEmailToken(token.Email, token.ID, exp)
+		assert.Nil(t, err)
+		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/auth/verify-email?token=%s", tokenStr), nil)
+		rec := httptest.NewRecorder()
+
+		s.echoInstance.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		user, err = q.GetUserByEmail(ctx, "test@example.com")
+		assert.Nil(t, err)
+		assert.True(t, user.EmailVerified)
+	})
+
+	t.Run("email verified status - true", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/ami-verified?email=test@example.com", nil)
+		rec := httptest.NewRecorder()
+		s.echoInstance.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var response EmailVerifiedStatusResponse
+		err := json.Unmarshal(rec.Body.Bytes(), &response)
+		assert.Nil(t, err)
+		assert.True(t, response.Verified)
 	})
 
 	t.Run("email verified status - missing email query param", func(t *testing.T) {
