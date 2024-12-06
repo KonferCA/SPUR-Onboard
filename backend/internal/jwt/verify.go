@@ -37,5 +37,9 @@ func VerifyEmailToken(token string) (*VerifyEmailJWTClaims, error) {
 	if err != nil {
 		return nil, err
 	}
+	if claims.TokenType != VERIFY_EMAIL_TOKEN_TYPE {
+		return nil, fmt.Errorf("Unexpected token type when verifying email token: %s", claims.TokenType)
+	}
+
 	return &claims, nil
 }
