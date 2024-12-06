@@ -1,0 +1,12 @@
+package views
+
+templ VerificationEmail(url string) {
+	<div>
+		<h1>SPUR x Konfer</h1>
+		<div>
+			<h1>Let's Verify Your Email</h1>
+			<p>Please click the link below and we will verify your email.</p>
+			<a href={ templ.URL(url) }>Verify now</a>
+		</div>
+	</div>
+}

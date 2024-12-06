@@ -11,3 +11,9 @@ type JWTClaims struct {
 	TokenType string      `json:"token_type"`
 	golangJWT.RegisteredClaims
 }
+
+type VerifyEmailJWTClaims struct {
+	Email     string `json:"email"`
+	TokenType string `json:"token_type"`
+	golangJWT.RegisteredClaims
+}

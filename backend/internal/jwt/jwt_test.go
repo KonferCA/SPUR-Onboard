@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"KonferCA/SPUR/db"
+
 	golangJWT "github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 )
@@ -13,6 +14,7 @@ import (
 func TestJWT(t *testing.T) {
 	// setup env
 	os.Setenv("JWT_SECRET", "secret")
+	os.Setenv("JWT_SECRET_VERIFY_EMAIL", "test-secret")
 
 	userID := "some-user-id"
 	role := db.UserRole("user")
@@ -75,6 +77,39 @@ func TestJWT(t *testing.T) {
 		token, err := generateToken(userID, role, ACCESS_TOKEN_TYPE, exp)
 		assert.Nil(t, err)
 		_, err = VerifyToken(token)
+		assert.NotNil(t, err)
+	})
+
+	t.Run("generate verify email token", func(t *testing.T) {
+		email := "test@mail.com"
+		id := "some-id"
+		exp := time.Now().Add(time.Second * 5)
+		token, err := GenerateVerifyEmailToken(email, id, exp)
+		assert.Nil(t, err)
+		claims, err := VerifyEmailToken(token)
+		assert.Nil(t, err)
+		assert.Equal(t, claims.Email, email)
+		assert.Equal(t, claims.ID, id)
+		assert.Equal(t, claims.ExpiresAt.Unix(), exp.Unix())
+	})
+
+	t.Run("deny expired verify email token", func(t *testing.T) {
+		email := "test@mail.com"
+		id := "some-id"
+		exp := time.Now().Add(-1 * 5 * time.Second)
+		token, err := GenerateVerifyEmailToken(email, id, exp)
+		assert.Nil(t, err)
+		_, err = VerifyEmailToken(token)
+		assert.NotNil(t, err)
+	})
+
+	t.Run("deny expired verify email token", func(t *testing.T) {
+		email := "test@mail.com"
+		id := "some-id"
+		exp := time.Now().Add(-1 * 5 * time.Second)
+		token, err := GenerateVerifyEmailToken(email, id, exp)
+		assert.Nil(t, err)
+		_, err = VerifyEmailToken(token)
 		assert.NotNil(t, err)
 	})
 }
