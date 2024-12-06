@@ -35,26 +35,26 @@ func New(testing bool) (*Server, error) {
 	var storage *storage.Storage
 	var err error
 
+	// format connection string
+	connStr := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("DB_SSLMODE"),
+	)
+
+	// initialize database connection using pool.go
+	dbPool, err = db.NewPool(connStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %v", err)
+	}
+	queries = db.New(dbPool)
+
 	if !testing {
-		// format connection string
-		connStr := fmt.Sprintf(
-			"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-			os.Getenv("DB_HOST"),
-			os.Getenv("DB_PORT"),
-			os.Getenv("DB_USER"),
-			os.Getenv("DB_PASSWORD"),
-			os.Getenv("DB_NAME"),
-			os.Getenv("DB_SSLMODE"),
-		)
-
-		// initialize database connection using pool.go
-		dbPool, err = db.NewPool(connStr)
-		if err != nil {
-			return nil, fmt.Errorf("failed to connect to database: %v", err)
-		}
-		queries = db.New(dbPool)
-
-		// Initialize storage
+		// Initialize storage only for non-test environment
 		storage, err = storage.NewStorage()
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize storage: %v", err)
@@ -64,30 +64,35 @@ func New(testing bool) (*Server, error) {
 	e := echo.New()
 	e.Debug = true
 
-	// setup error handler and global middlewares first
-	e.HTTPErrorHandler = globalErrorHandler
+	// create rate limiters
+	var authLimiter, apiLimiter *middleware.RateLimiter
 
-	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
-		// use default cors config, allow everything in development
-		e.Use(echoMiddleware.CORS())
-	} else if os.Getenv("APP_ENV") == common.PRODUCTION_ENV {
-		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
-			AllowOrigins: []string{"https://spur.konfer.ca"},
-		}))
+	if testing {
+		authLimiter = middleware.NewTestRateLimiter(20)
+		apiLimiter = middleware.NewTestRateLimiter(100)
 	} else {
-		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
-			AllowOrigins: []string{"https://nk-preview.konfer.ca"},
-		}))
+		authLimiter = middleware.NewRateLimiter(
+			20,             // 20 requests
+			5*time.Minute,  // per 5 minutes
+			15*time.Minute, // block for 15 minutes if exceeded
+		)
+		apiLimiter = middleware.NewRateLimiter(
+			100,           // 100 requests
+			time.Minute,   // per minute
+			5*time.Minute, // block for 5 minutes if exceeded
+		)
 	}
 
-	e.Use(middleware.Logger())
-	e.Use(echoMiddleware.Recover())
-	e.Use(apiLimiter.RateLimit()) // global rate limit
+	server := &Server{
+		DBPool:       dbPool,
+		queries:      queries,
+		echoInstance: e,
+		authLimiter:  authLimiter,
+		apiLimiter:   apiLimiter,
+		Storage:      storage,
+	}
 
-	customValidator := middleware.NewRequestBodyValidator()
-	e.Validator = customValidator
-
-	// setup api routes after middleware
+	// setup api routes first
 	server.setupV1Routes()
 	server.setupAuthRoutes()
 	server.setupCompanyRoutes()
@@ -102,6 +107,46 @@ func New(testing bool) (*Server, error) {
 	server.setupMeetingRoutes()
 	server.setupHealthRoutes()
 	server.setupStorageRoutes()
+
+	// setup error handler and middlewares after routes
+	e.HTTPErrorHandler = globalErrorHandler
+
+	// setup cors based on environment
+	if os.Getenv("APP_ENV") == common.PRODUCTION_ENV {
+		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
+			AllowOrigins: []string{"https://spur.konfer.ca"},
+			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
+			AllowHeaders: []string{
+				echo.HeaderOrigin,
+				echo.HeaderContentType,
+				echo.HeaderAccept,
+				echo.HeaderContentLength,
+				"X-Request-ID",
+			},
+		}))
+	} else if os.Getenv("APP_ENV") == common.STAGING_ENV {
+		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
+			AllowOrigins: []string{"https://nk-preview.konfer.ca"},
+			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
+			AllowHeaders: []string{
+				echo.HeaderOrigin,
+				echo.HeaderContentType,
+				echo.HeaderAccept,
+				echo.HeaderContentLength,
+				"X-Request-ID",
+			},
+		}))
+	} else {
+		// use default cors middleware for development
+		e.Use(echoMiddleware.CORS())
+	}
+
+	e.Use(middleware.Logger())
+	e.Use(echoMiddleware.Recover())
+	e.Use(apiLimiter.RateLimit()) // global rate limit
+
+	customValidator := middleware.NewRequestBodyValidator()
+	e.Validator = customValidator
 
 	// setup static routes last
 	server.setupStaticRoutes()
