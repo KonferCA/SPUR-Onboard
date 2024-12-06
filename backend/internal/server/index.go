@@ -111,19 +111,8 @@ func New(testing bool) (*Server, error) {
 	// setup error handler and middlewares after routes
 	e.HTTPErrorHandler = globalErrorHandler
 
-	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
-		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
-			AllowOrigins: []string{"*"},
-			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
-			AllowHeaders: []string{
-				echo.HeaderOrigin,
-				echo.HeaderContentType,
-				echo.HeaderAccept,
-				echo.HeaderContentLength,
-				"X-Request-ID",
-			},
-		}))
-	} else if os.Getenv("APP_ENV") == common.PRODUCTION_ENV {
+	// setup cors based on environment
+	if os.Getenv("APP_ENV") == common.PRODUCTION_ENV {
 		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
 			AllowOrigins: []string{"https://spur.konfer.ca"},
 			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
@@ -135,7 +124,7 @@ func New(testing bool) (*Server, error) {
 				"X-Request-ID",
 			},
 		}))
-	} else {
+	} else if os.Getenv("APP_ENV") == common.STAGING_ENV {
 		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
 			AllowOrigins: []string{"https://nk-preview.konfer.ca"},
 			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
@@ -147,6 +136,9 @@ func New(testing bool) (*Server, error) {
 				"X-Request-ID",
 			},
 		}))
+	} else {
+		// use default cors middleware for development
+		e.Use(echoMiddleware.CORS())
 	}
 
 	e.Use(middleware.Logger())
