@@ -30,7 +30,10 @@ type Server struct {
 // Create a new Server instance and registers all routes and middlewares.
 // Initialize database pool connection.
 func New(testing bool) (*Server, error) {
-	s := &Server{}
+	var dbPool *pgxpool.Pool
+	var queries *db.Queries
+	var storage *storage.Storage
+	var err error
 
 	if !testing {
 		// format connection string
@@ -45,19 +48,17 @@ func New(testing bool) (*Server, error) {
 		)
 
 		// initialize database connection using pool.go
-		dbPool, err := db.NewPool(connStr)
+		dbPool, err = db.NewPool(connStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to database: %v", err)
 		}
-		s.DBPool = dbPool
-		s.queries = db.New(dbPool)
+		queries = db.New(dbPool)
 
 		// Initialize storage
-		storage, err := storage.NewStorage()
+		storage, err = storage.NewStorage()
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize storage: %v", err)
 		}
-		s.Storage = storage
 	}
 
 	e := echo.New()
@@ -83,11 +84,12 @@ func New(testing bool) (*Server, error) {
 	}
 
 	server := &Server{
-		DBPool:       s.DBPool,
-		queries:      s.queries,
+		DBPool:       dbPool,
+		queries:      queries,
 		echoInstance: e,
 		authLimiter:  authLimiter,
 		apiLimiter:   apiLimiter,
+		Storage:      storage,
 	}
 
 	// setup api routes first
