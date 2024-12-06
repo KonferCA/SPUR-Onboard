@@ -1,7 +1,6 @@
 package jwt
 
 import (
-	"context"
 	"os"
 	"testing"
 	"time"
@@ -85,7 +84,7 @@ func TestJWT(t *testing.T) {
 		email := "test@mail.com"
 		id := "some-id"
 		exp := time.Now().Add(time.Second * 5)
-		token, err := GenerateVerifyEmailToken(context.Background(), email, id, exp)
+		token, err := GenerateVerifyEmailToken(email, id, exp)
 		assert.Nil(t, err)
 		claims, err := VerifyEmailToken(token)
 		assert.Nil(t, err)
@@ -98,7 +97,17 @@ func TestJWT(t *testing.T) {
 		email := "test@mail.com"
 		id := "some-id"
 		exp := time.Now().Add(-1 * 5 * time.Second)
-		token, err := GenerateVerifyEmailToken(context.Background(), email, id, exp)
+		token, err := GenerateVerifyEmailToken(email, id, exp)
+		assert.Nil(t, err)
+		_, err = VerifyEmailToken(token)
+		assert.NotNil(t, err)
+	})
+
+	t.Run("deny expired verify email token", func(t *testing.T) {
+		email := "test@mail.com"
+		id := "some-id"
+		exp := time.Now().Add(-1 * 5 * time.Second)
+		token, err := GenerateVerifyEmailToken(email, id, exp)
 		assert.Nil(t, err)
 		_, err = VerifyEmailToken(token)
 		assert.NotNil(t, err)
