@@ -32,7 +32,7 @@ type Server struct {
 func New(testing bool) (*Server, error) {
 	var dbPool *pgxpool.Pool
 	var queries *db.Queries
-	var storage *storage.Storage
+	var storageClient *storage.Storage
 	var err error
 
 	// format connection string
@@ -55,7 +55,7 @@ func New(testing bool) (*Server, error) {
 
 	if !testing {
 		// Initialize storage only for non-test environment
-		storage, err = storage.NewStorage()
+		storageClient, err = storage.NewStorage()
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize storage: %v", err)
 		}
@@ -89,7 +89,7 @@ func New(testing bool) (*Server, error) {
 		echoInstance: e,
 		authLimiter:  authLimiter,
 		apiLimiter:   apiLimiter,
-		Storage:      storage,
+		Storage:      storageClient,
 	}
 
 	// setup api routes first
