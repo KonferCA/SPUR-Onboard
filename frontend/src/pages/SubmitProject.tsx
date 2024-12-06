@@ -3,10 +3,100 @@ import { useState } from 'react';
 import { UserDashboard, TextInput, Dropdown, Section, Button, FileUpload, AnchorLinks, TeamMembers, SocialLinks, TextArea, DateInput } from '@components';
 import type { FormField, FormData } from '@/types';
 import { projectFormSchema } from '@/config/forms';
+import { createProject, createCompany } from '@/services';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SubmitProjectPage = () => {
   const [currentStep, setCurrentStep] = useState<'A' | 'B'>('A');
   const [formData, setFormData] = useState<FormData>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreatingCompany, setIsCreatingCompany] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { user, companyId, setCompanyId } = useAuth();
+
+  const handleCreateCompany = async () => {
+    if (!user) {
+      setError('Please log in to create a company.');
+      return;
+    }
+
+    try {
+      setIsCreatingCompany(true);
+      setError(null);
+
+      // Use the company name from the form if available, otherwise use a default name
+      const companyName = formData.companyName || 'My Company';
+      const company = await createCompany(user.id, companyName, formData.description);
+      
+      setCompanyId(company.id);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to create company:', err);
+      setError('Failed to create company. Please try again.');
+    } finally {
+      setIsCreatingCompany(false);
+    }
+  };
+
+  const fillWithSampleData = () => {
+    const sampleData = {
+      // Bookkeeping
+      companyName: 'TechVision AI Solutions',
+      foundedDate: '2023-06-15',
+      companyStage: 'seed',
+      investmentStage: 'seed',
+      
+      // Company Overview
+      description: 'TechVision AI Solutions is a cutting-edge artificial intelligence company focused on developing innovative computer vision solutions for retail and manufacturing industries. Our proprietary AI algorithms help businesses automate quality control, optimize inventory management, and enhance customer experiences.',
+      inspiration: 'After working in manufacturing for over a decade, we witnessed firsthand the inefficiencies and errors in manual quality control processes. This inspired us to develop an AI-powered solution that could perform inspections with greater accuracy and consistency, while significantly reducing costs and improving production speed.',
+      vision: 'Our vision is to become the global leader in AI-powered visual inspection and analytics. We aim to revolutionize how businesses handle quality control and inventory management by making advanced computer vision technology accessible and affordable for companies of all sizes. Within 5 years, we plan to expand our solutions across multiple industries and establish ourselves as the industry standard for automated visual inspection.',
+      
+      // Team Members
+      'team-members': [
+        {
+          id: '1',
+          name: 'Sarah Chen',
+          role: 'CEO & Co-founder',
+          avatar: ''
+        },
+        {
+          id: '2',
+          name: 'Michael Rodriguez',
+          role: 'CTO & Co-founder',
+          avatar: ''
+        },
+        {
+          id: '3',
+          name: 'Dr. Emily Thompson',
+          role: 'Head of AI Research',
+          avatar: ''
+        }
+      ],
+      
+      // Social Links
+      'social-links': [
+        {
+          id: '1',
+          type: 'website',
+          url: 'https://techvision-ai.com'
+        },
+        {
+          id: '2',
+          type: 'linkedin',
+          url: 'https://linkedin.com/company/techvision-ai'
+        },
+        {
+          id: '3',
+          type: 'twitter',
+          url: 'https://twitter.com/techvision_ai'
+        }
+      ]
+    };
+
+    setFormData(sampleData);
+  };
 
   const handleNext = () => {
     setCurrentStep('B');
@@ -21,6 +111,37 @@ const SubmitProjectPage = () => {
       ...prev,
       [fieldId]: value
     }));
+  };
+
+  const handleSubmit = async () => {
+    if (!companyId) {
+      setError('Company ID not found. Please create a company first.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setError(null);
+
+      // Get files and links from form data
+      const files = formData.documents || [];
+      const links = formData['social-links']?.map(link => ({
+        type: link.type || 'website',
+        url: link.url
+      })) || [];
+
+      // Create project with files and links in one call
+      const project = await createProject(companyId, formData, files, links);
+      console.log('Created project:', project);
+
+      // Navigate to success page or dashboard
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Failed to submit project:', err);
+      setError('Failed to submit project. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderField = (field: FormField) => {
@@ -125,7 +246,26 @@ const SubmitProjectPage = () => {
           <div className="space-y-8">
             {/* Header with tabs */}
             <div>
-              <h1 className="text-2xl font-semibold">Submit a project</h1>
+              <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-semibold">Submit a project</h1>
+                <div className="flex gap-4">
+                  {!companyId && (
+                    <button
+                      onClick={handleCreateCompany}
+                      disabled={isCreatingCompany}
+                      className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400"
+                    >
+                      {isCreatingCompany ? 'Creating Company...' : 'Create Company'}
+                    </button>
+                  )}
+                  <button
+                    onClick={fillWithSampleData}
+                    className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                  >
+                    Fill with Sample Data
+                  </button>
+                </div>
+              </div>
               <div className="mt-2">
                 <div className="flex gap-4 border-b border-gray-200">
                   {projectFormSchema.map(step => (
@@ -146,51 +286,56 @@ const SubmitProjectPage = () => {
               </div>
             </div>
 
+            {/* Form content */}
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ 
-                  duration: 0.15,
-                  ease: "easeOut"
-                }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
               >
-                {currentStepData?.sections.map(section => (
-                  <div 
-                    key={section.id}
-                    id={section.id}
-                    className="space-y-6 mt-8 first:mt-0"
-                  >
-                    <div>
-                      <h2 className="text-xl font-semibold">{section.title}</h2>
-                      {section.description && (
-                        <p className="text-sm text-gray-500 mt-2">{section.description}</p>
-                      )}
-                    </div>
+                {error && (
+                  <div className="text-red-500 text-sm mb-4">
+                    {error}
+                  </div>
+                )}
 
-                    <div className="space-y-6">
-                      {section.fields.map(field => renderField(field))}
+                {currentStepData?.sections.map(section => (
+                  <div key={section.id} id={section.id} className="mb-8">
+                    <h3 className="text-lg font-medium mb-2">{section.title}</h3>
+                    {section.description && (
+                      <p className="text-gray-600 text-sm mb-4">{section.description}</p>
+                    )}
+                    <div className="space-y-4">
+                      {section.fields.map(field => (
+                        <div key={field.id}>
+                          {renderField(field)}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
 
                 {currentStep === 'A' && (
-                  <div className="flex justify-end pt-8">
-                    <Button onClick={handleNext}>
-                      Next: Document Uploads
-                    </Button>
+                  <div className="pt-6">
+                    <button 
+                      className="w-full py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                      onClick={handleNext}
+                    >
+                      Continue
+                    </button>
                   </div>
                 )}
 
                 {currentStep === 'B' && (
                   <div className="pt-6">
                     <button 
-                      className="w-full py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                      onClick={() => console.log('Submit application', formData)}
+                      className="w-full py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors disabled:bg-gray-400"
+                      onClick={handleSubmit}
+                      disabled={isSubmitting || !companyId}
                     >
-                      Submit Application
+                      {isSubmitting ? 'Submitting...' : 'Submit Application'}
                     </button>
                   </div>
                 )}
@@ -203,4 +348,4 @@ const SubmitProjectPage = () => {
   );
 };
 
-export { SubmitProjectPage }; 
+export { SubmitProjectPage };

@@ -6,3 +6,5 @@ export {
     scrollToTop,
     isElementInView,
 } from './scroll';
+
+export { getApiUrl, HttpStatusCode } from './api';

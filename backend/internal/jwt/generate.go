@@ -1,8 +1,6 @@
 package jwt
 
 import (
-	"context"
-	"fmt"
 	"os"
 	"time"
 
@@ -37,38 +35,20 @@ GenerateVerifyEmailToken generates a new token for verifying someones email.
 This method uses a different jwt secret defined by JWT_SECRET_VERIFY_EMAIL
 to separate authentication related jwt with this one.
 */
-func GenerateVerifyEmailToken(ctx context.Context, email string, id string, exp time.Time) (string, error) {
-	done := make(chan struct {
-		token string
-		err   error
-	})
-
-	go func() {
-		claims := VerifyEmailJWTClaims{
-			Email:     email,
-			TokenType: VERIFY_EMAIL_TOKEN_TYPE,
-			RegisteredClaims: golangJWT.RegisteredClaims{
-				// expire in 1 week
-				ExpiresAt: golangJWT.NewNumericDate(exp),
-				IssuedAt:  golangJWT.NewNumericDate(time.Now()),
-				ID:        id,
-			},
-		}
-
-		token := golangJWT.NewWithClaims(golangJWT.SigningMethodHS256, claims)
-		signedToken, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_VERIFY_EMAIL")))
-		done <- struct {
-			token string
-			err   error
-		}{signedToken, err}
-	}()
-
-	select {
-	case <-ctx.Done():
-		return "", fmt.Errorf("context canceled while generating verify email JWT: %w", ctx.Err())
-	case result := <-done:
-		return result.token, result.err
+func GenerateVerifyEmailToken(email string, id string, exp time.Time) (string, error) {
+	claims := VerifyEmailJWTClaims{
+		Email:     email,
+		TokenType: VERIFY_EMAIL_TOKEN_TYPE,
+		RegisteredClaims: golangJWT.RegisteredClaims{
+			// expire in 1 week
+			ExpiresAt: golangJWT.NewNumericDate(exp),
+			IssuedAt:  golangJWT.NewNumericDate(time.Now()),
+			ID:        id,
+		},
 	}
+
+	token := golangJWT.NewWithClaims(golangJWT.SigningMethodHS256, claims)
+	return token.SignedString([]byte(os.Getenv("JWT_SECRET_VERIFY_EMAIL")))
 }
 
 // Private helper method to generate a token.
