@@ -23,6 +23,7 @@ func (s *Server) setupAuthRoutes() {
 	auth.Use(s.authLimiter.RateLimit()) // special rate limit for auth routes
 	auth.POST("/signup", s.handleSignup, mw.ValidateRequestBody(reflect.TypeOf(SignupRequest{})))
 	auth.POST("/signin", s.handleSignin, mw.ValidateRequestBody(reflect.TypeOf(SigninRequest{})))
+	auth.GET("/ami-verified", s.handleEmailVerifiedStatus)
 }
 
 func (s *Server) handleSignup(c echo.Context) error {
@@ -142,6 +143,26 @@ func (s *Server) handleSignin(c echo.Context) error {
 			EmailVerified: user.EmailVerified,
 		},
 	})
+}
+
+/*
+handleEmailVerifiedStatus checks for the email_verified column of the given email.
+If the email does not exist in the users table, it returns false. The same goes
+for any error encountered.
+*/
+func (s *Server) handleEmailVerifiedStatus(c echo.Context) error {
+	email := c.QueryParam("email")
+	if email == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "Missing email in query param.")
+	}
+
+	user, err := db.New(s.DBPool).GetUserByEmail(c.Request().Context(), email)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to fetch user when checking email verified status.")
+		return c.JSON(http.StatusOK, EmailVerifiedStatusResponse{Verified: false})
+	}
+
+	return c.JSON(http.StatusOK, EmailVerifiedStatusResponse{Verified: user.EmailVerified})
 }
 
 // helper function to convert pgtype.Text to *string
