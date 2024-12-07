@@ -1,4 +1,4 @@
-import { UserDashboard, Section, Grid, Footer, Header, FormContainer, NotificationBanner } from '@components';
+import { UserDashboard, Section, Header, NotificationBanner } from '@components';
 import { Button } from '@components';
 
 const DashboardPage = () => {

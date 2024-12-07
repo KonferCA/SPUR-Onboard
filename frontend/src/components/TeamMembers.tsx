@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiEdit2, FiX, FiPlus } from 'react-icons/fi';
+import { FiX, FiPlus } from 'react-icons/fi';
 import { Button } from './Button';
 import type { TeamMember } from '@/types';
 
@@ -15,7 +15,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({ value = [], onChange }
   const handleAdd = () => {
     if (newMember.name && newMember.role) {
       const member: TeamMember = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: Math.random().toString(36).substring(2, 9),
         name: newMember.name,
         role: newMember.role,
       };

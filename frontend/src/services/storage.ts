@@ -1,4 +1,4 @@
-import { getApiUrl, HttpStatusCode } from '@utils';
+import { getApiUrl } from '@utils';
 import { ApiError } from './errors';
 
 interface UploadResponse {

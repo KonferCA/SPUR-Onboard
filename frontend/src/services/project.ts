@@ -18,10 +18,10 @@ interface ProjectFile {
   file_url: string;
 }
 
-interface ProjectLink {
-  link_type: string;
-  url: string;
-}
+// interface ProjectLink {
+//   link_type: string;
+//   url: string;
+// }
 
 export async function createProject(
   companyId: string,
