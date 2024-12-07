@@ -121,7 +121,12 @@ func New(testing bool) (*Server, error) {
 				echo.HeaderContentType,
 				echo.HeaderAccept,
 				echo.HeaderContentLength,
+				echo.HeaderAuthorization,
 				"X-Request-ID",
+			},
+			AllowCredentials: true,
+			ExposeHeaders: []string{
+				"Set-Cookie",
 			},
 		}))
 	} else if os.Getenv("APP_ENV") == common.STAGING_ENV {
@@ -133,12 +138,32 @@ func New(testing bool) (*Server, error) {
 				echo.HeaderContentType,
 				echo.HeaderAccept,
 				echo.HeaderContentLength,
+				echo.HeaderAuthorization,
 				"X-Request-ID",
+			},
+			AllowCredentials: true,
+			ExposeHeaders: []string{
+				"Set-Cookie",
 			},
 		}))
 	} else {
-		// use default cors middleware for development
-		e.Use(echoMiddleware.CORS())
+		// development environment
+		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
+			AllowOrigins: []string{"http://localhost:5173"},
+			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
+			AllowHeaders: []string{
+				echo.HeaderOrigin,
+				echo.HeaderContentType,
+				echo.HeaderAccept,
+				echo.HeaderContentLength,
+				echo.HeaderAuthorization,
+				"X-Request-ID",
+			},
+			AllowCredentials: true,
+			ExposeHeaders: []string{
+				"Set-Cookie",
+			},
+		}))
 	}
 
 	e.Use(middleware.Logger())

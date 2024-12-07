@@ -12,11 +12,30 @@ import (
 	"KonferCA/SPUR/internal/service"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )
+
+type SignupResponse struct {
+	AccessToken string       `json:"access_token"`
+	User        UserResponse `json:"user"`
+}
+
+type SigninResponse struct {
+	AccessToken string       `json:"access_token"`
+	User        UserResponse `json:"user"`
+}
+
+type UserResponse struct {
+	ID            string      `json:"id"`
+	Email         string      `json:"email"`
+	FirstName     *string     `json:"first_name"`
+	LastName      *string     `json:"last_name"`
+	Role          db.UserRole `json:"role"`
+	WalletAddress *string     `json:"wallet_address,omitempty"`
+	EmailVerified bool        `json:"email_verified"`
+}
 
 func (s *Server) setupAuthRoutes() {
 	auth := s.apiV1.Group("/auth")
@@ -25,13 +44,14 @@ func (s *Server) setupAuthRoutes() {
 	auth.POST("/signin", s.handleSignin, mw.ValidateRequestBody(reflect.TypeOf(SigninRequest{})))
 	auth.GET("/verify-email", s.handleVerifyEmail)
 	auth.GET("/ami-verified", s.handleEmailVerifiedStatus)
+	auth.POST("/refresh", s.handleRefreshToken)
+	auth.POST("/signout", s.handleSignout)
 }
 
 func (s *Server) handleSignup(c echo.Context) error {
 	var req *SignupRequest
 	req, ok := c.Get(mw.REQUEST_BODY_KEY).(*SignupRequest)
 	if !ok {
-		// not good... no bueno
 		return echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
@@ -39,27 +59,23 @@ func (s *Server) handleSignup(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	ctx := c.Request().Context()
-	existingUser, err := s.queries.GetUserByEmail(ctx, req.Email)
-	if err == nil && existingUser.ID != "" {
-		return echo.NewHTTPError(http.StatusConflict, "email already registered")
-	}
-
+	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to hash password")
 	}
 
+	ctx := context.Background()
 	user, err := s.queries.CreateUser(ctx, db.CreateUserParams{
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
 		Role:         req.Role,
 	})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create user")
+		return echo.NewHTTPError(http.StatusConflict, "email already exists")
 	}
 
-	// Get user's token salt
+	// Get user's token salt that was generated during creation
 	salt, err := s.queries.GetUserTokenSalt(ctx, user.ID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user's token salt")
@@ -67,42 +83,51 @@ func (s *Server) handleSignup(c echo.Context) error {
 
 	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, salt)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate token")
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate tokens")
 	}
 
-	// send verification email
-	// db pool is passed to not lose reference to the s object once
-	// the function returns the response.
-	go func(pool *pgxpool.Pool, email string) {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-		defer cancel()
-		q := db.New(pool)
-		exp := time.Now().Add(time.Minute * 30)
-		token, err := q.CreateVerifyEmailToken(ctx, db.CreateVerifyEmailTokenParams{
-			Email: email,
-			// default expires after 30 minutes
-			ExpiresAt: exp,
+	// Set refresh token as HTTP-only cookie
+	cookie := new(http.Cookie)
+	cookie.Name = "refresh_token"
+	cookie.Value = refreshToken
+	cookie.HttpOnly = true
+	cookie.Secure = true // only send over HTTPS
+	cookie.SameSite = http.SameSiteStrictMode
+	cookie.Path = "/api/v1/auth" // only accessible by auth endpoints
+	cookie.MaxAge = 7 * 24 * 60 * 60 // 7 days in seconds
+
+	c.SetCookie(cookie)
+
+	// Send verification email asynchronously
+	go func() {
+		token, err := s.queries.CreateVerifyEmailToken(context.Background(), db.CreateVerifyEmailTokenParams{
+			Email:     user.Email,
+			ExpiresAt: time.Now().Add(30 * time.Minute),
 		})
 		if err != nil {
-			log.Error().Err(err).Str("email", email).Msg("Failed to create verify email token in db.")
+			log.Error().Err(err).Msg("Failed to create verification token")
 			return
 		}
-		tokenStr, err := jwt.GenerateVerifyEmailToken(email, token.ID, exp)
-		if err != nil {
-			log.Error().Err(err).Str("email", email).Msg("Failed to generate signed verify email token.")
-			return
-		}
-		err = service.SendVerficationEmail(ctx, email, tokenStr)
-		if err != nil {
-			log.Error().Err(err).Str("email", email).Msg("Failed to send verification email.")
-			return
-		}
-	}(s.DBPool, user.Email)
 
-	return c.JSON(http.StatusCreated, AuthResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		User: User{
+		// Generate JWT for email verification
+		tokenStr, err := jwt.GenerateVerifyEmailToken(token.Email, token.ID, token.ExpiresAt)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to generate verification token")
+			return
+		}
+
+		// Send verification email
+		if err := service.SendVerficationEmail(context.Background(), user.Email, tokenStr); err != nil {
+			log.Error().Err(err).Msg("Failed to send verification email")
+			return
+		}
+
+		log.Info().Str("token_id", token.ID).Msg("Verification email sent")
+	}()
+
+	return c.JSON(http.StatusCreated, SignupResponse{
+		AccessToken: accessToken,
+		User: UserResponse{
 			ID:            user.ID,
 			Email:         user.Email,
 			FirstName:     user.FirstName,
@@ -138,13 +163,24 @@ func (s *Server) handleSignin(c echo.Context) error {
 
 	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, salt)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate token")
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate tokens")
 	}
 
-	return c.JSON(http.StatusOK, AuthResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		User: User{
+	// Set refresh token as HTTP-only cookie
+	cookie := new(http.Cookie)
+	cookie.Name = "refresh_token"
+	cookie.Value = refreshToken
+	cookie.HttpOnly = true
+	cookie.Secure = true // only send over HTTPS
+	cookie.SameSite = http.SameSiteStrictMode
+	cookie.Path = "/api/v1/auth" // only accessible by auth endpoints
+	cookie.MaxAge = 7 * 24 * 60 * 60 // 7 days in seconds
+
+	c.SetCookie(cookie)
+
+	return c.JSON(http.StatusOK, SigninResponse{
+		AccessToken: accessToken,
+		User: UserResponse{
 			ID:            user.ID,
 			Email:         user.Email,
 			FirstName:     user.FirstName,
@@ -246,6 +282,86 @@ func (s *Server) handleEmailVerifiedStatus(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, EmailVerifiedStatusResponse{Verified: user.EmailVerified})
+}
+
+func (s *Server) handleRefreshToken(c echo.Context) error {
+	// Get refresh token from HTTP-only cookie
+	cookie, err := c.Cookie("refresh_token")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "no refresh token provided")
+	}
+
+	// Parse claims without verification to get userID
+	unverifiedClaims, err := jwt.ParseUnverifiedClaims(cookie.Value)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid token format")
+	}
+
+	// Get user's salt from database
+	ctx := context.Background()
+	salt, err := s.queries.GetUserTokenSalt(ctx, unverifiedClaims.UserID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
+	}
+
+	// Verify the refresh token with user's salt
+	claims, err := jwt.VerifyTokenWithSalt(cookie.Value, salt)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
+	}
+
+	// Verify it's actually a refresh token
+	if claims.TokenType != jwt.REFRESH_TOKEN_TYPE {
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid token type")
+	}
+
+	// Update user's token salt to invalidate old tokens
+	if err := s.queries.UpdateUserTokenSalt(ctx, claims.UserID); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to rotate token salt")
+	}
+
+	// Get the new salt
+	newSalt, err := s.queries.GetUserTokenSalt(ctx, claims.UserID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get new token salt")
+	}
+
+	// Generate new tokens with the new salt
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(claims.UserID, claims.Role, newSalt)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate tokens")
+	}
+
+	// Set new refresh token cookie
+	refreshCookie := new(http.Cookie)
+	refreshCookie.Name = "refresh_token"
+	refreshCookie.Value = refreshToken
+	refreshCookie.HttpOnly = true
+	refreshCookie.Secure = true
+	refreshCookie.SameSite = http.SameSiteStrictMode
+	refreshCookie.Path = "/api/v1/auth"
+	refreshCookie.MaxAge = 7 * 24 * 60 * 60 // 7 days
+
+	c.SetCookie(refreshCookie)
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"access_token": accessToken,
+	})
+}
+
+func (s *Server) handleSignout(c echo.Context) error {
+	// Create an expired cookie to clear the refresh token
+	cookie := new(http.Cookie)
+	cookie.Name = "refresh_token"
+	cookie.Value = ""
+	cookie.HttpOnly = true
+	cookie.Secure = true
+	cookie.SameSite = http.SameSiteStrictMode
+	cookie.Path = "/api/v1/auth"
+	cookie.MaxAge = -1 // immediately expires the cookie
+
+	c.SetCookie(cookie)
+	return c.NoContent(http.StatusOK)
 }
 
 // helper function to convert pgtype.Text to *string

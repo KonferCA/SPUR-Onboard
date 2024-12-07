@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { Button, TextInput, TextArea } from '@components';
-import { register, RegisterError, saveRefreshToken } from '@services';
+import { register, RegisterError } from '@services';
 import { useAuth } from '@/contexts/AuthContext';
 
 type RegistrationStep =
@@ -27,8 +27,8 @@ interface FormErrors {
 }
 
 const Register = () => {
-    const [currentStep, setCurrentStep] =
-        useState<RegistrationStep>('login-register');
+    const { setUser, setCompanyId } = useAuth();
+    const [currentStep, setCurrentStep] = useState<RegistrationStep>('login-register');
     const [formData, setFormData] = useState<FormData>({
         firstName: '',
         lastName: '',
@@ -39,7 +39,6 @@ const Register = () => {
         password: '',
     });
     const [errors, setErrors] = useState<FormErrors>({});
-    const { setUser, setCompanyId } = useAuth();
 
     const LINKEDIN_REGEX =
         /^(https?:\/\/)?([\w]+\.)?linkedin\.com\/(pub|in|profile)\/([-a-zA-Z0-9]+)\/?$/;
@@ -90,13 +89,9 @@ const Register = () => {
         e.preventDefault();
         try {
             const regResp = await register(formData.email, formData.password);
-            console.log(regResp);
-
+            
             setUser(regResp.user);
-            saveRefreshToken(regResp.refreshToken);
-
             setCompanyId('mock-company-id');
-
             setCurrentStep('verify-email');
         } catch (error) {
             if (error instanceof RegisterError) {
