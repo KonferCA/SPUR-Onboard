@@ -51,8 +51,8 @@ func TestProjectCommentEndpoints(t *testing.T) {
 	// Create a test user directly in the database
 	userID := uuid.New().String()
 	_, err = s.DBPool.Exec(ctx, `
-		INSERT INTO users (id, email, password_hash, first_name, last_name, role)
-		VALUES ($1, $2, $3, $4, $5, 'startup_owner')
+		INSERT INTO users (id, email, password_hash, first_name, last_name, role, token_salt)
+		VALUES ($1, $2, $3, $4, $5, 'startup_owner', gen_random_bytes(32))
 	`, userID, "test@example.com", "hashedpassword", "Test", "User")
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)

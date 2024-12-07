@@ -59,7 +59,13 @@ func (s *Server) handleSignup(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create user")
 	}
 
-	accessToken, refreshToken, err := jwt.Generate(user.ID, user.Role)
+	// Get user's token salt
+	salt, err := s.queries.GetUserTokenSalt(ctx, user.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user's token salt")
+	}
+
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, salt)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate token")
 	}
@@ -110,9 +116,6 @@ func (s *Server) handleSignup(c echo.Context) error {
 func (s *Server) handleSignin(c echo.Context) error {
 	req, ok := c.Get(mw.REQUEST_BODY_KEY).(*SigninRequest)
 	if !ok {
-		// no bueno...
-		// should never really reach this state since the validator should reject
-		// the request body if it is not a proper SigninRequest type
 		return echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
@@ -126,7 +129,13 @@ func (s *Server) handleSignin(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "invalid credentials")
 	}
 
-	accessToken, refreshToken, err := jwt.Generate(user.ID, user.Role)
+	// Get user's token salt
+	salt, err := s.queries.GetUserTokenSalt(ctx, user.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user's token salt")
+	}
+
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, salt)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate token")
 	}

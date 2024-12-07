@@ -235,6 +235,7 @@ type User struct {
 	UpdatedAt     pgtype.Timestamp
 	Role          UserRole
 	EmailVerified bool
+	TokenSalt     []byte
 }
 
 type VerifyEmailToken struct {

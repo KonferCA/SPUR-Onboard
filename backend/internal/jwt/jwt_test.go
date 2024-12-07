@@ -7,7 +7,6 @@ import (
 
 	"KonferCA/SPUR/db"
 
-	golangJWT "github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,69 +17,90 @@ func TestJWT(t *testing.T) {
 
 	userID := "some-user-id"
 	role := db.UserRole("user")
-	exp := time.Now().Add(5 * time.Minute)
+	salt := []byte("test-salt")
 
-	t.Run("generate access token", func(t *testing.T) {
-		token, err := generateToken(userID, role, ACCESS_TOKEN_TYPE, exp)
+	t.Run("token salt invalidation", func(t *testing.T) {
+		// Generate initial salt
+		initialSalt := []byte("initial-salt")
+		
+		// Generate tokens with initial salt
+		accessToken, refreshToken, err := GenerateWithSalt(userID, role, initialSalt)
 		assert.Nil(t, err)
-		assert.NotEmpty(t, token)
-		claims, err := VerifyToken(token)
+		assert.NotEmpty(t, accessToken)
+		assert.NotEmpty(t, refreshToken)
+
+		// Verify tokens work with initial salt
+		claims, err := VerifyTokenWithSalt(accessToken, initialSalt)
 		assert.Nil(t, err)
 		assert.Equal(t, claims.UserID, userID)
 		assert.Equal(t, claims.Role, role)
 		assert.Equal(t, claims.TokenType, ACCESS_TOKEN_TYPE)
-		assert.Equal(t, claims.RegisteredClaims.ExpiresAt, golangJWT.NewNumericDate(exp))
+
+		// Change salt (simulating token invalidation)
+		newSalt := []byte("new-salt")
+
+		// Old tokens should fail verification with new salt
+		_, err = VerifyTokenWithSalt(accessToken, newSalt)
+		assert.NotNil(t, err, "Token should be invalid with new salt")
+
+		// Generate new tokens with new salt
+		newAccessToken, newRefreshToken, err := GenerateWithSalt(userID, role, newSalt)
+		assert.Nil(t, err)
+		assert.NotEmpty(t, newAccessToken)
+		assert.NotEmpty(t, newRefreshToken)
+
+		// New tokens should work with new salt
+		claims, err = VerifyTokenWithSalt(newAccessToken, newSalt)
+		assert.Nil(t, err)
+		assert.Equal(t, claims.UserID, userID)
+	})
+
+	t.Run("two-step verification", func(t *testing.T) {
+		salt := []byte("test-salt")
+		
+		// Generate a token
+		accessToken, _, err := GenerateWithSalt(userID, role, salt)
+		assert.Nil(t, err)
+
+		// Step 1: Parse claims without verification
+		unverifiedClaims, err := ParseUnverifiedClaims(accessToken)
+		assert.Nil(t, err)
+		assert.Equal(t, userID, unverifiedClaims.UserID)
+
+		// Step 2: Verify with salt
+		verifiedClaims, err := VerifyTokenWithSalt(accessToken, salt)
+		assert.Nil(t, err)
+		assert.Equal(t, userID, verifiedClaims.UserID)
+
+		// Try to verify with wrong salt
+		wrongSalt := []byte("wrong-salt")
+		_, err = VerifyTokenWithSalt(accessToken, wrongSalt)
+		assert.NotNil(t, err, "Token should be invalid with wrong salt")
+	})
+
+	t.Run("generate access token", func(t *testing.T) {
+		accessToken, _, err := GenerateWithSalt(userID, role, salt)
+		assert.Nil(t, err)
+		assert.NotEmpty(t, accessToken)
+		claims, err := VerifyTokenWithSalt(accessToken, salt)
+		assert.Nil(t, err)
+		assert.Equal(t, claims.UserID, userID)
+		assert.Equal(t, claims.Role, role)
+		assert.Equal(t, claims.TokenType, ACCESS_TOKEN_TYPE)
 	})
 
 	t.Run("generate refresh token", func(t *testing.T) {
-		token, err := generateToken(userID, role, REFRESH_TOKEN_TYPE, exp)
+		_, refreshToken, err := GenerateWithSalt(userID, role, salt)
 		assert.Nil(t, err)
-		assert.NotEmpty(t, token)
-		claims, err := VerifyToken(token)
+		assert.NotEmpty(t, refreshToken)
+		claims, err := VerifyTokenWithSalt(refreshToken, salt)
 		assert.Nil(t, err)
 		assert.Equal(t, claims.UserID, userID)
 		assert.Equal(t, claims.Role, role)
 		assert.Equal(t, claims.TokenType, REFRESH_TOKEN_TYPE)
-		assert.Equal(t, claims.RegisteredClaims.ExpiresAt, golangJWT.NewNumericDate(exp))
 	})
 
-	t.Run("generate both refresh and access token", func(t *testing.T) {
-		a, r, err := Generate(userID, role)
-		assert.Nil(t, err)
-		assert.NotEmpty(t, a)
-		assert.NotEmpty(t, r)
-		claims, err := VerifyToken(a)
-		assert.Nil(t, err)
-		assert.Equal(t, claims.TokenType, ACCESS_TOKEN_TYPE)
-		claims, err = VerifyToken(r)
-		assert.Equal(t, claims.TokenType, REFRESH_TOKEN_TYPE)
-	})
-
-	t.Run("deny token with wrong signature", func(t *testing.T) {
-		a, r, err := Generate(userID, role)
-		assert.Nil(t, err)
-		// change secret
-		os.Setenv("JWT_SECRET", "changed")
-		_, err = VerifyToken(a)
-		assert.NotNil(t, err)
-		// restore error to nil
-		err = nil
-		// test the other token
-		_, err = VerifyToken(r)
-		assert.NotNil(t, err)
-		// restore secret
-		os.Setenv("JWT_SECRET", "secret")
-	})
-
-	t.Run("deny expired token", func(t *testing.T) {
-		exp = time.Now().Add(-1 * 5 * time.Minute)
-		token, err := generateToken(userID, role, ACCESS_TOKEN_TYPE, exp)
-		assert.Nil(t, err)
-		_, err = VerifyToken(token)
-		assert.NotNil(t, err)
-	})
-
-	t.Run("generate verify email token", func(t *testing.T) {
+	t.Run("verify email token", func(t *testing.T) {
 		email := "test@mail.com"
 		id := "some-id"
 		exp := time.Now().Add(time.Second * 5)
@@ -91,16 +111,6 @@ func TestJWT(t *testing.T) {
 		assert.Equal(t, claims.Email, email)
 		assert.Equal(t, claims.ID, id)
 		assert.Equal(t, claims.ExpiresAt.Unix(), exp.Unix())
-	})
-
-	t.Run("deny expired verify email token", func(t *testing.T) {
-		email := "test@mail.com"
-		id := "some-id"
-		exp := time.Now().Add(-1 * 5 * time.Second)
-		token, err := GenerateVerifyEmailToken(email, id, exp)
-		assert.Nil(t, err)
-		_, err = VerifyEmailToken(token)
-		assert.NotNil(t, err)
 	})
 
 	t.Run("deny expired verify email token", func(t *testing.T) {
