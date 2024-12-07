@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { UserDashboard, TextInput, Dropdown, Section, Button, FileUpload, AnchorLinks, TeamMembers, SocialLinks, TextArea, DateInput } from '@components';
+import { UserDashboard, TextInput, Dropdown, Section, FileUpload, AnchorLinks, TeamMembers, SocialLinks, TextArea, DateInput } from '@components';
 import type { FormField, FormData } from '@/types';
 import { projectFormSchema } from '@/config/forms';
 import { createProject, createCompany } from '@/services';
@@ -102,9 +102,9 @@ const SubmitProjectPage = () => {
     setCurrentStep('B');
   };
 
-  const handleBack = () => {
-    setCurrentStep('A');
-  };
+  // const handleBack = () => {
+  //   setCurrentStep('A');
+  // };
 
   const handleChange = (fieldId: string, value: any) => {
     setFormData(prev => ({
@@ -125,7 +125,7 @@ const SubmitProjectPage = () => {
 
       // Get files and links from form data
       const files = formData.documents || [];
-      const links = formData['social-links']?.map(link => ({
+      const links = formData['social-links']?.map((link: { type: string; url: string;})=> ({
         type: link.type || 'website',
         url: link.url
       })) || [];

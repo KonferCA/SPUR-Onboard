@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion';
-
 export const DashboardSkeleton = () => {
   return (
     <div className="px-6 animate-pulse">
