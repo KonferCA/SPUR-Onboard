@@ -18,8 +18,23 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
   // check if user's role is allowed
   if (!allowedRoles.includes(user.role as UserRole)) {
-    // redirect to user dashboard if unauthorized
-    return <Navigate to="/dashboard" replace />;
+    // determine appropriate redirect based on user's role
+    let redirectPath = '/';
+    
+    switch (user.role) {
+      case 'startup_owner':
+      case 'investor':
+        redirectPath = '/dashboard';
+        break;
+      case 'admin':
+        redirectPath = '/admin/dashboard';
+        break;
+      default:
+        // if unknown role, redirect to landing
+        redirectPath = '/';
+    }
+
+    return <Navigate to={redirectPath} replace />;
   }
 
   return <>{children}</>;
