@@ -77,16 +77,17 @@ func (s *Server) handleSignup(c echo.Context) error {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 		defer cancel()
 		q := db.New(pool)
+		exp := time.Now().Add(time.Minute * 30)
 		token, err := q.CreateVerifyEmailToken(ctx, db.CreateVerifyEmailTokenParams{
 			Email: email,
 			// default expires after 30 minutes
-			ExpiresAt: time.Now().Add(time.Minute * 30),
+			ExpiresAt: exp,
 		})
 		if err != nil {
 			log.Error().Err(err).Str("email", email).Msg("Failed to create verify email token in db.")
 			return
 		}
-		tokenStr, err := jwt.GenerateVerifyEmailToken(email, token.ID, token.ExpiresAt)
+		tokenStr, err := jwt.GenerateVerifyEmailToken(email, token.ID, exp)
 		if err != nil {
 			log.Error().Err(err).Str("email", email).Msg("Failed to generate signed verify email token.")
 			return
@@ -226,6 +227,7 @@ func (s *Server) handleVerifyEmail(c echo.Context) error {
 		"success": true,
 	})
 }
+
 /*
 handleEmailVerifiedStatus checks for the email_verified column of the given email.
 If the email does not exist in the users table, it returns false. The same goes
