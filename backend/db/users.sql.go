@@ -13,10 +13,11 @@ const createUser = `-- name: CreateUser :one
 INSERT INTO users (
     email,
     password_hash,
-    role
+    role,
+    token_salt
 ) VALUES (
-    $1, $2, $3
-) RETURNING id, email, password_hash, first_name, last_name, wallet_address, created_at, updated_at, role, email_verified
+    $1, $2, $3, gen_random_bytes(32)
+) RETURNING id, email, password_hash, first_name, last_name, wallet_address, created_at, updated_at, role, email_verified, token_salt
 `
 
 type CreateUserParams struct {
@@ -39,12 +40,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UpdatedAt,
 		&i.Role,
 		&i.EmailVerified,
+		&i.TokenSalt,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password_hash, first_name, last_name, wallet_address, created_at, updated_at, role, email_verified FROM users
+SELECT id, email, password_hash, first_name, last_name, wallet_address, created_at, updated_at, role, email_verified, token_salt FROM users
 WHERE email = $1 LIMIT 1
 `
 
@@ -62,12 +64,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.UpdatedAt,
 		&i.Role,
 		&i.EmailVerified,
+		&i.TokenSalt,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, password_hash, first_name, last_name, wallet_address, created_at, updated_at, role, email_verified FROM users
+SELECT id, email, password_hash, first_name, last_name, wallet_address, created_at, updated_at, role, email_verified, token_salt FROM users
 WHERE id = $1 LIMIT 1
 `
 
@@ -85,8 +88,21 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 		&i.UpdatedAt,
 		&i.Role,
 		&i.EmailVerified,
+		&i.TokenSalt,
 	)
 	return i, err
+}
+
+const getUserTokenSalt = `-- name: GetUserTokenSalt :one
+SELECT token_salt FROM users
+WHERE id = $1
+`
+
+func (q *Queries) GetUserTokenSalt(ctx context.Context, id string) ([]byte, error) {
+	row := q.db.QueryRow(ctx, getUserTokenSalt, id)
+	var token_salt []byte
+	err := row.Scan(&token_salt)
+	return token_salt, err
 }
 
 const updateUserEmailVerifiedStatus = `-- name: UpdateUserEmailVerifiedStatus :exec
@@ -101,5 +117,15 @@ type UpdateUserEmailVerifiedStatusParams struct {
 
 func (q *Queries) UpdateUserEmailVerifiedStatus(ctx context.Context, arg UpdateUserEmailVerifiedStatusParams) error {
 	_, err := q.db.Exec(ctx, updateUserEmailVerifiedStatus, arg.EmailVerified, arg.ID)
+	return err
+}
+
+const updateUserTokenSalt = `-- name: UpdateUserTokenSalt :exec
+UPDATE users SET token_salt = gen_random_bytes(32)
+WHERE id = $1
+`
+
+func (q *Queries) UpdateUserTokenSalt(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, updateUserTokenSalt, id)
 	return err
 }

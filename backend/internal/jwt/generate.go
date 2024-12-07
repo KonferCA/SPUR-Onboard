@@ -16,13 +16,13 @@ const (
 )
 
 // Generates JWT tokens for the given user. Returns the access token, refresh token and error (nil if no error)
-func Generate(userID string, role db.UserRole) (string, string, error) {
-	accessToken, err := generateToken(userID, role, ACCESS_TOKEN_TYPE, time.Now().Add(10*time.Minute))
+func GenerateWithSalt(userID string, role db.UserRole, salt []byte) (string, string, error) {
+	accessToken, err := generateTokenWithSalt(userID, role, ACCESS_TOKEN_TYPE, time.Now().Add(10*time.Minute), salt)
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := generateToken(userID, role, REFRESH_TOKEN_TYPE, time.Now().Add(24*7*time.Hour))
+	refreshToken, err := generateTokenWithSalt(userID, role, REFRESH_TOKEN_TYPE, time.Now().Add(24*7*time.Hour), salt)
 	if err != nil {
 		return "", "", err
 	}
@@ -40,7 +40,6 @@ func GenerateVerifyEmailToken(email string, id string, exp time.Time) (string, e
 		Email:     email,
 		TokenType: VERIFY_EMAIL_TOKEN_TYPE,
 		RegisteredClaims: golangJWT.RegisteredClaims{
-			// expire in 1 week
 			ExpiresAt: golangJWT.NewNumericDate(exp),
 			IssuedAt:  golangJWT.NewNumericDate(time.Now()),
 			ID:        id,
@@ -51,19 +50,20 @@ func GenerateVerifyEmailToken(email string, id string, exp time.Time) (string, e
 	return token.SignedString([]byte(os.Getenv("JWT_SECRET_VERIFY_EMAIL")))
 }
 
-// Private helper method to generate a token.
-func generateToken(userID string, role db.UserRole, tokenType string, exp time.Time) (string, error) {
+// Private helper method to generate a token with user's salt
+func generateTokenWithSalt(userID string, role db.UserRole, tokenType string, exp time.Time, salt []byte) (string, error) {
 	claims := JWTClaims{
 		UserID:    userID,
 		Role:      role,
 		TokenType: tokenType,
 		RegisteredClaims: golangJWT.RegisteredClaims{
-			// expire in 1 week
 			ExpiresAt: golangJWT.NewNumericDate(exp),
 			IssuedAt:  golangJWT.NewNumericDate(time.Now()),
 		},
 	}
 
 	token := golangJWT.NewWithClaims(golangJWT.SigningMethodHS256, claims)
-	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	// combine base secret with user's salt
+	secret := append([]byte(os.Getenv("JWT_SECRET")), salt...)
+	return token.SignedString(secret)
 }
