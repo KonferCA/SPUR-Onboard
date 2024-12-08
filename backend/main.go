@@ -15,7 +15,7 @@ import (
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
-	if os.Getenv("APP_ENV") != common.PRODUCTION_ENV {
+	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
 		if err := godotenv.Load(); err != nil {
 			log.Fatal().Err(err).Msg("failed to load .env")
 		}
