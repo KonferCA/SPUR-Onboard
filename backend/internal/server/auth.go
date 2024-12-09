@@ -84,7 +84,10 @@ func (s *Server) handleSignup(c echo.Context) error {
 
 	// Send verification email asynchronously
 	go func() {
-		token, err := s.queries.CreateVerifyEmailToken(context.Background(), db.CreateVerifyEmailTokenParams{
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+		defer cancel()
+		
+		token, err := s.queries.CreateVerifyEmailToken(ctx, db.CreateVerifyEmailTokenParams{
 			Email:     user.Email,
 			ExpiresAt: time.Now().Add(30 * time.Minute),
 		})
@@ -101,7 +104,7 @@ func (s *Server) handleSignup(c echo.Context) error {
 		}
 
 		// Send verification email
-		if err := service.SendVerficationEmail(context.Background(), user.Email, tokenStr); err != nil {
+		if err := service.SendVerficationEmail(ctx, user.Email, tokenStr); err != nil {
 			log.Error().Err(err).Msg("Failed to send verification email")
 			return
 		}
