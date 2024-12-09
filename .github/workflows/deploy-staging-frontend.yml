@@ -17,6 +17,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Setup VPS fingerprint
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.VPS_IP }} ${{ secrets.VPS_FINGERPRINT }}" >> ~/.ssh/known_hosts
+      - name: Setup Rsync
+        uses: GuillaumeFalourd/setup-rsync@v1.2
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -47,11 +55,5 @@ jobs:
       - name: Build
         run: pnpm build
       - name: Deploy to server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_IP }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_KEY }}
-          source: "frontend/dist/*"
-          target: "${{ secrets.FE_DIR }}"
-          strip_components: 2
+        run: |
+          rsync -avz --progress dist/* "${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_ENV }}/frontend"
