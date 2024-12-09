@@ -10,6 +10,5 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /app/app .
 RUN mkdir -p static/dist
-EXPOSE 6969
-ENV APP_ENV="production"
+
 CMD ["./app"]
