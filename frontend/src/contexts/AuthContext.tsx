@@ -1,11 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import type { User } from '@/types';
 
 interface AuthContextType {
   user: User | null;
   companyId: string | null;
-  setUser: (user: User | null) => void;
-  setCompanyId: (id: string | null) => void;
+  accessToken: string | null;
+  setAuth: (user: User | null, token: string | null, companyId?: string | null) => void;
+  clearAuth: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -13,40 +14,28 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  // Load user from localStorage on mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const storedCompanyId = localStorage.getItem('company_id');
-    
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    if (storedCompanyId) {
-      setCompanyId(storedCompanyId);
-    }
-  }, []);
+  const setAuth = (user: User | null, token: string | null, companyId: string | null = null) => {
+    setUser(user);
+    setAccessToken(token);
+    setCompanyId(companyId);
+  };
 
-  // Save user to localStorage when it changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('user');
-    }
-  }, [user]);
-
-  // Save companyId to localStorage when it changes
-  useEffect(() => {
-    if (companyId) {
-      localStorage.setItem('company_id', companyId);
-    } else {
-      localStorage.removeItem('company_id');
-    }
-  }, [companyId]);
+  const clearAuth = () => {
+    setUser(null);
+    setAccessToken(null);
+    setCompanyId(null);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, companyId, setUser, setCompanyId }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      companyId, 
+      accessToken,
+      setAuth,
+      clearAuth
+    }}>
       {children}
     </AuthContext.Provider>
   );
