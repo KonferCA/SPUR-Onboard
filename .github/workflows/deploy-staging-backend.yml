@@ -169,7 +169,7 @@ jobs:
               --network=host --add-host=host.docker.internal:host-gateway \
               "$APP_NAME-$APP_ENV:latest"
 
-            echo "Done: Preview Deployment"
+            echo "Done: Staging Deployment"
 
       - name: Post Deployment Clean Up on VPS
         uses: appleboy/ssh-action@v1.0.3
