@@ -7,6 +7,7 @@ interface AuthContextType {
   accessToken: string | null;
   setAuth: (user: User | null, token: string | null, companyId?: string | null) => void;
   clearAuth: () => void;
+  setCompanyId: (companyId: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,7 +35,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       companyId, 
       accessToken,
       setAuth,
-      clearAuth
+      clearAuth,
+      setCompanyId
     }}>
       {children}
     </AuthContext.Provider>
