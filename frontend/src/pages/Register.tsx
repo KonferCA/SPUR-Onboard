@@ -216,13 +216,15 @@ const Register = () => {
     );
 
     const renderVerifyEmail = () => {
+        const email = formData.email;
+
         useEffect(() => {
             let isMounted = true;
 
             const checkVerification = async () => {
                 try {
                     const response = await fetch(
-                        getApiUrl(`/auth/ami-verified?email=${encodeURIComponent(formData.email)}`),
+                        getApiUrl(`/auth/ami-verified?email=${encodeURIComponent(email)}`),
                         { method: 'GET' }
                     );
 
@@ -268,7 +270,7 @@ const Register = () => {
 
                 document.removeEventListener('visibilitychange', handleVisibilityChange);
             };
-        }, [formData.email]);
+        }, [email, setCurrentStep]);
 
         return (
             <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg">
