@@ -206,6 +206,10 @@ type EmailVerifiedStatusResponse struct {
 	Verified bool `json:"verified"`
 }
 
+type ResendVerificationEmailRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
 type CreateProjectFileRequest struct {
 	FileType string `json:"file_type" validate:"required"`
 	FileURL  string `json:"file_url" validate:"required,url,s3_url"`
