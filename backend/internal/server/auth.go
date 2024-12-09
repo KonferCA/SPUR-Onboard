@@ -34,6 +34,7 @@ func (s *Server) setupAuthRoutes() {
 	auth.POST("/signin", s.handleSignin, mw.ValidateRequestBody(reflect.TypeOf(SigninRequest{})))
 	auth.GET("/verify-email", s.handleVerifyEmail)
 	auth.GET("/ami-verified", s.handleEmailVerifiedStatus)
+	auth.POST("/resend-verification", s.handleResendVerificationEmail, mw.ValidateRequestBody(reflect.TypeOf(ResendVerificationEmailRequest{})))
 	auth.POST("/refresh", s.handleRefreshToken)
 	auth.POST("/signout", s.handleSignout)
 }
@@ -238,6 +239,55 @@ func (s *Server) handleVerifyEmail(c echo.Context) error {
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to commit transaction to update user email verification status.")
 		return echo.NewHTTPError(http.StatusInternalServerError, "Unable to verify email. Please try again later.")
+	}
+
+	return c.JSON(http.StatusOK, map[string]bool{
+		"success": true,
+	})
+}
+
+func (s *Server) handleResendVerificationEmail(c echo.Context) error {
+	req, ok := c.Get(mw.REQUEST_BODY_KEY).(*ResendVerificationEmailRequest)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+	}
+
+	ctx := c.Request().Context()
+	user, err := s.queries.GetUserByEmail(ctx, req.Email)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, "user not found")
+	}
+
+	if user.EmailVerified {
+		return echo.NewHTTPError(http.StatusBadRequest, "email already verified")
+	}
+
+	err = s.queries.DeleteVerifyEmailTokenByEmail(ctx, req.Email)
+	if err != nil {
+		log.Error().Err(err).Str("email", req.Email).Msg("Failed to delete existing verification tokens")
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to process request")
+	}
+
+	exp := time.Now().Add(time.Minute * 30)
+	token, err := s.queries.CreateVerifyEmailToken(ctx, db.CreateVerifyEmailTokenParams{
+		Email:     req.Email,
+		ExpiresAt: exp,
+	})
+	if err != nil {
+		log.Error().Err(err).Str("email", req.Email).Msg("Failed to verify email token in db")
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create verification token")
+	}
+
+	tokenStr, err := jwt.GenerateVerifyEmailToken(req.Email, token.ID, exp)
+	if err != nil {
+		log.Error().Err(err).Str("email", req.Email).Msg("Failed to generate signed verify email token")
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate verification token")
+	}
+
+	err = service.SendVerficationEmail(ctx, req.Email, tokenStr)
+	if err != nil {
+		log.Error().Err(err).Str("email", req.Email).Msg("Failed to send verification email")
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to send verification email")
 	}
 
 	return c.JSON(http.StatusOK, map[string]bool{
