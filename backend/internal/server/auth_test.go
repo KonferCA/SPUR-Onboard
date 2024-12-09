@@ -57,12 +57,23 @@ func TestAuth(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, rec.Code)
 
-		var response AuthResponse
+		var response SignupResponse
 		err := json.NewDecoder(rec.Body).Decode(&response)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, response.AccessToken)
-		assert.NotEmpty(t, response.RefreshToken)
 		assert.Equal(t, payload.Email, response.User.Email)
+
+		// Check refresh token cookie
+		cookies := rec.Result().Cookies()
+		var refreshCookie *http.Cookie
+		for _, cookie := range cookies {
+			if cookie.Name == "refresh_token" {
+				refreshCookie = cookie
+				break
+			}
+		}
+		assert.NotNil(t, refreshCookie, "Refresh token cookie should be set")
+		assert.True(t, refreshCookie.HttpOnly, "Cookie should be HTTP-only")
 	})
 
 	// test duplicate email
@@ -97,12 +108,23 @@ func TestAuth(t *testing.T) {
 		s.echoInstance.ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusOK, rec.Code)
 
-		var response AuthResponse
+		var response SigninResponse
 		err := json.Unmarshal(rec.Body.Bytes(), &response)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, response.AccessToken)
-		assert.NotEmpty(t, response.RefreshToken)
 		assert.Equal(t, payload.Email, response.User.Email)
+
+		// Check refresh token cookie
+		cookies := rec.Result().Cookies()
+		var refreshCookie *http.Cookie
+		for _, cookie := range cookies {
+			if cookie.Name == "refresh_token" {
+				refreshCookie = cookie
+				break
+			}
+		}
+		assert.NotNil(t, refreshCookie, "Refresh token cookie should be set")
+		assert.True(t, refreshCookie.HttpOnly, "Cookie should be HTTP-only")
 	})
 
 	// test invalid credentials
@@ -187,5 +209,107 @@ func TestAuth(t *testing.T) {
 		rec := httptest.NewRecorder()
 		s.echoInstance.ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	// test refresh token endpoint
+	t.Run("refresh token", func(t *testing.T) {
+		// First sign in to get a refresh token cookie
+		signinPayload := SigninRequest{
+			Email:    "test@example.com",
+			Password: "password123",
+		}
+		body, _ := json.Marshal(signinPayload)
+
+		signinReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/signin", bytes.NewReader(body))
+		signinReq.Header.Set("Content-Type", "application/json")
+		signinRec := httptest.NewRecorder()
+
+		s.echoInstance.ServeHTTP(signinRec, signinReq)
+		assert.Equal(t, http.StatusOK, signinRec.Code)
+
+		// Get the refresh token cookie
+		cookies := signinRec.Result().Cookies()
+		var refreshCookie *http.Cookie
+		for _, cookie := range cookies {
+			if cookie.Name == "refresh_token" {
+				refreshCookie = cookie
+				break
+			}
+		}
+		assert.NotNil(t, refreshCookie, "Refresh token cookie should be set")
+		assert.True(t, refreshCookie.HttpOnly, "Cookie should be HTTP-only")
+		assert.True(t, refreshCookie.Secure, "Cookie should be secure")
+		assert.Equal(t, http.SameSiteStrictMode, refreshCookie.SameSite, "Cookie should have strict same-site policy")
+		assert.Equal(t, "/api/v1/auth", refreshCookie.Path, "Cookie should be limited to auth endpoints")
+
+		// Test refresh endpoint
+		refreshReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/refresh", nil)
+		refreshReq.AddCookie(refreshCookie)
+		refreshRec := httptest.NewRecorder()
+
+		s.echoInstance.ServeHTTP(refreshRec, refreshReq)
+		assert.Equal(t, http.StatusOK, refreshRec.Code)
+
+		var refreshResponse map[string]string
+		err := json.NewDecoder(refreshRec.Body).Decode(&refreshResponse)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, refreshResponse["access_token"], "Should return new access token")
+
+		// Verify new refresh token cookie is set
+		newCookies := refreshRec.Result().Cookies()
+		var newRefreshCookie *http.Cookie
+		for _, cookie := range newCookies {
+			if cookie.Name == "refresh_token" {
+				newRefreshCookie = cookie
+				break
+			}
+		}
+		assert.NotNil(t, newRefreshCookie, "New refresh token cookie should be set")
+		assert.NotEqual(t, refreshCookie.Value, newRefreshCookie.Value, "New refresh token should be different")
+	})
+
+	// test signout endpoint
+	t.Run("signout", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/signout", nil)
+		rec := httptest.NewRecorder()
+
+		s.echoInstance.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		// Check that refresh token cookie is cleared
+		cookies := rec.Result().Cookies()
+		var refreshCookie *http.Cookie
+		for _, cookie := range cookies {
+			if cookie.Name == "refresh_token" {
+				refreshCookie = cookie
+				break
+			}
+		}
+		assert.NotNil(t, refreshCookie, "Refresh token cookie should be present")
+		assert.Equal(t, "", refreshCookie.Value, "Cookie value should be empty")
+		assert.True(t, refreshCookie.MaxAge < 0, "Cookie should be expired")
+	})
+
+	// test refresh with invalid token
+	t.Run("refresh with invalid token", func(t *testing.T) {
+		invalidCookie := &http.Cookie{
+			Name:  "refresh_token",
+			Value: "invalid-token",
+		}
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/refresh", nil)
+		req.AddCookie(invalidCookie)
+		rec := httptest.NewRecorder()
+
+		s.echoInstance.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	})
+
+	// test refresh without token
+	t.Run("refresh without token", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/refresh", nil)
+		rec := httptest.NewRecorder()
+
+		s.echoInstance.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 	})
 }

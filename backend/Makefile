@@ -8,7 +8,7 @@ TEST_DB_HOST_PORT ?= 5432
 TEST_DB_URL ?= postgres://$(TEST_DB_USER):$(TEST_DB_PASSWORD)@localhost:$(TEST_DB_HOST_PORT)/$(TEST_DB_NAME)?sslmode=disable
 POSTGRESQL_VERSION ?= 16
 
-.PHONY: query
+.PHONY: query seed
 
 dev:
 	@VERSION=dev APP_ENV=development air
@@ -20,6 +20,10 @@ migration:
 	@goose -dir .sqlc/migrations postgres "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" create $(NAME) sql
 sql:
 	@sqlc generate
+
+seed:
+	@echo "Running development seed data..."
+	@cat .sqlc/seeds/development_seed.sql | docker exec -i nokap-postgres psql -U postgres -d postgres
 
 setup:
 	@go install github.com/air-verse/air@v1.61.1 && \
