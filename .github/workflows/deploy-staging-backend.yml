@@ -152,7 +152,7 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           envs: DB_NAME,DB_PASSWORD,DB_PORT,DB_SSLMODE,DB_USER,APP_NAME,APP_ENV
           script: |
-            cd $HOME/staging
+            cd $HOME/$APP_ENV
 
             echo "Stopping and removing existing container if present..."
             CONTAINER="$APP_NAME-$APP_ENV"
