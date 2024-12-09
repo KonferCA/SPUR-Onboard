@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Landing, Register, DashboardPage, AdminDashboardPage, SubmitProjectPage } from '@pages';
+import { Landing, Register, DashboardPage, AdminDashboardPage, SubmitProjectPage, AdminProjectsPage, ProjectDetailsPage, ProjectSubmissionPage } from '@pages';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 
@@ -55,17 +55,27 @@ const Router = () => (
                 } />
                 <Route path="/admin/projects" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <AdminDashboardPage />
+                        <AdminProjectsPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/projects/:id" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <ProjectDetailsPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/projects/:id/submission" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <ProjectSubmissionPage />
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/projects/pending" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <AdminDashboardPage />
+                        <AdminProjectsPage />
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/projects/approved" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <AdminDashboardPage />
+                        <AdminProjectsPage />
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/resources" element={
