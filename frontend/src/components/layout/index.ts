@@ -14,3 +14,6 @@ export * from './templates/DashboardTemplate';
 // Page Layouts
 export * from './pages/AdminDashboard';
 export * from './pages/UserDashboard';
+
+// Protected Route
+export { ProtectedRoute } from './ProtectedRoute';
