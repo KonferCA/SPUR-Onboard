@@ -79,17 +79,18 @@ jobs:
           DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
           DB_USER: ${{ secrets.DB_USER }}
           APP_NAME: ${{ secrets.APP_NAME }}
+          APP_ENV: ${{ secrets.APP_ENV }}
         with:
           host: ${{ secrets.VPS_IP }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
-          envs: DB_NAME,DB_PASSWORD,DB_PORT,DB_SSLMODE,DB_USER,APP_NAME
+          envs: DB_NAME,DB_PASSWORD,DB_PORT,DB_SSLMODE,DB_USER,APP_NAME,APP_ENV
           script: |
             cd $HOME/staging
 
             POSTGRES_DATA_DIR="$HOME/staging/postgres"
             mkdir -p $POSTGRES_DATA_DIR
-            POSTGRES_CONTAINER="$APP_NAME-postgres"
+            POSTGRES_CONTAINER="$APP_NAME-$APP_ENV-postgres"
 
             if ! docker ps --filter "name=$POSTGRES_CONTAINER" --format '{{.Names}}' | grep -q "^$POSTGRES_CONTAINER"; then
                 echo "PostgreSQL container not found. Starting new container..."
@@ -128,8 +129,8 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t ${{ secrets.APP_NAME }}:latest .
-          docker save -o image.tar ${{ secrets.APP_NAME }}:latest
+          docker build -t ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest .
+          docker save -o image.tar ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest
 
       - name: Upload Docker Image
         run: |
@@ -144,27 +145,29 @@ jobs:
           DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
           DB_USER: ${{ secrets.DB_USER }}
           APP_NAME: ${{ secrets.APP_NAME }}
+          APP_ENV: ${{ secrets.APP_ENV }}
         with:
           host: ${{ secrets.VPS_IP }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
-          envs: DB_NAME,DB_PASSWORD,DB_PORT,DB_SSLMODE,DB_USER,APP_NAME
+          envs: DB_NAME,DB_PASSWORD,DB_PORT,DB_SSLMODE,DB_USER,APP_NAME,APP_ENV
           script: |
             cd $HOME/staging
 
             echo "Stopping and removing existing container if present..."
-            docker stop $APP_NAME || true
-            docker rm $APP_NAME || true
+            CONTAINER="$APP_NAME-$APP_ENV"
+            docker stop $CONTAINER || true
+            docker rm $CONTAINER || true
 
             echo "Loading pre-built docker image..."
             docker load -i image.tar
 
             echo "Starting new application container..."
             docker run -d \
-              --name $APP_NAME \
+              --name $CONTAINER \
               --env-file .env \
               --network=host --add-host=host.docker.internal:host-gateway \
-              $APP_NAME:latest
+              "$APP_NAME-$APP_ENV:latest"
 
             echo "Done: Preview Deployment"
 
