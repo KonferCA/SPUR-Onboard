@@ -18,23 +18,13 @@ import (
 )
 
 type SignupResponse struct {
-	AccessToken string       `json:"access_token"`
-	User        UserResponse `json:"user"`
+	AccessToken string `json:"access_token"`
+	User        User   `json:"user"`
 }
 
 type SigninResponse struct {
-	AccessToken string       `json:"access_token"`
-	User        UserResponse `json:"user"`
-}
-
-type UserResponse struct {
-	ID            string      `json:"id"`
-	Email         string      `json:"email"`
-	FirstName     *string     `json:"first_name"`
-	LastName      *string     `json:"last_name"`
-	Role          db.UserRole `json:"role"`
-	WalletAddress *string     `json:"wallet_address,omitempty"`
-	EmailVerified bool        `json:"email_verified"`
+	AccessToken string `json:"access_token"`
+	User        User   `json:"user"`
 }
 
 func (s *Server) setupAuthRoutes() {
@@ -75,13 +65,7 @@ func (s *Server) handleSignup(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusConflict, "email already exists")
 	}
 
-	// Get user's token salt that was generated during creation
-	salt, err := s.queries.GetUserTokenSalt(ctx, user.ID)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user's token salt")
-	}
-
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, salt)
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, user.TokenSalt)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate tokens")
 	}
@@ -100,7 +84,10 @@ func (s *Server) handleSignup(c echo.Context) error {
 
 	// Send verification email asynchronously
 	go func() {
-		token, err := s.queries.CreateVerifyEmailToken(context.Background(), db.CreateVerifyEmailTokenParams{
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+		defer cancel()
+		
+		token, err := s.queries.CreateVerifyEmailToken(ctx, db.CreateVerifyEmailTokenParams{
 			Email:     user.Email,
 			ExpiresAt: time.Now().Add(30 * time.Minute),
 		})
@@ -117,7 +104,7 @@ func (s *Server) handleSignup(c echo.Context) error {
 		}
 
 		// Send verification email
-		if err := service.SendVerficationEmail(context.Background(), user.Email, tokenStr); err != nil {
+		if err := service.SendVerficationEmail(ctx, user.Email, tokenStr); err != nil {
 			log.Error().Err(err).Msg("Failed to send verification email")
 			return
 		}
@@ -127,7 +114,7 @@ func (s *Server) handleSignup(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, SignupResponse{
 		AccessToken: accessToken,
-		User: UserResponse{
+		User: User{
 			ID:            user.ID,
 			Email:         user.Email,
 			FirstName:     user.FirstName,
@@ -155,13 +142,7 @@ func (s *Server) handleSignin(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "invalid credentials")
 	}
 
-	// Get user's token salt
-	salt, err := s.queries.GetUserTokenSalt(ctx, user.ID)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user's token salt")
-	}
-
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, salt)
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, user.TokenSalt)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate tokens")
 	}
@@ -180,7 +161,7 @@ func (s *Server) handleSignin(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, SigninResponse{
 		AccessToken: accessToken,
-		User: UserResponse{
+		User: User{
 			ID:            user.ID,
 			Email:         user.Email,
 			FirstName:     user.FirstName,
