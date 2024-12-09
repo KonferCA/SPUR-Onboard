@@ -11,6 +11,10 @@ jobs:
   test-frontend:
     name: Test Frontend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: frontend
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,13 +28,15 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: cd frontend && pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
       - name: Run tests
-        run: cd frontend && pnpm test:ci
+        run: pnpm test:ci
       - name: Generate coverage report
-        run: cd frontend && pnpm coverage
+        run: pnpm coverage
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-frontend
           path: frontend/coverage/
+      - name: Build Check
+        run: pnpm build
