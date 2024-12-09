@@ -28,6 +28,291 @@ interface FormErrors {
     password?: string;
 }
 
+interface LoginRegisterProps {
+    formData: FormData;
+    errors: FormErrors;
+    isLoading: boolean;
+    onSubmit: (e: FormEvent) => Promise<void>;
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+    onLogin: () => Promise<void>;
+}
+
+interface SigningInProps {
+    onComplete: () => void;
+}
+
+interface FormDetailsProps {
+    formData: FormData;
+    errors: FormErrors;
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+    onLinkedInChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSubmit: (e: FormEvent) => void;
+    isFormValid: boolean;
+}
+
+interface RegistrationCompleteProps {
+    onComplete: () => void;
+}
+
+const LoginRegister = ({ formData, errors, isLoading, onSubmit, onChange, onLogin }: LoginRegisterProps) => (
+    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg">
+        <h3 className="text-center mb-4 font-light">Register or Login</h3>
+        <hr className="border-gray-400" />
+        <h2 className="text-2xl mt-4 font-normal">
+            Register for Spur+Konfer
+        </h2>
+
+        <form onSubmit={onSubmit} className="space-y-4 mt-4">
+            <TextInput
+                label="Email"
+                required
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={onChange}
+                error={errors.email}
+            />
+
+            <TextInput
+                label="Password"
+                required
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={onChange}
+                error={errors.password}
+            />
+
+            <Button 
+                type="submit" 
+                size="lg" 
+                liquid 
+                variant="primary"
+                disabled={isLoading}
+            >
+                {isLoading ? 'Please wait...' : 'Register'}
+            </Button>
+
+            <div className="text-center mt-4">
+                <p className="text-md mb-3">Already have an account?</p>
+                <Button
+                    type="button"
+                    liquid
+                    size="lg"
+                    onClick={onLogin}
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'Please wait...' : 'Login'}
+                </Button>
+            </div>
+        </form>
+    </div>
+);
+
+const VerifyEmail = ({
+    email,
+    onVerified
+}: {
+    email: string;
+    onVerified: () => void;
+}) => {
+    useEffect(() => {
+        let isMounted = true;
+
+        const checkVerification = async () => {
+            try {
+                const response = await fetch(
+                    getApiUrl(`/auth/ami-verified?email=${encodeURIComponent(email)}`),
+                    { method: 'GET' }
+                );
+
+                const data = await response.json();
+
+                if (data.verified && isMounted) {
+                    onVerified();
+                }
+            } catch (error) {
+                console.error('error checking verification status', error);
+            }
+        };
+
+        let intervalId: ReturnType<typeof setInterval> | null = null;
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+            } else {
+                if (!intervalId) {
+                    checkVerification();
+                    intervalId = setInterval(checkVerification, 1000);
+                }
+            }
+        }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        if (!document.hidden) {
+            checkVerification();
+            intervalId = setInterval(checkVerification, 1000);
+        }
+
+        return () => {
+            isMounted = false;
+
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [email, onVerified]);
+
+    return (
+        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg">
+            <h2 className="text-2xl mb-4">Verify your account</h2>
+            <p className="font-light mb-6">
+                Your account and wallet has been linked. We just sent an email
+                confirmation to{' '}
+                <span className="font-semibold">{email}</span>. Please
+                verify your account to continue registering.
+            </p>
+
+            <div className="font-light mt-4">
+                <span>Didn't get the email? </span>
+                <button className="text-blue-500 hover:underline">
+                    Resend Link
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const SigningIn = ({ onComplete }: SigningInProps) => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onComplete();
+        }, 2000);
+
+        return () => clearTimeout(timer);
+    }, [onComplete]);
+
+    return (
+        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg text-center">
+            <h2 className="text-xl mb-4">Signing you in....</h2>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
+        </div>
+    );
+};
+
+const FormDetails = ({ 
+    formData, 
+    errors, 
+    onChange, 
+    onLinkedInChange, 
+    onSubmit,
+    isFormValid 
+}: FormDetailsProps) => (
+    <div className="w-full max-w-md mx-auto p-6">
+        <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold">Welcome to Spur+Konfer</h1>
+            <p className="text-gray-600 mt-2">
+                To begin your application, please enter your organization's
+                details
+            </p>
+        </div>
+
+        <form onSubmit={onSubmit} className="space-y-4">
+            <TextInput
+                label="Your first name"
+                required
+                name="firstName"
+                value={formData.firstName}
+                onChange={onChange}
+            />
+
+            <TextInput
+                label="Your last name"
+                required
+                name="lastName"
+                value={formData.lastName}
+                onChange={onChange}
+            />
+
+            <TextInput
+                label="Your position/title"
+                required
+                name="position"
+                value={formData.position}
+                onChange={onChange}
+            />
+
+            <TextArea
+                label="Your bio"
+                required
+                name="bio"
+                value={formData.bio}
+                onChange={onChange}
+            />
+
+            <TextInput
+                label="Link to your LinkedIn"
+                required
+                name="linkedIn"
+                value={formData.linkedIn}
+                onChange={onLinkedInChange}
+                error={errors.linkedIn}
+            />
+
+            <div className="pt-4">
+                <Button
+                    type="submit"
+                    disabled={!isFormValid}
+                    liquid
+                    size="lg"
+                    variant="primary"
+                >
+                    Register
+                </Button>
+            </div>
+
+            <p className="text-center text-sm mt-4">
+                By registering, you agree to Spur+Konfers'
+                <br />
+                <a href="#" className="text-blue-500">
+                    Terms of Service
+                </a>{' '}
+                and{' '}
+                <a href="#" className="text-blue-500">
+                    Privacy Policy
+                </a>
+            </p>
+        </form>
+    </div>
+);
+
+const RegistrationComplete = ({ onComplete }: RegistrationCompleteProps) => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onComplete();
+        }, 2000);
+
+        return () => clearTimeout(timer);
+    }, [onComplete]);
+
+    return (
+        <div className="w-full max-w-md mx-auto p-6 text-center">
+            <h2 className="text-xl mb-4">
+                Thank you for registering, you will now be redirected to the
+                dashboard
+            </h2>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
+        </div>
+    );
+};
+
 const Register = () => {
     const navigate = useNavigate();
     const { setAuth } = useAuth();
@@ -160,266 +445,39 @@ const Register = () => {
         );
     };
 
-    const renderLoginRegister = () => (
-        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg">
-            <h3 className="text-center mb-4 font-light">Register or Login</h3>
-            <hr className="border-gray-400" />
-            <h2 className="text-2xl mt-4 font-normal">
-                Register for Spur+Konfer
-            </h2>
-
-            <form onSubmit={handleInitialSubmit} className="space-y-4 mt-4">
-                <TextInput
-                    label="Email"
-                    required
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    error={errors.email}
-                />
-
-                <TextInput
-                    label="Password"
-                    required
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    error={errors.password}
-                />
-
-                <Button 
-                    type="submit" 
-                    size="lg" 
-                    liquid 
-                    variant="primary"
-                    disabled={isLoading}
-                >
-                    {isLoading ? 'Please wait...' : 'Register'}
-                </Button>
-
-                <div className="text-center mt-4">
-                    <p className="text-md mb-3">Already have an account?</p>
-                    <Button
-                        type="button"
-                        liquid
-                        size="lg"
-                        onClick={handleLogin}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? 'Please wait...' : 'Login'}
-                    </Button>
-                </div>
-            </form>
-        </div>
-    );
-
-    const renderVerifyEmail = () => {
-        const email = formData.email;
-
-        useEffect(() => {
-            let isMounted = true;
-
-            const checkVerification = async () => {
-                try {
-                    const response = await fetch(
-                        getApiUrl(`/auth/ami-verified?email=${encodeURIComponent(email)}`),
-                        { method: 'GET' }
-                    );
-
-                    const data = await response.json();
-
-                    if (data.verified && isMounted) {
-                        setCurrentStep('signing-in');
-                    }
-                } catch (error) {
-                    console.error('error checking verification status', error);
-                }
-            };
-
-            let intervalId: ReturnType<typeof setInterval> | null = null;
-
-            const handleVisibilityChange = () => {
-                if (document.hidden) {
-                    if (intervalId) {
-                        clearInterval(intervalId);
-                        intervalId = null;
-                    }
-                } else {
-                    if (!intervalId) {
-                        checkVerification();
-                        intervalId = setInterval(checkVerification, 1000);
-                    }
-                }
-            }
-
-            document.addEventListener('visibilitychange', handleVisibilityChange);
-
-            if (!document.hidden) {
-                checkVerification();
-                intervalId = setInterval(checkVerification, 1000);
-            }
-
-            return () => {
-                isMounted = false;
-
-                if (intervalId) {
-                    clearInterval(intervalId);
-                }
-
-                document.removeEventListener('visibilitychange', handleVisibilityChange);
-            };
-        }, [email, setCurrentStep]);
-
-        return (
-            <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg">
-                <h2 className="text-2xl mb-4">Verify your account</h2>
-                <p className="font-light mb-6">
-                    Your account and wallet has been linked. We just sent an email
-                    confirmation to{' '}
-                    <span className="font-semibold">{formData.email}</span>. Please
-                    verify your account to continue registering.
-                </p>
-
-                <div className="font-light mt-4">
-                    <span>Didn't get the email? </span>
-                    <button className="text-blue-500 hover:underline">
-                        Resend Link
-                    </button>
-                </div>
-            </div>
-        );
-    };
-
-    const renderSigningIn = () => {
-        useEffect(() => {
-            const timer = setTimeout(() => {
-                setCurrentStep('form-details');
-            }, 2000);
-
-            return () => clearTimeout(timer);
-        }, []);
-
-        return (
-            <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg text-center">
-                <h2 className="text-xl mb-4">Signing you in....</h2>
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
-            </div>
-        );
-    };
-
-    const renderFormDetails = () => (
-        <div className="w-full max-w-md mx-auto p-6">
-            <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold">Welcome to Spur+Konfer</h1>
-                <p className="text-gray-600 mt-2">
-                    To begin your application, please enter your organization's
-                    details
-                </p>
-            </div>
-
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-                <TextInput
-                    label="Your first name"
-                    required
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                />
-
-                <TextInput
-                    label="Your last name"
-                    required
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                />
-
-                <TextInput
-                    label="Your position/title"
-                    required
-                    name="position"
-                    value={formData.position}
-                    onChange={handleChange}
-                />
-
-                <TextArea
-                    label="Your bio"
-                    required
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleChange}
-                />
-
-                <TextInput
-                    label="Link to your LinkedIn"
-                    required
-                    name="linkedIn"
-                    value={formData.linkedIn}
-                    onChange={handleLinkedInChange}
-                    error={errors.linkedIn}
-                />
-
-                <div className="pt-4">
-                    <Button
-                        type="submit"
-                        disabled={!isFormDetailsValid()}
-                        liquid
-                        size="lg"
-                        variant="primary"
-                    >
-                        Register
-                    </Button>
-                </div>
-
-                <p className="text-center text-sm mt-4">
-                    By registering, you agree to Spur+Konfers'
-                    <br />
-                    <a href="#" className="text-blue-500">
-                        Terms of Service
-                    </a>{' '}
-                    and{' '}
-                    <a href="#" className="text-blue-500">
-                        Privacy Policy
-                    </a>
-                </p>
-            </form>
-        </div>
-    );
-
-    const renderRegistrationComplete = () => {
-        useEffect(() => {
-            const timer = setTimeout(() => {
-                // TODO: Push to '/dashboard'
-            }, 2000);
-
-            return () => clearTimeout(timer);
-        }, []);
-
-        return (
-            <div className="w-full max-w-md mx-auto p-6 text-center">
-                <h2 className="text-xl mb-4">
-                    Thank you for registering, you will now be redirected to the
-                    dashboard
-                </h2>
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
-            </div>
-        );
-    };
-
     const renderCurrentStep = () => {
         switch (currentStep) {
             case 'login-register':
-                return renderLoginRegister();
+                return <LoginRegister 
+                    formData={formData}
+                    errors={errors}
+                    isLoading={isLoading}
+                    onSubmit={handleInitialSubmit}
+                    onChange={handleChange}
+                    onLogin={handleLogin}
+                />;
             case 'verify-email':
-                return renderVerifyEmail();
+                return <VerifyEmail
+                    email={formData.email}
+                    onVerified={() => setCurrentStep('signing-in')}
+                />;
             case 'signing-in':
-                return renderSigningIn();
+                return <SigningIn 
+                    onComplete={() => setCurrentStep('form-details')}
+                />;
             case 'form-details':
-                return renderFormDetails();
+                return <FormDetails
+                    formData={formData}
+                    errors={errors}
+                    onChange={handleChange}
+                    onLinkedInChange={handleLinkedInChange}
+                    onSubmit={handleFormSubmit}
+                    isFormValid={isFormDetailsValid()}
+                />;
             case 'registration-complete':
-                return renderRegistrationComplete();
+                return <RegistrationComplete
+                    onComplete={() => navigate('/dashboard')}
+                />;
         }
     };
 
