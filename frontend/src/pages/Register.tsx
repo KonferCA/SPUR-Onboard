@@ -1,7 +1,8 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { Button, TextInput, TextArea } from '@components';
-import { register, RegisterError, saveRefreshToken } from '@services';
+import { register, signin, RegisterError, ApiError } from '@services';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 type RegistrationStep =
     | 'login-register'
@@ -27,8 +28,9 @@ interface FormErrors {
 }
 
 const Register = () => {
-    const [currentStep, setCurrentStep] =
-        useState<RegistrationStep>('login-register');
+    const navigate = useNavigate();
+    const { setAuth } = useAuth();
+    const [currentStep, setCurrentStep] = useState<RegistrationStep>('login-register');
     const [formData, setFormData] = useState<FormData>({
         firstName: '',
         lastName: '',
@@ -39,7 +41,7 @@ const Register = () => {
         password: '',
     });
     const [errors, setErrors] = useState<FormErrors>({});
-    const { setUser, setCompanyId } = useAuth();
+    const [isLoading, setIsLoading] = useState(false);
 
     const LINKEDIN_REGEX =
         /^(https?:\/\/)?([\w]+\.)?linkedin\.com\/(pub|in|profile)\/([-a-zA-Z0-9]+)\/?$/;
@@ -88,22 +90,56 @@ const Register = () => {
 
     const handleInitialSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        setIsLoading(true);
         try {
             const regResp = await register(formData.email, formData.password);
-            console.log(regResp);
-
-            setUser(regResp.user);
-            saveRefreshToken(regResp.refreshToken);
-
-            setCompanyId('mock-company-id');
-
+            setAuth(regResp.user, regResp.accessToken, 'mock-company-id');
             setCurrentStep('verify-email');
         } catch (error) {
             if (error instanceof RegisterError) {
-                console.log('do something here', error.statusCode, error.body);
+                setErrors(prev => ({
+                    ...prev,
+                    email: error.body.message || 'Registration failed'
+                }));
             } else {
-                // TODO: handle error with some kind of notification
+                setErrors(prev => ({
+                    ...prev,
+                    email: 'An unexpected error occurred'
+                }));
             }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleLogin = async () => {
+        setIsLoading(true);
+        try {
+            const signinResp = await signin(formData.email, formData.password);
+            setAuth(signinResp.user, signinResp.accessToken);
+            
+            // Redirect based on user role
+            if (signinResp.user.role === 'admin') {
+                navigate('/admin/dashboard');
+            } else if (signinResp.user.role === 'startup_owner') {
+                navigate('/dashboard');
+            } else if (signinResp.user.role === 'investor') {
+                navigate('/dashboard'); // or a specific investor dashboard
+            }
+        } catch (error) {
+            if (error instanceof ApiError) {
+                setErrors(prev => ({
+                    ...prev,
+                    email: 'Invalid email or password'
+                }));
+            } else {
+                setErrors(prev => ({
+                    ...prev,
+                    email: 'An unexpected error occurred'
+                }));
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -139,6 +175,7 @@ const Register = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
+                    error={errors.email}
                 />
 
                 <TextInput
@@ -148,10 +185,17 @@ const Register = () => {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
+                    error={errors.password}
                 />
 
-                <Button type="submit" size="lg" liquid variant="primary">
-                    Register
+                <Button 
+                    type="submit" 
+                    size="lg" 
+                    liquid 
+                    variant="primary"
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'Please wait...' : 'Register'}
                 </Button>
 
                 <div className="text-center mt-4">
@@ -160,9 +204,10 @@ const Register = () => {
                         type="button"
                         liquid
                         size="lg"
-                        // TODO: onClick to handle login
+                        onClick={handleLogin}
+                        disabled={isLoading}
                     >
-                        Login
+                        {isLoading ? 'Please wait...' : 'Login'}
                     </Button>
                 </div>
             </form>

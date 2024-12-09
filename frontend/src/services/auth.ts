@@ -3,15 +3,17 @@
  */
 
 import { getApiUrl, HttpStatusCode } from '@utils';
-import { RegisterError } from './errors';
+import { RegisterError, ApiError } from './errors';
 
 import type { User, UserRole } from '@t';
 
-export interface RegisterReponse {
+export interface AuthResponse {
     accessToken: string;
-    refreshToken: string;
     user: User;
 }
+
+export interface RegisterReponse extends AuthResponse {}
+export interface SigninResponse extends AuthResponse {}
 
 /**
  * Registers a user if the given email is not already registered.
@@ -46,9 +48,41 @@ export async function register(
 }
 
 /**
- * Saves the refresh token in localStorage.
+ * Signs in a user with email and password
  */
-export function saveRefreshToken(refreshToken: string) {
-    // IMPORTANT:  The location on where the token is saved must be revisited.
-    localStorage.setItem('refresh_token', refreshToken);
+export async function signin(
+    email: string,
+    password: string
+): Promise<SigninResponse> {
+    const url = getApiUrl('/auth/signin');
+    const body = {
+        email,
+        password,
+    };
+
+    const res = await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+
+    const json = await res.json();
+
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to sign in', res.status, json);
+    }
+
+    return json as SigninResponse;
+}
+
+/**
+ * Signs out the current user by:
+ * 1. Calling the signout endpoint to clear the refresh token cookie
+ * 2. Clearing the auth context
+ */
+export async function signout(): Promise<void> {
+    const url = getApiUrl('/auth/signout');
+    await fetch(url, { method: 'POST' });
 }
