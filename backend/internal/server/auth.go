@@ -65,13 +65,7 @@ func (s *Server) handleSignup(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusConflict, "email already exists")
 	}
 
-	// Get user's token salt that was generated during creation
-	salt, err := s.queries.GetUserTokenSalt(ctx, user.ID)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user's token salt")
-	}
-
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, salt)
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, user.TokenSalt)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate tokens")
 	}
@@ -145,13 +139,7 @@ func (s *Server) handleSignin(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "invalid credentials")
 	}
 
-	// Get user's token salt
-	salt, err := s.queries.GetUserTokenSalt(ctx, user.ID)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user's token salt")
-	}
-
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, salt)
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, user.TokenSalt)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate tokens")
 	}
