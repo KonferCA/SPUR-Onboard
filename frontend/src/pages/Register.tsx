@@ -3,6 +3,7 @@ import { Button, TextInput, TextArea } from '@components';
 import { register, signin, RegisterError, ApiError } from '@services';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { getApiUrl } from '@/utils';
 
 type RegistrationStep =
     | 'login-register'
@@ -214,24 +215,80 @@ const Register = () => {
         </div>
     );
 
-    const renderVerifyEmail = () => (
-        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg">
-            <h2 className="text-2xl mb-4">Verify your account</h2>
-            <p className="font-light mb-6">
-                Your account and wallet has been linked. We just sent an email
-                confirmation to{' '}
-                <span className="font-semibold">{formData.email}</span>. Please
-                verify your account to continue registering.
-            </p>
+    const renderVerifyEmail = () => {
+        useEffect(() => {
+            let isMounted = true;
 
-            <div className="font-light mt-4">
-                <span>Didn't get the email? </span>
-                <button className="text-blue-500 hover:underline">
-                    Resend Link
-                </button>
+            const checkVerification = async () => {
+                try {
+                    const response = await fetch(
+                        getApiUrl(`/auth/ami-verified?email=${encodeURIComponent(formData.email)}`),
+                        { method: 'GET' }
+                    );
+
+                    const data = await response.json();
+
+                    if (data.verified && isMounted) {
+                        setCurrentStep('signing-in');
+                    }
+                } catch (error) {
+                    console.error('error checking verification status', error);
+                }
+            };
+
+            let intervalId: ReturnType<typeof setInterval> | null = null;
+
+            const handleVisibilityChange = () => {
+                if (document.hidden) {
+                    if (intervalId) {
+                        clearInterval(intervalId);
+                        intervalId = null;
+                    }
+                } else {
+                    if (!intervalId) {
+                        checkVerification();
+                        intervalId = setInterval(checkVerification, 1000);
+                    }
+                }
+            }
+
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+
+            if (!document.hidden) {
+                checkVerification();
+                intervalId = setInterval(checkVerification, 1000);
+            }
+
+            return () => {
+                isMounted = false;
+
+                if (intervalId) {
+                    clearInterval(intervalId);
+                }
+
+                document.removeEventListener('visibilitychange', handleVisibilityChange);
+            };
+        }, [formData.email]);
+
+        return (
+            <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg">
+                <h2 className="text-2xl mb-4">Verify your account</h2>
+                <p className="font-light mb-6">
+                    Your account and wallet has been linked. We just sent an email
+                    confirmation to{' '}
+                    <span className="font-semibold">{formData.email}</span>. Please
+                    verify your account to continue registering.
+                </p>
+
+                <div className="font-light mt-4">
+                    <span>Didn't get the email? </span>
+                    <button className="text-blue-500 hover:underline">
+                        Resend Link
+                    </button>
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderSigningIn = () => {
         useEffect(() => {
