@@ -18,23 +18,13 @@ import (
 )
 
 type SignupResponse struct {
-	AccessToken string       `json:"access_token"`
-	User        UserResponse `json:"user"`
+	AccessToken string `json:"access_token"`
+	User        User   `json:"user"`
 }
 
 type SigninResponse struct {
-	AccessToken string       `json:"access_token"`
-	User        UserResponse `json:"user"`
-}
-
-type UserResponse struct {
-	ID            string      `json:"id"`
-	Email         string      `json:"email"`
-	FirstName     *string     `json:"first_name"`
-	LastName      *string     `json:"last_name"`
-	Role          db.UserRole `json:"role"`
-	WalletAddress *string     `json:"wallet_address,omitempty"`
-	EmailVerified bool        `json:"email_verified"`
+	AccessToken string `json:"access_token"`
+	User        User   `json:"user"`
 }
 
 func (s *Server) setupAuthRoutes() {
@@ -127,7 +117,7 @@ func (s *Server) handleSignup(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, SignupResponse{
 		AccessToken: accessToken,
-		User: UserResponse{
+		User: User{
 			ID:            user.ID,
 			Email:         user.Email,
 			FirstName:     user.FirstName,
@@ -180,7 +170,7 @@ func (s *Server) handleSignin(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, SigninResponse{
 		AccessToken: accessToken,
-		User: UserResponse{
+		User: User{
 			ID:            user.ID,
 			Email:         user.Email,
 			FirstName:     user.FirstName,
