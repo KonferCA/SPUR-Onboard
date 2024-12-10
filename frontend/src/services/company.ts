@@ -2,13 +2,13 @@ import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
 
 interface CreateCompanyResponse {
-  id: string;
-  owner_user_id: string;
-  name: string;
-  description: string | null;
-  is_verified: boolean;
-  created_at: string;
-  updated_at: string;
+  ID: string;
+  OwnerUserID: string;
+  Name: string;
+  Description: string | null;
+  IsVerified: boolean;
+  CreatedAt: string;
+  UpdatedAt: string;
 }
 
 export async function createCompany(

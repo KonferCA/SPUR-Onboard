@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UserDashboard, TextInput, Dropdown, Section, FileUpload, AnchorLinks, TeamMembers, SocialLinks, TextArea, DateInput } from '@components';
 import type { FormField, FormData } from '@/types';
 import { projectFormSchema } from '@/config/forms';
@@ -16,6 +16,10 @@ const SubmitProjectPage = () => {
   const navigate = useNavigate();
   const { user, companyId, setCompanyId } = useAuth();
 
+  useEffect(() => {
+    console.log('Current companyId:', companyId);
+  }, [companyId]);
+
   const handleCreateCompany = async () => {
     if (!user) {
       setError('Please log in to create a company.');
@@ -26,11 +30,11 @@ const SubmitProjectPage = () => {
       setIsCreatingCompany(true);
       setError(null);
 
-      // Use the company name from the form if available, otherwise use a default name
       const companyName = formData.companyName || 'My Company';
       const company = await createCompany(user.id, companyName, formData.description);
       
-      setCompanyId(company.id);
+      console.log('Created company:', company);
+      setCompanyId(company.ID);
       setError(null);
     } catch (err) {
       console.error('Failed to create company:', err);
@@ -125,10 +129,19 @@ const SubmitProjectPage = () => {
 
       // Get files and links from form data
       const files = formData.documents || [];
-      const links = formData['social-links']?.map((link: { type: string; url: string;})=> ({
-        type: link.type || 'website',
-        url: link.url
-      })) || [];
+      
+      // Debug the social links data
+      console.log('Social links from form:', formData['social-links']);
+      
+      const links = formData['social-links']?.map((link: { type: string; url: string; }) => {
+        console.log('Processing link:', link); // Debug each link
+        return {
+          LinkType: link.type || 'website',
+          URL: link.url
+        };
+      }) || [];
+
+      console.log('Transformed links:', links); // Debug the final links array
 
       // Create project with files and links in one call
       const project = await createProject(companyId, formData, files, links);
@@ -138,7 +151,7 @@ const SubmitProjectPage = () => {
       navigate('/dashboard');
     } catch (err) {
       console.error('Failed to submit project:', err);
-      setError('Failed to submit project. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to submit project');
     } finally {
       setIsSubmitting(false);
     }

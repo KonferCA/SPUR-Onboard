@@ -147,15 +147,6 @@ export const ProjectDetailsPage: React.FC = () => {
                 <p className="text-sm text-gray-500">{formatDate(project.created_at)}</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-gray-200" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">8 Comments Added</p>
-                <p className="text-sm text-gray-500">{formatDate(project.updated_at)}</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>

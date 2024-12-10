@@ -95,11 +95,16 @@ const transformProject = (project: ProjectResponse): Project => {
   };
 };
 
+interface ProjectLink {
+  LinkType: string;
+  URL: string;
+}
+
 export async function createProject(
   companyId: string,
   formData: FormData,
   files: File[] = [],
-  links: { type: string; url: string }[] = []
+  links: ProjectLink[] = []
 ): Promise<CreateProjectResponse> {
   // First upload all files
   const uploadedFiles: ProjectFile[] = await Promise.all(
@@ -114,14 +119,26 @@ export async function createProject(
 
   // Create project with files and links
   const url = getApiUrl('/projects');
+  
+  // Ensure links are properly structured
+  const sanitizedLinks = links.map(link => ({
+    LinkType: link.LinkType,
+    URL: link.URL
+  }));
+
   const body = {
     company_id: companyId,
     title: formData.companyName,
     description: formData.description,
     status: 'in_review',
     files: uploadedFiles,
-    links: links
+    links: sanitizedLinks.map(link => ({
+      link_type: link.LinkType.toLowerCase(),
+      url: link.URL
+    }))
   };
+
+  console.log('Request body:', body); // Debug log
 
   const response = await fetch(url, {
     method: 'POST',
@@ -132,7 +149,9 @@ export async function createProject(
   });
 
   if (!response.ok) {
-    throw new ApiError('Failed to create project', response.status);
+    const errorData = await response.json().catch(() => null);
+    console.error('Server error:', errorData); // Debug log
+    throw new ApiError('Failed to create project', response.status, errorData);
   }
 
   return response.json();
