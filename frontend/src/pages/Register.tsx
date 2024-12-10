@@ -332,7 +332,9 @@ const Register = () => {
     const location = useLocation();
     const { user, setAuth, clearAuth } = useAuth();
     const [currentStep, setCurrentStep] = useState<RegistrationStep>(() => {
-        const locationState = location.state as { step?: RegistrationStep } | null;
+        const locationState = location.state as {
+            step?: RegistrationStep;
+        } | null;
 
         if (locationState?.step) {
             return locationState.step;
@@ -440,7 +442,11 @@ const Register = () => {
         try {
             const signinResp = await signin(formData.email, formData.password);
             const company = await getCompany(signinResp.access_token);
-            setAuth(signinResp.user, signinResp.access_token, company.ID);
+            setAuth(
+                signinResp.user,
+                signinResp.access_token,
+                company ? company.ID : null
+            );
 
             if (!signinResp.user.isEmailVerified) {
                 setCurrentStep('verify-email');
@@ -451,7 +457,7 @@ const Register = () => {
                 setCurrentStep('form-details');
                 return;
             }
-            
+
             // Redirect based on user role
             if (signinResp.user.role === 'admin') {
                 navigate('/admin/dashboard', { replace: true });

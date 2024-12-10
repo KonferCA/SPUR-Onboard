@@ -42,7 +42,7 @@ export async function createCompany(
 
 export async function getCompany(
     accessToken: string
-): Promise<CreateCompanyResponse> {
+): Promise<CreateCompanyResponse | null> {
     const url = getApiUrl('/company');
 
     const res = await fetch(url, {
@@ -53,6 +53,10 @@ export async function getCompany(
     });
 
     const json = await res.json();
+
+    if (res.status === HttpStatusCode.NOT_FOUND) {
+        return null;
+    }
 
     if (res.status !== HttpStatusCode.OK) {
         throw new ApiError('Failed to create company', res.status, json);
