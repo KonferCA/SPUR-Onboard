@@ -2,7 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { Button, TextInput, TextArea } from '@components';
 import { register, signin, RegisterError, ApiError } from '@services';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getApiUrl } from '@/utils';
 import { getCompany } from '@/services/company';
 
@@ -329,16 +329,35 @@ const RegistrationComplete = ({ onComplete }: RegistrationCompleteProps) => {
 
 const Register = () => {
     const navigate = useNavigate();
-    const { setAuth } = useAuth();
-    const [currentStep, setCurrentStep] =
-        useState<RegistrationStep>('login-register');
+    const location = useLocation();
+    const { user, setAuth, clearAuth } = useAuth();
+    const [currentStep, setCurrentStep] = useState<RegistrationStep>(() => {
+        const locationState = location.state as { step?: RegistrationStep } | null;
+
+        if (locationState?.step) {
+            return locationState.step;
+        }
+
+        if (user) {
+            if (!user.isEmailVerified) {
+                return 'verify-email';
+            }
+
+            if (!user.firstName || !user.lastName) {
+                return 'form-details';
+            }
+        }
+
+        return 'login-register';
+    });
+
     const [formData, setFormData] = useState<FormData>({
-        firstName: '',
-        lastName: '',
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
         position: '',
         bio: '',
         linkedIn: '',
-        email: '',
+        email: user?.email || (location.state as any)?.email || '',
         password: '',
     });
     const [errors, setErrors] = useState<FormErrors>({});
@@ -392,11 +411,14 @@ const Register = () => {
     const handleInitialSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+
         try {
             const regResp = await register(formData.email, formData.password);
             setAuth(regResp.user, regResp.access_token);
             setCurrentStep('verify-email');
         } catch (error) {
+            clearAuth();
+
             if (error instanceof RegisterError) {
                 setErrors((prev) => ({
                     ...prev,
@@ -420,15 +442,27 @@ const Register = () => {
             const company = await getCompany(signinResp.access_token);
             setAuth(signinResp.user, signinResp.access_token, company.ID);
 
+            if (!signinResp.user.isEmailVerified) {
+                setCurrentStep('verify-email');
+                return;
+            }
+
+            if (!signinResp.user.firstName || !signinResp.user.lastName) {
+                setCurrentStep('form-details');
+                return;
+            }
+            
             // Redirect based on user role
             if (signinResp.user.role === 'admin') {
-                navigate('/admin/dashboard');
+                navigate('/admin/dashboard', { replace: true });
             } else if (signinResp.user.role === 'startup_owner') {
-                navigate('/dashboard');
+                navigate('/dashboard', { replace: true });
             } else if (signinResp.user.role === 'investor') {
-                navigate('/dashboard'); // or a specific investor dashboard
+                navigate('/dashboard', { replace: true }); // or a specific investor dashboard
             }
         } catch (error) {
+            clearAuth();
+
             if (error instanceof ApiError) {
                 setErrors((prev) => ({
                     ...prev,
@@ -506,6 +540,24 @@ const Register = () => {
                 );
         }
     };
+
+    useEffect(() => {
+        if (user && currentStep === 'login-register') {
+            if (!user.isEmailVerified) {
+                setCurrentStep('verify-email');
+            } else if (!user.firstName || !user.lastName) {
+                setCurrentStep('form-details');
+            } else {
+                if (user.role === 'admin') {
+                    navigate('/admin/dashboard', { replace: true });
+                } else if (user.role === 'startup_owner') {
+                    navigate('/dashboard', { replace: true });
+                } else if (user.role === 'investor') {
+                    navigate('/dashboard', { replace: true }); // or a specific investor dashboard
+                }
+            }
+        }
+    }, [user, currentStep, navigate]);
 
     return (
         <div className="min-h-screen bg-gray-50">

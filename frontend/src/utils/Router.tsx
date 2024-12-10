@@ -9,6 +9,7 @@ import {
 } from '@pages';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import { RegistrationGuard } from '@/components/layout/RegistrationGuard';
 
 const Router = () => (
     <AuthProvider>
@@ -18,20 +19,13 @@ const Router = () => (
                 <Route path="/register" element={<Register />} />
 
                 {/* User routes */}
-                <Route
-                    path="/dashboard"
-                    element={
-                        <ProtectedRoute
-                            allowedRoles={[
-                                'startup_owner',
-                                'investor',
-                                'admin',
-                            ]}
-                        >
+                <Route path="/dashboard" element={
+                    <ProtectedRoute allowedRoles={['startup_owner', 'investor', 'admin']}>
+                        <RegistrationGuard>
                             <DashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
                 <Route
                     path="/new-company"
                     element={
@@ -42,146 +36,105 @@ const Router = () => (
                                 'admin',
                             ]}
                         >
-                            <CreateCompany />
+                            <RegistrationGuard>
+                              <CreateCompany />
+                            </RegistrationGuard>
                         </ProtectedRoute>
                     }
                 />
-                <Route
-                    path="/projects"
-                    element={
-                        <ProtectedRoute
-                            allowedRoles={[
-                                'startup_owner',
-                                'investor',
-                                'admin',
-                            ]}
-                        >
+                <Route path="/projects" element={
+                    <ProtectedRoute allowedRoles={['startup_owner', 'investor', 'admin']}>
+                        <RegistrationGuard>
                             <DashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/resources"
-                    element={
-                        <ProtectedRoute
-                            allowedRoles={[
-                                'startup_owner',
-                                'investor',
-                                'admin',
-                            ]}
-                        >
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/resources" element={
+                    <ProtectedRoute allowedRoles={['startup_owner', 'investor', 'admin']}>
+                        <RegistrationGuard>
                             <DashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/favorites"
-                    element={
-                        <ProtectedRoute
-                            allowedRoles={[
-                                'startup_owner',
-                                'investor',
-                                'admin',
-                            ]}
-                        >
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/favorites" element={
+                    <ProtectedRoute allowedRoles={['startup_owner', 'investor', 'admin']}>
+                        <RegistrationGuard>
                             <DashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/profile"
-                    element={
-                        <ProtectedRoute
-                            allowedRoles={[
-                                'startup_owner',
-                                'investor',
-                                'admin',
-                            ]}
-                        >
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                    <ProtectedRoute allowedRoles={['startup_owner', 'investor', 'admin']}>
+                        <RegistrationGuard>
                             <DashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/drafts"
-                    element={
-                        <ProtectedRoute
-                            allowedRoles={[
-                                'startup_owner',
-                                'investor',
-                                'admin',
-                            ]}
-                        >
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/drafts" element={
+                    <ProtectedRoute allowedRoles={['startup_owner', 'investor', 'admin']}>
+                        <RegistrationGuard>
                             <DashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/submit-project"
-                    element={
-                        <ProtectedRoute allowedRoles={['startup_owner']}>
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/submit-project" element={
+                    <ProtectedRoute allowedRoles={['startup_owner']}>
+                        <RegistrationGuard>
                             <SubmitProjectPage />
-                        </ProtectedRoute>
-                    }
-                />
-
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                
                 {/* Admin routes */}
-                <Route
-                    path="/admin/dashboard"
-                    element={
-                        <ProtectedRoute allowedRoles={['admin']}>
+                <Route path="/admin/dashboard" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <RegistrationGuard>
                             <AdminDashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/projects"
-                    element={
-                        <ProtectedRoute allowedRoles={['admin']}>
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/projects" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <RegistrationGuard>
                             <AdminDashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/projects/pending"
-                    element={
-                        <ProtectedRoute allowedRoles={['admin']}>
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/projects/pending" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <RegistrationGuard>
                             <AdminDashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/projects/approved"
-                    element={
-                        <ProtectedRoute allowedRoles={['admin']}>
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/projects/approved" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <RegistrationGuard>
                             <AdminDashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/resources"
-                    element={
-                        <ProtectedRoute allowedRoles={['admin']}>
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/resources" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <RegistrationGuard>
                             <AdminDashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/users"
-                    element={
-                        <ProtectedRoute allowedRoles={['admin']}>
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/users" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <RegistrationGuard>
                             <AdminDashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/settings"
-                    element={
-                        <ProtectedRoute allowedRoles={['admin']}>
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/settings" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <RegistrationGuard>
                             <AdminDashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
             </Routes>
         </BrowserRouter>
     </AuthProvider>
