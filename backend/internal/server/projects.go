@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"encoding/json"
-	"encoding/base64"
 
 	"KonferCA/SPUR/db"
 	mw "KonferCA/SPUR/internal/middleware"
