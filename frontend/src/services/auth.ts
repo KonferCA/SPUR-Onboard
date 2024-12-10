@@ -8,7 +8,7 @@ import { RegisterError, ApiError } from './errors';
 import type { User, UserRole } from '@t';
 
 export interface AuthResponse {
-    accessToken: string;
+    access_token: string;
     user: User;
 }
 

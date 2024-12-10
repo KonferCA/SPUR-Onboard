@@ -4,6 +4,7 @@ import { register, signin, RegisterError, ApiError } from '@services';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getApiUrl } from '@/utils';
+import { getCompany } from '@/services/company';
 
 type RegistrationStep =
     | 'login-register'
@@ -393,7 +394,7 @@ const Register = () => {
         setIsLoading(true);
         try {
             const regResp = await register(formData.email, formData.password);
-            setAuth(regResp.user, regResp.accessToken);
+            setAuth(regResp.user, regResp.access_token);
             setCurrentStep('verify-email');
         } catch (error) {
             if (error instanceof RegisterError) {
@@ -416,7 +417,8 @@ const Register = () => {
         setIsLoading(true);
         try {
             const signinResp = await signin(formData.email, formData.password);
-            setAuth(signinResp.user, signinResp.accessToken);
+            const company = await getCompany(signinResp.access_token);
+            setAuth(signinResp.user, signinResp.access_token, company.ID);
 
             // Redirect based on user role
             if (signinResp.user.role === 'admin') {
