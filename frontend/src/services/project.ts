@@ -301,7 +301,13 @@ export const MOCK_PROJECTS: Project[] = [
 ];
 
 export async function getProjects(): Promise<Project[]> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return MOCK_PROJECTS;
+  const url = `${getApiUrl()}/projects`.replace(/([^:]\/)\/+/g, "$1");
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    throw new ApiError('Failed to fetch projects', response.status);
+  }
+
+  const data = await response.json();
+  return data.map(transformProject);
 } 

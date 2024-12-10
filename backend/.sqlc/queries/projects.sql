@@ -14,8 +14,37 @@ SELECT * FROM projects
 WHERE id = $1 LIMIT 1;
 
 -- name: ListProjects :many
-SELECT * FROM projects
-ORDER BY created_at DESC;
+WITH project_data AS (
+  SELECT 
+    p.*,
+    c.name as company_name,
+    c.industry,
+    c.founded_date,
+    c.company_stage,
+    json_agg(DISTINCT pf.*) FILTER (WHERE pf.id IS NOT NULL) as files,
+    json_agg(DISTINCT ps.*) FILTER (WHERE ps.id IS NOT NULL) as sections
+  FROM projects p
+  LEFT JOIN companies c ON p.company_id = c.id
+  LEFT JOIN project_files pf ON p.id = pf.project_id
+  LEFT JOIN project_sections ps ON p.id = ps.project_id
+  GROUP BY p.id, c.id
+)
+SELECT 
+  pd.*,
+  (
+    SELECT json_agg(
+      json_build_object(
+        'id', pq.id,
+        'question', pq.question_text,
+        'answer', pq.answer_text
+      )
+    )
+    FROM project_sections ps
+    LEFT JOIN project_questions pq ON ps.id = pq.section_id
+    WHERE ps.project_id = pd.id
+  ) as questions
+FROM project_data pd
+ORDER BY pd.created_at DESC;
 
 -- name: ListProjectsByCompany :many
 SELECT * FROM projects

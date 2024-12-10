@@ -20,6 +20,7 @@ export const AdminProjectsPage: React.FC = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
+        setIsLoading(true);
         const data = await getProjects();
         setProjects(data);
       } catch (err) {
