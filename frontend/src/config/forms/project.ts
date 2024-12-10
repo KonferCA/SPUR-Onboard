@@ -85,6 +85,87 @@ export const projectFormSchema: FormStep[] = [
                 ],
             },
             {
+                id: 'product-overview',
+                title: 'Product Overview',
+                description: '',
+                fields: [
+                    {
+                        id: 'product-description',
+                        type: 'textarea',
+                        label: 'How does your product or idea differentiate from competitors, and what makes it defensible or unique?',
+                        required: true,
+                    },
+                    {
+                        id: 'product-roadmap',
+                        type: 'textarea',
+                        label: 'What does your current product roadmap look like?',
+                        required: true,
+                    },
+                ],
+            },
+            {
+                id: 'customer-demographic',
+                title: 'Customer & Demographic',
+                description: '',
+                fields: [
+                    {
+                        id: 'target-demographic',
+                        type: 'textarea',
+                        label: 'Who are your target demographic and customers? What makes your product or service compelling to them?',
+                        required: true,
+                    },
+                    {
+                        id: 'addessable-market',
+                        type: 'textarea',
+                        label: 'What is the total addressable market for this company? How do you plan to capture your share of it?',
+                        required: true,
+                    },
+                ],
+            },
+            {
+                id: 'financials',
+                title: 'Financials',
+                description: '',
+                fields: [
+                    {
+                        id: 'company-revenue',
+                        type: 'text',
+                        label: "What is your company's annual recurring revenue (ARR)?",
+                        required: true,
+                    },
+                    {
+                        id: 'company-raised',
+                        type: 'text',
+                        label: 'How much has your company raised so far?',
+                        required: true,
+                    },
+                    {
+                        id: 'company-valuation',
+                        type: 'text',
+                        label: "What is your company's current valuation?",
+                        required: true,
+                    },
+                    {
+                        id: 'company-monthly-expenses',
+                        type: 'text',
+                        label: "What are your company's monthly expenses?",
+                        required: true,
+                    },
+                    {
+                        id: 'company-main-revenue',
+                        type: 'textarea',
+                        label: 'What are your main revenue streams, and how do you project these will grow over the next 12-36 months?',
+                        required: true,
+                    },
+                    {
+                        id: 'company-funding',
+                        type: 'textarea',
+                        label: 'What funding have you raised so far, and how have you allocated that capital towards growth and development?',
+                        required: true,
+                    },
+                ],
+            },
+            {
                 id: 'team-overview',
                 title: 'Team Overview',
                 description: 'Tell us about your team members',
@@ -134,4 +215,3 @@ export const projectFormSchema: FormStep[] = [
         ],
     },
 ];
-
