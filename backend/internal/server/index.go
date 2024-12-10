@@ -73,7 +73,7 @@ func New(testing bool) (*Server, error) {
 		apiLimiter = middleware.NewTestRateLimiter(100)
 	} else {
 		authLimiter = middleware.NewRateLimiter(
-			20,             // 20 requests
+			100,            // 100 requests
 			5*time.Minute,  // per 5 minutes
 			15*time.Minute, // block for 15 minutes if exceeded
 		)
