@@ -48,6 +48,9 @@ func (s *Server) handleGetUserCompany(c echo.Context) error {
 
 	company, err := s.queries.GetCompanyByUser(c.Request().Context(), claims.UserID)
 	if err != nil {
+		if isNoRowsError(err) {
+			return echo.NewHTTPError(http.StatusNotFound, "No company found")
+		}
 		log.Error().Err(err).Msg("Failed to get company by user")
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get company")
 	}
