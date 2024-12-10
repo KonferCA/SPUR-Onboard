@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import {
-    Landing,
+    // Landing,
     Register,
     DashboardPage,
     AdminDashboardPage,
@@ -15,7 +15,7 @@ const Router = () => (
     <AuthProvider>
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<Landing />} />
+                <Route path="/" element={<Register />} />
                 <Route path="/register" element={<Register />} />
 
                 {/* User routes */}
