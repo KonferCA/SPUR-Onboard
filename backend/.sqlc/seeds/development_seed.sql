@@ -89,6 +89,9 @@ INSERT INTO companies (
     name,
     description,
     is_verified,
+    industry,
+    company_stage,
+    founded_date,
     created_at,
     updated_at
 ) 
@@ -98,6 +101,9 @@ SELECT
     name,
     description,
     is_verified,
+    industry,
+    company_stage,
+    founded_date::DATE,
     created_at,
     updated_at
 FROM startup_user, (VALUES
@@ -105,6 +111,9 @@ FROM startup_user, (VALUES
         'TechVision AI',
         'An AI company focusing on computer vision solutions for autonomous vehicles',
         true,
+        'artificial_intelligence',
+        'seed',
+        '2022-03-15',
         NOW() - INTERVAL '30 days',
         NOW() - INTERVAL '2 days'
     ),
@@ -112,6 +121,9 @@ FROM startup_user, (VALUES
         'GreenEnergy Solutions',
         'Developing innovative solar panel technology for residential use',
         true,
+        'cleantech',
+        'series_a',
+        '2021-06-01',
         NOW() - INTERVAL '60 days',
         NOW() - INTERVAL '5 days'
     ),
@@ -119,6 +131,9 @@ FROM startup_user, (VALUES
         'HealthTech Pro',
         'Healthcare technology focusing on remote patient monitoring',
         false,
+        'healthcare',
+        'pre_seed',
+        '2023-11-30',
         NOW() - INTERVAL '1 day',
         NOW() - INTERVAL '1 day'
     ),
@@ -126,6 +141,9 @@ FROM startup_user, (VALUES
         'EduLearn Platform',
         'Online education platform with AI-powered personalized learning',
         true,
+        'education',
+        'seed',
+        '2022-09-01',
         NOW() - INTERVAL '90 days',
         NOW() - INTERVAL '10 days'
     ),
@@ -133,10 +151,13 @@ FROM startup_user, (VALUES
         'FinTech Solutions',
         'Blockchain-based payment solutions for cross-border transactions',
         false,
+        'fintech',
+        'pre_seed',
+        '2024-01-15',
         NOW() - INTERVAL '2 days',
         NOW() - INTERVAL '2 days'
     )
-) AS t(name, description, is_verified, created_at, updated_at);
+) AS t(name, description, is_verified, industry, company_stage, founded_date, created_at, updated_at);
 
 -- add company financials
 WITH companies_to_update AS (
@@ -363,3 +384,143 @@ CROSS JOIN (VALUES
 WHERE pd.company_name = pc.company_name 
   AND pd.project_title = pc.project_title
   AND EXISTS (SELECT 1 FROM users u WHERE u.id = pd.user_id AND u.email = pc.user_email); 
+
+-- Add project sections and questions
+WITH project_data AS (
+    SELECT p.id as project_id, 
+           p.title as project_title,
+           c.name as company_name
+    FROM projects p
+    JOIN companies c ON p.company_id = c.id
+)
+INSERT INTO project_sections (
+    id,
+    project_id,
+    title
+)
+SELECT 
+    gen_random_uuid(),
+    pd.project_id,
+    s.section_title
+FROM project_data pd
+CROSS JOIN (VALUES
+    ('TechVision AI', 'Autonomous Parking System', 'Bookkeeping'),
+    ('TechVision AI', 'Autonomous Parking System', 'Company Overview'),
+    ('TechVision AI', 'Autonomous Parking System', 'Team Overview'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Bookkeeping'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Company Overview'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Team Overview')
+) AS s(company_name, project_title, section_title)
+WHERE pd.company_name = s.company_name 
+AND pd.project_title = s.project_title;
+
+-- Add questions and answers for each section
+WITH section_data AS (
+    SELECT 
+        ps.id as section_id,
+        p.title as project_title,
+        c.name as company_name,
+        ps.title as section_title
+    FROM project_sections ps
+    JOIN projects p ON p.id = ps.project_id
+    JOIN companies c ON c.id = p.company_id
+)
+INSERT INTO project_questions (
+    section_id,
+    question_text,
+    answer_text
+)
+SELECT 
+    sd.section_id,
+    q.question,
+    q.answer
+FROM section_data sd
+CROSS JOIN (VALUES
+    (
+        'TechVision AI',
+        'Autonomous Parking System',
+        'Bookkeeping',
+        'What is the name of your company?',
+        'TechVision AI'
+    ),
+    (
+        'TechVision AI',
+        'Autonomous Parking System',
+        'Bookkeeping',
+        'When was your company founded?',
+        '2022-03-15'
+    ),
+    (
+        'TechVision AI',
+        'Autonomous Parking System',
+        'Bookkeeping',
+        'What stage is your company at?',
+        'seed'
+    ),
+    (
+        'TechVision AI',
+        'Autonomous Parking System',
+        'Company Overview',
+        'Brief description of your company',
+        'An AI company focusing on computer vision solutions for autonomous vehicles'
+    ),
+    (
+        'TechVision AI',
+        'Autonomous Parking System',
+        'Company Overview',
+        'What inspired you to start this company, and what is the core problem you''re solving?',
+        'After years in the automotive industry, we identified a critical gap in autonomous parking technology. Current solutions are either too expensive or unreliable for mass adoption.'
+    ),
+    (
+        'TechVision AI',
+        'Autonomous Parking System',
+        'Company Overview',
+        'What is your long-term vision for the company?',
+        'To become the industry standard for autonomous parking systems, making self-parking technology accessible to all vehicle manufacturers.'
+    ),
+    (
+        'GreenEnergy Solutions',
+        'Solar Panel Efficiency Optimizer',
+        'Bookkeeping',
+        'What is the name of your company?',
+        'GreenEnergy Solutions'
+    ),
+    (
+        'GreenEnergy Solutions',
+        'Solar Panel Efficiency Optimizer',
+        'Bookkeeping',
+        'When was your company founded?',
+        '2021-06-01'
+    ),
+    (
+        'GreenEnergy Solutions',
+        'Solar Panel Efficiency Optimizer',
+        'Bookkeeping',
+        'What stage is your company at?',
+        'series_a'
+    ),
+    (
+        'GreenEnergy Solutions',
+        'Solar Panel Efficiency Optimizer',
+        'Company Overview',
+        'Brief description of your company',
+        'Developing innovative solar panel technology for residential use'
+    ),
+    (
+        'GreenEnergy Solutions',
+        'Solar Panel Efficiency Optimizer',
+        'Company Overview',
+        'What inspired you to start this company, and what is the core problem you''re solving?',
+        'The inefficiency of current residential solar solutions inspired us to develop a more effective and affordable alternative for homeowners.'
+    ),
+    (
+        'GreenEnergy Solutions',
+        'Solar Panel Efficiency Optimizer',
+        'Company Overview',
+        'What is your long-term vision for the company?',
+        'To revolutionize residential solar energy by making it more efficient and accessible to homeowners worldwide.'
+    )
+) AS q(company_name, project_title, section_title, question, answer)
+WHERE sd.company_name = q.company_name 
+AND sd.project_title = q.project_title
+AND sd.section_title = q.section_title; 
