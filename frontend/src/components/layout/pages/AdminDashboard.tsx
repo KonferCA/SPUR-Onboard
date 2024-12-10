@@ -17,9 +17,10 @@ const adminNavTabs = [
 
 interface AdminDashboardProps {
   children: ReactNode;
+  customSidebar?: ReactNode;
 }
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ children }) => {
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ children, customSidebar }) => {
   const adminActions = (
     <>
       <button className="px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-700">
@@ -34,10 +35,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ children }) => {
 
   return (
     <DashboardTemplate
-      menuItems={adminMenuItems}
+      menuItems={customSidebar ? [] : adminMenuItems}
       navTabs={adminNavTabs}
       actions={adminActions}
       logo={<h1 className="text-xl font-bold">Admin Panel</h1>}
+      customSidebar={customSidebar}
     >
       {children}
     </DashboardTemplate>
