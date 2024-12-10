@@ -36,7 +36,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ children, custom
   return (
     <DashboardTemplate
       menuItems={customSidebar ? [] : adminMenuItems}
-      navTabs={adminNavTabs}
       actions={adminActions}
       logo={<h1 className="text-xl font-bold">Admin Panel</h1>}
       customSidebar={customSidebar}
