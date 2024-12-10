@@ -13,6 +13,7 @@ import (
 
 	"KonferCA/SPUR/common"
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/storage"
 )
@@ -191,6 +192,7 @@ func (s *Server) setupV1Routes() {
 func (s *Server) setupCompanyRoutes() {
 	s.apiV1.POST("/companies", s.handleCreateCompany, middleware.ValidateRequestBody(reflect.TypeOf(CreateCompanyRequest{})))
 	s.apiV1.GET("/companies/:id", s.handleGetCompany)
+	s.apiV1.GET("/company", s.handleGetUserCompany, middleware.ProtectAPI(jwt.ACCESS_TOKEN_TYPE, s.queries))
 	s.apiV1.GET("/companies", s.handleListCompanies)
 	s.apiV1.DELETE("/companies/:id", s.handleDeleteCompany)
 }

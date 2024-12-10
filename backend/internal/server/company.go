@@ -5,8 +5,12 @@ import (
 	"net/http"
 
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/jwt"
+	"KonferCA/SPUR/internal/middleware"
 	mw "KonferCA/SPUR/internal/middleware"
+
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 func (s *Server) handleCreateCompany(c echo.Context) error {
@@ -34,6 +38,21 @@ func (s *Server) handleCreateCompany(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, company)
+}
+
+func (s *Server) handleGetUserCompany(c echo.Context) error {
+	claims, ok := c.Get(middleware.JWT_CLAIMS).(*jwt.JWTClaims)
+	if !ok {
+		return echo.NewHTTPError(http.StatusBadRequest, "Failed to type cast jwt claims")
+	}
+
+	company, err := s.queries.GetCompanyByUser(c.Request().Context(), claims.UserID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get company by user")
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to get company")
+	}
+
+	return c.JSON(http.StatusOK, company)
 }
 
 func (s *Server) handleGetCompany(c echo.Context) error {
