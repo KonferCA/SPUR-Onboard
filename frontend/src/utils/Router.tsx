@@ -1,5 +1,12 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Landing, Register, DashboardPage, AdminDashboardPage, SubmitProjectPage } from '@pages';
+import {
+    Landing,
+    Register,
+    DashboardPage,
+    AdminDashboardPage,
+    SubmitProjectPage,
+    CreateCompany,
+} from '@pages';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { RegistrationGuard } from '@/components/layout/RegistrationGuard';
@@ -8,9 +15,9 @@ const Router = () => (
     <AuthProvider>
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={ <Landing /> } />
-                <Route path="/register" element={ <Register /> } />
-                
+                <Route path="/" element={<Landing />} />
+                <Route path="/register" element={<Register />} />
+
                 {/* User routes */}
                 <Route path="/dashboard" element={
                     <ProtectedRoute allowedRoles={['startup_owner', 'investor', 'admin']}>
@@ -19,6 +26,22 @@ const Router = () => (
                         </RegistrationGuard>
                     </ProtectedRoute>
                 } />
+                <Route
+                    path="/new-company"
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={[
+                                'startup_owner',
+                                'investor',
+                                'admin',
+                            ]}
+                        >
+                            <RegistrationGuard>
+                              <CreateCompany />
+                            </RegistrationGuard>
+                        </ProtectedRoute>
+                    }
+                />
                 <Route path="/projects" element={
                     <ProtectedRoute allowedRoles={['startup_owner', 'investor', 'admin']}>
                         <RegistrationGuard>

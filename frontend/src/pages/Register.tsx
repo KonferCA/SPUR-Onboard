@@ -4,6 +4,7 @@ import { register, signin, RegisterError, ApiError } from '@services';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getApiUrl } from '@/utils';
+import { getCompany } from '@/services/company';
 
 type RegistrationStep =
     | 'login-register'
@@ -33,7 +34,9 @@ interface LoginRegisterProps {
     errors: FormErrors;
     isLoading: boolean;
     onSubmit: (e: FormEvent) => Promise<void>;
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+    onChange: (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => void;
     onLogin: () => Promise<void>;
 }
 
@@ -44,7 +47,9 @@ interface SigningInProps {
 interface FormDetailsProps {
     formData: FormData;
     errors: FormErrors;
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+    onChange: (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => void;
     onLinkedInChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onSubmit: (e: FormEvent) => void;
     isFormValid: boolean;
@@ -54,13 +59,18 @@ interface RegistrationCompleteProps {
     onComplete: () => void;
 }
 
-const LoginRegister = ({ formData, errors, isLoading, onSubmit, onChange, onLogin }: LoginRegisterProps) => (
+const LoginRegister = ({
+    formData,
+    errors,
+    isLoading,
+    onSubmit,
+    onChange,
+    onLogin,
+}: LoginRegisterProps) => (
     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg">
         <h3 className="text-center mb-4 font-light">Register or Login</h3>
         <hr className="border-gray-400" />
-        <h2 className="text-2xl mt-4 font-normal">
-            Register for Spur+Konfer
-        </h2>
+        <h2 className="text-2xl mt-4 font-normal">Register for Spur+Konfer</h2>
 
         <form onSubmit={onSubmit} className="space-y-4 mt-4">
             <TextInput
@@ -83,10 +93,10 @@ const LoginRegister = ({ formData, errors, isLoading, onSubmit, onChange, onLogi
                 error={errors.password}
             />
 
-            <Button 
-                type="submit" 
-                size="lg" 
-                liquid 
+            <Button
+                type="submit"
+                size="lg"
+                liquid
                 variant="primary"
                 disabled={isLoading}
             >
@@ -111,7 +121,7 @@ const LoginRegister = ({ formData, errors, isLoading, onSubmit, onChange, onLogi
 
 const VerifyEmail = ({
     email,
-    onVerified
+    onVerified,
 }: {
     email: string;
     onVerified: () => void;
@@ -122,7 +132,9 @@ const VerifyEmail = ({
         const checkVerification = async () => {
             try {
                 const response = await fetch(
-                    getApiUrl(`/auth/ami-verified?email=${encodeURIComponent(email)}`),
+                    getApiUrl(
+                        `/auth/ami-verified?email=${encodeURIComponent(email)}`
+                    ),
                     { method: 'GET' }
                 );
 
@@ -150,7 +162,7 @@ const VerifyEmail = ({
                     intervalId = setInterval(checkVerification, 1000);
                 }
             }
-        }
+        };
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
@@ -166,7 +178,10 @@ const VerifyEmail = ({
                 clearInterval(intervalId);
             }
 
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            document.removeEventListener(
+                'visibilitychange',
+                handleVisibilityChange
+            );
         };
     }, [email, onVerified]);
 
@@ -175,9 +190,8 @@ const VerifyEmail = ({
             <h2 className="text-2xl mb-4">Verify your account</h2>
             <p className="font-light mb-6">
                 Your account and wallet has been linked. We just sent an email
-                confirmation to{' '}
-                <span className="font-semibold">{email}</span>. Please
-                verify your account to continue registering.
+                confirmation to <span className="font-semibold">{email}</span>.
+                Please verify your account to continue registering.
             </p>
 
             <div className="font-light mt-4">
@@ -207,13 +221,13 @@ const SigningIn = ({ onComplete }: SigningInProps) => {
     );
 };
 
-const FormDetails = ({ 
-    formData, 
-    errors, 
-    onChange, 
-    onLinkedInChange, 
+const FormDetails = ({
+    formData,
+    errors,
+    onChange,
+    onLinkedInChange,
     onSubmit,
-    isFormValid 
+    isFormValid,
 }: FormDetailsProps) => (
     <div className="w-full max-w-md mx-auto p-6">
         <div className="text-center mb-8">
@@ -336,6 +350,7 @@ const Register = () => {
 
         return 'login-register';
     });
+
     const [formData, setFormData] = useState<FormData>({
         firstName: user?.firstName || '',
         lastName: user?.lastName || '',
@@ -399,20 +414,20 @@ const Register = () => {
 
         try {
             const regResp = await register(formData.email, formData.password);
-            setAuth(regResp.user, regResp.accessToken, 'mock-company-id');
+            setAuth(regResp.user, regResp.access_token);
             setCurrentStep('verify-email');
         } catch (error) {
             clearAuth();
 
             if (error instanceof RegisterError) {
-                setErrors(prev => ({
+                setErrors((prev) => ({
                     ...prev,
-                    email: error.body.message || 'Registration failed'
+                    email: error.body.message || 'Registration failed',
                 }));
             } else {
-                setErrors(prev => ({
+                setErrors((prev) => ({
                     ...prev,
-                    email: 'An unexpected error occurred'
+                    email: 'An unexpected error occurred',
                 }));
             }
         } finally {
@@ -424,7 +439,8 @@ const Register = () => {
         setIsLoading(true);
         try {
             const signinResp = await signin(formData.email, formData.password);
-            setAuth(signinResp.user, signinResp.accessToken);
+            const company = await getCompany(signinResp.access_token);
+            setAuth(signinResp.user, signinResp.access_token, company.ID);
 
             if (!signinResp.user.isEmailVerified) {
                 setCurrentStep('verify-email');
@@ -448,14 +464,14 @@ const Register = () => {
             clearAuth();
 
             if (error instanceof ApiError) {
-                setErrors(prev => ({
+                setErrors((prev) => ({
                     ...prev,
-                    email: 'Invalid email or password'
+                    email: 'Invalid email or password',
                 }));
             } else {
-                setErrors(prev => ({
+                setErrors((prev) => ({
                     ...prev,
-                    email: 'An unexpected error occurred'
+                    email: 'An unexpected error occurred',
                 }));
             }
         } finally {
@@ -482,36 +498,46 @@ const Register = () => {
     const renderCurrentStep = () => {
         switch (currentStep) {
             case 'login-register':
-                return <LoginRegister 
-                    formData={formData}
-                    errors={errors}
-                    isLoading={isLoading}
-                    onSubmit={handleInitialSubmit}
-                    onChange={handleChange}
-                    onLogin={handleLogin}
-                />;
+                return (
+                    <LoginRegister
+                        formData={formData}
+                        errors={errors}
+                        isLoading={isLoading}
+                        onSubmit={handleInitialSubmit}
+                        onChange={handleChange}
+                        onLogin={handleLogin}
+                    />
+                );
             case 'verify-email':
-                return <VerifyEmail
-                    email={formData.email}
-                    onVerified={() => setCurrentStep('signing-in')}
-                />;
+                return (
+                    <VerifyEmail
+                        email={formData.email}
+                        onVerified={() => setCurrentStep('signing-in')}
+                    />
+                );
             case 'signing-in':
-                return <SigningIn 
-                    onComplete={() => setCurrentStep('form-details')}
-                />;
+                return (
+                    <SigningIn
+                        onComplete={() => setCurrentStep('form-details')}
+                    />
+                );
             case 'form-details':
-                return <FormDetails
-                    formData={formData}
-                    errors={errors}
-                    onChange={handleChange}
-                    onLinkedInChange={handleLinkedInChange}
-                    onSubmit={handleFormSubmit}
-                    isFormValid={isFormDetailsValid()}
-                />;
+                return (
+                    <FormDetails
+                        formData={formData}
+                        errors={errors}
+                        onChange={handleChange}
+                        onLinkedInChange={handleLinkedInChange}
+                        onSubmit={handleFormSubmit}
+                        isFormValid={isFormDetailsValid()}
+                    />
+                );
             case 'registration-complete':
-                return <RegistrationComplete
-                    onComplete={() => navigate('/dashboard')}
-                />;
+                return (
+                    <RegistrationComplete
+                        onComplete={() => navigate('/dashboard')}
+                    />
+                );
         }
     };
 
