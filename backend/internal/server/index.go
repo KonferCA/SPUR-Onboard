@@ -247,6 +247,8 @@ func (s *Server) setupProjectRoutes() {
 	s.apiV1.PUT("/projects/:id", s.handleUpdateProject, middleware.ValidateRequestBody(reflect.TypeOf(UpdateProjectRequest{})))
 	s.apiV1.DELETE("/projects/:id", s.handleDeleteProject)
 
+	s.apiV1.GET("/projects/:id/details", s.handleGetProjectDetails)
+
 	s.apiV1.POST("/projects/:id/files", s.handleCreateProjectFile, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectFileRequest{})))
 	s.apiV1.GET("/projects/:id/files", s.handleListProjectFiles)
 	s.apiV1.DELETE("/files/:id", s.handleDeleteProjectFile)

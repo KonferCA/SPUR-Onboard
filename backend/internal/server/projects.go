@@ -8,6 +8,8 @@ import (
 	"time"
 	"path/filepath"
 	"strings"
+	"encoding/json"
+	"encoding/base64"
 
 	"KonferCA/SPUR/db"
 	mw "KonferCA/SPUR/internal/middleware"
@@ -90,7 +92,7 @@ func (s *Server) handleGetProject(c echo.Context) error {
 	}
 
 	queries := db.New(s.DBPool)
-	project, err := queries.GetProject(context.Background(), projectID)
+	project, err := queries.ListProjectWithDetails(context.Background(), projectID)
 	if err != nil {
 		return handleDBError(err, "fetch", "project")
 	}
@@ -485,4 +487,55 @@ func (s *Server) handleUpdateProject(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, project)
+}
+
+func (s *Server) handleGetProjectDetails(c echo.Context) error {
+	projectID, err := validateUUID(c.Param("id"), "project")
+	if err != nil {
+		return err
+	}
+
+	queries := db.New(s.DBPool)
+	project, err := queries.ListProjectWithDetails(context.Background(), projectID)
+	if err != nil {
+		return handleDBError(err, "fetch", "project details")
+	}
+
+	// decode sections from json
+	var sections []map[string]interface{}
+	if project.Sections != nil {
+		if err := json.Unmarshal(project.Sections, &sections); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to parse sections")
+		}
+	}
+
+	// decode documents from json
+	var documents []map[string]interface{}
+	if project.Documents != nil {
+		if err := json.Unmarshal(project.Documents, &documents); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to parse documents")
+		}
+	}
+
+	// create response with parsed json
+	response := map[string]interface{}{
+		"id":          project.ID,
+		"company_id":  project.CompanyID,
+		"title":       project.Title,
+		"description": project.Description,
+		"status":      project.Status,
+		"created_at":  project.CreatedAt,
+		"updated_at":  project.UpdatedAt,
+		"company": map[string]interface{}{
+			"id":           project.CompanyID,
+			"name":         project.CompanyName,
+			"industry":     project.CompanyIndustry,
+			"founded_date": project.CompanyFoundedDate,
+			"stage":        project.CompanyStage,
+		},
+		"sections":  sections,
+		"documents": documents,
+	}
+
+	return c.JSON(http.StatusOK, response)
 }

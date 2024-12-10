@@ -236,15 +236,18 @@ WHERE
     (c.name = 'TechVision AI' AND e.email LIKE '%techvision%') OR
     (c.name = 'GreenEnergy Solutions' AND e.email LIKE '%greenenergy%');
 
--- clean up existing projects
+-- clean up existing projects and related data
 DELETE FROM project_links;
 DELETE FROM project_comments;
 DELETE FROM project_files;
+DELETE FROM project_questions;
+DELETE FROM project_sections;
 DELETE FROM projects;
 
--- add demo projects
+-- add demo projects (reduced to just 2)
 WITH company_data AS (
     SELECT id, name FROM companies
+    WHERE name IN ('GreenEnergy Solutions', 'EduLearn Platform')
 )
 INSERT INTO projects (
     company_id,
@@ -264,22 +267,6 @@ SELECT
 FROM company_data c
 CROSS JOIN (VALUES
     (
-        'TechVision AI',
-        'Autonomous Parking System',
-        'AI-powered system for automated parallel and perpendicular parking',
-        'in_progress',
-        45,
-        2
-    ),
-    (
-        'TechVision AI',
-        'Traffic Pattern Analysis',
-        'Real-time traffic analysis using computer vision',
-        'completed',
-        90,
-        30
-    ),
-    (
         'GreenEnergy Solutions',
         'Solar Panel Efficiency Optimizer',
         'AI-driven system to maximize solar panel energy collection',
@@ -298,94 +285,7 @@ CROSS JOIN (VALUES
 ) AS p(company_name, title, description, status, age, last_update)
 WHERE c.name = p.company_name;
 
--- add project links
-WITH project_data AS (
-    SELECT p.id, p.title, c.name as company_name
-    FROM projects p
-    JOIN companies c ON p.company_id = c.id
-)
-INSERT INTO project_links (
-    project_id,
-    link_type,
-    url
-)
-SELECT 
-    pd.id,
-    l.link_type,
-    l.url
-FROM project_data pd
-CROSS JOIN (VALUES
-    (
-        'TechVision AI',
-        'Autonomous Parking System',
-        'github',
-        'https://github.com/techvision/parking-ai'
-    ),
-    (
-        'TechVision AI',
-        'Autonomous Parking System',
-        'demo',
-        'https://demo.techvision.ai/parking'
-    ),
-    (
-        'GreenEnergy Solutions',
-        'Solar Panel Efficiency Optimizer',
-        'documentation',
-        'https://docs.greenenergy.com/solar-optimizer'
-    )
-) AS l(company_name, project_title, link_type, url)
-WHERE pd.company_name = l.company_name AND pd.title = l.project_title;
-
--- add project comments
-WITH project_data AS (
-    SELECT p.id as project_id, 
-           u.id as user_id,
-           p.title as project_title,
-           c.name as company_name
-    FROM projects p
-    JOIN companies c ON p.company_id = c.id
-    CROSS JOIN users u
-)
-INSERT INTO project_comments (
-    project_id,
-    user_id,
-    comment,
-    created_at
-)
-SELECT 
-    pd.project_id,
-    pd.user_id,
-    pc.comment,
-    NOW() - (pc.days_ago || ' days')::INTERVAL
-FROM project_data pd
-CROSS JOIN (VALUES
-    (
-        'TechVision AI',
-        'Autonomous Parking System',
-        'investor@test.com',
-        'This looks great!',
-        5
-    ),
-    (
-        'TechVision AI',
-        'Autonomous Parking System',
-        'startup@test.com',
-        'YOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO',
-        4
-    ),
-    (
-        'GreenEnergy Solutions',
-        'Solar Panel Efficiency Optimizer',
-        'investor@test.com',
-        'This sucks. :(',
-        3
-    )
-) AS pc(company_name, project_title, user_email, comment, days_ago)
-WHERE pd.company_name = pc.company_name 
-  AND pd.project_title = pc.project_title
-  AND EXISTS (SELECT 1 FROM users u WHERE u.id = pd.user_id AND u.email = pc.user_email); 
-
--- Add project sections and questions
+-- add project sections
 WITH project_data AS (
     SELECT p.id as project_id, 
            p.title as project_title,
@@ -404,17 +304,25 @@ SELECT
     s.section_title
 FROM project_data pd
 CROSS JOIN (VALUES
-    ('TechVision AI', 'Autonomous Parking System', 'Bookkeeping'),
-    ('TechVision AI', 'Autonomous Parking System', 'Company Overview'),
-    ('TechVision AI', 'Autonomous Parking System', 'Team Overview'),
-    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Bookkeeping'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Bookkeeping Details'),
     ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Company Overview'),
-    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Team Overview')
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Product Overview'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Customer & Demographic'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Financials'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Team Overview'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Social Media & Web Presence'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Bookkeeping Details'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Company Overview'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Product Overview'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Customer & Demographic'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Financials'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Team Overview'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Social Media & Web Presence')
 ) AS s(company_name, project_title, section_title)
 WHERE pd.company_name = s.company_name 
 AND pd.project_title = s.project_title;
 
--- Add questions and answers for each section
+-- add questions and answers for each section
 WITH section_data AS (
     SELECT 
         ps.id as section_id,
@@ -436,90 +344,120 @@ SELECT
     q.answer
 FROM section_data sd
 CROSS JOIN (VALUES
-    (
-        'TechVision AI',
-        'Autonomous Parking System',
-        'Bookkeeping',
-        'What is the name of your company?',
-        'TechVision AI'
-    ),
-    (
-        'TechVision AI',
-        'Autonomous Parking System',
-        'Bookkeeping',
-        'When was your company founded?',
-        '2022-03-15'
-    ),
-    (
-        'TechVision AI',
-        'Autonomous Parking System',
-        'Bookkeeping',
-        'What stage is your company at?',
-        'seed'
-    ),
-    (
-        'TechVision AI',
-        'Autonomous Parking System',
-        'Company Overview',
-        'Brief description of your company',
-        'An AI company focusing on computer vision solutions for autonomous vehicles'
-    ),
-    (
-        'TechVision AI',
-        'Autonomous Parking System',
-        'Company Overview',
-        'What inspired you to start this company, and what is the core problem you''re solving?',
-        'After years in the automotive industry, we identified a critical gap in autonomous parking technology. Current solutions are either too expensive or unreliable for mass adoption.'
-    ),
-    (
-        'TechVision AI',
-        'Autonomous Parking System',
-        'Company Overview',
-        'What is your long-term vision for the company?',
-        'To become the industry standard for autonomous parking systems, making self-parking technology accessible to all vehicle manufacturers.'
-    ),
-    (
-        'GreenEnergy Solutions',
-        'Solar Panel Efficiency Optimizer',
-        'Bookkeeping',
-        'What is the name of your company?',
-        'GreenEnergy Solutions'
-    ),
-    (
-        'GreenEnergy Solutions',
-        'Solar Panel Efficiency Optimizer',
-        'Bookkeeping',
-        'When was your company founded?',
-        '2021-06-01'
-    ),
-    (
-        'GreenEnergy Solutions',
-        'Solar Panel Efficiency Optimizer',
-        'Bookkeeping',
-        'What stage is your company at?',
-        'series_a'
-    ),
-    (
-        'GreenEnergy Solutions',
-        'Solar Panel Efficiency Optimizer',
-        'Company Overview',
-        'Brief description of your company',
-        'Developing innovative solar panel technology for residential use'
-    ),
-    (
-        'GreenEnergy Solutions',
-        'Solar Panel Efficiency Optimizer',
-        'Company Overview',
-        'What inspired you to start this company, and what is the core problem you''re solving?',
-        'The inefficiency of current residential solar solutions inspired us to develop a more effective and affordable alternative for homeowners.'
-    ),
-    (
-        'GreenEnergy Solutions',
-        'Solar Panel Efficiency Optimizer',
-        'Company Overview',
-        'What is your long-term vision for the company?',
-        'To revolutionize residential solar energy by making it more efficient and accessible to homeowners worldwide.'
-    )
+    -- Bookkeeping Details
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Bookkeeping Details', 
+     'What is your company name?', 'GreenEnergy Solutions'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Bookkeeping Details', 
+     'When was your company founded?', '2021-06-01'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Bookkeeping Details', 
+     'What stage is your company at?', 'Series A'),
+
+    -- Company Overview
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Company Overview', 
+     'Brief description of your company', 'Developing innovative solar panel technology for residential use'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Company Overview', 
+     'What inspired you to start this company, and what is the core problem you''re solving?', 
+     'The inefficiency of current residential solar solutions inspired us to develop a more effective and affordable alternative for homeowners.'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Company Overview', 
+     'What is your long-term vision for the company?', 
+     'To revolutionize residential solar energy by making it more efficient and accessible to homeowners worldwide.'),
+
+    -- Product Overview
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Product Overview', 
+     'What is your product?', 'An AI-driven solar panel optimization system that maximizes energy collection'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Product Overview', 
+     'What stage is your product in?', 'Beta testing with 100 households'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Product Overview', 
+     'What is your product roadmap?', 'Q1 2024: Public launch, Q2 2024: Enterprise features, Q4 2024: International expansion'),
+
+    -- Customer & Demographic
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Customer & Demographic', 
+     'Who is your target customer?', 'Environmentally conscious homeowners in suburban areas'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Customer & Demographic', 
+     'What is your market size?', '47 million households in the US alone'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Customer & Demographic', 
+     'What is your go-to-market strategy?', 'Direct-to-consumer sales through partnerships with solar installers'),
+
+    -- Financials
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Financials', 
+     'What is your current revenue?', '$1.2M ARR'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Financials', 
+     'What is your burn rate?', '$150K per month'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Financials', 
+     'How much funding are you seeking?', '$5M Series A'),
+
+    -- Team Overview
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Team Overview', 
+     'Who are your key team members?', 'CEO: Dr. Sarah Chen (PhD in Material Science), CTO: Michael Green (15 years in renewable energy)'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Team Overview', 
+     'What are your hiring plans?', 'Looking to add 5 engineers and 3 sales representatives in next 6 months'),
+
+    -- Social Media & Web Presence
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Social Media & Web Presence', 
+     'What is your website?', 'www.greenenergysolutions.com'),
+    ('GreenEnergy Solutions', 'Solar Panel Efficiency Optimizer', 'Social Media & Web Presence', 
+     'List your social media presence', 'Twitter: @GreenEnergySol, LinkedIn: /company/greenenergy-solutions'),
+
+    -- Repeat similar structure for EduLearn Platform
+    -- Bookkeeping Details
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Bookkeeping Details', 
+     'What is your company name?', 'EduLearn Platform'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Bookkeeping Details', 
+     'When was your company founded?', '2022-09-01'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Bookkeeping Details', 
+     'What stage is your company at?', 'Seed'),
+
+    -- Company Overview
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Company Overview', 
+     'Brief description of your company', 'Online education platform with AI-powered personalized learning paths'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Company Overview', 
+     'What inspired you to start this company, and what is the core problem you''re solving?', 
+     'Traditional online learning platforms offer a one-size-fits-all approach. We saw the opportunity to use AI to create truly personalized learning experiences that adapt to each student''s pace and style.'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Company Overview', 
+     'What is your long-term vision for the company?', 
+     'To become the leading adaptive learning platform globally, making quality education accessible and personalized for everyone.'),
+
+    -- Product Overview
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Product Overview', 
+     'What is your product?', 'An AI-powered learning platform that creates personalized curriculum paths'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Product Overview', 
+     'What stage is your product in?', 'Live with 5,000 active users across 3 universities'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Product Overview', 
+     'What is your product roadmap?', 'Q1 2024: Mobile app launch, Q2 2024: Enterprise features for universities, Q3 2024: K-12 expansion'),
+
+    -- Customer & Demographic
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Customer & Demographic', 
+     'Who is your target customer?', 'Initially focusing on higher education institutions and their students, with plans to expand to K-12'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Customer & Demographic', 
+     'What is your market size?', '21 million college students in the US, $350B global edtech market'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Customer & Demographic', 
+     'What is your go-to-market strategy?', 'B2B2C model through partnerships with universities, followed by direct-to-consumer offerings'),
+
+    -- Financials
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Financials', 
+     'What is your current revenue?', '$450K ARR'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Financials', 
+     'What is your burn rate?', '$80K per month'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Financials', 
+     'How much funding are you seeking?', '$3M Seed Round'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Financials', 
+     'What are your key metrics?', 'User retention: 85%, Average learning time: 45 mins/day, Course completion rate: 78%'),
+
+    -- Team Overview
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Team Overview', 
+     'Who are your key team members?', 'CEO: Dr. James Lee (Former EdTech executive), CTO: Maria Garcia (ML/AI specialist), Head of Education: Dr. Sarah Thompson (20 years in higher education)'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Team Overview', 
+     'What are your hiring plans?', 'Planning to hire 4 ML engineers, 2 educational content specialists, and 2 sales representatives in next quarter'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Team Overview', 
+     'Tell us about your advisors', 'Advisory board includes former university presidents, EdTech founders, and AI researchers'),
+
+    -- Social Media & Web Presence
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Social Media & Web Presence', 
+     'What is your website?', 'www.edulearn.ai'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Social Media & Web Presence', 
+     'List your social media presence', 'Twitter: @EduLearnAI, LinkedIn: /company/edulearn-platform, Instagram: @edulearn.ai'),
+    ('EduLearn Platform', 'Adaptive Learning Algorithm', 'Social Media & Web Presence', 
+     'Do you have any press coverage?', 'Featured in TechCrunch, EdTech Magazine, and Forbes Education')
 ) AS q(company_name, project_title, section_title, question, answer)
 WHERE sd.company_name = q.company_name 
 AND sd.project_title = q.project_title

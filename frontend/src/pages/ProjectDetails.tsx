@@ -1,16 +1,53 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AdminDashboard } from '@/components/layout';
-import { MOCK_PROJECTS } from '@/services/project';
+import { getProjects } from '@/services/project';
 import type { Project } from '@/services/project';
 import { format } from 'date-fns';
 
 export const ProjectDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
-  // Find project from mock data
-  const project = MOCK_PROJECTS.find((p: Project) => p.id === id);
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        setLoading(true);
+        const projects = await getProjects();
+        const foundProject = projects.find(p => p.id === id);
+        if (foundProject) {
+          setProject(foundProject);
+        } else {
+          setError('Project not found');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch project');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProject();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <AdminDashboard>
+        <div>Loading...</div>
+      </AdminDashboard>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminDashboard>
+        <div className="text-red-600">Error: {error}</div>
+      </AdminDashboard>
+    );
+  }
 
   if (!project) {
     return (
@@ -124,4 +161,4 @@ export const ProjectDetailsPage: React.FC = () => {
       </div>
     </AdminDashboard>
   );
-}; 
+};
