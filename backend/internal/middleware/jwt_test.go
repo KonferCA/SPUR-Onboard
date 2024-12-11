@@ -1,149 +1,132 @@
 package middleware
 
 import (
-	"context"
-	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"testing"
+    "context"
+    "fmt"
+    "net/http"
+    "net/http/httptest"
+    "os"
+    "testing"
 
-	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/jwt"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
+    "KonferCA/SPUR/db"
+    "KonferCA/SPUR/internal/jwt"
+    "github.com/google/uuid"
+    "github.com/jackc/pgx/v5/pgxpool"
+    "github.com/labstack/echo/v4"
+    "github.com/stretchr/testify/assert"
 )
 
-// MockDBTX implements db.DBTX interface
-type MockDBTX struct {
-	mock.Mock
-}
-
-func (m *MockDBTX) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
-	return pgconn.CommandTag{}, nil
-}
-
-func (m *MockDBTX) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
-	return nil, nil
-}
-
-func (m *MockDBTX) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
-	// For GetUserTokenSalt, we'll return a mock row that returns our test salt
-	return &mockRow{salt: []byte("test-salt")}
-}
-
-// mockRow implements pgx.Row for our test
-type mockRow struct {
-	salt []byte
-}
-
-func (m *mockRow) Scan(dest ...interface{}) error {
-	if len(dest) > 0 {
-		if p, ok := dest[0].(*[]byte); ok {
-			*p = m.salt
-			return nil
-		}
-	}
-	return fmt.Errorf("unexpected scan")
-}
-
 func TestProtectAPIForAccessToken(t *testing.T) {
-	os.Setenv("JWT_SECRET", "secret")
-	e := echo.New()
-	mockDB := &MockDBTX{}
-	queries := db.New(mockDB)
+    // setup test environment
+    os.Setenv("JWT_SECRET", "secret")
+    
+    // Connect to test database
+    ctx := context.Background()
+    dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+        "postgres",
+        "postgres",
+        "localhost",
+        "5432",
+        "postgres",
+        "disable",
+    )
+    
+    dbPool, err := pgxpool.New(ctx, dbURL)
+    if err != nil {
+        t.Fatalf("failed to connect to database: %v", err)
+    }
+    defer dbPool.Close()
 
-	// Create a middleware instance with the mock
-	middleware := ProtectAPI(jwt.ACCESS_TOKEN_TYPE, queries)
-	e.Use(middleware)
+    // Clean up any existing test user
+    _, err = dbPool.Exec(ctx, "DELETE FROM users WHERE email = $1", "test@example.com")
+    if err != nil {
+        t.Fatalf("failed to clean up test user: %v", err)
+    }
 
-	e.GET("/protected", func(c echo.Context) error {
-		return c.String(http.StatusOK, "protected resource")
-	})
+    // Create a test user directly in the database
+    userID := uuid.New().String()
+    _, err = dbPool.Exec(ctx, `
+        INSERT INTO users (id, email, password_hash, first_name, last_name, role, token_salt)
+        VALUES ($1, $2, $3, $4, $5, 'startup_owner', gen_random_bytes(32))
+    `, userID, "test@example.com", "hashedpassword", "Test", "User")
+    if err != nil {
+        t.Fatalf("failed to create test user: %v", err)
+    }
 
-	// generate valid tokens
-	userID := "user-id"
-	role := db.UserRole("user-role")
-	salt := []byte("test-salt")
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(userID, role, salt)
-	assert.Nil(t, err)
+    // Create Echo instance with the DB connection
+    e := echo.New()
+    queries := db.New(dbPool)
+    middleware := ProtectAPI(jwt.ACCESS_TOKEN_TYPE, queries)
+    e.Use(middleware)
 
-	tests := []struct {
-		name         string
-		expectedCode int
-		token        string
-	}{
-		{
-			name:         "Accept access token",
-			expectedCode: http.StatusOK,
-			token:        accessToken,
-		},
-		{
-			name:         "Reject refresh token",
-			expectedCode: http.StatusUnauthorized,
-			token:        refreshToken,
-		},
-	}
+    e.GET("/protected", func(c echo.Context) error {
+        return c.String(http.StatusOK, "protected resource")
+    })
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/protected", nil)
-			rec := httptest.NewRecorder()
-			req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", test.token))
-			e.ServeHTTP(rec, req)
-			assert.Equal(t, test.expectedCode, rec.Code)
-		})
-	}
-}
+    // Get test user data from the database
+    user, err := queries.GetUserByEmail(ctx, "test@example.com")
+    if err != nil {
+        t.Fatalf("failed to get test user: %v", err)
+    }
 
-func TestProtectAPIForRefreshToken(t *testing.T) {
-	os.Setenv("JWT_SECRET", "secret")
-	e := echo.New()
-	mockDB := &MockDBTX{}
-	queries := db.New(mockDB)
+    // Get the user's salt
+    var salt []byte
+    err = dbPool.QueryRow(ctx, "SELECT token_salt FROM users WHERE id = $1", user.ID).Scan(&salt)
+    if err != nil {
+        t.Fatalf("failed to get user salt: %v", err)
+    }
 
-	// Create a middleware instance with the mock
-	middleware := ProtectAPI(jwt.REFRESH_TOKEN_TYPE, queries)
-	e.Use(middleware)
+    // generate valid tokens using the actual salt
+    accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, salt)
+    assert.Nil(t, err)
 
-	e.GET("/protected", func(c echo.Context) error {
-		return c.String(http.StatusOK, "protected resource")
-	})
+    tests := []struct {
+        name         string
+        expectedCode int
+        token        string
+    }{
+        {
+            name:         "Accept access token",
+            expectedCode: http.StatusOK,
+            token:        accessToken,
+        },
+        {
+            name:         "Reject refresh token",
+            expectedCode: http.StatusUnauthorized,
+            token:        refreshToken,
+        },
+        {
+            name:         "Reject invalid token format",
+            expectedCode: http.StatusUnauthorized,
+            token:        "invalid-token",
+        },
+        {
+            name:         "Reject empty token",
+            expectedCode: http.StatusUnauthorized,
+            token:        "",
+        },
+        {
+            name:         "Reject token with invalid signature",
+            expectedCode: http.StatusUnauthorized,
+            token:        accessToken + "tampered",
+        },
+    }
 
-	// generate valid tokens
-	userID := "user-id"
-	role := db.UserRole("user-role")
-	salt := []byte("test-salt")
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(userID, role, salt)
-	assert.Nil(t, err)
+    for _, test := range tests {
+        t.Run(test.name, func(t *testing.T) {
+            req := httptest.NewRequest(http.MethodGet, "/protected", nil)
+            rec := httptest.NewRecorder()
+            if test.token != "" {
+                req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", test.token))
+            }
+            e.ServeHTTP(rec, req)
+            assert.Equal(t, test.expectedCode, rec.Code)
+        })
+    }
 
-	tests := []struct {
-		name         string
-		expectedCode int
-		token        string
-	}{
-		{
-			name:         "Reject access token",
-			expectedCode: http.StatusUnauthorized,
-			token:        accessToken,
-		},
-		{
-			name:         "Accept refresh token",
-			expectedCode: http.StatusOK,
-			token:        refreshToken,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/protected", nil)
-			rec := httptest.NewRecorder()
-			req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", test.token))
-			e.ServeHTTP(rec, req)
-			assert.Equal(t, test.expectedCode, rec.Code)
-		})
-	}
+    // Clean up test user after test
+    _, err = dbPool.Exec(ctx, "DELETE FROM users WHERE email = $1", "test@example.com")
+    if err != nil {
+        t.Fatalf("failed to clean up test user: %v", err)
+    }
 }
