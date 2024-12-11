@@ -509,7 +509,11 @@ const Register = () => {
                 return (
                     <VerifyEmail
                         email={formData.email}
-                        onVerified={() => setCurrentStep('signing-in')}
+                        onVerified={() => {
+                            if (user) user.email_verified = true;
+                            setAuth(user, accessToken, companyId);
+                            setCurrentStep('signing-in');
+                        }}
                     />
                 );
             case 'signing-in':

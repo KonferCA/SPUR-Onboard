@@ -65,8 +65,8 @@ export interface Project {
 // Transform backend response to frontend format
 const transformProject = (project: ProjectResponse): Project => {
   let sections: ProjectSection[] = [];
-  
-  if (project.Sections) {
+
+  if (project.Sections && Array.isArray(project.Sections)) {
     sections = project.Sections.map(s => ({
       id: s.id,
       title: s.title || '',

@@ -21,7 +21,9 @@ export const UserProjectsPage: React.FC = () => {
       try {
         setIsLoading(true);
         const data = await getProjects();
-        setProjects(data);
+        if (data) {
+            setProjects(data);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch projects');
       } finally {
