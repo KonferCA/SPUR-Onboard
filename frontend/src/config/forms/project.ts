@@ -115,7 +115,7 @@ export const projectFormSchema: FormStep[] = [
                         required: true,
                     },
                     {
-                        id: 'addessable-market',
+                        id: 'addressable-market',
                         type: 'textarea',
                         label: 'What is the total addressable market for this company? How do you plan to capture your share of it?',
                         required: true,
