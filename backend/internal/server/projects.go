@@ -100,25 +100,50 @@ func (s *Server) handleGetProject(c echo.Context) error {
 }
 
 func (s *Server) handleListProjects(c echo.Context) error {
+	// Get authenticated user from context
+	user := c.Get("user").(db.User)
+	fmt.Printf("DEBUG: User accessing projects - ID: %s, Role: %s\n", user.ID, user.Role)
+	
 	queries := db.New(s.DBPool)
-	companyID := c.QueryParam("company_id")
 
-	if companyID != "" {
-		companyUUID, err := validateUUID(companyID, "company")
-		if err != nil {
-			return err
+	// If user is admin, they can see all projects or filter by company
+	if user.Role == "admin" {
+		fmt.Println("DEBUG: User is admin, can see all projects")
+		companyID := c.QueryParam("company_id")
+		if companyID != "" {
+			fmt.Printf("DEBUG: Admin filtering by company_id: %s\n", companyID)
+			companyUUID, err := validateUUID(companyID, "company")
+			if err != nil {
+				return err
+			}
+			projects, err := queries.ListProjectsByCompany(context.Background(), companyUUID)
+			if err != nil {
+				return handleDBError(err, "fetch", "projects")
+			}
+			return c.JSON(http.StatusOK, projects)
 		}
-		projects, err := queries.ListProjectsByCompany(context.Background(), companyUUID)
+
+		projects, err := queries.ListProjects(context.Background())
 		if err != nil {
 			return handleDBError(err, "fetch", "projects")
 		}
 		return c.JSON(http.StatusOK, projects)
 	}
 
-	projects, err := queries.ListProjects(context.Background())
+	// For non-admin users, get their company ID from employee record
+	employee, err := queries.GetEmployeeByEmail(context.Background(), user.Email)
 	if err != nil {
+		fmt.Printf("DEBUG: Error fetching employee record: %v\n", err)
+		return handleDBError(err, "fetch", "employee")
+	}
+
+	fmt.Printf("DEBUG: Regular user, filtering by their company_id: %s\n", employee.CompanyID)
+	projects, err := queries.ListProjectsByCompany(context.Background(), employee.CompanyID)
+	if err != nil {
+		fmt.Printf("DEBUG: Error fetching projects: %v\n", err)
 		return handleDBError(err, "fetch", "projects")
 	}
+	fmt.Printf("DEBUG: Found %d projects for company %s\n", len(projects), employee.CompanyID)
 	return c.JSON(http.StatusOK, projects)
 }
 

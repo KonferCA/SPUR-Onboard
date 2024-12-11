@@ -159,6 +159,28 @@ FROM startup_user, (VALUES
     )
 ) AS t(name, description, is_verified, industry, company_stage, founded_date, created_at, updated_at);
 
+-- After creating companies, create employee record for startup owner
+WITH startup_user AS (
+    SELECT id FROM users WHERE email = 'startup@test.com' LIMIT 1
+),
+startup_company AS (
+    SELECT id FROM companies WHERE owner_user_id = (SELECT id FROM startup_user) LIMIT 1
+)
+INSERT INTO employees (
+    company_id,
+    name,
+    email,
+    role,
+    bio
+)
+SELECT 
+    startup_company.id,
+    'Startup Owner',
+    'startup@test.com',
+    'CEO',
+    'Startup founder and CEO'
+FROM startup_user, startup_company;
+
 -- add company financials
 WITH companies_to_update AS (
     SELECT id, name FROM companies 

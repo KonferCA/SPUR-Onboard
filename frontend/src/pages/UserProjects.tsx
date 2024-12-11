@@ -23,9 +23,7 @@ export const UserProjectsPage: React.FC = () => {
       try {
         setIsLoading(true);
         const data = await getProjects();
-        // Filter projects for user's company
-        const userProjects = data.filter(project => project.company_id === companyId);
-        setProjects(userProjects);
+        setProjects(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch projects');
       } finally {
@@ -34,7 +32,7 @@ export const UserProjectsPage: React.FC = () => {
     };
 
     fetchProjects();
-  }, [companyId]);
+  }, []);
 
   const filteredProjects = projects.filter(project => {
     // Filter by active tab

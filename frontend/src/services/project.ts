@@ -2,13 +2,14 @@ import { getApiUrl } from '@utils';
 import { ApiError } from './errors';
 import type { FormData } from '@/types';
 import { uploadFile } from './storage';
+import { fetchWithAuth } from './auth';
 
 interface CompanyResponse {
   ID: string;
   Name: string;
-  Industry: string;
-  FoundedDate: string;
-  CompanyStage: string;
+  Industry: string | null;
+  FoundedDate: string | null;
+  CompanyStage: string | null;
 }
 
 // Backend response interface
@@ -21,14 +22,12 @@ interface ProjectResponse {
   CreatedAt: string;
   UpdatedAt: string;
   Company?: CompanyResponse;
-  Sections?: {
-    ID: string;
-    Title: string;
-    Questions: {
-      QuestionText: string;
-      AnswerText: string;
-    }[];
-  }[];
+  Sections?: ProjectSection[];
+}
+
+interface ProjectFile {
+  file_type: string;
+  file_url: string;
 }
 
 // Frontend interfaces
@@ -55,28 +54,25 @@ export interface Project {
   status: string;
   created_at: string;
   updated_at: string;
-  industry: string;
-  company_stage: string;
-  founded_date: string;
+  industry: string | null;
+  company_stage: string | null;
+  founded_date: string | null;
   documents: ProjectDocument[];
   sections: ProjectSection[];
 }
 
 // Transform backend response to frontend format
 const transformProject = (project: ProjectResponse): Project => {
-  // decode sections from base64
   let sections: ProjectSection[] = [];
-  try {
-    if (project.Sections) {
-      const decodedSections = atob(project.Sections);
-      const parsedSections = JSON.parse(decodedSections);
-      sections = parsedSections.map(s => ({
-        title: s.title || '',
-        questions: s.questions || []
-      }));
-    }
-  } catch (err) {
-    console.error('failed to parse sections:', err);
+  
+  if (project.Sections) {
+    sections = project.Sections.map(s => ({
+      title: s.Title,
+      questions: s.Questions.map(q => ({
+        question: q.QuestionText,
+        answer: q.AnswerText
+      }))
+    }));
   }
 
   return {
@@ -87,9 +83,9 @@ const transformProject = (project: ProjectResponse): Project => {
     status: project.Status,
     created_at: project.CreatedAt,
     updated_at: project.UpdatedAt,
-    industry: project.Company?.Industry,
-    company_stage: project.Company?.CompanyStage,
-    founded_date: project.Company?.FoundedDate,
+    industry: project.Company?.Industry || null,
+    company_stage: project.Company?.CompanyStage || null,
+    founded_date: project.Company?.FoundedDate || null,
     documents: [], // todo: implement when backend supports
     sections: sections
   };
@@ -105,7 +101,7 @@ export async function createProject(
   formData: FormData,
   files: File[] = [],
   links: ProjectLink[] = []
-): Promise<CreateProjectResponse> {
+): Promise<ProjectResponse> {
   // First upload all files
   const uploadedFiles: ProjectFile[] = await Promise.all(
     files.map(async (file) => {
@@ -117,10 +113,8 @@ export async function createProject(
     })
   );
 
-  // Create project with files and links
   const url = getApiUrl('/projects');
   
-  // Ensure links are properly structured
   const sanitizedLinks = links.map(link => ({
     LinkType: link.LinkType,
     URL: link.URL
@@ -138,9 +132,9 @@ export async function createProject(
     }))
   };
 
-  console.log('Request body:', body); // Debug log
+  console.log('Request body:', body);
 
-  const response = await fetch(url, {
+  const response = await fetchWithAuth(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -150,32 +144,33 @@ export async function createProject(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);
-    console.error('Server error:', errorData); // Debug log
-    throw new ApiError('Failed to create project', response.status, errorData);
+    console.error('Server error:', errorData);
+    throw new ApiError('Failed to create project', response.status, errorData || {});
   }
 
   return response.json();
 }
 
 export async function getProjects(): Promise<Project[]> {
-  const url = `${getApiUrl()}/projects`.replace(/([^:]\/)\/+/g, "$1");
-  const response = await fetch(url);
+  const url = getApiUrl('/projects').replace(/([^:]\/)\/+/g, "$1");
+  const response = await fetchWithAuth(url);
   
   if (!response.ok) {
-    throw new ApiError('Failed to fetch projects', response.status);
+    const errorData = await response.json().catch(() => null);
+    throw new ApiError('Failed to fetch projects', response.status, errorData || {});
   }
 
   const data = await response.json();
   return data.map(transformProject);
-} 
+}
 
-// Add new function to get project details
 export async function getProjectDetails(id: string): Promise<Project> {
   const url = `${getApiUrl()}/projects/${id}`.replace(/([^:]\/)\/+/g, "$1");
-  const response = await fetch(url);
+  const response = await fetchWithAuth(url);
   
   if (!response.ok) {
-    throw new ApiError('Failed to fetch project details', response.status);
+    const errorData = await response.json().catch(() => null);
+    throw new ApiError('Failed to fetch project details', response.status, errorData || {});
   }
 
   const data = await response.json();
