@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Landing, Register, DashboardPage, AdminDashboardPage, SubmitProjectPage, AdminProjectsPage, ProjectDetailsPage, ProjectSubmissionPage } from '@pages';
+import { Landing, Register, DashboardPage, AdminDashboardPage, SubmitProjectPage, AdminProjectsPage, ProjectDetailsPage, ProjectSubmissionPage, UserProjectsPage } from '@pages';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 
@@ -18,7 +18,7 @@ const Router = () => (
                 } />
                 <Route path="/projects" element={
                     <ProtectedRoute allowedRoles={['startup_owner', 'investor', 'admin']}>
-                        <DashboardPage />
+                        <UserProjectsPage />
                     </ProtectedRoute>
                 } />
                 <Route path="/resources" element={
