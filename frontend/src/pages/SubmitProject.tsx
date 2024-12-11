@@ -41,6 +41,22 @@ const SubmitProjectPage = () => {
                 'After working in manufacturing for over a decade, we witnessed firsthand the inefficiencies and errors in manual quality control processes. This inspired us to develop an AI-powered solution that could perform inspections with greater accuracy and consistency, while significantly reducing costs and improving production speed.',
             vision: 'Our vision is to become the global leader in AI-powered visual inspection and analytics. We aim to revolutionize how businesses handle quality control and inventory management by making advanced computer vision technology accessible and affordable for companies of all sizes. Within 5 years, we plan to expand our solutions across multiple industries and establish ourselves as the industry standard for automated visual inspection.',
 
+            // Product Overview
+            'product-description': "TechVision AI Solutions differentiates itself through its specialized focus on retail and manufacturing computer vision applications, offering end-to-end solutions rather than standalone AI capabilities like many competitors. The defensibility primarily relies on proprietary algorithms, though this could be strengthened by developing industry-specific datasets, building network effects across the customer base, and creating high switching costs through deep operational integration. However, the current positioning would benefit from more specific technical differentiators and unique data assets to create a stronger competitive moat.",
+            'product-roadmap': "Within 12 months, TechVision will roll out core quality control and inventory modules (Q1), enhance customer analytics (Q2), develop advanced automation features (Q3), and launch customization tools with automated reporting (Q4).",
+
+            // Customer Demographic
+            'target-demographic': "TechVision AI Solutions primarily targets mid to large-scale retail chains and manufacturing facilities that need to modernize their quality control and inventory processes. The solution is compelling to these customers because it directly addresses their key pain points: reducing costly quality control errors, eliminating manual inventory counts, and improving customer satisfaction through better stock management - all of which impact their bottom line through both cost savings and revenue growth opportunities.",
+            'addressable-market': "TechVision AI Solutions operates in a substantial addressable market combining retail and manufacturing AI solutions, estimated at $45B globally and growing at 28% annually. The market capture strategy involves a three-phase approach: initially targeting medium-sized manufacturers and retail chains with high quality control costs in North America (representing $5B of the TAM), then expanding to enterprise clients and European markets by year 2, and finally scaling to Asia-Pacific regions and smaller businesses through a more accessible SaaS model in year 3, with a goal of capturing 2-3% market share within 5 years through direct sales, strategic partnerships with existing automation providers, and channel resellers.",
+
+            // Financials
+            'company-revenue': "TechVision AI Solutions has an ARR of $4.2M as of Q4 2024, representing a 180% growth from the previous year's $1.5M. Our revenue comes primarily from subscription licenses to our AI quality control platform, with our top 3 enterprise clients accounting for 40% of ARR, while our mid-market segment is showing the fastest growth at 215% year-over-year.",
+            'company-raised': "TechVision AI Solutions has raised a total of $8.2M across two funding rounds: a $1.2M seed round in early 2023 led by First Tech Ventures with participation from angel investors, followed by a $7M Series A in late 2024 led by AI Capital Partners, with strategic investment from Manufacturing Innovation Fund and existing investors participating.",
+            'company-valuation': "Following our recent Series A round in late 2024, TechVision AI Solutions is valued at $42M, based on a 5x ARR multiple which reflects our strong growth trajectory (+180% YoY) and established position in the retail and manufacturing AI sectors. This represents a significant increase from our $12M valuation during our seed round, driven by our rapid customer acquisition and expanding product capabilities.",
+            'company-monthly-expenses': "TechVision AI Solutions' monthly burn rate is approximately $320,000, with the following breakdown: $180,000 for our 25-person team (engineering, sales, and operations), $45,000 for cloud infrastructure and computing costs, $35,000 for office and operational expenses, $40,000 for marketing and sales activities, and $20,000 for R&D and other miscellaneous costs. With our current runway and revenue growth, this gives us approximately 18 months of operating capital.",
+            'company-main-revenue': "TechVision AI Solutions currently generates $4.2M ARR across three revenue streams: Enterprise Subscriptions ($3.2M, priced $15-45K/month), Mid-Market Solutions ($800K, priced $5-12K/month), and Professional Services ($200K), with projections to reach $11.5M ARR in 12 months and $33M ARR in 36 months through market expansion, increased enterprise adoption, and scaling of our channel partner program.",
+            'company-funding': "TechVision AI Solutions has raised $8.2M total ($1.2M seed, $7M Series A), with capital allocation focused 45% on R&D and engineering (expanding our AI capabilities and product features), 25% on sales and marketing (building enterprise sales team and channel partnerships), 20% on operations and infrastructure scaling, and 10% maintained as operating runway - these investments have enabled our 180% YoY growth and expansion into enterprise markets.",
+
             // Team Members
             'team-members': [
                 {
@@ -137,7 +153,7 @@ const SubmitProjectPage = () => {
                     <TextInput
                         label={field.label}
                         value={formData[field.id] || ''}
-                        onChange={(value) => handleChange(field.id, value)}
+                        onChange={(e) => handleChange(field.id, e.target.value)}
                         placeholder={field.placeholder}
                         required={field.required}
                     />
@@ -156,7 +172,7 @@ const SubmitProjectPage = () => {
                     <TextArea
                         label={field.label}
                         value={formData[field.id] || ''}
-                        onChange={(value) => handleChange(field.id, value)}
+                        onChange={(e) => handleChange(field.id, e.target.value)}
                         placeholder={field.placeholder}
                         required={field.required}
                         rows={field.rows}
