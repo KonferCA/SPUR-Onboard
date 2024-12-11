@@ -123,6 +123,11 @@ jobs:
                 echo "PostgreSQL container is already running"
             fi
 
+            # Force the version to the latest actual migration
+            goose -dir $HOME/staging/migrations postgres \
+              "postgres://$DB_USER:$DB_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" force 20241219000000
+
+            # Run migrations up
             goose -dir $HOME/staging/migrations postgres \
               "postgres://$DB_USER:$DB_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" up
 
