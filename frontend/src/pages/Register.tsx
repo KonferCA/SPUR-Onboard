@@ -330,7 +330,7 @@ const RegistrationComplete = ({ onComplete }: RegistrationCompleteProps) => {
 const Register = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { user, setAuth, clearAuth } = useAuth();
+    const { user, accessToken, companyId, setAuth, clearAuth } = useAuth();
     const [currentStep, setCurrentStep] = useState<RegistrationStep>(() => {
         const locationState = location.state as {
             step?: RegistrationStep;
@@ -487,6 +487,10 @@ const Register = () => {
 
     const handleFormSubmit = (e: FormEvent) => {
         e.preventDefault();
+        if (!user) return;
+        user.firstName = formData.firstName;
+        user.lastName = formData.lastName;
+        setAuth(user, accessToken, companyId);
         setCurrentStep('registration-complete');
     };
 
