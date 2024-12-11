@@ -3,13 +3,16 @@ package server
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"KonferCA/SPUR/internal/jwt"
 )
 
 func TestProjectTagEndpoints(t *testing.T) {
@@ -46,11 +49,44 @@ func TestProjectTagEndpoints(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to clean up companies: %v", err)
 	}
+	_, err = s.DBPool.Exec(ctx, "DELETE FROM users WHERE email = $1", "test@example.com")
+	if err != nil {
+		t.Fatalf("failed to clean up users: %v", err)
+	}
+
+	// Create a test user directly in the database
+	userID := uuid.New().String()
+	_, err = s.DBPool.Exec(ctx, `
+		INSERT INTO users (id, email, password_hash, first_name, last_name, role, token_salt)
+		VALUES ($1, $2, $3, $4, $5, 'startup_owner', gen_random_bytes(32))
+	`, userID, "test@example.com", "hashedpassword", "Test", "User")
+	if err != nil {
+		t.Fatalf("failed to create test user: %v", err)
+	}
+
+	// After creating the test user, generate a JWT token
+	salt := make([]byte, 32)
+	_, err = rand.Read(salt)
+	if err != nil {
+		t.Fatalf("failed to generate salt: %v", err)
+	}
+
+	// Update user with salt
+	_, err = s.DBPool.Exec(ctx, "UPDATE users SET token_salt = $1 WHERE id = $2", salt, userID)
+	if err != nil {
+		t.Fatalf("failed to update user salt: %v", err)
+	}
+
+	// Generate tokens
+	accessToken, _, err := jwt.GenerateWithSalt(userID, "startup_owner", salt)
+	if err != nil {
+		t.Fatalf("failed to generate tokens: %v", err)
+	}
 
 	// First create a company
 	description := "Test Company Description"
 	companyPayload := CreateCompanyRequest{
-		OwnerUserID: "00000000-0000-0000-0000-000000000000", // assuming this is a valid user ID
+		OwnerUserID: userID,  // Use the created user's ID instead of zeros
 		Name:        "Test Company",
 		Description: &description,
 	}
@@ -90,6 +126,7 @@ func TestProjectTagEndpoints(t *testing.T) {
 
 	req = httptest.NewRequest(http.MethodPost, "/api/v1/projects", bytes.NewReader(projectBody))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessToken)
 	rec = httptest.NewRecorder()
 	s.echoInstance.ServeHTTP(rec, req)
 
@@ -147,6 +184,7 @@ func TestProjectTagEndpoints(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/projects/"+projectID+"/tags", bytes.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec := httptest.NewRecorder()
 
 		s.echoInstance.ServeHTTP(rec, req)
@@ -163,6 +201,7 @@ func TestProjectTagEndpoints(t *testing.T) {
 	// test list project tags
 	t.Run("list project tags", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/projects/"+projectID+"/tags", nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec := httptest.NewRecorder()
 
 		s.echoInstance.ServeHTTP(rec, req)
@@ -183,6 +222,7 @@ func TestProjectTagEndpoints(t *testing.T) {
 	// test delete project tag
 	t.Run("delete project tag", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodDelete, "/api/v1/projects/"+projectID+"/tags/"+tagID, nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec := httptest.NewRecorder()
 
 		s.echoInstance.ServeHTTP(rec, req)
@@ -191,6 +231,7 @@ func TestProjectTagEndpoints(t *testing.T) {
 
 		// verify deletion using list endpoint
 		req = httptest.NewRequest(http.MethodGet, "/api/v1/projects/"+projectID+"/tags", nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec = httptest.NewRecorder()
 
 		s.echoInstance.ServeHTTP(rec, req)
