@@ -460,7 +460,7 @@ const Register = () => {
 
             // Redirect based on user role
             if (signinResp.user.role === 'admin') {
-                navigate('/admin/dashboard', { replace: true });
+                navigate('/admin/projects', { replace: true });
             } else if (signinResp.user.role === 'startup_owner') {
                 navigate('/dashboard', { replace: true });
             } else if (signinResp.user.role === 'investor') {

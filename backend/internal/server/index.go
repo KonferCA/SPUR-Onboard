@@ -243,27 +243,38 @@ func (s *Server) setupCompanyQuestionsAnswersRoutes() {
 }
 
 func (s *Server) setupProjectRoutes() {
-	s.apiV1.POST("/projects", s.handleCreateProject, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectRequest{})))
-	s.apiV1.GET("/projects/:id", s.handleGetProject)
-	s.apiV1.GET("/projects", s.handleListProjects)
-	s.apiV1.PUT("/projects/:id", s.handleUpdateProject, middleware.ValidateRequestBody(reflect.TypeOf(UpdateProjectRequest{})))
-	s.apiV1.DELETE("/projects/:id", s.handleDeleteProject)
+    // create projects group
+    projects := s.apiV1.Group("/projects")
+    
+    // protect all project routes with JWT authentication
+    projects.Use(middleware.ProtectAPI(jwt.ACCESS_TOKEN_TYPE, s.queries))
 
-	s.apiV1.POST("/projects/:id/files", s.handleCreateProjectFile, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectFileRequest{})))
-	s.apiV1.GET("/projects/:id/files", s.handleListProjectFiles)
-	s.apiV1.DELETE("/files/:id", s.handleDeleteProjectFile)
-
-	s.apiV1.POST("/projects/:id/comments", s.handleCreateProjectComment, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectCommentRequest{})))
-	s.apiV1.GET("/projects/:id/comments", s.handleListProjectComments)
-	s.apiV1.DELETE("/projects/comments/:id", s.handleDeleteProjectComment)
-
-	s.apiV1.POST("/projects/:id/links", s.handleCreateProjectLink, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectLinkRequest{})))
-	s.apiV1.GET("/projects/:id/links", s.handleListProjectLinks)
-	s.apiV1.DELETE("/projects/links/:id", s.handleDeleteProjectLink)
-
-	s.apiV1.POST("/projects/:id/tags", s.handleAddProjectTag, middleware.ValidateRequestBody(reflect.TypeOf(AddProjectTagRequest{})))
-	s.apiV1.GET("/projects/:id/tags", s.handleListProjectTags)
-	s.apiV1.DELETE("/projects/:id/tags/:tag_id", s.handleDeleteProjectTag)
+    // setup routes
+    projects.POST("", s.handleCreateProject, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectRequest{})))
+    projects.GET("", s.handleListProjects)
+    projects.GET("/:id", s.handleGetProject)
+    projects.PUT("/:id", s.handleUpdateProject, middleware.ValidateRequestBody(reflect.TypeOf(UpdateProjectRequest{})))
+    projects.DELETE("/:id", s.handleDeleteProject)
+    
+    // project files
+    projects.POST("/:id/files", s.handleCreateProjectFile)
+    projects.GET("/:id/files", s.handleListProjectFiles)
+    projects.DELETE("/files/:id", s.handleDeleteProjectFile)
+    
+    // project comments
+    projects.POST("/:id/comments", s.handleCreateProjectComment, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectCommentRequest{})))
+    projects.GET("/:id/comments", s.handleListProjectComments)
+    projects.DELETE("/comments/:id", s.handleDeleteProjectComment)
+    
+    // project links
+    projects.POST("/:id/links", s.handleCreateProjectLink, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectLinkRequest{})))
+    projects.GET("/:id/links", s.handleListProjectLinks)
+    projects.DELETE("/links/:id", s.handleDeleteProjectLink)
+    
+    // project tags
+    projects.POST("/:id/tags", s.handleAddProjectTag, middleware.ValidateRequestBody(reflect.TypeOf(AddProjectTagRequest{})))
+    projects.GET("/:id/tags", s.handleListProjectTags)
+    projects.DELETE("/:id/tags/:tag_id", s.handleDeleteProjectTag)
 }
 
 func (s *Server) setupTagRoutes() {

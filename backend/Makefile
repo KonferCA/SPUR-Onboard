@@ -59,6 +59,14 @@ test: start-testdb
 			exit 1; \
 		fi
 
+re:
+	@echo "resetting development environment..."
+	@make clean-dev-db || true
+	@make init-dev-db
+	@make up
+	@make seed
+	@make dev
+
 start-testdb:
 	@echo "Setting up PostgreSQL database..."
 	@if ! docker ps -a --filter "name=test-postgres" --format '{{.Names}}' | grep -q '^test-postgres$$'; then \

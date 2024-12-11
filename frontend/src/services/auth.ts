@@ -15,6 +15,8 @@ export interface AuthResponse {
 export interface RegisterReponse extends AuthResponse {}
 export interface SigninResponse extends AuthResponse {}
 
+let currentAccessToken: string | null = null;
+
 /**
  * Registers a user if the given email is not already registered.
  */
@@ -66,6 +68,7 @@ export async function signin(
         headers: {
             'Content-Type': 'application/json',
         },
+        credentials: 'include'
     });
 
     const json = await res.json();
@@ -74,7 +77,66 @@ export async function signin(
         throw new ApiError('Failed to sign in', res.status, json);
     }
 
+    // Store the access token
+    currentAccessToken = json.access_token;
     return json as SigninResponse;
+}
+
+export async function refreshAccessToken(): Promise<string> {
+    const url = getApiUrl('/auth/refresh');
+    const res = await fetch(url, {
+        method: 'POST',
+        credentials: 'include'
+    });
+
+    if (!res.ok) {
+        throw new ApiError('Failed to refresh token', res.status, await res.json());
+    }
+
+    const json = await res.json();
+    currentAccessToken = json.access_token;
+    return json.access_token;
+}
+
+export function getAccessToken(): string | null {
+    return currentAccessToken;
+}
+
+// Add this utility function to handle API requests with auto-refresh
+export async function fetchWithAuth(url: string, options: RequestInit = {}) {
+    // Ensure credentials are included
+    options.credentials = 'include';
+    
+    // Add access token if available
+    const accessToken = getAccessToken();
+    if (accessToken) {
+        options.headers = {
+            ...options.headers,
+            'Authorization': `Bearer ${accessToken}`
+        };
+    }
+    
+    let response = await fetch(url, options);
+    
+    if (response.status === 401) {
+        // Try to refresh the token
+        try {
+            const newAccessToken = await refreshAccessToken();
+            
+            // Add the new access token to headers
+            const headers = new Headers(options.headers);
+            headers.set('Authorization', `Bearer ${newAccessToken}`);
+            options.headers = headers;
+            
+            // Retry the original request
+            response = await fetch(url, options);
+        } catch (error) {
+            // If refresh fails, throw error to trigger logout
+            throw new ApiError('Authentication failed', 401, {});
+        }
+    }
+    
+    return response;
 }
 
 /**
@@ -84,5 +146,9 @@ export async function signin(
  */
 export async function signout(): Promise<void> {
     const url = getApiUrl('/auth/signout');
-    await fetch(url, { method: 'POST' });
+    await fetch(url, { 
+        method: 'POST',
+        credentials: 'include' 
+    });
+    currentAccessToken = null;
 }

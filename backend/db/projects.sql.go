@@ -419,20 +419,110 @@ func (q *Queries) ListProjectTags(ctx context.Context, projectID string) ([]List
 	return items, nil
 }
 
-const listProjects = `-- name: ListProjects :many
-SELECT id, company_id, title, description, status, created_at, updated_at FROM projects
-ORDER BY created_at DESC
+const listProjectWithDetails = `-- name: ListProjectWithDetails :one
+SELECT 
+    p.id, p.company_id, p.title, p.description, p.status, p.created_at, p.updated_at,
+    c.name as company_name,
+    c.industry as company_industry,
+    c.founded_date as company_founded_date,
+    c.company_stage as company_stage,
+    json_agg(DISTINCT jsonb_build_object(
+        'id', ps.id,
+        'title', ps.title,
+        'questions', (
+            SELECT json_agg(jsonb_build_object(
+                'question', pq.question_text,
+                'answer', pq.answer_text
+            ))
+            FROM project_questions pq
+            WHERE pq.section_id = ps.id
+        )
+    )) as sections,
+    json_agg(DISTINCT jsonb_build_object(
+        'id', pf.id,
+        'name', pf.file_type,
+        'url', pf.file_url
+    )) as documents
+FROM projects p
+LEFT JOIN companies c ON p.company_id = c.id
+LEFT JOIN project_sections ps ON ps.project_id = p.id
+LEFT JOIN project_files pf ON pf.project_id = p.id
+WHERE p.id = $1
+GROUP BY p.id, c.id
 `
 
-func (q *Queries) ListProjects(ctx context.Context) ([]Project, error) {
+type ListProjectWithDetailsRow struct {
+	ID                 string
+	CompanyID          string
+	Title              string
+	Description        *string
+	Status             string
+	CreatedAt          pgtype.Timestamp
+	UpdatedAt          pgtype.Timestamp
+	CompanyName        *string
+	CompanyIndustry    *string
+	CompanyFoundedDate pgtype.Date
+	CompanyStage       *string
+	Sections           []byte
+	Documents          []byte
+}
+
+func (q *Queries) ListProjectWithDetails(ctx context.Context, id string) (ListProjectWithDetailsRow, error) {
+	row := q.db.QueryRow(ctx, listProjectWithDetails, id)
+	var i ListProjectWithDetailsRow
+	err := row.Scan(
+		&i.ID,
+		&i.CompanyID,
+		&i.Title,
+		&i.Description,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.CompanyName,
+		&i.CompanyIndustry,
+		&i.CompanyFoundedDate,
+		&i.CompanyStage,
+		&i.Sections,
+		&i.Documents,
+	)
+	return i, err
+}
+
+const listProjects = `-- name: ListProjects :many
+SELECT 
+    p.id, p.company_id, p.title, p.description, p.status, p.created_at, p.updated_at,
+    c.name as company_name,
+    c.industry as company_industry,
+    c.founded_date as company_founded_date,
+    c.company_stage as company_stage
+FROM projects p
+LEFT JOIN companies c ON p.company_id = c.id
+ORDER BY p.created_at DESC
+`
+
+type ListProjectsRow struct {
+	ID                 string
+	CompanyID          string
+	Title              string
+	Description        *string
+	Status             string
+	CreatedAt          pgtype.Timestamp
+	UpdatedAt          pgtype.Timestamp
+	CompanyName        *string
+	CompanyIndustry    *string
+	CompanyFoundedDate pgtype.Date
+	CompanyStage       *string
+}
+
+func (q *Queries) ListProjects(ctx context.Context) ([]ListProjectsRow, error) {
 	rows, err := q.db.Query(ctx, listProjects)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Project
+	var items []ListProjectsRow
 	for rows.Next() {
-		var i Project
+		var i ListProjectsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.CompanyID,
@@ -441,6 +531,10 @@ func (q *Queries) ListProjects(ctx context.Context) ([]Project, error) {
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.CompanyName,
+			&i.CompanyIndustry,
+			&i.CompanyFoundedDate,
+			&i.CompanyStage,
 		); err != nil {
 			return nil, err
 		}

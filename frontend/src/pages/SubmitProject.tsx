@@ -90,10 +90,6 @@ const SubmitProjectPage = () => {
         setCurrentStep('B');
     };
 
-    // const handleBack = () => {
-    //   setCurrentStep('A');
-    // };
-
     const handleChange = (fieldId: string, value: any) => {
         setFormData((prev) => ({
             ...prev,
@@ -113,28 +109,22 @@ const SubmitProjectPage = () => {
 
             // Get files and links from form data
             const files = formData.documents || [];
-            const links =
-                formData['social-links']?.map(
-                    (link: { type: string; url: string }) => ({
-                        type: link.type || 'website',
-                        url: link.url,
-                    })
-                ) || [];
+            const links = formData['social-links']?.map(
+                (link: { type: string; url: string }) => ({
+                    LinkType: link.type || 'website',
+                    URL: link.url,
+                })
+            ) || [];
 
             // Create project with files and links in one call
-            const project = await createProject(
-                companyId,
-                formData,
-                files,
-                links
-            );
+            const project = await createProject(companyId, formData, files, links);
             console.log('Created project:', project);
 
             // Navigate to success page or dashboard
             navigate('/dashboard');
         } catch (err) {
             console.error('Failed to submit project:', err);
-            setError('Failed to submit project. Please try again.');
+            setError(err instanceof Error ? err.message : 'Failed to submit project');
         } finally {
             setIsSubmitting(false);
         }
@@ -273,32 +263,19 @@ const SubmitProjectPage = () => {
                                             key={step.id}
                                             className={`pb-2 px-4 cursor-pointer ${
                                                 currentStep === step.id
-                                                    ? 'border-b-2 border-gray-900'
-                                                    : ''
+                                                    ? 'border-b-2 border-blue-500 text-blue-600'
+                                                    : 'text-gray-500'
                                             }`}
-                                            onClick={() =>
-                                                setCurrentStep(step.id)
-                                            }
+                                            onClick={() => setCurrentStep(step.id)}
                                         >
-                                            <span
-                                                className={`text-sm font-medium ${
-                                                    currentStep === step.id
-                                                        ? 'text-gray-900'
-                                                        : 'text-gray-500'
-                                                }`}
-                                            >
-                                                {step.title}
-                                            </span>
-                                            <p className="text-xs text-gray-500">
-                                                {step.subtitle}
-                                            </p>
+                                            {step.title}
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Form content */}
+                        {/* Form sections */}
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={currentStep}
@@ -307,27 +284,16 @@ const SubmitProjectPage = () => {
                                 exit={{ opacity: 0, y: -20 }}
                                 transition={{ duration: 0.2 }}
                             >
-                                {error && (
-                                    <div className="text-red-500 text-sm mb-4">
-                                        {error}
-                                    </div>
-                                )}
-
                                 {currentStepData?.sections.map((section) => (
                                     <div
                                         key={section.id}
                                         id={section.id}
-                                        className="mb-8"
+                                        className="space-y-6"
                                     >
-                                        <h3 className="text-lg font-medium mb-2">
+                                        <h2 className="text-lg font-medium text-gray-900">
                                             {section.title}
-                                        </h3>
-                                        {section.description && (
-                                            <p className="text-gray-600 text-sm mb-4">
-                                                {section.description}
-                                            </p>
-                                        )}
-                                        <div className="space-y-4">
+                                        </h2>
+                                        <div className="space-y-6">
                                             {section.fields.map((field) => (
                                                 <div key={field.id}>
                                                     {renderField(field)}
@@ -336,35 +302,43 @@ const SubmitProjectPage = () => {
                                         </div>
                                     </div>
                                 ))}
-
-                                {currentStep === 'A' && (
-                                    <div className="pt-6">
-                                        <button
-                                            className="w-full py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                                            onClick={handleNext}
-                                        >
-                                            Continue
-                                        </button>
-                                    </div>
-                                )}
-
-                                {currentStep === 'B' && (
-                                    <div className="pt-6">
-                                        <button
-                                            className="w-full py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors disabled:bg-gray-400"
-                                            onClick={handleSubmit}
-                                            disabled={
-                                                isSubmitting || !companyId
-                                            }
-                                        >
-                                            {isSubmitting
-                                                ? 'Submitting...'
-                                                : 'Submit Application'}
-                                        </button>
-                                    </div>
-                                )}
                             </motion.div>
                         </AnimatePresence>
+
+                        {/* Error message */}
+                        {error && (
+                            <div className="text-red-600 text-sm">{error}</div>
+                        )}
+
+                        {/* Navigation buttons */}
+                        <div className="flex justify-between pt-8">
+                            {currentStep === 'A' ? (
+                                <div />
+                            ) : (
+                                <button
+                                    onClick={() => setCurrentStep('A')}
+                                    className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+                                >
+                                    Back
+                                </button>
+                            )}
+                            {currentStep === 'A' ? (
+                                <button
+                                    onClick={handleNext}
+                                    className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                >
+                                    Next
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting}
+                                    className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                                >
+                                    {isSubmitting ? 'Submitting...' : 'Submit'}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </Section>
             </div>

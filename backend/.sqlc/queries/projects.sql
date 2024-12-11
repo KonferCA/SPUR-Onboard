@@ -14,8 +14,15 @@ SELECT * FROM projects
 WHERE id = $1 LIMIT 1;
 
 -- name: ListProjects :many
-SELECT * FROM projects
-ORDER BY created_at DESC;
+SELECT 
+    p.*,
+    c.name as company_name,
+    c.industry as company_industry,
+    c.founded_date as company_founded_date,
+    c.company_stage as company_stage
+FROM projects p
+LEFT JOIN companies c ON p.company_id = c.id
+ORDER BY p.created_at DESC;
 
 -- name: ListProjectsByCompany :many
 SELECT * FROM projects
@@ -124,3 +131,51 @@ WHERE project_id = $1 AND tag_id = $2;
 -- name: DeleteAllProjectTags :exec
 DELETE FROM project_tags 
 WHERE project_id = $1;
+
+-- name: ListProjectWithDetails :one
+SELECT 
+    p.*,
+    c.name as company_name,
+    c.industry as company_industry,
+    c.founded_date as company_founded_date,
+    c.company_stage as company_stage,
+    COALESCE(
+        json_agg(
+            DISTINCT jsonb_build_object(
+                'id', ps.id,
+                'title', ps.title,
+                'questions', (
+                    SELECT COALESCE(
+                        json_agg(
+                            jsonb_build_object(
+                                'question', pq.question_text,
+                                'answer', pq.answer_text
+                            )
+                        ),
+                        '[]'::json
+                    )
+                    FROM project_questions pq
+                    WHERE pq.section_id = ps.id
+                )
+            )
+            FILTER (WHERE ps.id IS NOT NULL)
+        ),
+        '[]'::json
+    ) as sections,
+    COALESCE(
+        json_agg(
+            DISTINCT jsonb_build_object(
+                'id', pf.id,
+                'name', pf.file_type,
+                'url', pf.file_url
+            )
+            FILTER (WHERE pf.id IS NOT NULL)
+        ),
+        '[]'::json
+    ) as documents
+FROM projects p
+LEFT JOIN companies c ON p.company_id = c.id
+LEFT JOIN project_sections ps ON ps.project_id = p.id
+LEFT JOIN project_files pf ON pf.project_id = p.id
+WHERE p.id = $1
+GROUP BY p.id, c.id;

@@ -74,14 +74,17 @@ func AllUserRoleValues() []UserRole {
 }
 
 type Company struct {
-	ID          string
-	OwnerUserID string
-	Name        string
-	Description *string
-	IsVerified  bool
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   pgtype.Timestamp
+	ID           string
+	OwnerUserID  string
+	Name         string
+	Description  *string
+	IsVerified   bool
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	DeletedAt    pgtype.Timestamp
+	Industry     *string
+	CompanyStage *string
+	FoundedDate  pgtype.Date
 }
 
 type CompanyDocument struct {
@@ -188,6 +191,23 @@ type ProjectLink struct {
 	ProjectID string
 	LinkType  string
 	Url       string
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+}
+
+type ProjectQuestion struct {
+	ID           string
+	SectionID    string
+	QuestionText string
+	AnswerText   string
+	CreatedAt    pgtype.Timestamp
+	UpdatedAt    pgtype.Timestamp
+}
+
+type ProjectSection struct {
+	ID        string
+	ProjectID string
+	Title     string
 	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp
 }

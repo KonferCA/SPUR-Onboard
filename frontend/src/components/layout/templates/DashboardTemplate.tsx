@@ -33,8 +33,8 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
 
   return (
     <PageLayout className="bg-gray-50">
-      {/* top navbar */}
-      <div className="w-full bg-white border-b border-gray-200">
+      {/* top navbar - fixed */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
         <div className="max-w-[1440px] mx-auto px-6">
           <Stack direction="row" justify="between" align="center" className="h-16">
             <Stack direction="row" gap="lg" align="center">
@@ -71,12 +71,15 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
         </div>
       </div>
 
+      {/* spacer for fixed header */}
+      <div className="h-16" />
+
       {/* main content area */}
       <div className="w-full max-w-[1440px] mx-auto flex flex-1">
         {/* sidebar */}
         {customSidebar || (
           <div className="w-64 bg-white border-r border-gray-200">
-            <nav className="sticky top-0 py-4">
+            <nav className="sticky top-16 py-4">
               {menuItems.map((item) => (
                 <Link
                   key={item.path}

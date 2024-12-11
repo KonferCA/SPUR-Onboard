@@ -8,6 +8,7 @@ import (
 	"time"
 	"path/filepath"
 	"strings"
+	"encoding/json"
 
 	"KonferCA/SPUR/db"
 	mw "KonferCA/SPUR/internal/middleware"
@@ -90,7 +91,7 @@ func (s *Server) handleGetProject(c echo.Context) error {
 	}
 
 	queries := db.New(s.DBPool)
-	project, err := queries.GetProject(context.Background(), projectID)
+	project, err := queries.ListProjectWithDetails(context.Background(), projectID)
 	if err != nil {
 		return handleDBError(err, "fetch", "project")
 	}
@@ -99,25 +100,50 @@ func (s *Server) handleGetProject(c echo.Context) error {
 }
 
 func (s *Server) handleListProjects(c echo.Context) error {
+	// Get authenticated user from context
+	user := c.Get("user").(db.User)
+	fmt.Printf("DEBUG: User accessing projects - ID: %s, Role: %s\n", user.ID, user.Role)
+	
 	queries := db.New(s.DBPool)
-	companyID := c.QueryParam("company_id")
 
-	if companyID != "" {
-		companyUUID, err := validateUUID(companyID, "company")
-		if err != nil {
-			return err
+	// If user is admin, they can see all projects or filter by company
+	if user.Role == "admin" {
+		fmt.Println("DEBUG: User is admin, can see all projects")
+		companyID := c.QueryParam("company_id")
+		if companyID != "" {
+			fmt.Printf("DEBUG: Admin filtering by company_id: %s\n", companyID)
+			companyUUID, err := validateUUID(companyID, "company")
+			if err != nil {
+				return err
+			}
+			projects, err := queries.ListProjectsByCompany(context.Background(), companyUUID)
+			if err != nil {
+				return handleDBError(err, "fetch", "projects")
+			}
+			return c.JSON(http.StatusOK, projects)
 		}
-		projects, err := queries.ListProjectsByCompany(context.Background(), companyUUID)
+
+		projects, err := queries.ListProjects(context.Background())
 		if err != nil {
 			return handleDBError(err, "fetch", "projects")
 		}
 		return c.JSON(http.StatusOK, projects)
 	}
 
-	projects, err := queries.ListProjects(context.Background())
+	// For non-admin users, get their company ID from employee record
+	employee, err := queries.GetEmployeeByEmail(context.Background(), user.Email)
 	if err != nil {
+		fmt.Printf("DEBUG: Error fetching employee record: %v\n", err)
+		return handleDBError(err, "fetch", "employee")
+	}
+
+	fmt.Printf("DEBUG: Regular user, filtering by their company_id: %s\n", employee.CompanyID)
+	projects, err := queries.ListProjectsByCompany(context.Background(), employee.CompanyID)
+	if err != nil {
+		fmt.Printf("DEBUG: Error fetching projects: %v\n", err)
 		return handleDBError(err, "fetch", "projects")
 	}
+	fmt.Printf("DEBUG: Found %d projects for company %s\n", len(projects), employee.CompanyID)
 	return c.JSON(http.StatusOK, projects)
 }
 
@@ -485,4 +511,55 @@ func (s *Server) handleUpdateProject(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, project)
+}
+
+func (s *Server) handleGetProjectDetails(c echo.Context) error {
+	projectID, err := validateUUID(c.Param("id"), "project")
+	if err != nil {
+		return err
+	}
+
+	queries := db.New(s.DBPool)
+	project, err := queries.ListProjectWithDetails(context.Background(), projectID)
+	if err != nil {
+		return handleDBError(err, "fetch", "project details")
+	}
+
+	// decode sections from json
+	var sections []map[string]interface{}
+	if project.Sections != nil {
+		if err := json.Unmarshal(project.Sections, &sections); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to parse sections")
+		}
+	}
+
+	// decode documents from json
+	var documents []map[string]interface{}
+	if project.Documents != nil {
+		if err := json.Unmarshal(project.Documents, &documents); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to parse documents")
+		}
+	}
+
+	// create response with parsed json
+	response := map[string]interface{}{
+		"id":          project.ID,
+		"company_id":  project.CompanyID,
+		"title":       project.Title,
+		"description": project.Description,
+		"status":      project.Status,
+		"created_at":  project.CreatedAt,
+		"updated_at":  project.UpdatedAt,
+		"company": map[string]interface{}{
+			"id":           project.CompanyID,
+			"name":         project.CompanyName,
+			"industry":     project.CompanyIndustry,
+			"founded_date": project.CompanyFoundedDate,
+			"stage":        project.CompanyStage,
+		},
+		"sections":  sections,
+		"documents": documents,
+	}
+
+	return c.JSON(http.StatusOK, response)
 }

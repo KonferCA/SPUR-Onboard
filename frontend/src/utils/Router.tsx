@@ -5,6 +5,10 @@ import {
     DashboardPage,
     AdminDashboardPage,
     SubmitProjectPage,
+    AdminProjectsPage,
+    ProjectDetailsPage,
+    ProjectSubmissionPage,
+    UserProjectsPage,
     CreateCompany,
 } from '@pages';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -37,7 +41,7 @@ const Router = () => (
                             ]}
                         >
                             <RegistrationGuard>
-                              <CreateCompany />
+                                <CreateCompany />
                             </RegistrationGuard>
                         </ProtectedRoute>
                     }
@@ -45,7 +49,7 @@ const Router = () => (
                 <Route path="/projects" element={
                     <ProtectedRoute allowedRoles={['startup_owner', 'investor', 'admin']}>
                         <RegistrationGuard>
-                            <DashboardPage />
+                            <UserProjectsPage />
                         </RegistrationGuard>
                     </ProtectedRoute>
                 } />
@@ -96,21 +100,35 @@ const Router = () => (
                 <Route path="/admin/projects" element={
                     <ProtectedRoute allowedRoles={['admin']}>
                         <RegistrationGuard>
-                            <AdminDashboardPage />
+                            <AdminProjectsPage />
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/projects/:id" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <RegistrationGuard>
+                            <ProjectDetailsPage />
+                        </RegistrationGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/projects/:id/submission" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <RegistrationGuard>
+                            <ProjectSubmissionPage />
                         </RegistrationGuard>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/projects/pending" element={
                     <ProtectedRoute allowedRoles={['admin']}>
                         <RegistrationGuard>
-                            <AdminDashboardPage />
+                            <AdminProjectsPage />
                         </RegistrationGuard>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/projects/approved" element={
                     <ProtectedRoute allowedRoles={['admin']}>
                         <RegistrationGuard>
-                            <AdminDashboardPage />
+                            <AdminProjectsPage />
                         </RegistrationGuard>
                     </ProtectedRoute>
                 } />

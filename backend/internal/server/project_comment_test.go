@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"KonferCA/SPUR/internal/jwt"
 )
 
 func TestProjectCommentEndpoints(t *testing.T) {
@@ -58,6 +60,25 @@ func TestProjectCommentEndpoints(t *testing.T) {
 		t.Fatalf("failed to create test user: %v", err)
 	}
 
+	// After creating the test user, generate a JWT token
+	salt := make([]byte, 32)
+	_, err = rand.Read(salt)
+	if err != nil {
+		t.Fatalf("failed to generate salt: %v", err)
+	}
+
+	// Update user with salt
+	_, err = s.DBPool.Exec(ctx, "UPDATE users SET token_salt = $1 WHERE id = $2", salt, userID)
+	if err != nil {
+		t.Fatalf("failed to update user salt: %v", err)
+	}
+
+	// Generate tokens
+	accessToken, _, err := jwt.GenerateWithSalt(userID, "startup_owner", salt)
+	if err != nil {
+		t.Fatalf("failed to generate tokens: %v", err)
+	}
+
 	// Create a company
 	description := "Test Company Description"
 	companyPayload := CreateCompanyRequest{
@@ -69,6 +90,7 @@ func TestProjectCommentEndpoints(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/companies", bytes.NewReader(companyBody))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessToken)
 	rec := httptest.NewRecorder()
 	s.echoInstance.ServeHTTP(rec, req)
 
@@ -97,6 +119,7 @@ func TestProjectCommentEndpoints(t *testing.T) {
 
 	req = httptest.NewRequest(http.MethodPost, "/api/v1/projects", bytes.NewReader(projectBody))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessToken)
 	rec = httptest.NewRecorder()
 	s.echoInstance.ServeHTTP(rec, req)
 
@@ -123,6 +146,7 @@ func TestProjectCommentEndpoints(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/projects/"+projectID+"/comments", bytes.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec := httptest.NewRecorder()
 
 		s.echoInstance.ServeHTTP(rec, req)
@@ -139,6 +163,7 @@ func TestProjectCommentEndpoints(t *testing.T) {
 	// test list comments
 	t.Run("list comments", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/projects/"+projectID+"/comments", nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec := httptest.NewRecorder()
 
 		s.echoInstance.ServeHTTP(rec, req)
@@ -156,6 +181,7 @@ func TestProjectCommentEndpoints(t *testing.T) {
 	t.Run("delete comment", func(t *testing.T) {
 		// Get the comment ID from the list response
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/projects/"+projectID+"/comments", nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec := httptest.NewRecorder()
 		s.echoInstance.ServeHTTP(rec, req)
 
@@ -168,6 +194,7 @@ func TestProjectCommentEndpoints(t *testing.T) {
 
 		// Delete the comment
 		req = httptest.NewRequest(http.MethodDelete, "/api/v1/projects/comments/"+commentID, nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec = httptest.NewRecorder()
 
 		s.echoInstance.ServeHTTP(rec, req)
@@ -176,6 +203,7 @@ func TestProjectCommentEndpoints(t *testing.T) {
 
 		// Verify deletion
 		req = httptest.NewRequest(http.MethodGet, "/api/v1/projects/"+projectID+"/comments", nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec = httptest.NewRecorder()
 
 		s.echoInstance.ServeHTTP(rec, req)
@@ -198,6 +226,7 @@ func TestProjectCommentEndpoints(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/projects/invalid-uuid/comments", bytes.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec := httptest.NewRecorder()
 
 		s.echoInstance.ServeHTTP(rec, req)
@@ -213,6 +242,7 @@ func TestProjectCommentEndpoints(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/projects/"+projectID+"/comments", bytes.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec := httptest.NewRecorder()
 
 		s.echoInstance.ServeHTTP(rec, req)
@@ -222,6 +252,7 @@ func TestProjectCommentEndpoints(t *testing.T) {
 	t.Run("delete non-existent comment", func(t *testing.T) {
 		nonExistentID := uuid.New().String()
 		req := httptest.NewRequest(http.MethodDelete, "/api/v1/projects/comments/"+nonExistentID, nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec := httptest.NewRecorder()
 
 		s.echoInstance.ServeHTTP(rec, req)
