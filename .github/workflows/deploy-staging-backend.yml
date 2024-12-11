@@ -123,7 +123,6 @@ jobs:
                 echo "PostgreSQL container is already running"
             fi
 
-            goose fix -dir $HOME/staging/migrations
             goose -dir $HOME/staging/migrations postgres \
               "postgres://$DB_USER:$DB_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" up
 
