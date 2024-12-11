@@ -78,7 +78,7 @@ func (s *Server) handleSignup(c echo.Context) error {
 	cookie.HttpOnly = true
 	cookie.Secure = true // only send over HTTPS
 	cookie.SameSite = http.SameSiteStrictMode
-	cookie.Path = "/api/v1/auth" // only accessible by auth endpoints
+	cookie.Path = "/api/v1/auth"     // only accessible by auth endpoints
 	cookie.MaxAge = 7 * 24 * 60 * 60 // 7 days in seconds
 
 	c.SetCookie(cookie)
@@ -87,10 +87,12 @@ func (s *Server) handleSignup(c echo.Context) error {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 		defer cancel()
-		
+
+		exp := time.Now().Add(30 * time.Minute)
+
 		token, err := s.queries.CreateVerifyEmailToken(ctx, db.CreateVerifyEmailTokenParams{
 			Email:     user.Email,
-			ExpiresAt: time.Now().Add(30 * time.Minute),
+			ExpiresAt: exp,
 		})
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to create verification token")
@@ -98,7 +100,7 @@ func (s *Server) handleSignup(c echo.Context) error {
 		}
 
 		// Generate JWT for email verification
-		tokenStr, err := jwt.GenerateVerifyEmailToken(token.Email, token.ID, token.ExpiresAt)
+		tokenStr, err := jwt.GenerateVerifyEmailToken(token.Email, token.ID, exp)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to generate verification token")
 			return
@@ -155,7 +157,7 @@ func (s *Server) handleSignin(c echo.Context) error {
 	cookie.HttpOnly = true
 	cookie.Secure = true // only send over HTTPS
 	cookie.SameSite = http.SameSiteStrictMode
-	cookie.Path = "/api/v1/auth" // only accessible by auth endpoints
+	cookie.Path = "/api/v1/auth"     // only accessible by auth endpoints
 	cookie.MaxAge = 7 * 24 * 60 * 60 // 7 days in seconds
 
 	c.SetCookie(cookie)

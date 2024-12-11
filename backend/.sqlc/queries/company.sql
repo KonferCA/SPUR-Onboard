@@ -23,6 +23,11 @@ SELECT *
 FROM companies
 WHERE id = $1 LIMIT 1;
 
+-- name: GetCompanyByUser :one
+SELECT *
+FROM companies
+WHERE owner_user_id = $1 LIMIT 1;
+
 -- name: ListCompanies :many
 SELECT *
 FROM companies

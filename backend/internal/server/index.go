@@ -73,7 +73,7 @@ func New(testing bool) (*Server, error) {
 		apiLimiter = middleware.NewTestRateLimiter(100)
 	} else {
 		authLimiter = middleware.NewRateLimiter(
-			20,             // 20 requests
+			100,            // 100 requests
 			5*time.Minute,  // per 5 minutes
 			15*time.Minute, // block for 15 minutes if exceeded
 		)
@@ -192,6 +192,7 @@ func (s *Server) setupV1Routes() {
 func (s *Server) setupCompanyRoutes() {
 	s.apiV1.POST("/companies", s.handleCreateCompany, middleware.ValidateRequestBody(reflect.TypeOf(CreateCompanyRequest{})))
 	s.apiV1.GET("/companies/:id", s.handleGetCompany)
+	s.apiV1.GET("/company", s.handleGetUserCompany, middleware.ProtectAPI(jwt.ACCESS_TOKEN_TYPE, s.queries))
 	s.apiV1.GET("/companies", s.handleListCompanies)
 	s.apiV1.DELETE("/companies/:id", s.handleDeleteCompany)
 }

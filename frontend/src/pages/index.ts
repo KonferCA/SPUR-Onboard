@@ -7,3 +7,4 @@ export { AdminProjectsPage } from './AdminProjects';
 export { ProjectDetailsPage } from './ProjectDetails';
 export { ProjectSubmissionPage } from './ProjectSubmission';
 export { UserProjectsPage } from './UserProjects';
+export { CreateCompany } from './CreateCompany';

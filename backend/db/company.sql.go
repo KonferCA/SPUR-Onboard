@@ -91,6 +91,28 @@ func (q *Queries) GetCompanyByID(ctx context.Context, id string) (Company, error
 	return i, err
 }
 
+const getCompanyByUser = `-- name: GetCompanyByUser :one
+SELECT id, owner_user_id, name, description, is_verified, created_at, updated_at, deleted_at
+FROM companies
+WHERE owner_user_id = $1 LIMIT 1
+`
+
+func (q *Queries) GetCompanyByUser(ctx context.Context, ownerUserID string) (Company, error) {
+	row := q.db.QueryRow(ctx, getCompanyByUser, ownerUserID)
+	var i Company
+	err := row.Scan(
+		&i.ID,
+		&i.OwnerUserID,
+		&i.Name,
+		&i.Description,
+		&i.IsVerified,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const listCompanies = `-- name: ListCompanies :many
 SELECT id, owner_user_id, name, description, is_verified, created_at, updated_at, deleted_at, industry, company_stage, founded_date
 FROM companies
