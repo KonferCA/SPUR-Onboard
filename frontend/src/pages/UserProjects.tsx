@@ -4,7 +4,6 @@ import { ProjectsTable } from '@/components/tables/ProjectsTable';
 import { getProjects } from '@/services/project';
 import type { Project } from '@/services/project';
 import type { SortingState } from '@tanstack/react-table';
-import { useAuth } from '@/contexts/AuthContext';
 
 export const UserProjectsPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -16,7 +15,6 @@ export const UserProjectsPage: React.FC = () => {
     yearFounded: '',
   });
   const [searchQuery, setSearchQuery] = useState('');
-  const { companyId } = useAuth();
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -121,7 +119,9 @@ export const UserProjectsPage: React.FC = () => {
           >
             <option value="">Industry</option>
             {industries.map(industry => (
-              <option key={industry} value={industry}>{industry}</option>
+              <option key={industry} value={industry || ''}>
+                {industry || 'N/A'}
+              </option>
             ))}
           </select>
 

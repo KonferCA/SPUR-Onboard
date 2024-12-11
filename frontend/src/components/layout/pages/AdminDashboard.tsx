@@ -9,12 +9,6 @@ const adminMenuItems = [
   { label: "Settings", path: "/admin/settings", icon: <FiSettings /> },
 ];
 
-const adminNavTabs = [
-  { label: "All Projects", path: "/admin/projects" },
-  { label: "Pending", path: "/admin/projects/pending" },
-  { label: "Approved", path: "/admin/projects/approved" },
-];
-
 interface AdminDashboardProps {
   children: ReactNode;
   customSidebar?: ReactNode;

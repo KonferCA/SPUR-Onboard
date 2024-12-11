@@ -15,7 +15,7 @@ import { format, isValid, parseISO } from 'date-fns';
 const columnHelper = createColumnHelper<Project>();
 
 // Helper function to safely format dates
-const formatDate = (dateString: string | undefined, formatStr: string): string => {
+const formatDate = (dateString: string | undefined | null, formatStr: string): string => {
   if (!dateString) return 'N/A';
   try {
     const date = parseISO(dateString);

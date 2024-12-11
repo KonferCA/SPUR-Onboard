@@ -39,6 +39,7 @@ export interface ProjectDocument {
 }
 
 export interface ProjectSection {
+  id: string;
   title: string;
   questions: {
     question: string;
@@ -67,11 +68,12 @@ const transformProject = (project: ProjectResponse): Project => {
   
   if (project.Sections) {
     sections = project.Sections.map(s => ({
-      title: s.Title,
-      questions: s.Questions.map(q => ({
-        question: q.QuestionText,
-        answer: q.AnswerText
-      }))
+      id: s.id,
+      title: s.title || '',
+      questions: s.questions?.map((q: any) => ({
+        question: q.question || '',
+        answer: q.answer || ''
+      })) || []
     }));
   }
 

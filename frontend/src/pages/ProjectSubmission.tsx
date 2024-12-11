@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { AdminDashboard } from '@/components/layout';
 import { getProjectDetails } from '@/services/project';
 import type { Project } from '@/services/project';
@@ -18,7 +18,6 @@ interface Section {
 
 export const ProjectSubmissionPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

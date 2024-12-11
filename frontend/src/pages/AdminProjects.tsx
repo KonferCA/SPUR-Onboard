@@ -124,8 +124,8 @@ export const AdminProjectsPage: React.FC = () => {
           >
             <option value="">Company Stage</option>
             {companyStages.map(stage => (
-              <option key={stage} value={stage}>
-                {stage?.replace('_', ' ')}
+              <option key={stage} value={stage || ''}>
+                {stage?.replace('_', ' ') || 'N/A'}
               </option>
             ))}
           </select>
@@ -137,7 +137,9 @@ export const AdminProjectsPage: React.FC = () => {
           >
             <option value="">Industry</option>
             {industries.map(industry => (
-              <option key={industry} value={industry}>{industry}</option>
+              <option key={industry} value={industry || ''}>
+                {industry || 'N/A'}
+              </option>
             ))}
           </select>
 
