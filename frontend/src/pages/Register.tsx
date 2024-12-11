@@ -309,11 +309,7 @@ const FormDetails = ({
 
 const RegistrationComplete = ({ onComplete }: RegistrationCompleteProps) => {
     useEffect(() => {
-        const timer = setTimeout(() => {
-            onComplete();
-        }, 2000);
-
-        return () => clearTimeout(timer);
+        setTimeout(onComplete, 1000);
     }, [onComplete]);
 
     return (
@@ -341,12 +337,8 @@ const Register = () => {
         }
 
         if (user) {
-            if (!user.isEmailVerified) {
+            if (!user.email_verified) {
                 return 'verify-email';
-            }
-
-            if (!user.firstName || !user.lastName) {
-                return 'form-details';
             }
         }
 
@@ -354,8 +346,8 @@ const Register = () => {
     });
 
     const [formData, setFormData] = useState<FormData>({
-        firstName: user?.firstName || '',
-        lastName: user?.lastName || '',
+        firstName: user?.first_name || '',
+        lastName: user?.last_name || '',
         position: '',
         bio: '',
         linkedIn: '',
@@ -448,13 +440,8 @@ const Register = () => {
                 company ? company.ID : null
             );
 
-            if (!signinResp.user.isEmailVerified) {
+            if (!signinResp.user.email_verified) {
                 setCurrentStep('verify-email');
-                return;
-            }
-
-            if (!signinResp.user.firstName || !signinResp.user.lastName) {
-                setCurrentStep('form-details');
                 return;
             }
 
@@ -488,8 +475,8 @@ const Register = () => {
     const handleFormSubmit = (e: FormEvent) => {
         e.preventDefault();
         if (!user) return;
-        user.firstName = formData.firstName;
-        user.lastName = formData.lastName;
+        user.first_name = formData.firstName;
+        user.last_name = formData.lastName;
         setAuth(user, accessToken, companyId);
         setCurrentStep('registration-complete');
     };
@@ -528,7 +515,9 @@ const Register = () => {
             case 'signing-in':
                 return (
                     <SigningIn
-                        onComplete={() => setCurrentStep('form-details')}
+                        onComplete={() =>
+                            setCurrentStep('registration-complete')
+                        }
                     />
                 );
             case 'form-details':
@@ -553,11 +542,9 @@ const Register = () => {
 
     useEffect(() => {
         if (user && currentStep === 'login-register') {
-            if (!user.isEmailVerified) {
+            if (!user.email_verified) {
                 setCurrentStep('verify-email');
-            } else if (!user.firstName || !user.lastName) {
-                setCurrentStep('form-details');
-            } else {
+            } else if (user) {
                 if (user.role === 'admin') {
                     navigate('/admin/dashboard', { replace: true });
                 } else if (user.role === 'startup_owner') {
@@ -567,7 +554,7 @@ const Register = () => {
                 }
             }
         }
-    }, [user, currentStep, navigate]);
+    }, [user, currentStep]);
 
     return (
         <div className="min-h-screen bg-gray-50">
