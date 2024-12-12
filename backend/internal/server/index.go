@@ -108,6 +108,7 @@ func New(testing bool) (*Server, error) {
 	server.setupMeetingRoutes()
 	server.setupHealthRoutes()
 	server.setupStorageRoutes()
+	server.setupUserProfileRoutes()
 
 	// setup error handler and middlewares after routes
 	e.HTTPErrorHandler = globalErrorHandler
@@ -243,38 +244,38 @@ func (s *Server) setupCompanyQuestionsAnswersRoutes() {
 }
 
 func (s *Server) setupProjectRoutes() {
-    // create projects group
-    projects := s.apiV1.Group("/projects")
-    
-    // protect all project routes with JWT authentication
-    projects.Use(middleware.ProtectAPI(jwt.ACCESS_TOKEN_TYPE, s.queries))
+	// create projects group
+	projects := s.apiV1.Group("/projects")
 
-    // setup routes
-    projects.POST("", s.handleCreateProject, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectRequest{})))
-    projects.GET("", s.handleListProjects)
-    projects.GET("/:id", s.handleGetProject)
-    projects.PUT("/:id", s.handleUpdateProject, middleware.ValidateRequestBody(reflect.TypeOf(UpdateProjectRequest{})))
-    projects.DELETE("/:id", s.handleDeleteProject)
-    
-    // project files
-    projects.POST("/:id/files", s.handleCreateProjectFile)
-    projects.GET("/:id/files", s.handleListProjectFiles)
-    projects.DELETE("/files/:id", s.handleDeleteProjectFile)
-    
-    // project comments
-    projects.POST("/:id/comments", s.handleCreateProjectComment, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectCommentRequest{})))
-    projects.GET("/:id/comments", s.handleListProjectComments)
-    projects.DELETE("/comments/:id", s.handleDeleteProjectComment)
-    
-    // project links
-    projects.POST("/:id/links", s.handleCreateProjectLink, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectLinkRequest{})))
-    projects.GET("/:id/links", s.handleListProjectLinks)
-    projects.DELETE("/links/:id", s.handleDeleteProjectLink)
-    
-    // project tags
-    projects.POST("/:id/tags", s.handleAddProjectTag, middleware.ValidateRequestBody(reflect.TypeOf(AddProjectTagRequest{})))
-    projects.GET("/:id/tags", s.handleListProjectTags)
-    projects.DELETE("/:id/tags/:tag_id", s.handleDeleteProjectTag)
+	// protect all project routes with JWT authentication
+	projects.Use(middleware.ProtectAPI(jwt.ACCESS_TOKEN_TYPE, s.queries))
+
+	// setup routes
+	projects.POST("", s.handleCreateProject, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectRequest{})))
+	projects.GET("", s.handleListProjects)
+	projects.GET("/:id", s.handleGetProject)
+	projects.PUT("/:id", s.handleUpdateProject, middleware.ValidateRequestBody(reflect.TypeOf(UpdateProjectRequest{})))
+	projects.DELETE("/:id", s.handleDeleteProject)
+
+	// project files
+	projects.POST("/:id/files", s.handleCreateProjectFile)
+	projects.GET("/:id/files", s.handleListProjectFiles)
+	projects.DELETE("/files/:id", s.handleDeleteProjectFile)
+
+	// project comments
+	projects.POST("/:id/comments", s.handleCreateProjectComment, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectCommentRequest{})))
+	projects.GET("/:id/comments", s.handleListProjectComments)
+	projects.DELETE("/comments/:id", s.handleDeleteProjectComment)
+
+	// project links
+	projects.POST("/:id/links", s.handleCreateProjectLink, middleware.ValidateRequestBody(reflect.TypeOf(CreateProjectLinkRequest{})))
+	projects.GET("/:id/links", s.handleListProjectLinks)
+	projects.DELETE("/links/:id", s.handleDeleteProjectLink)
+
+	// project tags
+	projects.POST("/:id/tags", s.handleAddProjectTag, middleware.ValidateRequestBody(reflect.TypeOf(AddProjectTagRequest{})))
+	projects.GET("/:id/tags", s.handleListProjectTags)
+	projects.DELETE("/:id/tags/:tag_id", s.handleDeleteProjectTag)
 }
 
 func (s *Server) setupTagRoutes() {
@@ -298,6 +299,17 @@ func (s *Server) setupMeetingRoutes() {
 	s.apiV1.GET("/meetings", s.handleListMeetings)
 	s.apiV1.PUT("/meetings/:id", s.handleUpdateMeeting, middleware.ValidateRequestBody(reflect.TypeOf(UpdateMeetingRequest{})))
 	s.apiV1.DELETE("/meetings/:id", s.handleDeleteMeeting)
+}
+
+func (s *Server) setupUserProfileRoutes() {
+	profiles := s.apiV1.Group("/profiles")
+	profiles.Use(middleware.ProtectAPI(jwt.ACCESS_TOKEN_TYPE, s.queries))
+
+	profiles.POST("", s.handleCreateUserProfile, middleware.ValidateRequestBody(reflect.TypeOf(CreateUserProfileRequest{})))
+	profiles.GET("/me", s.handleGetUserProfile)
+	profiles.GET("", s.handleListUserProfiles)
+	profiles.PUT("/me", s.handleUpdateUserProfile, middleware.ValidateRequestBody(reflect.TypeOf(UpdateUserProfileRequest{})))
+	profiles.DELETE("/me", s.handleDeleteUserProfile)
 }
 
 func (s *Server) setupHealthRoutes() {
