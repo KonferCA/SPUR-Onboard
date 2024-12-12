@@ -486,43 +486,47 @@ SELECT
     c.founded_date as company_founded_date,
     c.company_stage as company_stage,
     COALESCE(
-        json_agg(
-            DISTINCT jsonb_build_object(
-                'id', ps.id,
-                'title', ps.title,
-                'questions', (
-                    SELECT COALESCE(
-                        json_agg(
-                            jsonb_build_object(
-                                'question', pq.question_text,
-                                'answer', pq.answer_text
-                            )
-                        ),
-                        '[]'::json
+        (
+            SELECT json_agg(
+                json_build_object(
+                    'id', ps.id,
+                    'title', ps.title,
+                    'questions', (
+                        SELECT COALESCE(
+                            json_agg(
+                                json_build_object(
+                                    'question', pq.question_text,
+                                    'answer', pq.answer_text
+                                )
+                            ),
+                            '[]'::json
+                        )
+                        FROM project_questions pq
+                        WHERE pq.section_id = ps.id
                     )
-                    FROM project_questions pq
-                    WHERE pq.section_id = ps.id
                 )
             )
-            FILTER (WHERE ps.id IS NOT NULL)
+            FROM project_sections ps
+            WHERE ps.project_id = p.id
         ),
         '[]'::json
     ) as sections,
     COALESCE(
-        json_agg(
-            DISTINCT jsonb_build_object(
-                'id', pf.id,
-                'name', pf.file_type,
-                'url', pf.file_url
+        (
+            SELECT json_agg(
+                json_build_object(
+                    'id', pf.id,
+                    'name', pf.file_type,
+                    'url', pf.file_url
+                )
             )
-            FILTER (WHERE pf.id IS NOT NULL)
+            FROM project_files pf
+            WHERE pf.project_id = p.id
         ),
         '[]'::json
     ) as documents
 FROM projects p
 LEFT JOIN companies c ON p.company_id = c.id
-LEFT JOIN project_sections ps ON ps.project_id = p.id
-LEFT JOIN project_files pf ON pf.project_id = p.id
 WHERE p.id = $1
 GROUP BY p.id, c.id
 `

@@ -47,12 +47,24 @@ export const ProjectSubmissionPage: React.FC = () => {
         setProject(projectData);
         
         // Update sections with data from the project
-        setSections(prev => prev.map(section => ({
-          ...section,
-          questions: projectData.sections?.find(s => 
-            s.title.toLowerCase() === section.title.toLowerCase()
-          )?.questions || []
-        })));
+        setSections(prev => prev.map(section => {
+          // Find matching section from project data
+          const projectSection = projectData.sections?.find(s => {
+            // Normalize both strings for comparison
+            const normalizedSectionTitle = section.title.toLowerCase().replace(/[^a-z0-9]+/g, '');
+            const normalizedProjectTitle = s.title.toLowerCase().replace(/[^a-z0-9]+/g, '');
+            return normalizedSectionTitle === normalizedProjectTitle;
+          });
+
+          return {
+            ...section,
+            questions: projectSection?.questions || []
+          };
+        }));
+
+        // Debug logging
+        console.log('Project Sections:', projectData.sections);
+        console.log('Updated Sections:', sections);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch project');
       } finally {

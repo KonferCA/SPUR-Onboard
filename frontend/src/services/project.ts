@@ -64,40 +64,20 @@ export interface Project {
 }
 
 // Transform backend response to frontend format
-const transformProject = (project: ProjectResponse): Project => {
-  let sections: ProjectSection[] = [];
-
-  if (project.Sections) {
-    try {
-      const decodedSections = JSON.parse(atob(project.Sections));
-      if (Array.isArray(decodedSections)) {
-        sections = decodedSections.map(s => ({
-          id: s.id || '',
-          title: s.title || '',
-          questions: s.questions?.map((q: any) => ({
-            question: q.question || '',
-            answer: q.answer || ''
-          })) || []
-        }));
-      }
-    } catch (error) {
-      console.error('Error decoding sections:', error);
-    }
-  }
-
+const transformProject = (data: any): Project => {
   return {
-    id: project.ID,
-    company_id: project.CompanyID,
-    title: project.Title,
-    description: project.Description,
-    status: project.Status,
-    created_at: project.CreatedAt,
-    updated_at: project.UpdatedAt,
-    industry: project.Company?.Industry || null,
-    company_stage: project.Company?.CompanyStage || null,
-    founded_date: project.Company?.FoundedDate || null,
+    id: data.ID,
+    company_id: data.CompanyID,
+    title: data.Title,
+    description: data.Description,
+    status: data.Status,
+    created_at: data.CreatedAt,
+    updated_at: data.UpdatedAt,
+    industry: data.Company?.Industry || null,
+    company_stage: data.Company?.CompanyStage || null,
+    founded_date: data.Company?.FoundedDate || null,
     documents: [], // todo: implement when backend supports
-    sections: sections
+    sections: data.Sections || []
   };
 };
 
