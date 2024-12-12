@@ -170,6 +170,65 @@ func (q *Queries) CreateProjectLink(ctx context.Context, arg CreateProjectLinkPa
 	return i, err
 }
 
+const createProjectQuestion = `-- name: CreateProjectQuestion :one
+INSERT INTO project_questions (
+    section_id,
+    question_text,
+    answer_text
+) VALUES (
+    $1, $2, $3
+)
+RETURNING id, section_id, question_text, answer_text, created_at, updated_at
+`
+
+type CreateProjectQuestionParams struct {
+	SectionID    string
+	QuestionText string
+	AnswerText   string
+}
+
+func (q *Queries) CreateProjectQuestion(ctx context.Context, arg CreateProjectQuestionParams) (ProjectQuestion, error) {
+	row := q.db.QueryRow(ctx, createProjectQuestion, arg.SectionID, arg.QuestionText, arg.AnswerText)
+	var i ProjectQuestion
+	err := row.Scan(
+		&i.ID,
+		&i.SectionID,
+		&i.QuestionText,
+		&i.AnswerText,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createProjectSection = `-- name: CreateProjectSection :one
+INSERT INTO project_sections (
+    project_id,
+    title
+) VALUES (
+    $1, $2
+)
+RETURNING id, project_id, title, created_at, updated_at
+`
+
+type CreateProjectSectionParams struct {
+	ProjectID string
+	Title     string
+}
+
+func (q *Queries) CreateProjectSection(ctx context.Context, arg CreateProjectSectionParams) (ProjectSection, error) {
+	row := q.db.QueryRow(ctx, createProjectSection, arg.ProjectID, arg.Title)
+	var i ProjectSection
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.Title,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const deleteAllProjectTags = `-- name: DeleteAllProjectTags :exec
 DELETE FROM project_tags 
 WHERE project_id = $1
@@ -426,23 +485,40 @@ SELECT
     c.industry as company_industry,
     c.founded_date as company_founded_date,
     c.company_stage as company_stage,
-    json_agg(DISTINCT jsonb_build_object(
-        'id', ps.id,
-        'title', ps.title,
-        'questions', (
-            SELECT json_agg(jsonb_build_object(
-                'question', pq.question_text,
-                'answer', pq.answer_text
-            ))
-            FROM project_questions pq
-            WHERE pq.section_id = ps.id
-        )
-    )) as sections,
-    json_agg(DISTINCT jsonb_build_object(
-        'id', pf.id,
-        'name', pf.file_type,
-        'url', pf.file_url
-    )) as documents
+    COALESCE(
+        json_agg(
+            DISTINCT jsonb_build_object(
+                'id', ps.id,
+                'title', ps.title,
+                'questions', (
+                    SELECT COALESCE(
+                        json_agg(
+                            jsonb_build_object(
+                                'question', pq.question_text,
+                                'answer', pq.answer_text
+                            )
+                        ),
+                        '[]'::json
+                    )
+                    FROM project_questions pq
+                    WHERE pq.section_id = ps.id
+                )
+            )
+            FILTER (WHERE ps.id IS NOT NULL)
+        ),
+        '[]'::json
+    ) as sections,
+    COALESCE(
+        json_agg(
+            DISTINCT jsonb_build_object(
+                'id', pf.id,
+                'name', pf.file_type,
+                'url', pf.file_url
+            )
+            FILTER (WHERE pf.id IS NOT NULL)
+        ),
+        '[]'::json
+    ) as documents
 FROM projects p
 LEFT JOIN companies c ON p.company_id = c.id
 LEFT JOIN project_sections ps ON ps.project_id = p.id
@@ -463,8 +539,8 @@ type ListProjectWithDetailsRow struct {
 	CompanyIndustry    *string
 	CompanyFoundedDate pgtype.Date
 	CompanyStage       *string
-	Sections           []byte
-	Documents          []byte
+	Sections           interface{}
+	Documents          interface{}
 }
 
 func (q *Queries) ListProjectWithDetails(ctx context.Context, id string) (ListProjectWithDetailsRow, error) {
