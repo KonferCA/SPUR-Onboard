@@ -1,9 +1,6 @@
 import { getApiUrl } from '@utils';
 import { ApiError } from './errors';
-import type { FormData } from '@/types';
-import { uploadFile } from './storage';
 import { fetchWithAuth } from './auth';
-import { projectFormSchema } from '@/config/forms/project';
 
 interface CompanyResponse {
   ID: string;
@@ -24,11 +21,6 @@ interface ProjectResponse {
   UpdatedAt: string;
   Company?: CompanyResponse;
   Sections?: ProjectSection[];
-}
-
-interface ProjectFile {
-  file_type: string;
-  file_url: string;
 }
 
 // Frontend interfaces
@@ -81,18 +73,23 @@ const transformProject = (data: any): Project => {
   };
 };
 
-interface ProjectLink {
-  LinkType: string;
-  URL: string;
-}
-
 export async function createProject(
-  companyId: string,
-  payload: any  // TODO: This sucks
+  _companyId: string,
+  payload: {
+    company_id: string;
+    title: string;
+    description: string;
+    status: string;
+    files: any[];
+    links: { link_type: string; url: string }[];
+    sections: {
+      title: string;
+      questions: { question: string; answer: string }[];
+    }[];
+  }
 ): Promise<ProjectResponse> {
   const url = getApiUrl('/projects');
   
-  // Use the payload directly instead of reconstructing it
   const response = await fetchWithAuth(url, {
     method: 'POST',
     headers: {
