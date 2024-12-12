@@ -571,7 +571,11 @@ func (s *Server) handleGetProjectDetails(c echo.Context) error {
 	// decode sections from json
 	var sections []map[string]interface{}
 	if project.Sections != nil {
-		if err := json.Unmarshal(project.Sections, &sections); err != nil {
+		sectionsBytes, ok := project.Sections.([]byte)
+		if !ok {
+			return echo.NewHTTPError(http.StatusInternalServerError, "invalid sections format")
+		}
+		if err := json.Unmarshal(sectionsBytes, &sections); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to parse sections")
 		}
 	}
@@ -579,7 +583,11 @@ func (s *Server) handleGetProjectDetails(c echo.Context) error {
 	// decode documents from json
 	var documents []map[string]interface{}
 	if project.Documents != nil {
-		if err := json.Unmarshal(project.Documents, &documents); err != nil {
+		documentsBytes, ok := project.Documents.([]byte)
+		if !ok {
+			return echo.NewHTTPError(http.StatusInternalServerError, "invalid documents format")
+		}
+		if err := json.Unmarshal(documentsBytes, &documents); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to parse documents")
 		}
 	}
