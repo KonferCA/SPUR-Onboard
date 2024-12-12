@@ -219,3 +219,21 @@ type CreateProjectLinkRequest struct {
 	LinkType string `json:"link_type" validate:"required"`
 	URL      string `json:"url" validate:"required,url"`
 }
+
+// Request types
+type CreateUserProfileRequest struct {
+	FirstName string   `json:"first_name" validate:"required"`
+	LastName  string   `json:"last_name" validate:"required"`
+	Position  string   `json:"position" validate:"required"`
+	Role      string   `json:"role" validate:"required,oneof=admin startup_owner investor"`
+	Bio       string   `json:"bio" validate:"required"`
+	Expertise []string `json:"expertise" validate:"required,min=1"`
+}
+
+type UpdateUserProfileRequest struct {
+	FirstName string   `json:"first_name" validate:"required"`
+	LastName  string   `json:"last_name" validate:"required"`
+	Position  string   `json:"position" validate:"required"`
+	Bio       string   `json:"bio" validate:"required"`
+	Expertise []string `json:"expertise" validate:"required,min=1"`
+}
