@@ -92,7 +92,7 @@ func (q *Queries) GetCompanyByID(ctx context.Context, id string) (Company, error
 }
 
 const getCompanyByUser = `-- name: GetCompanyByUser :one
-SELECT id, owner_user_id, name, description, is_verified, created_at, updated_at, deleted_at
+SELECT id, owner_user_id, name, description, is_verified, created_at, updated_at, deleted_at, industry, company_stage, founded_date
 FROM companies
 WHERE owner_user_id = $1 LIMIT 1
 `
@@ -109,6 +109,9 @@ func (q *Queries) GetCompanyByUser(ctx context.Context, ownerUserID string) (Com
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.Industry,
+		&i.CompanyStage,
+		&i.FoundedDate,
 	)
 	return i, err
 }
