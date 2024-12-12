@@ -1,15 +1,17 @@
 package server
 
 import (
-	"context"
 	"net/http"
 
 	"KonferCA/SPUR/db"
 	mw "KonferCA/SPUR/internal/middleware"
+
 	"github.com/labstack/echo/v4"
 )
 
 func (s *Server) handleCreateTag(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	var req *CreateTagRequest
 	req, ok := c.Get(mw.REQUEST_BODY_KEY).(*CreateTagRequest)
 	if !ok {
@@ -17,7 +19,7 @@ func (s *Server) handleCreateTag(c echo.Context) error {
 	}
 
 	queries := db.New(s.DBPool)
-	tag, err := queries.CreateTag(context.Background(), req.Name)
+	tag, err := queries.CreateTag(ctx, req.Name)
 	if err != nil {
 		return handleDBError(err, "create", "tag")
 	}
@@ -26,13 +28,15 @@ func (s *Server) handleCreateTag(c echo.Context) error {
 }
 
 func (s *Server) handleGetTag(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	tagID, err := validateUUID(c.Param("id"), "tag")
 	if err != nil {
 		return err
 	}
 
 	queries := db.New(s.DBPool)
-	tag, err := queries.GetTag(context.Background(), tagID)
+	tag, err := queries.GetTag(ctx, tagID)
 	if err != nil {
 		return handleDBError(err, "fetch", "tag")
 	}
@@ -41,8 +45,10 @@ func (s *Server) handleGetTag(c echo.Context) error {
 }
 
 func (s *Server) handleListTags(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	queries := db.New(s.DBPool)
-	tags, err := queries.ListTags(context.Background())
+	tags, err := queries.ListTags(ctx)
 	if err != nil {
 		return handleDBError(err, "fetch", "tags")
 	}
@@ -51,13 +57,15 @@ func (s *Server) handleListTags(c echo.Context) error {
 }
 
 func (s *Server) handleDeleteTag(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	tagID, err := validateUUID(c.Param("id"), "tag")
 	if err != nil {
 		return err
 	}
 
 	queries := db.New(s.DBPool)
-	err = queries.DeleteTag(context.Background(), tagID)
+	err = queries.DeleteTag(ctx, tagID)
 	if err != nil {
 		return handleDBError(err, "delete", "tag")
 	}

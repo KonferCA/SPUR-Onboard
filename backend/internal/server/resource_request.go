@@ -1,11 +1,11 @@
 package server
 
 import (
-	"context"
 	"net/http"
 
 	"KonferCA/SPUR/db"
 	mw "KonferCA/SPUR/internal/middleware"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -14,6 +14,8 @@ type UpdateResourceRequestStatusRequest struct {
 }
 
 func (s *Server) handleCreateResourceRequest(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	var req *CreateResourceRequestRequest
 	req, ok := c.Get(mw.REQUEST_BODY_KEY).(*CreateResourceRequestRequest)
 	if !ok {
@@ -26,7 +28,7 @@ func (s *Server) handleCreateResourceRequest(c echo.Context) error {
 	}
 
 	queries := db.New(s.DBPool)
-	_, err = queries.GetCompanyByID(context.Background(), companyID)
+	_, err = queries.GetCompanyByID(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "verify", "company")
 	}
@@ -38,7 +40,7 @@ func (s *Server) handleCreateResourceRequest(c echo.Context) error {
 		Status:       req.Status,
 	}
 
-	request, err := queries.CreateResourceRequest(context.Background(), params)
+	request, err := queries.CreateResourceRequest(ctx, params)
 	if err != nil {
 		return handleDBError(err, "create", "resource request")
 	}
@@ -47,13 +49,15 @@ func (s *Server) handleCreateResourceRequest(c echo.Context) error {
 }
 
 func (s *Server) handleGetResourceRequest(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	requestID, err := validateUUID(c.Param("id"), "resource request")
 	if err != nil {
 		return err
 	}
 
 	queries := db.New(s.DBPool)
-	request, err := queries.GetResourceRequestByID(context.Background(), requestID)
+	request, err := queries.GetResourceRequestByID(ctx, requestID)
 	if err != nil {
 		return handleDBError(err, "fetch", "resource request")
 	}
@@ -62,6 +66,8 @@ func (s *Server) handleGetResourceRequest(c echo.Context) error {
 }
 
 func (s *Server) handleListResourceRequests(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	companyID := c.QueryParam("company_id")
 	queries := db.New(s.DBPool)
 
@@ -71,12 +77,12 @@ func (s *Server) handleListResourceRequests(c echo.Context) error {
 			return err
 		}
 
-		_, err = queries.GetCompanyByID(context.Background(), companyUUID)
+		_, err = queries.GetCompanyByID(ctx, companyUUID)
 		if err != nil {
 			return handleDBError(err, "verify", "company")
 		}
 
-		requests, err := queries.ListResourceRequestsByCompany(context.Background(), companyUUID)
+		requests, err := queries.ListResourceRequestsByCompany(ctx, companyUUID)
 		if err != nil {
 			return handleDBError(err, "fetch", "resource requests")
 		}
@@ -84,7 +90,7 @@ func (s *Server) handleListResourceRequests(c echo.Context) error {
 		return c.JSON(http.StatusOK, requests)
 	}
 
-	requests, err := queries.ListResourceRequests(context.Background())
+	requests, err := queries.ListResourceRequests(ctx)
 	if err != nil {
 		return handleDBError(err, "fetch", "resource requests")
 	}
@@ -93,6 +99,8 @@ func (s *Server) handleListResourceRequests(c echo.Context) error {
 }
 
 func (s *Server) handleUpdateResourceRequestStatus(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	requestID, err := validateUUID(c.Param("id"), "resource request")
 	if err != nil {
 		return err
@@ -105,12 +113,12 @@ func (s *Server) handleUpdateResourceRequestStatus(c echo.Context) error {
 	}
 
 	queries := db.New(s.DBPool)
-	_, err = queries.GetResourceRequestByID(context.Background(), requestID)
+	_, err = queries.GetResourceRequestByID(ctx, requestID)
 	if err != nil {
 		return handleDBError(err, "verify", "resource request")
 	}
 
-	request, err := queries.UpdateResourceRequestStatus(context.Background(), db.UpdateResourceRequestStatusParams{
+	request, err := queries.UpdateResourceRequestStatus(ctx, db.UpdateResourceRequestStatusParams{
 		ID:     requestID,
 		Status: req.Status,
 	})
@@ -122,18 +130,20 @@ func (s *Server) handleUpdateResourceRequestStatus(c echo.Context) error {
 }
 
 func (s *Server) handleDeleteResourceRequest(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	requestID, err := validateUUID(c.Param("id"), "resource request")
 	if err != nil {
 		return err
 	}
 
 	queries := db.New(s.DBPool)
-	_, err = queries.GetResourceRequestByID(context.Background(), requestID)
+	_, err = queries.GetResourceRequestByID(ctx, requestID)
 	if err != nil {
 		return handleDBError(err, "verify", "resource request")
 	}
 
-	err = queries.DeleteResourceRequest(context.Background(), requestID)
+	err = queries.DeleteResourceRequest(ctx, requestID)
 	if err != nil {
 		handleDBError(err, "delete", "resource request")
 	}

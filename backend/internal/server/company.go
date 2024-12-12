@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 
 	"KonferCA/SPUR/db"
@@ -14,6 +13,8 @@ import (
 )
 
 func (s *Server) handleCreateCompany(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	var req *CreateCompanyRequest
 	req, ok := c.Get(mw.REQUEST_BODY_KEY).(*CreateCompanyRequest)
 	if !ok {
@@ -32,7 +33,7 @@ func (s *Server) handleCreateCompany(c echo.Context) error {
 		Description: req.Description,
 	}
 
-	company, err := queries.CreateCompany(context.Background(), params)
+	company, err := queries.CreateCompany(ctx, params)
 	if err != nil {
 		return handleDBError(err, "create", "company")
 	}
@@ -41,12 +42,14 @@ func (s *Server) handleCreateCompany(c echo.Context) error {
 }
 
 func (s *Server) handleGetUserCompany(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	claims, ok := c.Get(middleware.JWT_CLAIMS).(*jwt.JWTClaims)
 	if !ok {
 		return echo.NewHTTPError(http.StatusBadRequest, "Failed to type cast jwt claims")
 	}
 
-	company, err := s.queries.GetCompanyByUser(c.Request().Context(), claims.UserID)
+	company, err := s.queries.GetCompanyByUser(ctx, claims.UserID)
 	if err != nil {
 		if isNoRowsError(err) {
 			return echo.NewHTTPError(http.StatusNotFound, "No company found")
@@ -59,13 +62,15 @@ func (s *Server) handleGetUserCompany(c echo.Context) error {
 }
 
 func (s *Server) handleGetCompany(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	companyID, err := validateUUID(c.Param("id"), "company")
 	if err != nil {
 		return err
 	}
 
 	queries := db.New(s.DBPool)
-	company, err := queries.GetCompanyByID(context.Background(), companyID)
+	company, err := queries.GetCompanyByID(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "fetch", "company")
 	}
@@ -74,8 +79,10 @@ func (s *Server) handleGetCompany(c echo.Context) error {
 }
 
 func (s *Server) handleListCompanies(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	queries := db.New(s.DBPool)
-	companies, err := queries.ListCompanies(context.Background())
+	companies, err := queries.ListCompanies(ctx)
 	if err != nil {
 		return handleDBError(err, "fetch", "companies")
 	}
@@ -84,18 +91,20 @@ func (s *Server) handleListCompanies(c echo.Context) error {
 }
 
 func (s *Server) handleDeleteCompany(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	companyID, err := validateUUID(c.Param("id"), "company")
 	if err != nil {
 		return err
 	}
 
 	queries := db.New(s.DBPool)
-	_, err = queries.GetCompanyByID(context.Background(), companyID)
+	_, err = queries.GetCompanyByID(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "verify", "company")
 	}
 
-	err = queries.DeleteCompany(context.Background(), companyID)
+	err = queries.DeleteCompany(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "delete", "company")
 	}

@@ -1,15 +1,17 @@
 package server
 
 import (
-	"context"
 	"net/http"
 
 	"KonferCA/SPUR/db"
 	mw "KonferCA/SPUR/internal/middleware"
+
 	"github.com/labstack/echo/v4"
 )
 
 func (s *Server) handleCreateQuestion(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	var req *CreateQuestionRequest
 	req, ok := c.Get(mw.REQUEST_BODY_KEY).(*CreateQuestionRequest)
 	if !ok {
@@ -17,7 +19,7 @@ func (s *Server) handleCreateQuestion(c echo.Context) error {
 	}
 
 	queries := db.New(s.DBPool)
-	question, err := queries.CreateQuestion(context.Background(), req.QuestionText)
+	question, err := queries.CreateQuestion(ctx, req.QuestionText)
 	if err != nil {
 		return handleDBError(err, "create", "question")
 	}
@@ -26,13 +28,15 @@ func (s *Server) handleCreateQuestion(c echo.Context) error {
 }
 
 func (s *Server) handleGetQuestion(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	questionID, err := validateUUID(c.Param("id"), "question")
 	if err != nil {
 		return err
 	}
 
 	queries := db.New(s.DBPool)
-	question, err := queries.GetQuestion(context.Background(), questionID)
+	question, err := queries.GetQuestion(ctx, questionID)
 	if err != nil {
 		return handleDBError(err, "fetch", "question")
 	}
@@ -41,8 +45,10 @@ func (s *Server) handleGetQuestion(c echo.Context) error {
 }
 
 func (s *Server) handleListQuestions(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	queries := db.New(s.DBPool)
-	questions, err := queries.ListQuestions(context.Background())
+	questions, err := queries.ListQuestions(ctx)
 	if err != nil {
 		return handleDBError(err, "fetch", "questions")
 	}
@@ -51,6 +57,8 @@ func (s *Server) handleListQuestions(c echo.Context) error {
 }
 
 func (s *Server) handleCreateCompanyAnswer(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	companyID, err := validateUUID(c.Param("id"), "company")
 	if err != nil {
 		return err
@@ -68,13 +76,12 @@ func (s *Server) handleCreateCompanyAnswer(c echo.Context) error {
 	}
 
 	queries := db.New(s.DBPool)
-
-	_, err = queries.GetCompanyByID(context.Background(), companyID)
+	_, err = queries.GetCompanyByID(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "verify", "company")
 	}
 
-	_, err = queries.GetQuestion(context.Background(), questionID)
+	_, err = queries.GetQuestion(ctx, questionID)
 	if err != nil {
 		return handleDBError(err, "verify", "question")
 	}
@@ -85,7 +92,7 @@ func (s *Server) handleCreateCompanyAnswer(c echo.Context) error {
 		AnswerText: req.AnswerText,
 	}
 
-	answer, err := queries.CreateCompanyAnswer(context.Background(), params)
+	answer, err := queries.CreateCompanyAnswer(ctx, params)
 	if err != nil {
 		return handleDBError(err, "create", "company answer")
 	}
@@ -94,6 +101,8 @@ func (s *Server) handleCreateCompanyAnswer(c echo.Context) error {
 }
 
 func (s *Server) handleGetCompanyAnswer(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	companyID, err := validateUUID(c.Param("company_id"), "company")
 	if err != nil {
 		return err
@@ -105,13 +114,12 @@ func (s *Server) handleGetCompanyAnswer(c echo.Context) error {
 	}
 
 	queries := db.New(s.DBPool)
-
 	params := db.GetCompanyAnswerParams{
 		CompanyID:  companyID,
 		QuestionID: questionID,
 	}
 
-	answer, err := queries.GetCompanyAnswer(context.Background(), params)
+	answer, err := queries.GetCompanyAnswer(ctx, params)
 	if err != nil {
 		return handleDBError(err, "fetch", "company answer")
 	}
@@ -120,14 +128,15 @@ func (s *Server) handleGetCompanyAnswer(c echo.Context) error {
 }
 
 func (s *Server) handleListCompanyAnswers(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	companyID, err := validateUUID(c.Param("id"), "company")
 	if err != nil {
 		return err
 	}
 
 	queries := db.New(s.DBPool)
-
-	answers, err := queries.ListCompanyAnswers(context.Background(), companyID)
+	answers, err := queries.ListCompanyAnswers(ctx, companyID)
 	if err != nil {
 		return handleDBError(err, "fetch", "company answers")
 	}
@@ -136,6 +145,8 @@ func (s *Server) handleListCompanyAnswers(c echo.Context) error {
 }
 
 func (s *Server) handleUpdateCompanyAnswer(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	companyID, err := validateUUID(c.Param("company_id"), "company")
 	if err != nil {
 		return err
@@ -153,8 +164,7 @@ func (s *Server) handleUpdateCompanyAnswer(c echo.Context) error {
 	}
 
 	queries := db.New(s.DBPool)
-
-	_, err = queries.GetCompanyAnswer(context.Background(), db.GetCompanyAnswerParams{
+	_, err = queries.GetCompanyAnswer(ctx, db.GetCompanyAnswerParams{
 		CompanyID:  companyID,
 		QuestionID: questionID,
 	})
@@ -168,7 +178,7 @@ func (s *Server) handleUpdateCompanyAnswer(c echo.Context) error {
 		AnswerText: req.AnswerText,
 	}
 
-	answer, err := queries.UpdateCompanyAnswer(context.Background(), params)
+	answer, err := queries.UpdateCompanyAnswer(ctx, params)
 	if err != nil {
 		return handleDBError(err, "update", "company answer")
 	}
@@ -177,6 +187,8 @@ func (s *Server) handleUpdateCompanyAnswer(c echo.Context) error {
 }
 
 func (s *Server) handleDeleteCompanyAnswer(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	companyID, err := validateUUID(c.Param("company_id"), "company")
 	if err != nil {
 		return err
@@ -188,8 +200,7 @@ func (s *Server) handleDeleteCompanyAnswer(c echo.Context) error {
 	}
 
 	queries := db.New(s.DBPool)
-
-	_, err = queries.GetCompanyAnswer(context.Background(), db.GetCompanyAnswerParams{
+	_, err = queries.GetCompanyAnswer(ctx, db.GetCompanyAnswerParams{
 		CompanyID:  companyID,
 		QuestionID: questionID,
 	})
@@ -202,7 +213,7 @@ func (s *Server) handleDeleteCompanyAnswer(c echo.Context) error {
 		QuestionID: questionID,
 	}
 
-	err = queries.SoftDeleteCompanyAnswer(context.Background(), params)
+	err = queries.SoftDeleteCompanyAnswer(ctx, params)
 	if err != nil {
 		return handleDBError(err, "delete", "company answer")
 	}
@@ -211,13 +222,15 @@ func (s *Server) handleDeleteCompanyAnswer(c echo.Context) error {
 }
 
 func (s *Server) handleDeleteQuestion(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	questionID, err := validateUUID(c.Param("id"), "question")
 	if err != nil {
 		return err
 	}
 
 	queries := db.New(s.DBPool)
-	err = queries.SoftDeleteQuestion(context.Background(), questionID)
+	err = queries.SoftDeleteQuestion(ctx, questionID)
 	if err != nil {
 		return handleDBError(err, "delete", "question")
 	}
