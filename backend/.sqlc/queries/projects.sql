@@ -179,3 +179,22 @@ LEFT JOIN project_sections ps ON ps.project_id = p.id
 LEFT JOIN project_files pf ON pf.project_id = p.id
 WHERE p.id = $1
 GROUP BY p.id, c.id;
+
+-- name: CreateProjectSection :one
+INSERT INTO project_sections (
+    project_id,
+    title
+) VALUES (
+    $1, $2
+)
+RETURNING *;
+
+-- name: CreateProjectQuestion :one
+INSERT INTO project_questions (
+    section_id,
+    question_text,
+    answer_text
+) VALUES (
+    $1, $2, $3
+)
+RETURNING *;

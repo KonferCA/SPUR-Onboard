@@ -3,6 +3,7 @@ import { ApiError } from './errors';
 import type { FormData } from '@/types';
 import { uploadFile } from './storage';
 import { fetchWithAuth } from './auth';
+import { projectFormSchema } from '@/config/forms/project';
 
 interface CompanyResponse {
   ID: string;
@@ -22,7 +23,7 @@ interface ProjectResponse {
   CreatedAt: string;
   UpdatedAt: string;
   Company?: CompanyResponse;
-  Sections?: ProjectSection[];
+  Sections?: string; // Base64 encoded JSON string
 }
 
 interface ProjectFile {
@@ -66,15 +67,22 @@ export interface Project {
 const transformProject = (project: ProjectResponse): Project => {
   let sections: ProjectSection[] = [];
 
-  if (project.Sections && Array.isArray(project.Sections)) {
-    sections = project.Sections.map(s => ({
-      id: s.id,
-      title: s.title || '',
-      questions: s.questions?.map((q: any) => ({
-        question: q.question || '',
-        answer: q.answer || ''
-      })) || []
-    }));
+  if (project.Sections) {
+    try {
+      const decodedSections = JSON.parse(atob(project.Sections));
+      if (Array.isArray(decodedSections)) {
+        sections = decodedSections.map(s => ({
+          id: s.id || '',
+          title: s.title || '',
+          questions: s.questions?.map((q: any) => ({
+            question: q.question || '',
+            answer: q.answer || ''
+          })) || []
+        }));
+      }
+    } catch (error) {
+      console.error('Error decoding sections:', error);
+    }
   }
 
   return {
@@ -104,7 +112,6 @@ export async function createProject(
   files: File[] = [],
   links: ProjectLink[] = []
 ): Promise<ProjectResponse> {
-  // First upload all files
   const uploadedFiles: ProjectFile[] = await Promise.all(
     files.map(async (file) => {
       const fileUrl = await uploadFile(file);
@@ -115,23 +122,28 @@ export async function createProject(
     })
   );
 
-  const url = getApiUrl('/projects');
-  
-  const sanitizedLinks = links.map(link => ({
-    LinkType: link.LinkType,
-    URL: link.URL
+  // Get all sections from the schema (excluding document upload section)
+  const sections = projectFormSchema[0].sections.map(section => ({
+    title: section.title,
+    questions: section.fields.map(field => ({
+      question: field.label,
+      answer: formData[field.id] || ''  // Use the field ID to get the answer from formData
+    }))
   }));
 
+  const url = getApiUrl('/projects');
+  console.log('Sections:', sections);
   const body = {
     company_id: companyId,
     title: formData.companyName,
     description: formData.description,
     status: 'in_review',
     files: uploadedFiles,
-    links: sanitizedLinks.map(link => ({
+    links: links.map(link => ({
       link_type: link.LinkType.toLowerCase(),
       url: link.URL
-    }))
+    })),
+    sections: btoa(JSON.stringify(sections)) // Base64 encode sections
   };
 
   console.log('Request body:', body);

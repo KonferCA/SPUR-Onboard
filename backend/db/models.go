@@ -196,22 +196,24 @@ type ProjectLink struct {
 }
 
 type ProjectQuestion struct {
-	ID           string
-	SectionID    string
-	QuestionText string
-	AnswerText   string
-	CreatedAt    pgtype.Timestamp
-	UpdatedAt    pgtype.Timestamp
+    Question string `json:"question"`
+    Answer   string `json:"answer"`
 }
 
 type ProjectSection struct {
-	ID        string
-	ProjectID string
-	Title     string
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+    Title     string           `json:"title"`
+    Questions []ProjectQuestion `json:"questions"`
 }
 
+type CreateProjectRequest struct {
+    CompanyID   string           `json:"company_id"`
+    Title       string           `json:"title"`
+    Description string          `json:"description"`
+    Status      string           `json:"status"`
+    Files       []ProjectFile    `json:"files"`
+    Links       []ProjectLink    `json:"links"`
+    Sections    []ProjectSection `json:"sections"`
+}
 type ProjectTag struct {
 	ID        string
 	ProjectID string
