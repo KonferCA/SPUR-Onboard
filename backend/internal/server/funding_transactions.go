@@ -1,16 +1,18 @@
 package server
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"KonferCA/SPUR/db"
 	mw "KonferCA/SPUR/internal/middleware"
+
 	"github.com/labstack/echo/v4"
 )
 
 func (s *Server) handleCreateFundingTransaction(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	var req *CreateFundingTransactionRequest
 	req, ok := c.Get(mw.REQUEST_BODY_KEY).(*CreateFundingTransactionRequest)
 	if !ok {
@@ -24,7 +26,7 @@ func (s *Server) handleCreateFundingTransaction(c echo.Context) error {
 
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetProject(context.Background(), projectID)
+	_, err = queries.GetProject(ctx, projectID)
 	if err != nil {
 		return handleDBError(err, "verify", "project")
 	}
@@ -44,7 +46,7 @@ func (s *Server) handleCreateFundingTransaction(c echo.Context) error {
 		Status:            req.Status,
 	}
 
-	transaction, err := queries.CreateFundingTransaction(context.Background(), params)
+	transaction, err := queries.CreateFundingTransaction(ctx, params)
 	if err != nil {
 		fmt.Printf("Error creating transaction: %v\n", err)
 		return handleDBError(err, "create", "funding transaction")
@@ -54,13 +56,15 @@ func (s *Server) handleCreateFundingTransaction(c echo.Context) error {
 }
 
 func (s *Server) handleGetFundingTransaction(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	transactionID, err := validateUUID(c.Param("id"), "transaction")
 	if err != nil {
 		return err
 	}
 
 	queries := db.New(s.DBPool)
-	transaction, err := queries.GetFundingTransaction(context.Background(), transactionID)
+	transaction, err := queries.GetFundingTransaction(ctx, transactionID)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 			return echo.NewHTTPError(http.StatusNotFound, "funding transaction not found :(")
@@ -73,6 +77,8 @@ func (s *Server) handleGetFundingTransaction(c echo.Context) error {
 }
 
 func (s *Server) handleListFundingTransactions(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	queries := db.New(s.DBPool)
 	projectID := c.QueryParam("project_id")
 
@@ -82,7 +88,7 @@ func (s *Server) handleListFundingTransactions(c echo.Context) error {
 			return err
 		}
 
-		transactions, err := queries.ListProjectFundingTransactions(context.Background(), projectUUID)
+		transactions, err := queries.ListProjectFundingTransactions(ctx, projectUUID)
 		if err != nil {
 			return handleDBError(err, "fetch", "funding transactions")
 		}
@@ -90,7 +96,7 @@ func (s *Server) handleListFundingTransactions(c echo.Context) error {
 		return c.JSON(http.StatusOK, transactions)
 	}
 
-	transactions, err := queries.ListFundingTransactions(context.Background())
+	transactions, err := queries.ListFundingTransactions(ctx)
 	if err != nil {
 		return handleDBError(err, "fetch", "funding transactions")
 	}
@@ -99,6 +105,8 @@ func (s *Server) handleListFundingTransactions(c echo.Context) error {
 }
 
 func (s *Server) handleUpdateFundingTransactionStatus(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	transactionID, err := validateUUID(c.Param("id"), "transaction")
 	if err != nil {
 		return err
@@ -112,7 +120,7 @@ func (s *Server) handleUpdateFundingTransactionStatus(c echo.Context) error {
 
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetFundingTransaction(context.Background(), transactionID)
+	_, err = queries.GetFundingTransaction(ctx, transactionID)
 	if err != nil {
 		return handleDBError(err, "verify", "funding transaction")
 	}
@@ -122,7 +130,7 @@ func (s *Server) handleUpdateFundingTransactionStatus(c echo.Context) error {
 		Status: req.Status,
 	}
 
-	transaction, err := queries.UpdateFundingTransactionStatus(context.Background(), params)
+	transaction, err := queries.UpdateFundingTransactionStatus(ctx, params)
 	if err != nil {
 		return handleDBError(err, "update", "funding transaction")
 	}
@@ -131,6 +139,8 @@ func (s *Server) handleUpdateFundingTransactionStatus(c echo.Context) error {
 }
 
 func (s *Server) handleDeleteFundingTransaction(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	transactionID, err := validateUUID(c.Param("id"), "transaction")
 	if err != nil {
 		return err
@@ -138,12 +148,12 @@ func (s *Server) handleDeleteFundingTransaction(c echo.Context) error {
 
 	queries := db.New(s.DBPool)
 
-	_, err = queries.GetFundingTransaction(context.Background(), transactionID)
+	_, err = queries.GetFundingTransaction(ctx, transactionID)
 	if err != nil {
 		return handleDBError(err, "verify", "funding transaction")
 	}
 
-	err = queries.DeleteFundingTransaction(context.Background(), transactionID)
+	err = queries.DeleteFundingTransaction(ctx, transactionID)
 	if err != nil {
 		return handleDBError(err, "delete", "funding transaction")
 	}
