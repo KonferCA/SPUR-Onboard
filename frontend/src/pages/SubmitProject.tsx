@@ -123,20 +123,57 @@ const SubmitProjectPage = () => {
             setIsSubmitting(true);
             setError(null);
 
-            // Get files and links from form data
-            const files = formData.documents || [];
-            const links = formData['social-links']?.map(
-                (link: { type: string; url: string }) => ({
-                    LinkType: link.type || 'website',
-                    URL: link.url,
-                })
-            ) || [];
+            // Transform all sections from the form schema
+            const sections = projectFormSchema.flatMap(step => 
+                step.sections.map(section => ({
+                    title: section.title,
+                    questions: section.fields.map(field => {
+                        let answer = formData[field.id];
+                        
+                        // Convert arrays to strings (will fix better later)
+                        if (Array.isArray(answer)) {
+                            if (field.type === 'team-members') {
+                                answer = answer.map((member: any) => 
+                                    `${member.name} (${member.role})`
+                                ).join('\n');
+                            } else if (field.type === 'social-links') {
+                                answer = answer.map((link: any) => 
+                                    `${link.type}: ${link.url}`
+                                ).join('\n');
+                            } else {
+                                answer = answer.join(', ');
+                            }
+                        }
 
-            // Create project with files and links in one call
-            const project = await createProject(companyId, formData, files, links);
+                        return {
+                            question: field.label,
+                            answer: answer?.toString() || ''
+                        };
+                    })
+                }))
+            );
+
+            const payload = {
+                company_id: companyId,
+                title: formData.companyName || '',
+                description: formData.description || '',
+                status: 'in_review',
+                files: formData.documents || [],
+                links: formData['social-links']?.map(
+                    (link: { type: string; url: string }) => ({
+                        link_type: link.type,
+                        url: link.url,
+                    })
+                ) || [],
+                sections: sections
+            };
+
+            // Debug logs
+            console.log('Final payload:', payload);
+
+            const project = await createProject(companyId, payload);
             console.log('Created project:', project);
 
-            // Navigate to success page or dashboard
             navigate('/dashboard');
         } catch (err) {
             console.error('Failed to submit project:', err);

@@ -136,21 +136,6 @@ type ProjectLink struct {
 	URL      string `json:"url" validate:"required,url"`
 }
 
-type CreateProjectRequest struct {
-	CompanyID       string        `json:"company_id" validate:"required"`
-	Title           string        `json:"title" validate:"required"`
-	Description     *string       `json:"description"`
-	Status          string        `json:"status" validate:"required"`
-	FoundedDate     string        `json:"founded_date,omitempty"`
-	CompanyStage    string        `json:"company_stage,omitempty"`
-	InvestmentStage string        `json:"investment_stage,omitempty"`
-	Inspiration     string        `json:"inspiration,omitempty"`
-	Vision          string        `json:"vision,omitempty"`
-	TeamMembers     []TeamMember  `json:"team_members,omitempty" validate:"dive"`
-	Files           []ProjectFile `json:"files" validate:"dive"`
-	Links           []ProjectLink `json:"links" validate:"dive"`
-}
-
 type UpdateProjectRequest struct {
 	Title       string `json:"title" validate:"required"`
 	Description string `json:"description"`

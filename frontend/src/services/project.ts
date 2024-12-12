@@ -1,7 +1,5 @@
 import { getApiUrl } from '@utils';
 import { ApiError } from './errors';
-import type { FormData } from '@/types';
-import { uploadFile } from './storage';
 import { fetchWithAuth } from './auth';
 
 interface CompanyResponse {
@@ -23,11 +21,6 @@ interface ProjectResponse {
   UpdatedAt: string;
   Company?: CompanyResponse;
   Sections?: ProjectSection[];
-}
-
-interface ProjectFile {
-  file_type: string;
-  file_url: string;
 }
 
 // Frontend interfaces
@@ -63,85 +56,46 @@ export interface Project {
 }
 
 // Transform backend response to frontend format
-const transformProject = (project: ProjectResponse): Project => {
-  let sections: ProjectSection[] = [];
-
-  if (project.Sections && Array.isArray(project.Sections)) {
-    sections = project.Sections.map(s => ({
-      id: s.id,
-      title: s.title || '',
-      questions: s.questions?.map((q: any) => ({
-        question: q.question || '',
-        answer: q.answer || ''
-      })) || []
-    }));
-  }
-
+const transformProject = (data: any): Project => {
   return {
-    id: project.ID,
-    company_id: project.CompanyID,
-    title: project.Title,
-    description: project.Description,
-    status: project.Status,
-    created_at: project.CreatedAt,
-    updated_at: project.UpdatedAt,
-    industry: project.Company?.Industry || null,
-    company_stage: project.Company?.CompanyStage || null,
-    founded_date: project.Company?.FoundedDate || null,
+    id: data.ID,
+    company_id: data.CompanyID,
+    title: data.Title,
+    description: data.Description,
+    status: data.Status,
+    created_at: data.CreatedAt,
+    updated_at: data.UpdatedAt,
+    industry: data.Company?.Industry || null,
+    company_stage: data.Company?.CompanyStage || null,
+    founded_date: data.Company?.FoundedDate || null,
     documents: [], // todo: implement when backend supports
-    sections: sections
+    sections: data.Sections || []
   };
 };
 
-interface ProjectLink {
-  LinkType: string;
-  URL: string;
-}
-
 export async function createProject(
-  companyId: string,
-  formData: FormData,
-  files: File[] = [],
-  links: ProjectLink[] = []
+  _companyId: string,
+  payload: {
+    company_id: string;
+    title: string;
+    description: string;
+    status: string;
+    files: any[];
+    links: { link_type: string; url: string }[];
+    sections: {
+      title: string;
+      questions: { question: string; answer: string }[];
+    }[];
+  }
 ): Promise<ProjectResponse> {
-  // First upload all files
-  const uploadedFiles: ProjectFile[] = await Promise.all(
-    files.map(async (file) => {
-      const fileUrl = await uploadFile(file);
-      return {
-        file_type: file.type,
-        file_url: fileUrl
-      };
-    })
-  );
-
   const url = getApiUrl('/projects');
   
-  const sanitizedLinks = links.map(link => ({
-    LinkType: link.LinkType,
-    URL: link.URL
-  }));
-
-  const body = {
-    company_id: companyId,
-    title: formData.companyName,
-    description: formData.description,
-    status: 'in_review',
-    files: uploadedFiles,
-    links: sanitizedLinks.map(link => ({
-      link_type: link.LinkType.toLowerCase(),
-      url: link.URL
-    }))
-  };
-
-  console.log('Request body:', body);
-
   const response = await fetchWithAuth(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
