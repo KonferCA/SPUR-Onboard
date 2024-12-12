@@ -426,23 +426,40 @@ SELECT
     c.industry as company_industry,
     c.founded_date as company_founded_date,
     c.company_stage as company_stage,
-    json_agg(DISTINCT jsonb_build_object(
-        'id', ps.id,
-        'title', ps.title,
-        'questions', (
-            SELECT json_agg(jsonb_build_object(
-                'question', pq.question_text,
-                'answer', pq.answer_text
-            ))
-            FROM project_questions pq
-            WHERE pq.section_id = ps.id
-        )
-    )) as sections,
-    json_agg(DISTINCT jsonb_build_object(
-        'id', pf.id,
-        'name', pf.file_type,
-        'url', pf.file_url
-    )) as documents
+    COALESCE(
+        json_agg(
+            DISTINCT jsonb_build_object(
+                'id', ps.id,
+                'title', ps.title,
+                'questions', (
+                    SELECT COALESCE(
+                        json_agg(
+                            jsonb_build_object(
+                                'question', pq.question_text,
+                                'answer', pq.answer_text
+                            )
+                        ),
+                        '[]'::json
+                    )
+                    FROM project_questions pq
+                    WHERE pq.section_id = ps.id
+                )
+            )
+            FILTER (WHERE ps.id IS NOT NULL)
+        ),
+        '[]'::json
+    ) as sections,
+    COALESCE(
+        json_agg(
+            DISTINCT jsonb_build_object(
+                'id', pf.id,
+                'name', pf.file_type,
+                'url', pf.file_url
+            )
+            FILTER (WHERE pf.id IS NOT NULL)
+        ),
+        '[]'::json
+    ) as documents
 FROM projects p
 LEFT JOIN companies c ON p.company_id = c.id
 LEFT JOIN project_sections ps ON ps.project_id = p.id
@@ -463,8 +480,8 @@ type ListProjectWithDetailsRow struct {
 	CompanyIndustry    *string
 	CompanyFoundedDate pgtype.Date
 	CompanyStage       *string
-	Sections           []byte
-	Documents          []byte
+	Sections           interface{}
+	Documents          interface{}
 }
 
 func (q *Queries) ListProjectWithDetails(ctx context.Context, id string) (ListProjectWithDetailsRow, error) {

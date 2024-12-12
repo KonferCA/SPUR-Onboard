@@ -258,6 +258,20 @@ type User struct {
 	TokenSalt     []byte
 }
 
+type UserProfile struct {
+	ID                string
+	UserID            string
+	FirstName         string
+	LastName          string
+	Position          string
+	Role              UserRole
+	Bio               string
+	Expertise         []string
+	IsProfileComplete bool
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+}
+
 type VerifyEmailToken struct {
 	ID        string
 	Email     string
