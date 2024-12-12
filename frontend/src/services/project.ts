@@ -88,52 +88,17 @@ interface ProjectLink {
 
 export async function createProject(
   companyId: string,
-  formData: FormData,
-  files: File[] = [],
-  links: ProjectLink[] = []
+  payload: any  // TODO: This sucks
 ): Promise<ProjectResponse> {
-  const uploadedFiles: ProjectFile[] = await Promise.all(
-    files.map(async (file) => {
-      const fileUrl = await uploadFile(file);
-      return {
-        file_type: file.type,
-        file_url: fileUrl
-      };
-    })
-  );
-
-  // Get all sections from the schema (excluding document upload section)
-  const sections = projectFormSchema[0].sections.map(section => ({
-    title: section.title,
-    questions: section.fields.map(field => ({
-      question: field.label,
-      answer: formData[field.id] || ''  // Use the field ID to get the answer from formData
-    }))
-  }));
-
   const url = getApiUrl('/projects');
-  console.log('Sections:', sections);
-  const body = {
-    company_id: companyId,
-    title: formData.companyName,
-    description: formData.description,
-    status: 'in_review',
-    files: uploadedFiles,
-    links: links.map(link => ({
-      link_type: link.LinkType.toLowerCase(),
-      url: link.URL
-    })),
-    sections: sections // Remove the base64 encoding
-  };
-
-  console.log('Request body:', body);
-
+  
+  // Use the payload directly instead of reconstructing it
   const response = await fetchWithAuth(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {

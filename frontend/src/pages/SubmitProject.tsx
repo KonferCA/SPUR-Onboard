@@ -127,18 +127,35 @@ const SubmitProjectPage = () => {
             const sections = projectFormSchema.flatMap(step => 
                 step.sections.map(section => ({
                     title: section.title,
-                    questions: section.fields.map(field => ({
-                        question: field.label,
-                        answer: formData[field.id] || ''
-                    }))
+                    questions: section.fields.map(field => {
+                        let answer = formData[field.id];
+                        
+                        // Convert arrays to strings (will fix better later)
+                        if (Array.isArray(answer)) {
+                            if (field.type === 'team-members') {
+                                answer = answer.map((member: any) => 
+                                    `${member.name} (${member.role})`
+                                ).join('\n');
+                            } else if (field.type === 'social-links') {
+                                answer = answer.map((link: any) => 
+                                    `${link.type}: ${link.url}`
+                                ).join('\n');
+                            } else {
+                                answer = answer.join(', ');
+                            }
+                        }
+
+                        return {
+                            question: field.label,
+                            answer: answer?.toString() || ''
+                        };
+                    })
                 }))
             );
 
-            console.log('Transformed sections:', sections);
-
             const payload = {
                 company_id: companyId,
-                title: formData.companyName || '', // Use companyName as title
+                title: formData.companyName || '',
                 description: formData.description || '',
                 status: 'in_review',
                 files: formData.documents || [],
@@ -148,10 +165,11 @@ const SubmitProjectPage = () => {
                         url: link.url,
                     })
                 ) || [],
-                sections: sections // Now properly structured as an array
+                sections: sections
             };
 
-            console.log('Submitting payload:', payload);
+            // Debug logs
+            console.log('Final payload:', payload);
 
             const project = await createProject(companyId, payload);
             console.log('Created project:', project);
