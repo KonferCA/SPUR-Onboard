@@ -31,9 +31,9 @@ const columns = [
     header: 'Project name',
     cell: info => (
       <div>
-        <div className="font-medium">{info.getValue()}</div>
+        <div className="font-medium truncate max-w-xs">{info.getValue()}</div>
         {info.row.original.description && (
-          <div className="text-sm text-gray-500">{info.row.original.description}</div>
+          <div className="text-sm text-gray-500 truncate max-w-xs">{info.row.original.description}</div>
         )}
       </div>
     ),
