@@ -23,7 +23,7 @@ interface ProjectResponse {
   CreatedAt: string;
   UpdatedAt: string;
   Company?: CompanyResponse;
-  Sections?: string; // Base64 encoded JSON string
+  Sections?: ProjectSection[];
 }
 
 interface ProjectFile {
@@ -123,7 +123,7 @@ export async function createProject(
       link_type: link.LinkType.toLowerCase(),
       url: link.URL
     })),
-    sections: btoa(JSON.stringify(sections)) // Base64 encode sections
+    sections: sections // Remove the base64 encoding
   };
 
   console.log('Request body:', body);
