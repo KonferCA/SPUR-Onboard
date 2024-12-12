@@ -3,12 +3,20 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"KonferCA/SPUR/db"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
+)
+
+const (
+	defaultPage  = 1
+	defaultLimit = 10
+	maxLimit     = 100
 )
 
 func validateBody(c echo.Context, requestBodyType interface{}) error {
@@ -108,4 +116,36 @@ func validateSignupRole(role db.UserRole) error {
 	}
 
 	return nil
+}
+
+func getPageParam(c echo.Context) int {
+	pageStr := c.QueryParam("page")
+	if pageStr == "" {
+		return defaultPage
+	}
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		return defaultPage
+	}
+
+	return page
+}
+
+func getLimitParam(c echo.Context) int {
+	limitStr := c.QueryParam("limit")
+	if limitStr == "" {
+		return defaultLimit
+	}
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		return defaultLimit
+	}
+
+	if limit > maxLimit {
+		return maxLimit
+	}
+
+	return limit
 }
