@@ -15,6 +15,22 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type CreateProjectRequest struct {
+	CompanyID   string `json:"company_id"`
+	Title       string `json:"title"`
+	Description *string `json:"description"`
+	Status      string `json:"status"`
+	Files       []ProjectFile `json:"files"`
+	Links       []ProjectLink `json:"links"`
+	Sections    []struct {
+		Title     string `json:"title"`
+		Questions []struct {
+			Question string `json:"question"`
+			Answer   string `json:"answer"`
+		} `json:"questions"`
+	} `json:"sections"`
+}
+
 func (s *Server) handleCreateProject(c echo.Context) error {
 	var req *CreateProjectRequest
 	req, ok := c.Get(mw.REQUEST_BODY_KEY).(*CreateProjectRequest)
@@ -73,6 +89,33 @@ func (s *Server) handleCreateProject(c echo.Context) error {
 		_, err := qtx.CreateProjectLink(context.Background(), linkParams)
 		if err != nil {
 			return handleDBError(err, "create", "project link")
+		}
+	}
+
+	// Create sections and questions
+	for _, section := range req.Sections {
+		sectionParams := db.CreateProjectSectionParams{
+			ProjectID: project.ID,
+			Title:    section.Title,
+		}
+		
+		projectSection, err := qtx.CreateProjectSection(context.Background(), sectionParams)
+		if err != nil {
+			return handleDBError(err, "create", "project section")
+		}
+
+		// Create questions for this section
+		for _, q := range section.Questions {
+			questionParams := db.CreateProjectQuestionParams{
+				SectionID:    projectSection.ID,
+				QuestionText: q.Question,
+				AnswerText:   q.Answer,
+			}
+			
+			_, err := qtx.CreateProjectQuestion(context.Background(), questionParams)
+			if err != nil {
+				return handleDBError(err, "create", "project question")
+			}
 		}
 	}
 
