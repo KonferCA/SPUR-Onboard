@@ -2,7 +2,7 @@ name: Deploy Staging
 on:
   workflow_dispatch:
   push:
-    branches: ['main']
+    branches: ['staging']
     paths:
       - 'backend/**'
 jobs:
