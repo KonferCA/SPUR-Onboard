@@ -111,17 +111,9 @@ CREATE TABLE IF NOT EXISTS transactions (
     project_id uuid NOT NULL REFERENCES projects(id),
     company_id uuid NOT NULL REFERENCES companies(id),
     tx_hash varchar NOT NULL,
-    block_number bigint NOT NULL,
     from_address varchar NOT NULL,
     to_address varchar NOT NULL,
-    value_amount decimal(65,18) NOT NULL,
-    currency_symbol varchar NOT NULL,
-    gas_price decimal(65,18),
-    gas_used bigint,
-    total_fee decimal(65,18),
-    status boolean NOT NULL,
-    nonce bigint NOT NULL,
-    created_at bigint NOT NULL DEFAULT extract(epoch from now())
+    value_amount decimal(65,18) NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
