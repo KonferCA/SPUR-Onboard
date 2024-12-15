@@ -23,16 +23,16 @@ CREATE TABLE IF NOT EXISTS users (
     password char(256) NOT NULL,
     role user_role NOT NULL,
     email_verified boolean NOT NULL DEFAULT false,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at bigint NOT NULL DEFAULT extract(epoch from now()),
+    updated_at bigint NOT NULL DEFAULT extract(epoch from now()),
     token_salt bytea UNIQUE NOT NULL DEFAULT gen_random_bytes(32)
 );
 
 CREATE TABLE IF NOT EXISTS verify_email_tokens (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    expires_at timestamp NOT NULL
+    created_at bigint NOT NULL DEFAULT extract(epoch from now()),
+    expires_at bigint NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS companies (
@@ -41,8 +41,8 @@ CREATE TABLE IF NOT EXISTS companies (
     name varchar NOT NULL,
     wallet_address varchar,
     linkedin_url varchar NOT NULL,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at bigint NOT NULL DEFAULT extract(epoch from now()),
+    updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
 
 CREATE TABLE IF NOT EXISTS team_members (
@@ -54,8 +54,8 @@ CREATE TABLE IF NOT EXISTS team_members (
     bio varchar NOT NULL,
     linkedin_url varchar NOT NULL,
     is_account_owner boolean NOT NULL DEFAULT false,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at bigint NOT NULL DEFAULT extract(epoch from now()),
+    updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
 
 CREATE TABLE IF NOT EXISTS projects (
@@ -64,16 +64,16 @@ CREATE TABLE IF NOT EXISTS projects (
     title varchar NOT NULL,
     description varchar,
     status project_status NOT NULL DEFAULT 'draft',
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at bigint NOT NULL DEFAULT extract(epoch from now()),
+    updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
 
 CREATE TABLE IF NOT EXISTS project_questions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     question varchar NOT NULL,
     section varchar NOT NULL DEFAULT 'overall',
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at bigint NOT NULL DEFAULT extract(epoch from now()),
+    updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
 
 CREATE TABLE IF NOT EXISTS project_answers (
@@ -81,8 +81,8 @@ CREATE TABLE IF NOT EXISTS project_answers (
     project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     question_id uuid NOT NULL REFERENCES project_questions(id),
     answer varchar NOT NULL DEFAULT '',
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at bigint NOT NULL DEFAULT extract(epoch from now()),
+    updated_at bigint NOT NULL DEFAULT extract(epoch from now()),
     UNIQUE(project_id, question_id)
 );
 
@@ -92,8 +92,8 @@ CREATE TABLE IF NOT EXISTS project_documents (
     name varchar NOT NULL,
     url varchar NOT NULL,
     section varchar NOT NULL DEFAULT 'overall',
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at bigint NOT NULL DEFAULT extract(epoch from now()),
+    updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
 
 CREATE TABLE IF NOT EXISTS project_comments (
@@ -102,8 +102,8 @@ CREATE TABLE IF NOT EXISTS project_comments (
     target_id uuid NOT NULL,
     comment uuid NOT NULL,
     commenter_id uuid NOT NULL REFERENCES users(id),
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at bigint NOT NULL DEFAULT extract(epoch from now()),
+    updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
 
 CREATE TABLE IF NOT EXISTS transactions (
@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     total_fee decimal(65,18),
     status boolean NOT NULL,
     nonce bigint NOT NULL,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
