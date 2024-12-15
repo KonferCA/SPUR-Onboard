@@ -1,3 +1,9 @@
+-- +goose Up
+-- +goose StatementBegin
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+SET TIME ZONE 'UTC';
+
 CREATE TYPE user_role AS ENUM (
     'admin',
     'startup_owner',
@@ -118,10 +124,36 @@ CREATE TABLE IF NOT EXISTS transactions (
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_companies_owner ON companies(owner_id);
-CREATE INDEX idx_projects_company ON projects(company_id);
-CREATE INDEX idx_project_answers_project ON project_answers(project_id);
-CREATE INDEX idx_transactions_project ON transactions(project_id);
-CREATE INDEX idx_transactions_company ON transactions(company_id);
-CREATE INDEX idx_team_members_company ON team_members(company_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_companies_owner ON companies(owner_id);
+CREATE INDEX IF NOT EXISTS idx_projects_company ON projects(company_id);
+CREATE INDEX IF NOT EXISTS idx_project_answers_project ON project_answers(project_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_project ON transactions(project_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_company ON transactions(company_id);
+CREATE INDEX IF NOT EXISTS idx_team_members_company ON team_members(company_id);
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP INDEX IF EXISTS idx_team_members_company;
+DROP INDEX IF EXISTS idx_transactions_company;
+DROP INDEX IF EXISTS idx_transactions_project;
+DROP INDEX IF EXISTS idx_project_answers_project;
+DROP INDEX IF EXISTS idx_projects_company;
+DROP INDEX IF EXISTS idx_companies_owner;
+DROP INDEX IF EXISTS idx_users_email;
+
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS project_comments;
+DROP TABLE IF EXISTS project_documents;
+DROP TABLE IF EXISTS project_answers;
+DROP TABLE IF EXISTS project_questions;
+DROP TABLE IF EXISTS projects;
+DROP TABLE IF EXISTS team_members;
+DROP TABLE IF EXISTS companies;
+DROP TABLE IF EXISTS verify_email_tokens;
+DROP TABLE IF EXISTS users;
+
+DROP TYPE IF EXISTS project_status;
+DROP TYPE IF EXISTS user_role;
+-- +goose StatementEnd
