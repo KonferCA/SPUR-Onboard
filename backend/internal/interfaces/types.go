@@ -35,27 +35,3 @@ type CoreServer interface {
 	GetAPILimiter() *middleware.RateLimiter
 	GetEcho() *echo.Echo
 }
-
-/*
-HandlerDependencies defines a minimal interface for individual handlers.
-This interface provides only the essential services needed for most handlers,
-reducing coupling and making handlers easier to test.
-
-Usage:
-  - Used by individual route handlers
-  - Provides minimal required dependencies
-  - Makes handlers more testable with minimal mocking
-
-Example:
-
-	func (h *Handler) HandleCreateUser(deps HandlerDependencies) echo.HandlerFunc {
-	    return func(c echo.Context) error {
-	        // Use deps.GetQueries() for database operations
-	        // Use deps.GetStorage() for file operations
-	    }
-	}
-*/
-type HandlerDependencies interface {
-	GetQueries() *db.Queries
-	GetStorage() *storage.Storage
-}
