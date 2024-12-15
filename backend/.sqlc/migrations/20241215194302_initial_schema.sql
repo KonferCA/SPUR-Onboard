@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS verify_email_tokens (
 
 CREATE TABLE IF NOT EXISTS companies (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id uuid NOT NULL REFERENCES users(id),
     name varchar NOT NULL,
     wallet_address varchar,
     linkedin_url varchar NOT NULL,
@@ -124,6 +125,7 @@ CREATE TABLE IF NOT EXISTS transactions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_companies_owner ON companies(owner_id);
 CREATE INDEX IF NOT EXISTS idx_projects_company ON projects(company_id);
 CREATE INDEX IF NOT EXISTS idx_project_answers_project ON project_answers(project_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_project ON transactions(project_id);
