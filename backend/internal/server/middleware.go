@@ -8,5 +8,5 @@ import (
 Setup all the global middlewares used in the server.
 */
 func (s *Server) setupMiddlewares() {
-	s.E.Use(middleware.RequestID())
+	s.Echo.Use(middleware.RequestID())
 }
