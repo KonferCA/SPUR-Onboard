@@ -2,7 +2,7 @@ package v1health
 
 import (
 	"KonferCA/SPUR/common"
-	"KonferCA/SPUR/internal/interfaces"
+	"KonferCA/SPUR/db"
 	"context"
 	"net/http"
 	"runtime"
@@ -20,7 +20,7 @@ func (h *Handler) handleHealthCheck(c echo.Context) error {
 		System:    getSystemInfo(),
 	}
 
-	dbInfo := checkDatabase(h.server)
+	dbInfo := checkDatabase(h.server.GetQueries())
 	report.Database = dbInfo
 
 	if dbInfo.Connected {
@@ -53,7 +53,7 @@ func getSystemInfo() SystemInfo {
 checkDatabase is a helper function that gathers healthcheck information
 on the database including connection status, latency, version, and errors.
 */
-func checkDatabase(s interfaces.CoreServer) DatabaseInfo {
+func checkDatabase(queries *db.Queries) DatabaseInfo {
 	info := DatabaseInfo{
 		Connected: false,
 	}
@@ -63,8 +63,7 @@ func checkDatabase(s interfaces.CoreServer) DatabaseInfo {
 
 	start := time.Now()
 
-	var version string
-	err := s.GetDB().QueryRow(ctx, "SELECT version()").Scan(&version)
+	version, err := queries.GetDBVersion(ctx)
 
 	latency := time.Since(start)
 	info.LatencyMs = float64(latency.Microseconds()) / 1000.0
