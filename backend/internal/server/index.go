@@ -42,5 +42,15 @@ func New() (*Server, error) {
 		Echo:   e,
 	}
 
+	s.setupMiddlewares()
+	s.setupRoutes()
+
 	return &s, nil
+}
+
+/*
+Start the server and binds it to the given port.
+*/
+func (s *Server) Start(port int) error {
+	return s.Echo.Start(fmt.Sprintf(":%d", port))
 }
