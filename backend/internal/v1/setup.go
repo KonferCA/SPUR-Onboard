@@ -8,5 +8,5 @@ import (
 func SetupRoutes(s interfaces.CoreServer) {
 	e := s.GetEcho()
 	g := e.Group("/api/v1")
-	v1health.SetupHealthcheckRoutes(g, s)
+	v1_health.SetupHealthcheckRoutes(g, s)
 }

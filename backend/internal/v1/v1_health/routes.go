@@ -1,4 +1,4 @@
-package v1health
+package v1_health
 
 import (
 	"KonferCA/SPUR/internal/interfaces"

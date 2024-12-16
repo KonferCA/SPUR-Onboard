@@ -1,4 +1,4 @@
-package v1health
+package v1_health
 
 import (
 	"KonferCA/SPUR/common"
@@ -12,7 +12,7 @@ import (
 )
 
 /*
-V1 healthchekc endpoint handler.
+V1 healthcheck endpoint handler.
 */
 func (h *Handler) handleHealthCheck(c echo.Context) error {
 	report := HealthReport{
