@@ -5,7 +5,6 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/storage"
 )
 
@@ -31,7 +30,5 @@ type CoreServer interface {
 	GetDB() *pgxpool.Pool
 	GetQueries() *db.Queries
 	GetStorage() *storage.Storage
-	GetAuthLimiter() *middleware.RateLimiter
-	GetAPILimiter() *middleware.RateLimiter
 	GetEcho() *echo.Echo
 }
