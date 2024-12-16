@@ -1,6 +1,6 @@
 ---
 name: Backend Feature
-about: An addition to the backend (routes, middleware, database, or funding).
+about: An addition or refactor to the backend (routes, middleware, database, or funding).
 title: "[BE Feat] Describe what to add here"
 labels: backend, enhancement
 assignees: ''
@@ -9,7 +9,7 @@ assignees: ''
 
 ## Checklist
 Before submitting this ticket, make sure this ticket:
-- [ ] Is **labelled properly**.
+- [ ] Is **labelled properly** - if this is a refactor, add the label!
 - [ ] Has the **SPUR project assigned to it**.
 - [ ] Has an **assigned milestone**.
 
