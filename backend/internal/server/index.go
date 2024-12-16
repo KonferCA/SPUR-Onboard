@@ -2,17 +2,13 @@ package server
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/storage"
 	"fmt"
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 )
-
-type Server struct {
-	DBPool *pgxpool.Pool
-	Echo   *echo.Echo
-}
 
 /*
 Initializes a new Server instance and creates a connection pool to the database.
@@ -35,17 +31,55 @@ func New() (*Server, error) {
 		return nil, err
 	}
 
+	store, err := storage.NewStorage()
+	if err != nil {
+		return nil, err
+	}
+
 	e := echo.New()
 
 	s := Server{
-		DBPool: pool,
-		Echo:   e,
+		DBPool:  pool,
+		Echo:    e,
+		Storage: store,
 	}
 
 	s.setupMiddlewares()
 	s.setupRoutes()
 
 	return &s, nil
+}
+
+/*
+Implement the CoreServer interface GetDB method that simply
+returns the current db pool.
+*/
+func (s *Server) GetDB() *pgxpool.Pool {
+	return s.DBPool
+}
+
+/*
+Implement the CoreServer interface GetQueries method that simply
+returns a new instance of the db.Queries struct.
+*/
+func (s *Server) GetQueries() *db.Queries {
+	return db.New(s.DBPool)
+}
+
+/*
+Implement the CoreServer interface GetStorage method that simply
+returns an storage instance.
+*/
+func (s *Server) GetStorage() *storage.Storage {
+	return s.Storage
+}
+
+/*
+Implement the CoreServer interface GetEcho method that simply
+returns the root echo instance.
+*/
+func (s *Server) GetEcho() *echo.Echo {
+	return s.Echo
 }
 
 /*
