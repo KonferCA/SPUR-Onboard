@@ -1,6 +1,6 @@
 ---
 name: Backend Feature
-about: An addition or refactor to the backend (routes, middleware, database, or funding).
+about: An addition, change, or refactor to the backend (routes, middleware, database, or funding).
 title: "[BE Feat] Describe what to add here"
 labels: backend, enhancement
 assignees: ''
