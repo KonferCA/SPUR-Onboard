@@ -1,6 +1,6 @@
 ---
 name: UI Feature
-about: An addition to the Figma UI design file.
+about: An addition or change to the Figma UI design file.
 title: "[UI Feat] Describe what to add here"
 labels: design, enhancement
 assignees: ''
