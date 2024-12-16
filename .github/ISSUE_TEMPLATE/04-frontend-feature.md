@@ -1,6 +1,6 @@
 ---
 name: Frontend Feature
-about: An addition to the frontend.
+about: An addition or refactor to the frontend.
 title: "[FE Feat] Describe what to add here"
 labels: enhancement, frontend
 assignees: ''
@@ -9,7 +9,7 @@ assignees: ''
 
 ## Checklist
 Before submitting this ticket, make sure this ticket:
-- [ ] Is **labelled properly**.
+- [ ] Is **labelled properly** - if this is a refactor, add the label!
 - [ ] Has the **SPUR project assigned to it**.
 - [ ] Has an **assigned milestone**.
 
