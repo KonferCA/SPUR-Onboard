@@ -1,6 +1,6 @@
 ---
 name: Frontend Feature
-about: An addition or refactor to the frontend.
+about: An addition, change, or refactor to the frontend.
 title: "[FE Feat] Describe what to add here"
 labels: enhancement, frontend
 assignees: ''
