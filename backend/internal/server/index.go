@@ -51,6 +51,6 @@ func New() (*Server, error) {
 /*
 Start the server and binds it to the given port.
 */
-func (s *Server) Start(port int) error {
-	return s.Echo.Start(fmt.Sprintf(":%d", port))
+func (s *Server) Start(port string) error {
+	return s.Echo.Start(fmt.Sprintf(":%s", port))
 }
