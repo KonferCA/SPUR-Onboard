@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -29,7 +28,7 @@ func Auth(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc {
 			}
 
 			// get user salt from db using claims
-			claims, err := jwt.ParseToken(parts[1])
+			claims, err := jwt.ParseUnverifiedClaims(parts[1])
 			if err != nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 			}
@@ -65,7 +64,8 @@ func Auth(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc {
 			}
 
 			// verify token with user's salt
-			if err := jwt.VerifyTokenWithSalt(parts[1], salt); err != nil {
+			claims, err = jwt.VerifyTokenWithSalt(parts[1], salt)
+			if err != nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 			}
 
