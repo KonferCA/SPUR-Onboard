@@ -3,7 +3,7 @@ package v1common
 /*
 Use this for any json response that just needs a simple message field.
 */
-type basicOkResponse struct {
+type basicResponse struct {
 	Message string `json:"message"`
 }
 
