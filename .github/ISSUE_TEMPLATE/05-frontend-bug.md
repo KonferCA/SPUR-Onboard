@@ -1,6 +1,6 @@
 ---
 name: Frontend Issue, Bug, or Error
-about: An bug pertaining to the frontend.
+about: A bug pertaining to the frontend.
 title: "[FE Bug] Describe what to fix here"
 labels: bug, frontend
 assignees: ''
