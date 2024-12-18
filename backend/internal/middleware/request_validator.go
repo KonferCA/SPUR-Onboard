@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -23,6 +24,7 @@ func NewRequestValidator() *CustomValidator {
 	v.RegisterValidation("valid_user_role", validateUserRole)
 	v.RegisterValidation("non_admin_role", validateNonAdminRole)
 	v.RegisterValidation("s3_url", validateS3URL)
+	v.RegisterValidation("wallet_address", validateWalletAddress)
 
 	return &CustomValidator{validator: v}
 }
@@ -94,4 +96,17 @@ func validateS3URL(fl validator.FieldLevel) bool {
 	expectedPrefix := fmt.Sprintf("https://%s.s3.us-east-1.amazonaws.com/", bucket)
 
 	return strings.HasPrefix(url, expectedPrefix)
+}
+
+func validateWalletAddress(fl validator.FieldLevel) bool {
+	address := fl.Field().String()
+
+	// address is an optional field - return true on empty str
+	if address == "" {
+		return true
+	}
+
+	matched, _ := regexp.MatchString("^0x[0-9a-fA-F]{40}$", address)
+
+	return matched
 }
