@@ -38,10 +38,10 @@ func Auth(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token type")
 			}
 
-			// validate user role
+			// check if user role is allowed
 			roleValid := false
 			for _, role := range config.AcceptUserRoles {
-				if claims.Role == role {
+				if claims.Role.Valid() && claims.Role == role {
 					roleValid = true
 					break
 				}
