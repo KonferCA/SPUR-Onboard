@@ -51,7 +51,7 @@ func TestJWTMiddleware(t *testing.T) {
 		INSERT INTO users (
 			id, 
 			email, 
-			password_hash, 
+			password, 
 			role, 
 			email_verified, 
 			token_salt,
