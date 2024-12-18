@@ -28,6 +28,7 @@ func CORS() echo.MiddlewareFunc {
 
 func getCORSConfigByEnv() em.CORSConfig {
 	appEnv := os.Getenv("APP_ENV")
+	url := os.Getenv("BACKEND_URL")
 
 	switch appEnv {
 	case common.DEVELOPMENT_ENV, common.TEST_ENV:
@@ -48,7 +49,7 @@ func getCORSConfigByEnv() em.CORSConfig {
 		}
 	case common.STAGING_ENV:
 		return em.CORSConfig{
-			AllowOrigins: []string{"https://nk-staging.konfer.ca"},
+			AllowOrigins: []string{url},
 			AllowMethods: []string{
 				http.MethodGet,
 				http.MethodPost,
@@ -63,7 +64,7 @@ func getCORSConfigByEnv() em.CORSConfig {
 		}
 	case common.PREVIEW_ENV:
 		return em.CORSConfig{
-			AllowOrigins: []string{"https://nk-dev.konfer.ca"},
+			AllowOrigins: []string{url},
 			AllowMethods: []string{
 				http.MethodGet,
 				http.MethodPost,
@@ -83,7 +84,7 @@ func getCORSConfigByEnv() em.CORSConfig {
 	return em.CORSConfig{
 		// TODO: We need to decide on a name and what will be the domain name
 		// for the production deployment
-		AllowOrigins: []string{"https://spur.konfer.ca"},
+		AllowOrigins: []string{url},
 		AllowMethods: []string{
 			http.MethodGet,
 			http.MethodPost,
