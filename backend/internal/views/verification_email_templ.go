@@ -29,16 +29,29 @@ func VerificationEmail(url string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><h1>SPUR x Konfer</h1><div><h1>Let's Verify Your Email</h1><p>Please click the link below and we will verify your email.</p><a href=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Verify Your Email</title><style>\n        body {\n            font-family: Arial, sans-serif;\n            line-height: 1.6;\n            color: #000000 !important;\n            margin: 0;\n            padding: 0;\n        }\n        .container {\n            max-width: 600px;\n            margin: 0 auto;\n            padding: 20px;\n        }\n        .header {\n            background-color: #f8f9fa;\n            padding: 20px;\n            text-align: center;\n        }\n        .content {\n            padding: 20px;\n        }\n        .button, .button:visited {\n            display: inline-block;\n            padding: 10px 20px;\n            background-color: #007bff;\n            color: #ffffff !important;\n            text-decoration: none;\n            border-radius: 5px;\n        }\n    </style></head><body><div class=\"container\"><div class=\"header\"><h1>Verify Your Email</h1></div><div class=\"content\"><p>Hello,</p><p>Thank you for signing up! To complete your registration, please verify your email address by clicking the button below:</p><p style=\"text-align: center;\"><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 templ.SafeURL = templ.URL(url)
+		var templ_7745c5c3_Var2 templ.SafeURL = templ.SafeURL(url)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var2)))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">Verify now</a></div></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"button\">Verify Email</a></p><p>If the button above doesn't work, you can also copy and paste the following link into your browser:</p><p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(url)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/verification_email.templ`, Line: 52, Col: 13}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</p><p>This link will expire in 30 minutes for security reasons.</p><p>If you didn't create an account with us, please ignore this email.</p><p>Best regards,<br>SPUR x KONFER</p></div></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
