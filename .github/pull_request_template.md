@@ -1,6 +1,7 @@
 ## Checklist
 Before opening this PR, make sure the PR:
 - [ ] Has an **assignee or group of assignees**.
+- [ ] Has a **reviewer or a group of reviewers**.
 - [ ] Is **labelled properly**.
 - [ ] Has the **SPUR project assigned to it**.
 - [ ] Has an **assigned milestone**.
