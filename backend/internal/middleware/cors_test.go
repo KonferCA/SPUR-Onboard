@@ -232,12 +232,7 @@ func TestCORSIntegration(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			os.Setenv("APP_ENV", tc.env)
 			e := echo.New()
-			e.Use(CORS())
-
-			// Add a test route
-			e.GET("/test", func(c echo.Context) error {
-				return c.String(http.StatusOK, "test")
-			})
+			cors := CORS()
 
 			// Create a test request
 			req := httptest.NewRequest(tc.method, "/test", nil)
@@ -251,7 +246,11 @@ func TestCORSIntegration(t *testing.T) {
 				req.Header.Set("Access-Control-Request-Headers", "content-type")
 			}
 
-			e.ServeHTTP(rec, req)
+			c := e.NewContext(req, rec)
+			err := cors(func(c echo.Context) error {
+				return c.NoContent(http.StatusOK)
+			})(c)
+			assert.NoError(t, err)
 
 			// Assert common CORS headers
 			assert.Equal(t, tc.expectedOrigin, rec.Header().Get("Access-Control-Allow-Origin"), "Allow-Origin header mismatch")
