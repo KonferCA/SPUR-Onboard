@@ -38,6 +38,9 @@ func New() (*Server, error) {
 
 	e := echo.New()
 
+	// set the global error handler for all incoming requests
+	e.HTTPErrorHandler = errorHandler
+
 	s := Server{
 		DBPool:  pool,
 		Echo:    e,
