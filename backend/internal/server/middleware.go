@@ -12,8 +12,3 @@ Setup all the global middlewares used in the server.
 func (s *Server) setupMiddlewares() {
 	s.Echo.Use(middleware.RequestID())
 }
-
-// protected is a helper to quickly protect routes with JWT auth
-func (s *Server) protected(roles ...db.UserRole) echo.MiddlewareFunc {
-	return middleware.Auth(s.DBPool, roles...)
-}
