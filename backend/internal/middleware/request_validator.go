@@ -108,7 +108,7 @@ func validateWalletAddress(fl validator.FieldLevel) bool {
 		return true
 	}
 
-	matched, _ := regexp.MatchString("^0x[0-9a-fA-F]{40}$", address)
+	matched, _ := regexp.MatchString("^0x[0-9a-fA-F]{64}$", address)
 
 	return matched
 }
