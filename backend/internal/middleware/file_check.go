@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
+	"strings"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/labstack/echo/v4"
@@ -18,9 +19,10 @@ Example:
     10MB = 10 * 1024 * 1024 bytes
 */
 type FileConfig struct {
-	MinSize      int64
-	MaxSize      int64
-	AllowedTypes []string // e.g. ["image/jpeg", "image/png", "application/pdf"]
+	MinSize          int64
+	MaxSize          int64
+	AllowedTypes     []string // ex. ["image/jpeg", "image/png", "application/pdf"]
+	StrictValidation bool // If true, always verify content type matches header
 }
 
 /*
@@ -95,20 +97,40 @@ func validateFile(file *multipart.FileHeader, config FileConfig) error {
 
 	// Check MIME type if restrictions are specified
 	if len(config.AllowedTypes) > 0 {
-		f, err := file.Open()
-		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "could not read file")
-		}
-		defer f.Close()
+		declaredType := file.Header.Get("Content-Type")
+		declaredType = strings.Split(declaredType, ";")[0] // Remove parameters
 
-		mime, err := mimetype.DetectReader(f)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "could not detect file type")
+		// If no Content-Type header or strict validation is enabled, check actual content
+		if declaredType == "" || config.StrictValidation {
+			f, err := file.Open()
+			if err != nil {
+				return echo.NewHTTPError(http.StatusBadRequest, "could not read file")
+			}
+			defer f.Close()
+
+			mime, err := mimetype.DetectReader(f)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusBadRequest, "could not detect file type")
+			}
+
+			actualType := mime.String()
+
+			// If we have both types, verify they match (when strict validation is enabled)
+			if declaredType != "" && config.StrictValidation && !strings.EqualFold(declaredType, actualType) {
+				return echo.NewHTTPError(http.StatusBadRequest,
+					fmt.Sprintf("declared Content-Type (%s) doesn't match actual content type (%s)", 
+						declaredType, actualType))
+			}
+
+			// Use actual type if no declared type, otherwise use declared type
+			if declaredType == "" {
+				declaredType = actualType
+			}
 		}
 
 		isAllowed := false
 		for _, allowed := range config.AllowedTypes {
-			if mime.Is(allowed) {
+			if strings.EqualFold(declaredType, allowed) {
 				isAllowed = true
 				break
 			}
@@ -116,7 +138,8 @@ func validateFile(file *multipart.FileHeader, config FileConfig) error {
 
 		if !isAllowed {
 			return echo.NewHTTPError(http.StatusBadRequest,
-				fmt.Sprintf("file type %s not allowed. Allowed types: %v", mime.String(), config.AllowedTypes))
+				fmt.Sprintf("file type %s not allowed for %s. Allowed types: %v", 
+					declaredType, file.Filename, config.AllowedTypes))
 		}
 	}
 
