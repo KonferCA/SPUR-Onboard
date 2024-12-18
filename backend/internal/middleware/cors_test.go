@@ -141,11 +141,14 @@ func TestGetCORSConfigByEnv(t *testing.T) {
 	// Store original environment variable
 	originalEnv := os.Getenv("APP_ENV")
 	defer os.Setenv("APP_ENV", originalEnv)
+	originalBackenUrlEnv := os.Getenv("BACKEND_URL")
+	defer os.Setenv("BACKEND_URL", originalBackenUrlEnv)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set environment for this test
 			os.Setenv("APP_ENV", tt.env)
+			os.Setenv("BACKEND_URL", tt.expectedAllowOrigins[0])
 
 			config := getCORSConfigByEnv()
 
@@ -228,9 +231,16 @@ func TestCORSIntegration(t *testing.T) {
 		},
 	}
 
+	// Store original environment variable
+	originalEnv := os.Getenv("APP_ENV")
+	defer os.Setenv("APP_ENV", originalEnv)
+	originalBackenUrlEnv := os.Getenv("BACKEND_URL")
+	defer os.Setenv("BACKEND_URL", originalBackenUrlEnv)
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			os.Setenv("APP_ENV", tc.env)
+			os.Setenv("BACKEND_URL", tc.origin)
 			e := echo.New()
 			cors := CORS()
 
