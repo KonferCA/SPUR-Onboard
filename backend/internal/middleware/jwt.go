@@ -12,15 +12,16 @@ import (
 )
 
 // Auth creates a middleware that validates JWT access tokens with specified user roles
-func Auth(roles ...db.UserRole) echo.MiddlewareFunc {
+func Auth(dbPool *pgxpool.Pool, roles ...db.UserRole) echo.MiddlewareFunc {
 	return AuthWithConfig(AuthConfig{
 		AcceptTokenType: jwt.ACCESS_TOKEN_TYPE,
 		AcceptUserRoles: roles,
-	})
+	}, dbPool)
 }
 
 // AuthWithConfig creates a middleware with custom configuration for JWT validation
-func AuthWithConfig(config AuthConfig) echo.MiddlewareFunc {
+func AuthWithConfig(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc {
+	queries := db.New(dbPool)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			// get the authorization header
@@ -59,7 +60,7 @@ func AuthWithConfig(config AuthConfig) echo.MiddlewareFunc {
 			}
 
 			// get user's token salt and user data from db
-			user, err := dbPool.GetUserByID(c.Request().Context(), claims.UserID)
+			user, err := queries.GetUserByID(c.Request().Context(), claims.UserID)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 			}

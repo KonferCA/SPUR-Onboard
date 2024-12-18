@@ -54,12 +54,10 @@ func TestJWTMiddleware(t *testing.T) {
 			password, 
 			role, 
 			email_verified, 
-			token_salt,
-			first_name,
-			last_name
+			token_salt
 		)
-		VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32), $6, $7)
-	`, userID, "test@example.com", "hashedpassword", db.UserRoleStartupOwner, true, "Test", "User")
+		VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
+	`, userID, "test@example.com", "hashedpassword", db.UserRoleStartupOwner, true)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
 	}
@@ -70,7 +68,7 @@ func TestJWTMiddleware(t *testing.T) {
 		AcceptTokenType: jwt.ACCESS_TOKEN_TYPE,
 		AcceptUserRoles: []db.UserRole{db.UserRoleStartupOwner},
 	}
-	e.Use(middleware.Auth(middlewareConfig, dbPool))
+	e.Use(middleware.AuthWithConfig(middlewareConfig, dbPool))
 
 	e.GET("/protected", func(c echo.Context) error {
 		return c.String(http.StatusOK, "protected resource")
