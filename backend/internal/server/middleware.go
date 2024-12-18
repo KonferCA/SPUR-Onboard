@@ -1,9 +1,7 @@
 package server
 
 import (
-	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/middleware"
-	"github.com/labstack/echo/v4"
 )
 
 /*
