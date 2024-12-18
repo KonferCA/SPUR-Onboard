@@ -11,8 +11,16 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// Auth creates a middleware that validates JWT tokens from the Authorization header
-func Auth(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc {
+// Auth creates a middleware that validates JWT access tokens with specified user roles
+func Auth(roles ...db.UserRole) echo.MiddlewareFunc {
+	return AuthWithConfig(AuthConfig{
+		AcceptTokenType: jwt.ACCESS_TOKEN_TYPE,
+		AcceptUserRoles: roles,
+	})
+}
+
+// AuthWithConfig creates a middleware with custom configuration for JWT validation
+func AuthWithConfig(config AuthConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			// get the authorization header
