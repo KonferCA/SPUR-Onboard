@@ -1,8 +1,8 @@
 ---
-name: Backend Issue
-about: An issue pertaining to the backend (routes, middleware, database, or funding).
-title: "[BE Issue] Describe what to fix here"
-labels: backend, bug
+name: Issue, Bug, or Error
+about: A bug pertaining to the backend AND frontend.
+title: "[Bug] Describe what to fix here"
+labels: backend, frontend, bug
 assignees: ''
 
 ---

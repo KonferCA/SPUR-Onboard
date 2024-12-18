@@ -1,8 +1,8 @@
 ---
-name: UI Issue
-about: An issue pertaining to the Figma UI design file.
-title: "[UI Feat] Describe what to fix here"
-labels: bug, design
+name: Frontend Issue, Bug, or Error
+about: A bug pertaining to the frontend.
+title: "[FE Bug] Describe what to fix here"
+labels: bug, frontend
 assignees: ''
 
 ---
@@ -14,10 +14,14 @@ Before submitting this ticket, make sure this ticket:
 - [ ] Has an **assigned milestone**.
 
 And lastly:
-- [ ] Once someone picks up this ticket, **make sure to assign it to a designer**.
+- [ ] Once someone picks up this ticket, **make sure to assign it to a developer**.
 
 ## Description
-Replace this text with a brief description of the issue and what to replace it with.
+Replace this text with a brief description of the issue.
+
+## Reproduction
+1. Replace this with a list of steps to reproduce the issue.
+2. ...
 
 ## Screenshots
 If applicable add screenshots, otherwise delete this section.
