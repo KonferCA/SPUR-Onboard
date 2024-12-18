@@ -51,20 +51,13 @@ func Auth(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc {
 			}
 
 			// get user's token salt and user data from db
-			var salt []byte
-			var user db.User
-			err = dbPool.QueryRow(
-				c.Request().Context(),
-				`SELECT token_salt, id, email, role, email_verified 
-				 FROM users WHERE id = $1`,
-				claims.UserID,
-			).Scan(&salt, &user.ID, &user.Email, &user.Role, &user.EmailVerified)
+			user, err := dbPool.GetUserByID(c.Request().Context(), claims.UserID)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 			}
 
 			// verify token with user's salt
-			claims, err = jwt.VerifyTokenWithSalt(parts[1], salt)
+			claims, err = jwt.VerifyTokenWithSalt(parts[1], user.TokenSalt)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 			}
@@ -72,7 +65,7 @@ func Auth(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc {
 			// store claims and user in context for handlers
 			c.Set("claims", &AuthClaims{
 				JWTClaims: claims,
-				Salt:      salt,
+				Salt:      user.TokenSalt,
 			})
 			c.Set("user", &user)
 
