@@ -3,78 +3,83 @@ package middleware
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"time"
 )
 
+type contextKey string
+const loggerContextKey contextKey = "logger"
+
 /*
-Logger Middleware
+Logger provides a simplified interface for structured logging throughout the application.
+It automatically includes request context (request ID, path, method) in all log entries
+while providing a clean interface for developers.
 
-This middleware integrates with the SPUR backend's logging system to provide
-structured request logging. It uses the global zerolog configuration from main.go
-for timestamp formatting.
-
-Key Features:
-- Captures request ID for distributed tracing
-- Records request method, path, and client IP
-- Measures request processing duration
-- Logs final response status code
-- Includes error details when requests fail
-
-Integration:
-The middleware is set up in backend/internal/server/middleware.go along with
-other global middlewares like RequestID. It should be added after RequestID
-but before route-specific middleware.
+Usage in handlers:
+    logger := middleware.GetLogger(c)
+    logger.Info("starting process")
+    logger.Error(err, "process failed")
+    logger.Warn("suspicious activity", optionalError)
 */
-func Logger() echo.MiddlewareFunc {
+type Logger struct {
+	baseLogger *zerolog.Logger
+}
+
+func (l *Logger) Info(msg string) {
+	l.baseLogger.Info().Msg(msg)
+}
+
+func (l *Logger) Error(err error, msg string) {
+	l.baseLogger.Error().Err(err).Msg(msg)
+}
+
+func (l *Logger) Warn(msg string, err ...error) {
+	logger := l.baseLogger.Warn()
+	if len(err) > 0 && err[0] != nil {
+		logger = logger.Err(err[0])
+	}
+	logger.Msg(msg)
+}
+
+/*
+GetLogger retrieves the request-scoped logger from the echo context.
+If no logger is found, returns a default logger.
+
+The returned logger automatically includes request context in all log entries.
+*/
+func GetLogger(c echo.Context) *Logger {
+	if l, ok := c.Get(string(loggerContextKey)).(*Logger); ok {
+		return l
+	}
+	defaultLogger := log.With().Logger()
+	return &Logger{baseLogger: &defaultLogger}
+}
+
+/*
+LoggerMiddleware initializes a request-scoped logger and stores it in the context.
+The logger includes request ID, method, and path in all subsequent log entries.
+*/
+func LoggerMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			start := time.Now()
-			req := c.Request()
-			res := c.Response()
-
-			// extract request id that was set by the RequestID middleware
-			requestID := req.Header.Get(echo.HeaderXRequestID)
+			// Get request ID from header OR response header (in case middleware set it)
+			requestID := c.Request().Header.Get(echo.HeaderXRequestID)
 			if requestID == "" {
-				// fallback in case RequestID middleware wasn't used
-				requestID = res.Header().Get(echo.HeaderXRequestID)
+				requestID = c.Response().Header().Get(echo.HeaderXRequestID)
 			}
 
-			// process request
-			err := next(c)
-
-			// prepare log entry
-			logger := log.Info()
-
-			// handle different types of errors
-			if err != nil {
-				logger = log.Error().Err(err)
-				
-				// handle echo's HTTPError type
-				if he, ok := err.(*echo.HTTPError); ok {
-					res.Status = he.Code
-					logger.Int("error_code", he.Code)
-					if msg, ok := he.Message.(string); ok {
-						logger.Str("error_message", msg)
-					}
-				} else {
-					// for non-HTTP errors, use 500
-					res.Status = echo.ErrInternalServerError.Code
-				}
-			}
-
-			// log request completion with all details
-			logger.
+			// Create logger with request context
+			baseLogger := log.With().
 				Str("request_id", requestID).
-				Str("method", req.Method).
-				Str("path", req.URL.Path).
-				Str("remote_ip", c.RealIP()).
-				Str("user_agent", req.UserAgent()).
-				Int("status", res.Status).
-				Dur("latency", time.Since(start)).
-				Msg("request completed")
+				Str("method", c.Request().Method).
+				Str("path", c.Request().URL.Path).
+				Logger()
 
-			return err
+			c.Set(string(loggerContextKey), &Logger{
+				baseLogger: &baseLogger,
+			})
+
+			return next(c)
 		}
 	}
 } 
