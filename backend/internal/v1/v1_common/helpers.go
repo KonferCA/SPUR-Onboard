@@ -41,7 +41,7 @@ Example:
 	}
 */
 func fail(c echo.Context, code int, publicErrMsg string, internalErr error) error {
-	c.Set("request_error", internalErr)
+	c.Set("internal_error", internalErr)
 	if publicErrMsg == "" {
 		publicErrMsg = http.StatusText(code)
 	}
