@@ -20,13 +20,6 @@ Replace this with a summary of the changes and the related issues. Please also i
 ## Linked Issues
 - Fixes # (add all issues that this PR closes, prefixed with either "Fixes" or "Closes").
 
-## Type of Change
-Please delete options that are not relevant:
-- [ ] Bug fix (non-breaking change which fixes an issue).
-- [ ] New feature (non-breaking change which adds functionality).
-- [ ] Breaking change (fix or feature that would cause existing functionality not to work as expected).
-- [ ] This change requires a documentation update.
-
 ## Testing
 - Replace this with a list of test files covering all the PR changes.
 - ...
