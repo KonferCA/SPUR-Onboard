@@ -25,6 +25,7 @@ func NewRequestValidator() *CustomValidator {
 	v.RegisterValidation("non_admin_role", validateNonAdminRole)
 	v.RegisterValidation("s3_url", validateS3URL)
 	v.RegisterValidation("wallet_address", validateWalletAddress)
+	v.RegisterValidation("linkedin_url", validateLinkedInURL)
 
 	return &CustomValidator{validator: v}
 }
@@ -107,6 +108,13 @@ func validateWalletAddress(fl validator.FieldLevel) bool {
 	}
 
 	matched, _ := regexp.MatchString("^0x[0-9a-fA-F]{40}$", address)
+
+	return matched
+}
+
+func validateLinkedInURL(fl validator.FieldLevel) bool {
+	url := fl.Field().String()
+	matched, _ := regexp.MatchString(`^https?:\/\/(www\.)?linkedin\.com\/.*$`, url)
 
 	return matched
 }
