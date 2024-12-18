@@ -18,6 +18,7 @@ func NewRequestValidator() *CustomValidator {
 	v := validator.New()
 
 	v.RegisterValidation("valid_user_role", validateUserRole)
+	v.RegisterValidation("non_admin_role", validateNonAdminRole)
 
 	return &CustomValidator{validator: v}
 }
@@ -53,6 +54,24 @@ func validateUserRole(fl validator.FieldLevel) bool {
 		ur := field.Interface().(*db.UserRole)
 
 		return ur.Valid()
+	}
+
+	return false
+}
+
+func validateNonAdminRole(fl validator.FieldLevel) bool {
+	field := fl.Field()
+
+	if field.Type() == reflect.TypeOf(db.UserRole("")) {
+		ur := field.Interface().(db.UserRole)
+
+		return ur.Valid() && ur != db.UserRoleAdmin
+	}
+
+	if field.Kind() == reflect.String {
+		ur := db.UserRole(field.String())
+
+		return ur.Valid() && ur != db.UserRoleAdmin
 	}
 
 	return false
