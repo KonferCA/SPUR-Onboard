@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFileSizeCheck(t *testing.T) {
+func TestFileCheck(t *testing.T) {
 	e := echo.New()
 	
 	handler := func(c echo.Context) error {
@@ -37,54 +37,66 @@ func TestFileSizeCheck(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		config         FileSizeConfig
-		fileSize       int
+		config         FileConfig
+		filename       string
+		content        []byte
 		expectedStatus int
 	}{
 		{
-			name: "valid file size",
-			config: FileSizeConfig{
-				MinSize: 5,
-				MaxSize: 1024, // increased to account for form overhead
+			name: "valid file",
+			config: FileConfig{
+				MinSize:      5,
+				MaxSize:      1024,
+				AllowedTypes: []string{"text/plain"},
 			},
-			fileSize:       50,
+			filename:       "test.txt",
+			content:       []byte("Hello, World!"),
 			expectedStatus: http.StatusOK,
 		},
 		{
 			name: "file too large",
-			config: FileSizeConfig{
-				MinSize: 5,
-				MaxSize: 100,
+			config: FileConfig{
+				MinSize:      5,
+				MaxSize:      100,
+				AllowedTypes: []string{"text/plain"},
 			},
-			fileSize:       150,
+			filename:       "large.txt",
+			content:       bytes.Repeat([]byte("a"), 150),
 			expectedStatus: http.StatusRequestEntityTooLarge,
 		},
 		{
 			name: "file too small",
-			config: FileSizeConfig{
-				MinSize: 50,
-				MaxSize: 1024,
+			config: FileConfig{
+				MinSize:      50,
+				MaxSize:      1024,
+				AllowedTypes: []string{"text/plain"},
 			},
-			fileSize:       10,
+			filename:       "small.txt",
+			content:       []byte("tiny"),
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "invalid mime type",
+			config: FileConfig{
+				MinSize:      5,
+				MaxSize:      1024,
+				AllowedTypes: []string{"image/jpeg", "image/png"},
+			},
+			filename:       "test.txt",
+			content:       []byte("Hello, World!"),
 			expectedStatus: http.StatusBadRequest,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// create a file with specified size
-			content := make([]byte, tt.fileSize)
-			req, body, err := createMultipartRequest("test.txt", content)
+			req, _, err := createMultipartRequest(tt.filename, tt.content)
 			assert.NoError(t, err)
-
-			// log actual size for debugging
-			t.Logf("Total request size: %d, File content size: %d", body.Len(), tt.fileSize)
 
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 
-			// wrap handler with middleware
-			h := FileSizeCheck(tt.config)(handler)
+			h := FileCheck(tt.config)(handler)
 			err = h(c)
 
 			if tt.expectedStatus != http.StatusOK {
@@ -103,7 +115,7 @@ func TestFileSizeCheck(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 
-		h := FileSizeCheck(FileSizeConfig{
+		h := FileCheck(FileConfig{
 			MinSize: 5,
 			MaxSize: 100,
 		})(handler)
@@ -112,4 +124,4 @@ func TestFileSizeCheck(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, rec.Code)
 	})
-}
+} 
