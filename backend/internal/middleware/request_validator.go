@@ -26,6 +26,7 @@ func NewRequestValidator() *CustomValidator {
 	v.RegisterValidation("s3_url", validateS3URL)
 	v.RegisterValidation("wallet_address", validateWalletAddress)
 	v.RegisterValidation("linkedin_url", validateLinkedInURL)
+	v.RegisterValidation("project_status", validateProjectStatus)
 
 	return &CustomValidator{validator: v}
 }
@@ -117,4 +118,22 @@ func validateLinkedInURL(fl validator.FieldLevel) bool {
 	matched, _ := regexp.MatchString(`^https?:\/\/(www\.)?linkedin\.com\/.*$`, url)
 
 	return matched
+}
+
+func validateProjectStatus(fl validator.FieldLevel) bool {
+	field := fl.Field()
+
+	if field.Type() == reflect.TypeOf(db.ProjectStatus("")) {
+		ps := field.Interface().(db.ProjectStatus)
+
+		return ps.Valid()
+	}
+
+	if field.Kind() == reflect.String {
+		ps := db.ProjectStatus(field.String())
+
+		return ps.Valid()
+	}
+
+	return false
 }
