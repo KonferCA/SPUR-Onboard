@@ -11,11 +11,8 @@ import (
 Logger Middleware
 
 This middleware integrates with the SPUR backend's logging system to provide
-structured request logging. It works in conjunction with the zerolog setup
-in backend/main.go which configures:
-- Unix timestamp format in production
-- Human-readable timestamps (RFC3339) in development
-- Console writer with pretty printing in development
+structured request logging. It uses the global zerolog configuration from main.go
+for timestamp formatting.
 
 Key Features:
 - Captures request ID for distributed tracing
@@ -47,7 +44,6 @@ func Logger() echo.MiddlewareFunc {
 			err := next(c)
 
 			// prepare log entry
-			latency := time.Since(start)
 			logger := log.Info()
 
 			// handle different types of errors
@@ -75,7 +71,7 @@ func Logger() echo.MiddlewareFunc {
 				Str("remote_ip", c.RealIP()).
 				Str("user_agent", req.UserAgent()).
 				Int("status", res.Status).
-				Dur("latency", latency).
+				Dur("latency", time.Since(start)).
 				Msg("request completed")
 
 			return err
