@@ -1,7 +1,7 @@
 ---
-name: UI Issue
-about: An issue pertaining to the Figma UI design file.
-title: "[UI Feat] Describe what to fix here"
+name: UI Issue, Bug, or Error
+about: A bug pertaining to the Figma UI design file.
+title: "[UI Bug] Describe what to fix here"
 labels: bug, design
 assignees: ''
 
