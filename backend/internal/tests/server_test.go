@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -95,6 +96,38 @@ func TestServer(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to clean up test user: %v", err)
 			}
+		})
+
+		t.Run("/auth/verify-email - 200 OK - valid email token", func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+			defer cancel()
+			userID, email, _, err := createTestUser(ctx, s)
+			assert.Nil(t, err)
+			defer removeTestUser(ctx, email, s)
+
+			// generate a test email token
+			exp := time.Now().Add(time.Minute * 30).UTC()
+			tokenID, err := createTestEmailToken(ctx, userID, exp, s)
+			assert.Nil(t, err)
+			tokenStr, err := jwt.GenerateVerifyEmailToken(email, tokenID, exp)
+			assert.Nil(t, err)
+
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify-email", nil)
+			req.URL.Query().Add("token", tokenStr)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+
+			resBodyBytes, err := io.ReadAll(rec.Body)
+			assert.Nil(t, err)
+
+			var resBody map[string]any
+			err = json.Unmarshal(resBodyBytes, &resBody)
+			assert.Nil(t, err)
+			log.Info().Any("body", resBody).Msg("debug")
+
+			assert.Equal(t, http.StatusOK, rec.Code)
+
 		})
 	})
 }
