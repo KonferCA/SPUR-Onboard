@@ -1,4 +1,4 @@
-package v1common
+package v1_common
 
 import (
 	"encoding/json"
@@ -18,7 +18,7 @@ func TestRequestResponders(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		err := success(c, http.StatusOK, "test")
+		err := Success(c, http.StatusOK, "test")
 		assert.NoError(t, err)
 		data, err := io.ReadAll(rec.Body)
 		assert.NoError(t, err)
@@ -34,7 +34,7 @@ func TestRequestResponders(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		err := success(c, http.StatusOK, "")
+		err := Success(c, http.StatusOK, "")
 		assert.NoError(t, err)
 		data, err := io.ReadAll(rec.Body)
 		assert.NoError(t, err)
@@ -51,7 +51,7 @@ func TestRequestResponders(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 		testErr := errors.New("test-error")
-		err, ok := fail(c, http.StatusBadRequest, "test", testErr).(*echo.HTTPError)
+		err, ok := Fail(c, http.StatusBadRequest, "test", testErr).(*echo.HTTPError)
 		assert.True(t, ok)
 		assert.Equal(t, err.Code, http.StatusBadRequest)
 		assert.Equal(t, err.Message, "test")
@@ -66,7 +66,7 @@ func TestRequestResponders(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
 		testErr := errors.New("test-error")
-		err, ok := fail(c, http.StatusBadRequest, "", testErr).(*echo.HTTPError)
+		err, ok := Fail(c, http.StatusBadRequest, "", testErr).(*echo.HTTPError)
 		assert.True(t, ok)
 		assert.Equal(t, err.Code, http.StatusBadRequest)
 		assert.Equal(t, err.Message, http.StatusText(http.StatusBadRequest))
@@ -80,7 +80,7 @@ func TestRequestResponders(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		err, ok := fail(c, http.StatusBadRequest, "", nil).(*echo.HTTPError)
+		err, ok := Fail(c, http.StatusBadRequest, "", nil).(*echo.HTTPError)
 		assert.True(t, ok)
 		assert.Equal(t, err.Code, http.StatusBadRequest)
 		assert.Equal(t, err.Message, http.StatusText(http.StatusBadRequest))
