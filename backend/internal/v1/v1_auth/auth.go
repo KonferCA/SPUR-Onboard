@@ -42,11 +42,7 @@ func (h *Handler) handleVerifyEmail(c echo.Context) error {
 
 	claims, err := jwt.VerifyEmailToken(tokenStr)
 	if err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Failed to verify email. Invalid token.", err)
-	}
-
-	if time.Now().After(claims.ExpiresAt.Time) {
-		return v1_common.Fail(c, http.StatusBadRequest, "Failed to verify email. Link expired.", nil)
+		return v1_common.Fail(c, http.StatusBadRequest, "Failed to verify email. Invalid or expired token.", err)
 	}
 
 	token, err := db.New(h.server.GetDB()).GetVerifyEmailTokenByID(ctx, claims.ID)
