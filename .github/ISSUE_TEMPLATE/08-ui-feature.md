@@ -6,6 +6,14 @@ labels: design, enhancement
 assignees: ''
 
 ---
+## Description
+Replace this text with a brief description of the issue and what to replace it with.
+
+## Screenshots
+If applicable add screenshots, otherwise delete this section.
+
+## Additional Information
+If applicable add any other information, otherwise, delete this section.
 
 ## Checklist
 Before submitting this ticket, make sure this ticket:
@@ -15,12 +23,3 @@ Before submitting this ticket, make sure this ticket:
 
 And lastly:
 - [ ] Once someone picks up this ticket, **make sure to assign it to a designer**.
-
-## Description
-Replace this text with a brief description of the issue and what to replace it with.
-
-## Screenshots
-If applicable add screenshots, otherwise delete this section.
-
-## Additional Information
-If applicable add any other information, otherwise, delete this section.
