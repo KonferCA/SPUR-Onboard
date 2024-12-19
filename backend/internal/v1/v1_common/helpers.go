@@ -1,4 +1,4 @@
-package v1common
+package v1_common
 
 import (
 	"net/http"
@@ -14,10 +14,10 @@ Example:
 
 	func handler(c echo.Context) error
 	    // some code...
-	    return success(c, http.StatusOk, "Something")
+	    return Success(c, http.StatusOk, "Something")
 	}
 */
-func success(c echo.Context, code int, message string) error {
+func Success(c echo.Context, code int, message string) error {
 	if message == "" {
 		message = http.StatusText(code)
 	}
@@ -37,10 +37,10 @@ Example:
 
 	func handler(c echo.Context) error
 	    // some code...
-	    return fail(c, http.StatusNotFound, "Something not found", err)
+	    return Fail(c, http.StatusNotFound, "Something not found", err)
 	}
 */
-func fail(c echo.Context, code int, publicErrMsg string, internalErr error) error {
+func Fail(c echo.Context, code int, publicErrMsg string, internalErr error) error {
 	c.Set("internal_error", internalErr)
 	if publicErrMsg == "" {
 		publicErrMsg = http.StatusText(code)

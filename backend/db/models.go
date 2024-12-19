@@ -14,10 +14,11 @@ import (
 type ProjectStatus string
 
 const (
-	ProjectStatusDraft    ProjectStatus = "draft"
-	ProjectStatusPending  ProjectStatus = "pending"
-	ProjectStatusVerified ProjectStatus = "verified"
-	ProjectStatusDeclined ProjectStatus = "declined"
+	ProjectStatusDraft     ProjectStatus = "draft"
+	ProjectStatusPending   ProjectStatus = "pending"
+	ProjectStatusVerified  ProjectStatus = "verified"
+	ProjectStatusDeclined  ProjectStatus = "declined"
+	ProjectStatusWithdrawn ProjectStatus = "withdrawn"
 )
 
 func (e *ProjectStatus) Scan(src interface{}) error {
@@ -60,7 +61,8 @@ func (e ProjectStatus) Valid() bool {
 	case ProjectStatusDraft,
 		ProjectStatusPending,
 		ProjectStatusVerified,
-		ProjectStatusDeclined:
+		ProjectStatusDeclined,
+		ProjectStatusWithdrawn:
 		return true
 	}
 	return false
@@ -72,6 +74,7 @@ func AllProjectStatusValues() []ProjectStatus {
 		ProjectStatusPending,
 		ProjectStatusVerified,
 		ProjectStatusDeclined,
+		ProjectStatusWithdrawn,
 	}
 }
 
