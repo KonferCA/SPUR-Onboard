@@ -35,8 +35,7 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 	if err := cv.validator.Struct(i); err != nil {
 		log.Error().Err(err).Msg("validation error")
 
-		// TODO: Implement custom error messages
-		return echo.NewHTTPError(http.StatusBadRequest, "err")
+		return echo.NewHTTPError(http.StatusBadRequest, formatValidationErrors(err))
 	}
 
 	return nil
@@ -136,4 +135,51 @@ func validateProjectStatus(fl validator.FieldLevel) bool {
 	}
 
 	return false
+}
+
+func formatValidationErrors(err error) string {
+	if validationErrors, ok := err.(validator.ValidationErrors); ok {
+		var errorMessages []string
+
+		for _, e := range validationErrors {
+			field := e.Field()
+			tag := e.Tag()
+			param := e.Param()
+			message := formatErrorMessage(field, tag, param)
+			errorMessages = append(errorMessages, message)
+		}
+
+		return strings.Join(errorMessages, "; ")
+	}
+
+	return err.Error()
+}
+
+func formatErrorMessage(field, tag, param string) string {
+	switch tag {
+	case "valid_user_role":
+		return fmt.Sprintf("%s must be a valid user role", field)
+	case "non_admin_role":
+		return fmt.Sprintf("%s cannot be an admin role", field)
+	case "s3_url":
+		return fmt.Sprintf("%s must be a valid S3 URL", field)
+	case "wallet_address":
+		return fmt.Sprintf("%s must be a valid SUI wallet address", field)
+	case "linkedin_url":
+		return fmt.Sprintf("%s must be a valid LinkedIn URL", field)
+	case "project_status":
+		return fmt.Sprintf("%s must be a valid project status", field)
+	case "required":
+		return fmt.Sprintf("%s is required", field)
+	case "email":
+		return fmt.Sprintf("%s must be a valid email address", field)
+	// To be used in request types - i.e in passwords, bio etc
+	case "min":
+		return fmt.Sprintf("%s must be at least %s characters long", field, param)
+	// To be used in request types - i.e in passwords, bio etc
+	case "max":
+		return fmt.Sprintf("%s must not exceed %s characters", field, param)
+	default:
+		return fmt.Sprintf("%s failed validation for %s", field, tag)
+	}
 }
