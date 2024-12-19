@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -112,11 +111,11 @@ func TestServer(t *testing.T) {
 			tokenStr, err := jwt.GenerateVerifyEmailToken(email, tokenID, exp)
 			assert.Nil(t, err)
 
-			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify-email", nil)
-			req.URL.Query().Add("token", tokenStr)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/auth/verify-email?token=%s", tokenStr), nil)
 			rec := httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusOK, rec.Code)
 
 			resBodyBytes, err := io.ReadAll(rec.Body)
 			assert.Nil(t, err)
@@ -124,10 +123,7 @@ func TestServer(t *testing.T) {
 			var resBody map[string]any
 			err = json.Unmarshal(resBodyBytes, &resBody)
 			assert.Nil(t, err)
-			log.Info().Any("body", resBody).Msg("debug")
-
-			assert.Equal(t, http.StatusOK, rec.Code)
-
+			assert.Equal(t, resBody["verified"], true)
 		})
 	})
 }
