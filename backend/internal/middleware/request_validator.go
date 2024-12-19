@@ -14,10 +14,26 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var (
+	walletAddressPattern = regexp.MustCompile("^0x[0-9a-fA-F]{64}$")
+	linkedInURLPattern   = regexp.MustCompile(`^https?:\/\/(www\.)?linkedin\.com\/.*$`)
+)
+
 type CustomValidator struct {
 	validator *validator.Validate
 }
 
+/*
+NewRequestValidator creates and initializes a new CustomValidator with registered custom validation rules. The following custom validations are registered:
+  - valid_user_role: Validates user role assignments
+  - non_admin_role: Ensures role is valid but not admin
+  - s3_url: Validates S3 bucket URLs
+  - wallet_address: Validates cryptocurrency wallet addresses
+  - linkedin_url: Validates LinkedIn profile URLs
+  - project_status: Validates project status values
+
+Returns a configured CustomValidator
+*/
 func NewRequestValidator() *CustomValidator {
 	v := validator.New()
 
@@ -31,6 +47,11 @@ func NewRequestValidator() *CustomValidator {
 	return &CustomValidator{validator: v}
 }
 
+/*
+Validate implements the Validator interface (Echo). It performs structural validation of any interface{} using the registered validation rules.
+
+If validation fails, it returns an HTTP 400 Bad Request error with formatted validation error messages. Otherwise, returns nil for successful validation.
+*/
 func (cv *CustomValidator) Validate(i interface{}) error {
 	if err := cv.validator.Struct(i); err != nil {
 		log.Error().Err(err).Msg("validation error")
@@ -41,6 +62,12 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 	return nil
 }
 
+/*
+validateUserRole checks if a field contains a valid user role.
+Supports validation of string fields, UserRole types, and UserRole pointers.
+
+Returns true if the field contains a valid user role, false otherwise.
+*/
 func validateUserRole(fl validator.FieldLevel) bool {
 	field := fl.Field()
 
@@ -66,24 +93,37 @@ func validateUserRole(fl validator.FieldLevel) bool {
 	return false
 }
 
+/*
+validateNonAdminRole ensures a field contains a valid non-admin user role.
+Supports validation of both string fields and UserRole types.
+
+Returns true if the field contains a valid non-admin role, false otherwise.
+*/
 func validateNonAdminRole(fl validator.FieldLevel) bool {
 	field := fl.Field()
-
-	if field.Type() == reflect.TypeOf(db.UserRole("")) {
-		ur := field.Interface().(db.UserRole)
-
-		return ur.Valid() && ur != db.UserRoleAdmin
-	}
 
 	if field.Kind() == reflect.String {
 		ur := db.UserRole(field.String())
 
-		return ur.Valid() && ur != db.UserRoleAdmin
+		return ur == db.UserRoleStartupOwner || ur == db.UserRoleInvestor
+	}
+
+	if field.Type() == reflect.TypeOf(db.UserRole("")) {
+		ur := field.Interface().(db.UserRole)
+
+		return ur == db.UserRoleStartupOwner || ur == db.UserRoleInvestor
 	}
 
 	return false
 }
 
+/*
+validateS3URL verifies that a field contains a valid S3 URL for the configured bucket.
+The URL must start with the expected S3 bucket prefix from AWS_S3_BUCKET environment variable.
+
+Returns true if the URL is valid for the configured bucket, false otherwise.
+Logs a warning if AWS_S3_BUCKET environment variable is not set.
+*/
 func validateS3URL(fl validator.FieldLevel) bool {
 	url := fl.Field().String()
 	bucket := os.Getenv("AWS_S3_BUCKET")
@@ -99,6 +139,12 @@ func validateS3URL(fl validator.FieldLevel) bool {
 	return strings.HasPrefix(url, expectedPrefix)
 }
 
+/*
+validateWalletAddress verifies that a field contains a valid cryptocurrency wallet address.
+The address must be either empty (optional field) or match the format: 0x followed by 64 hexadecimal characters.
+
+Returns true if the address is empty or matches the required format, false otherwise.
+*/
 func validateWalletAddress(fl validator.FieldLevel) bool {
 	address := fl.Field().String()
 
@@ -107,18 +153,27 @@ func validateWalletAddress(fl validator.FieldLevel) bool {
 		return true
 	}
 
-	matched, _ := regexp.MatchString("^0x[0-9a-fA-F]{64}$", address)
-
-	return matched
+	return walletAddressPattern.MatchString(address)
 }
 
+/*
+validateLinkedInURL verifies that a field contains a valid LinkedIn URL.
+The URL must start with http:// or https:// and contain linkedin.com domain.
+
+Returns true if the URL matches LinkedIn's format, false otherwise.
+*/
 func validateLinkedInURL(fl validator.FieldLevel) bool {
 	url := fl.Field().String()
-	matched, _ := regexp.MatchString(`^https?:\/\/(www\.)?linkedin\.com\/.*$`, url)
 
-	return matched
+	return linkedInURLPattern.MatchString(url)
 }
 
+/*
+validateProjectStatus verifies that a field contains a valid project status.
+Supports validation of both string fields and ProjectStatus types.
+
+Returns true if the field contains a valid project status, false otherwise.
+*/
 func validateProjectStatus(fl validator.FieldLevel) bool {
 	field := fl.Field()
 
@@ -137,6 +192,12 @@ func validateProjectStatus(fl validator.FieldLevel) bool {
 	return false
 }
 
+/*
+formatValidationErrors converts validator.ValidationErrors into a human-readable string.
+It processes each validation error and formats it according to the validation tag that failed.
+
+Returns a semicolon-separated string of formatted error messages.
+*/
 func formatValidationErrors(err error) string {
 	if validationErrors, ok := err.(validator.ValidationErrors); ok {
 		var errorMessages []string
@@ -155,6 +216,17 @@ func formatValidationErrors(err error) string {
 	return err.Error()
 }
 
+/*
+formatErrorMessage creates a human-readable error message for a validation failure.
+It takes the field name, validation tag, and parameter (if any) and returns an appropriate error message based on the type of validation that failed.
+
+Parameters:
+  - field: Name of the field that failed validation
+  - tag: Type of validation that failed (e.g., "required", "email", "min")
+  - param: Additional parameter for the validation (e.g., minimum length for "min" tag)
+
+Returns a formatted error message string.
+*/
 func formatErrorMessage(field, tag, param string) string {
 	switch tag {
 	case "valid_user_role":
@@ -173,10 +245,8 @@ func formatErrorMessage(field, tag, param string) string {
 		return fmt.Sprintf("%s is required", field)
 	case "email":
 		return fmt.Sprintf("%s must be a valid email address", field)
-	// To be used in request types - i.e in passwords, bio etc
 	case "min":
 		return fmt.Sprintf("%s must be at least %s characters long", field, param)
-	// To be used in request types - i.e in passwords, bio etc
 	case "max":
 		return fmt.Sprintf("%s must not exceed %s characters", field, param)
 	default:
