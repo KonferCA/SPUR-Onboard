@@ -14,7 +14,8 @@ CREATE TYPE project_status AS ENUM (
     'draft',
     'pending',
     'verified',
-    'declined'
+    'declined',
+    'withdrawn'
 );
 
 CREATE TABLE IF NOT EXISTS users (

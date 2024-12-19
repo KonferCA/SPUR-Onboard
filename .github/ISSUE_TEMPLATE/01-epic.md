@@ -6,6 +6,11 @@ labels: epic
 assignees: ''
 
 ---
+## Description
+Replace this text with a brief description of the epic.
+
+## Tickets
+- [ ] Replace this with a list of tickets that have been made. Tickets can be referenced by typing "#" followed by the issue ID>
 
 ## Checklist
 Before submitting this epic, make sure this epic:
@@ -13,9 +18,3 @@ Before submitting this epic, make sure this epic:
 - [ ] Has the **SPUR project assigned to it**.
 - [ ] Has an **assigned milestone**.
 - [ ] Has everyone that will work on it assigned. 
-
-## Description
-Replace this text with a brief description of the epic.
-
-## Tickets
-- [ ] Replace this with a list of tickets that have been made. Tickets can be referenced by typing "#" followed by the issue ID>

@@ -35,3 +35,14 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (GetUserByIDRow, e
 	)
 	return i, err
 }
+
+const getUserEmailVerifiedStatusByEmail = `-- name: GetUserEmailVerifiedStatusByEmail :one
+SELECT email_verified FROM users WHERE email = $1
+`
+
+func (q *Queries) GetUserEmailVerifiedStatusByEmail(ctx context.Context, email string) (bool, error) {
+	row := q.db.QueryRow(ctx, getUserEmailVerifiedStatusByEmail, email)
+	var email_verified bool
+	err := row.Scan(&email_verified)
+	return email_verified, err
+}
