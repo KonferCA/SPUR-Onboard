@@ -1,13 +1,20 @@
 package tests
 
 import (
+	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/server"
+	"KonferCA/SPUR/internal/v1/v1_auth"
+	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,5 +44,57 @@ func TestServer(t *testing.T) {
 		assert.NotEmpty(t, resBody["timestamp"])
 		assert.NotEmpty(t, resBody["database"])
 		assert.NotEmpty(t, resBody["system"])
+	})
+
+	t.Run("Test API V1 Auth Routes", func(t *testing.T) {
+		t.Run("/auth/ami-verified - 200 OK", func(t *testing.T) {
+			email := "test@mail.com"
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+			defer cancel()
+
+			// create test user
+			userID := uuid.New()
+			_, err = s.DBPool.Exec(ctx, `
+                INSERT INTO users (
+                    id,
+                    email, 
+                    password, 
+                    role, 
+                    email_verified, 
+                    token_salt
+                )
+                VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))`,
+				userID, email, "hashedpassword", db.UserRoleStartupOwner, true)
+			if err != nil {
+				t.Fatalf("failed to create test user: %v", err)
+			}
+
+			user, err := db.New(s.DBPool).GetUserByID(ctx, userID.String())
+			assert.Nil(t, err)
+
+			accessToken, _, err := jwt.GenerateWithSalt(userID.String(), user.Role, user.TokenSalt)
+			assert.Nil(t, err)
+
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/ami-verified", nil)
+			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			// read the response body
+			resBodyBytes, err := io.ReadAll(rec.Body)
+			assert.Nil(t, err)
+			var resBody v1_auth.EmailVerifiedStatusResponse
+			err = json.Unmarshal(resBodyBytes, &resBody)
+			assert.Nil(t, err)
+
+			assert.True(t, resBody.Verified)
+
+			_, err = s.DBPool.Exec(ctx, "DELETE FROM users WHERE email = $1", email)
+			if err != nil {
+				t.Fatalf("failed to clean up test user: %v", err)
+			}
+		})
 	})
 }
