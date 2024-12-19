@@ -125,5 +125,21 @@ func TestServer(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, resBody["verified"], true)
 		})
+
+		t.Run("/auth/verify-email - 400 Bad Request - missing token query parameter", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify-email", nil)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+			resBodyBytes, err := io.ReadAll(rec.Body)
+			assert.Nil(t, err)
+
+			var resBody map[string]any
+			err = json.Unmarshal(resBodyBytes, &resBody)
+			assert.Nil(t, err)
+			assert.Equal(t, "Missing required query parameter: 'token'", resBody["message"])
+		})
 	})
 }
