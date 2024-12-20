@@ -2,6 +2,8 @@ package tests
 
 import (
 	"KonferCA/SPUR/internal/middleware"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -21,8 +23,19 @@ type testStruct struct {
 	Password      string `validate:"required,min=8"`
 }
 
-func TestRequestValidator(t *testing.T) {
-	validator := middleware.NewRequestValidator()
+func TestValidatorMiddleware(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	h := middleware.ValidateRequestBody()(func(c echo.Context) error {
+		return nil
+	})
+	err := h(c)
+	assert.NoError(t, err)
+
+	validator := middleware.GetValidator(c)
 	assert.NotNil(t, validator)
 
 	os.Setenv("AWS_S3_BUCKET", "test-bucket")
@@ -176,4 +189,14 @@ func TestRequestValidator(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetValidatorWithoutMiddleware(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	validator := middleware.GetValidator(c)
+	assert.Nil(t, validator, "Should return nil when validator is not set in context")
 }
