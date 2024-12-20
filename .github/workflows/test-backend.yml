@@ -36,7 +36,7 @@ jobs:
       - name: Install Goose
         run: cd backend && go install github.com/pressly/goose/v3/cmd/goose@v3.22.1
       - name: Run migrations
-        run: cd backend && goose -dir .sqlc/migrations postgres "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" up
+        run: cd backend && goose -dir .sqlc/migrations postgres "postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable" up
       - name: Run tests
         run: |
           # run tests and capture output
