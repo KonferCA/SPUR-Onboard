@@ -96,5 +96,79 @@ func TestServer(t *testing.T) {
 				t.Fatalf("failed to clean up test user: %v", err)
 			}
 		})
+
+		t.Run("/auth/verify-email - 200 OK - valid email token", func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+			defer cancel()
+			userID, email, _, err := createTestUser(ctx, s)
+			assert.Nil(t, err)
+			defer removeTestUser(ctx, email, s)
+
+			// generate a test email token
+			exp := time.Now().Add(time.Minute * 30).UTC()
+			tokenID, err := createTestEmailToken(ctx, userID, exp, s)
+			assert.Nil(t, err)
+			tokenStr, err := jwt.GenerateVerifyEmailToken(email, tokenID, exp)
+			assert.Nil(t, err)
+
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/auth/verify-email?token=%s", tokenStr), nil)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			resBodyBytes, err := io.ReadAll(rec.Body)
+			assert.Nil(t, err)
+
+			var resBody map[string]any
+			err = json.Unmarshal(resBodyBytes, &resBody)
+			assert.Nil(t, err)
+			assert.Equal(t, resBody["verified"], true)
+		})
+
+		t.Run("/auth/verify-email - 400 Bad Request - missing token query parameter", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify-email", nil)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+			resBodyBytes, err := io.ReadAll(rec.Body)
+			assert.Nil(t, err)
+
+			var resBody map[string]any
+			err = json.Unmarshal(resBodyBytes, &resBody)
+			assert.Nil(t, err)
+			assert.Equal(t, "Missing required query parameter: 'token'", resBody["message"])
+		})
+
+		t.Run("/auth/verify-email - 400 Bad Request - deny expired email token", func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+			defer cancel()
+			userID, email, _, err := createTestUser(ctx, s)
+			assert.Nil(t, err)
+			defer removeTestUser(ctx, email, s)
+
+			// generate a test email token that is expired
+			exp := time.Now().Add(-(time.Minute * 30)).UTC()
+			tokenID, err := createTestEmailToken(ctx, userID, exp, s)
+			assert.Nil(t, err)
+			tokenStr, err := jwt.GenerateVerifyEmailToken(email, tokenID, exp)
+			assert.Nil(t, err)
+
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/auth/verify-email?token=%s", tokenStr), nil)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+			resBodyBytes, err := io.ReadAll(rec.Body)
+			assert.Nil(t, err)
+
+			var resBody map[string]any
+			err = json.Unmarshal(resBodyBytes, &resBody)
+			assert.Nil(t, err)
+			assert.Equal(t, "Failed to verify email. Invalid or expired token.", resBody["message"])
+		})
 	})
 }
