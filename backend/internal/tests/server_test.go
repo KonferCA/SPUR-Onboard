@@ -5,6 +5,7 @@ import (
 	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/server"
 	"KonferCA/SPUR/internal/v1/v1_auth"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -94,6 +95,76 @@ func TestServer(t *testing.T) {
 			_, err = s.DBPool.Exec(ctx, "DELETE FROM users WHERE email = $1", email)
 			if err != nil {
 				t.Fatalf("failed to clean up test user: %v", err)
+			}
+		})
+
+		t.Run("/api/v1/auth/register - 201 CREATED - successful registration", func(t *testing.T) {
+			url := "/api/v1/auth/register"
+
+			// create context with timeout of 1 minute.
+			// tests should not hang for more than 1 minute.
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			defer cancel()
+
+			// create request body
+			email := "test@mail.com"
+			password := "mypassword"
+			reqBody := map[string]string{
+				"email":    email,
+				"password": password,
+			}
+			reqBodyBytes, err := json.Marshal(reqBody)
+			assert.NoError(t, err)
+
+			reader := bytes.NewReader(reqBodyBytes)
+			req := httptest.NewRequest(http.MethodPost, url, reader)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusCreated, rec.Code)
+
+			// read in the response body
+			resBodyBytes, err := io.ReadAll(rec.Body)
+			assert.NoError(t, err)
+			var resBody map[string]any
+			err = json.Unmarshal(resBodyBytes, &resBody)
+			assert.NoError(t, err)
+
+			// make sure that the response body has all the expected fields
+			// it should have the an access token
+			assert.NotEmpty(t, resBody["access_token"])
+			assert.NotEmpty(t, resBody["user"])
+
+			// get the token salt of newly created user
+			row := s.DBPool.QueryRow(ctx, "SELECT token_salt FROM users WHERE email = $1;", email)
+			var salt []byte
+			err = row.Scan(&salt)
+			assert.NoError(t, err)
+
+			//  make sure it generated a valid access token by verifying it
+			claims, err := jwt.VerifyTokenWithSalt(resBody["access_token"].(string), salt)
+			assert.NoError(t, err)
+			assert.Equal(t, claims.TokenType, jwt.ACCESS_TOKEN_TYPE)
+
+			// make sure that the headers include the Set-Cookie
+			cookies := rec.Result().Cookies()
+			var refreshCookie *http.Cookie
+			for _, cookie := range cookies {
+				if cookie.Name == v1_auth.COOKIE_REFRESH_TOKEN {
+					refreshCookie = cookie
+					break
+				}
+			}
+
+			assert.NotNil(t, refreshCookie, "Refresh token cookie should be set.")
+			if refreshCookie != nil {
+				assert.True(t, refreshCookie.HttpOnly, "Cookie should be HTTP-only")
+				assert.Equal(t, "/api/v1/auth/verify", refreshCookie.Path, "Cookie path should be /api")
+				assert.NotEmpty(t, refreshCookie.Value, "Cookie should have refresh token string as value")
+				// make sure the cookie value holds a valid refresh token
+				claims, err := jwt.VerifyTokenWithSalt(refreshCookie.Value, salt)
+				assert.NoError(t, err)
+				assert.Equal(t, claims.TokenType, jwt.REFRESH_TOKEN_TYPE)
 			}
 		})
 	})
