@@ -13,9 +13,10 @@ Sets up the V1 auth routes.
 */
 func SetupAuthRoutes(e *echo.Group, s interfaces.CoreServer) {
 	h := Handler{server: s}
+	e.POST("/auth/login", h.handleLogin)
 	e.GET(
 		"/auth/ami-verified",
 		h.handleEmailVerificationStatus,
-		middleware.Auth(s.GetDB(), db.UserRoleStartupOwner, db.UserRoleAdmin, db.UserRoleStartupOwner),
+		middleware.Auth(s.GetDB(), db.UserRoleStartupOwner, db.UserRoleAdmin),
 	)
 }
