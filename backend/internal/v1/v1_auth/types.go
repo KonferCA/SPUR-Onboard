@@ -15,3 +15,11 @@ Response body for route /auth/ami-verified
 type EmailVerifiedStatusResponse struct {
 	Verified bool `json:"verified"`
 }
+
+/*
+Request body for route /auth/register
+*/
+type RegisterRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8"`
+}
