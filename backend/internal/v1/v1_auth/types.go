@@ -10,7 +10,7 @@ type Handler struct {
 }
 
 /*
-Response body for route /auth/ami-verified
+Response body for route /auth/ami-verified and /auth/verify-email
 */
 type EmailVerifiedStatusResponse struct {
 	Verified bool `json:"verified"`
