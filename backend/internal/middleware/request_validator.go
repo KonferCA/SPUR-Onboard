@@ -14,11 +14,27 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+/*
+walletAddressPattern is a regular expression pattern for validating cryptocurrency wallet addresses.
+It matches the format: 0x followed by 64 hexadecimal characters.
+
+linkedinURLPattern is a regular expression pattern for validating LinkedIn profile URLs.
+It matches URLs that start with http:// or https:// and contain linkedin.com domain.
+*/
 var (
 	walletAddressPattern = regexp.MustCompile("^0x[0-9a-fA-F]{64}$")
 	linkedInURLPattern   = regexp.MustCompile(`^https?:\/\/(www\.)?linkedin\.com\/.*$`)
 )
 
+/*
+validatorContextKey is the key used to store the CustomValidator in the context.
+*/
+const validatorContextKey = "validator"
+
+/*
+CustomValidator is a wrapper around the go-playground/validator package.
+It provides custom validation rules for various fields and types used in the application.
+*/
 type CustomValidator struct {
 	validator *validator.Validate
 }
@@ -45,6 +61,33 @@ func NewRequestValidator() *CustomValidator {
 	v.RegisterValidation("project_status", validateProjectStatus)
 
 	return &CustomValidator{validator: v}
+}
+
+/*
+ValidateRequestBody creates a middleware function that adds the validator to the context.
+*/
+func ValidateRequestBody() echo.MiddlewareFunc {
+	validator := NewRequestValidator()
+
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Set(string(validatorContextKey), validator)
+
+			return next(c)
+		}
+	}
+}
+
+/*
+GetValidator retrieves the validator from the context.
+Returns nil if no validator is found in the context.
+*/
+func GetValidator(c echo.Context) *CustomValidator {
+	if v, ok := c.Get(string(validatorContextKey)).(*CustomValidator); ok {
+		return v
+	}
+
+	return nil
 }
 
 /*
