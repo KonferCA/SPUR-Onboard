@@ -19,4 +19,5 @@ func SetupAuthRoutes(e *echo.Group, s interfaces.CoreServer) {
 		h.handleEmailVerificationStatus,
 		middleware.Auth(s.GetDB(), db.UserRoleStartupOwner, db.UserRoleAdmin),
 	)
+	e.GET("/auth/verify-email", h.handleVerifyEmail)
 }
