@@ -12,9 +12,6 @@ import (
 Sets up the V1 auth routes.
 */
 func SetupAuthRoutes(e *echo.Group, s interfaces.CoreServer) {
-	
-	validator := middleware.NewRequestValidator()
-	e.Validator = validator
 
 	h := Handler{server: s}
 	e.POST("/auth/login", h.handleLogin)
