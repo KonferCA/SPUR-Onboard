@@ -91,3 +91,16 @@ func (q *Queries) UserExistsByEmail(ctx context.Context, email string) (bool, er
 	err := row.Scan(&exists)
 	return exists, err
 }
+const updateUserEmailVerifiedStatus = `-- name: UpdateUserEmailVerifiedStatus :exec
+UPDATE users SET email_verified = $1 WHERE id = $2
+`
+
+type UpdateUserEmailVerifiedStatusParams struct {
+	EmailVerified bool
+	ID            string
+}
+
+func (q *Queries) UpdateUserEmailVerifiedStatus(ctx context.Context, arg UpdateUserEmailVerifiedStatusParams) error {
+	_, err := q.db.Exec(ctx, updateUserEmailVerifiedStatus, arg.EmailVerified, arg.ID)
+	return err
+}

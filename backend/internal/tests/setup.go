@@ -21,4 +21,5 @@ func setupEnv() {
 	os.Setenv("DB_NAME", "postgres")
 	os.Setenv("DB_SSLMODE", "disable")
 	os.Setenv("JWT_SECRET", "jwt")
+	os.Setenv("JWT_SECRET_VERIFY_EMAIL", "verify_email")
 }

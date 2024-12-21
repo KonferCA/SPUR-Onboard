@@ -14,3 +14,6 @@ INSERT INTO users
 (email, password, role)
 VALUES
 ($1, $2, $3) RETURNING id, email, email_verified, role, token_salt;
+
+-- name: UpdateUserEmailVerifiedStatus :exec
+UPDATE users SET email_verified = $1 WHERE id = $2;
