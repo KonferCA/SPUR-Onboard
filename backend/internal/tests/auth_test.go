@@ -3,6 +3,7 @@ package tests
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/jwt"
+	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/server"
 	"KonferCA/SPUR/internal/v1/v1_auth"
 	"bytes"
@@ -16,11 +17,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
-	"KonferCA/SPUR/internal/middleware"
 )
 
 func TestAuthEndpoints(t *testing.T) {
