@@ -26,7 +26,7 @@ func TestCheckDatabase(t *testing.T) {
 		fmt.Sprintf(
 			"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 			"localhost",
-			"5432",
+			"5433",
 			"postgres",
 			"postgres",
 			"postgres",
