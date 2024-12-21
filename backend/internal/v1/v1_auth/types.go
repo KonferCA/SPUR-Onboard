@@ -20,23 +20,15 @@ type EmailVerifiedStatusResponse struct {
 }
 
 /*
-Request body for route /auth/register
-*/
-type RegisterRequest struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=8"`
-}
-
-/*
  * Request/response types for authentication endpoints.
  * These define the API contract for auth-related operations.
  */
-type LoginRequest struct {
+type AuthRequest struct {
 	Email    string `json:"email" validate:"required,email"`    // user's email
 	Password string `json:"password" validate:"required,min=8"` // user's password
 }
 
-type LoginResponse struct {
+type AuthResponse struct {
 	AccessToken string       `json:"access_token"` // jwt access token
 	User        UserResponse `json:"user"`         // user info
 }

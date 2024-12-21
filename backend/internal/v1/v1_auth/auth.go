@@ -51,7 +51,7 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", err)
 	}
-	var reqBody RegisterRequest
+	var reqBody AuthRequest
 	err = json.Unmarshal(reqBodyBytes, &reqBody)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", err)
@@ -112,7 +112,7 @@ func (h *Handler) handleRegister(c echo.Context) error {
  * 4. Returns access token and user info
  */
 func (h *Handler) handleLogin(c echo.Context) error {
-	var req LoginRequest
+	var req AuthRequest
 	if err := c.Bind(&req); err != nil {
 		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request format", err)
 	}
@@ -147,7 +147,7 @@ func (h *Handler) handleLogin(c echo.Context) error {
 	cookie.SameSite = http.SameSiteStrictMode
 	c.SetCookie(cookie)
 
-	return c.JSON(http.StatusOK, LoginResponse{
+	return c.JSON(http.StatusOK, AuthResponse{
 		AccessToken: accessToken,
 		User: UserResponse{
 			Email:         user.Email,
