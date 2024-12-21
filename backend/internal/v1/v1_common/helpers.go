@@ -1,8 +1,10 @@
 package v1_common
 
 import (
+	"KonferCA/SPUR/db"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -46,4 +48,32 @@ func Fail(c echo.Context, code int, publicErrMsg string, internalErr error) erro
 		publicErrMsg = http.StatusText(code)
 	}
 	return echo.NewHTTPError(code, publicErrMsg)
+}
+
+/*
+Helper that gets the user id from the context.
+
+Returns an error if the user id is not found in the context.
+*/
+func GetUserID(c echo.Context) (uuid.UUID, error) {
+	userID, ok := c.Get("used_id").(uuid.UUID)
+	if !ok {
+		return uuid.Nil, NewAuthError("user id not found in context")
+	}
+
+	return userID, nil
+}
+
+/*
+Helper that gets the user role from the context.
+
+Returns an error if the user role is not found in the context.
+*/
+func GetUserRole(c echo.Context) (db.UserRole, error) {
+	userRole, ok := c.Get("user_role").(db.UserRole)
+	if !ok {
+		return "", NewAuthError("user role not found in context")
+	}
+
+	return userRole, nil
 }
