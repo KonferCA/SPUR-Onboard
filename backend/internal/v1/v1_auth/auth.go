@@ -68,6 +68,7 @@ func (h *Handler) handleLogin(c echo.Context) error {
 	cookie := new(http.Cookie)
 	cookie.Name = "token"
 	cookie.Value = refreshToken
+	cookie.Path = "/api/v1/auth/verify"
 	cookie.Expires = time.Now().Add(24 * 7 * time.Hour)
 	cookie.HttpOnly = true
 	cookie.Secure = true
