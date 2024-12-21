@@ -2,8 +2,6 @@ package tests
 
 import (
 	"KonferCA/SPUR/internal/middleware"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -25,18 +23,8 @@ type testStruct struct {
 
 func TestValidatorMiddleware(t *testing.T) {
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	h := middleware.ValidateRequestBody()(func(c echo.Context) error {
-		return nil
-	})
-	err := h(c)
-	assert.NoError(t, err)
-
-	validator := middleware.GetValidator(c)
-	assert.NotNil(t, validator)
+	validator := middleware.NewRequestValidator()
+	e.Validator = validator
 
 	os.Setenv("AWS_S3_BUCKET", "test-bucket")
 	defer os.Unsetenv("AWS_S3_BUCKET")
@@ -178,7 +166,7 @@ func TestValidatorMiddleware(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			err := validator.Validate(tc.input)
+			err := e.Validator.Validate(tc.input)
 			if tc.expectedError {
 				assert.Error(t, err)
 				httpErr, ok := err.(*echo.HTTPError)
@@ -191,12 +179,7 @@ func TestValidatorMiddleware(t *testing.T) {
 	}
 }
 
-func TestGetValidatorWithoutMiddleware(t *testing.T) {
+func TestValidatorNil(t *testing.T) {
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	validator := middleware.GetValidator(c)
-	assert.Nil(t, validator, "Should return nil when validator is not set in context")
+	assert.Nil(t, e.Validator, "Validator should be nil by default")
 }
