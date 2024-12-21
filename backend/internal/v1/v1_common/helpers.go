@@ -23,7 +23,7 @@ func Success(c echo.Context, code int, message string) error {
 	if message == "" {
 		message = http.StatusText(code)
 	}
-	return c.JSON(code, basicResponse{Message: message})
+	return c.JSON(code, BasicResponse{Message: message})
 }
 
 /*
@@ -48,6 +48,23 @@ func Fail(c echo.Context, code int, publicErrMsg string, internalErr error) erro
 		publicErrMsg = http.StatusText(code)
 	}
 	return echo.NewHTTPError(code, publicErrMsg)
+}
+
+/*
+BindAndValidate binds the request body to a struct and validates it.
+
+Returns an error if either binding or validation fails.
+*/
+func BindandValidate(c echo.Context, req interface{}) error {
+	if err := c.Bind(req); err != nil {
+		return NewValidationError("invalid request body")
+	}
+
+	if err := c.Validate(req); err != nil {
+		return NewValidationError(err.Error())
+	}
+
+	return nil
 }
 
 /*
@@ -76,4 +93,30 @@ func GetUserRole(c echo.Context) (db.UserRole, error) {
 	}
 
 	return userRole, nil
+}
+
+/*
+Helper that checks if the user is an admin.
+
+Returns true if the user is an admin, false otherwise.
+*/
+func IsAdmin(c echo.Context) bool {
+	role, err := GetUserRole(c)
+	if err != nil {
+		return false
+	}
+
+	return role == db.UserRoleAdmin
+}
+
+/*
+Helper that checks if the route requires admin access.
+
+Returns an error if the user is not an admin.
+*/
+func RequireAdmin(c echo.Context) error {
+	if !IsAdmin(c) {
+		return NewForbiddenError("Admin access required")
+	}
+	return nil
 }
