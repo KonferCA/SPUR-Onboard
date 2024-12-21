@@ -137,15 +137,7 @@ func (h *Handler) handleLogin(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to generate tokens", err)
 	}
 
-	cookie := new(http.Cookie)
-	cookie.Name = "token"
-	cookie.Value = refreshToken
-	cookie.Path = "/api/v1/auth/verify"
-	cookie.Expires = time.Now().Add(24 * 7 * time.Hour)
-	cookie.HttpOnly = true
-	cookie.Secure = true
-	cookie.SameSite = http.SameSiteStrictMode
-	c.SetCookie(cookie)
+	setRefreshTokenCookie(c, refreshToken)
 
 	return c.JSON(http.StatusOK, AuthResponse{
 		AccessToken: accessToken,
