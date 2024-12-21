@@ -166,6 +166,9 @@ func TestServer(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, claims.TokenType, jwt.REFRESH_TOKEN_TYPE)
 			}
+
+			err = removeTestUser(ctx, email, s)
+			assert.NoError(t, err)
 		})
 
 		t.Run("/auth/verify-email - 200 OK - valid email token", func(t *testing.T) {
