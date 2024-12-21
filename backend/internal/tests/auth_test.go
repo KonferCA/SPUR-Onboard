@@ -25,7 +25,7 @@ import (
 func TestAuthEndpoints(t *testing.T) {
 	// Setup test environment
 	setupEnv()
-	
+
 	// Additional required env vars
 	os.Setenv("JWT_SECRET", "test-secret-key")
 
@@ -45,7 +45,7 @@ func TestAuthEndpoints(t *testing.T) {
 		ID:            userID.String(),
 		Email:         "test@example.com",
 		Password:      string(hashedPassword),
-		Role:         db.UserRoleStartupOwner,
+		Role:          db.UserRoleStartupOwner,
 		EmailVerified: true,
 		CreatedAt:     time.Now().Unix(),
 		UpdatedAt:     time.Now().Unix(),
@@ -65,13 +65,13 @@ func TestAuthEndpoints(t *testing.T) {
 	t.Run("Login Endpoint", func(t *testing.T) {
 		tests := []struct {
 			name           string
-			payload        v1_auth.LoginRequest
+			payload        v1_auth.AuthRequest
 			expectedStatus int
 			checkResponse  bool
 		}{
 			{
 				name: "Valid Login",
-				payload: v1_auth.LoginRequest{
+				payload: v1_auth.AuthRequest{
 					Email:    "test@example.com",
 					Password: "testpassword123",
 				},
@@ -80,7 +80,7 @@ func TestAuthEndpoints(t *testing.T) {
 			},
 			{
 				name: "Invalid Password",
-				payload: v1_auth.LoginRequest{
+				payload: v1_auth.AuthRequest{
 					Email:    "test@example.com",
 					Password: "wrongpassword",
 				},
@@ -89,7 +89,7 @@ func TestAuthEndpoints(t *testing.T) {
 			},
 			{
 				name: "Invalid Email",
-				payload: v1_auth.LoginRequest{
+				payload: v1_auth.AuthRequest{
 					Email:    "nonexistent@example.com",
 					Password: "testpassword123",
 				},
@@ -98,7 +98,7 @@ func TestAuthEndpoints(t *testing.T) {
 			},
 			{
 				name: "Invalid Email Format",
-				payload: v1_auth.LoginRequest{
+				payload: v1_auth.AuthRequest{
 					Email:    "invalid-email",
 					Password: "testpassword123",
 				},
@@ -121,7 +121,7 @@ func TestAuthEndpoints(t *testing.T) {
 				assert.Equal(t, tc.expectedStatus, rec.Code)
 
 				if tc.checkResponse {
-					var response v1_auth.LoginResponse
+					var response v1_auth.AuthResponse
 					err := json.Unmarshal(rec.Body.Bytes(), &response)
 					assert.NoError(t, err)
 					assert.NotEmpty(t, response.AccessToken)
