@@ -6,9 +6,7 @@ import (
 	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"context"
-	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"time"
 
@@ -47,14 +45,12 @@ Route handles incoming requests to register/create a new account.
 - HTTP-only cookie is also set with the refresh token value
 */
 func (h *Handler) handleRegister(c echo.Context) error {
-	reqBodyBytes, err := io.ReadAll(c.Request().Body)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "", err)
-	}
 	var reqBody AuthRequest
-	err = json.Unmarshal(reqBodyBytes, &reqBody)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "", err)
+	if err := c.Bind(&reqBody); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
+	}
+	if err := c.Validate(&reqBody); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
 	}
 
 	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
