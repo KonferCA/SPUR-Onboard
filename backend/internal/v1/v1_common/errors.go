@@ -1,5 +1,10 @@
 package v1_common
 
+import (
+	"fmt"
+	"net/http"
+)
+
 /*
 Common error types for v1
 */
@@ -32,4 +37,37 @@ func NewError(errorType ErrorType, code int, message string, details string) *AP
 	}
 }
 
-// TODO: Implement the rest of the error types
+/*
+NewValidationError creates a new APIError object with type VALIDATION_ERROR.
+*/
+func NewValidationError(message string) *APIError {
+	return NewError(ErrorTypeValidation, http.StatusBadRequest, message, "")
+}
+
+/*
+NewNotFoundError creates a new APIError object with type NOT_FOUND.
+*/
+func NewNotFoundError(resource string) *APIError {
+	return NewError(ErrorTypeNotFound, http.StatusNotFound, fmt.Sprintf("%s not found", resource), "")
+}
+
+/*
+NewAuthError creates a new APIError object with type AUTH_ERROR.
+*/
+func NewAuthError(message string) *APIError {
+	return NewError(ErrorTypeAuth, http.StatusUnauthorized, message, "")
+}
+
+/*
+NewForbiddenError creates a new APIError object with type FORBIDDEN.
+*/
+func NewForbiddenError(message string) *APIError {
+	return NewError(ErrorTypeForbidden, http.StatusForbidden, message, "")
+}
+
+/*
+NewInternalError creates a new APIError object with type INTERNAL_ERROR.
+*/
+func NewInternalError(err error) *APIError {
+	return NewError(ErrorTypeInternal, http.StatusInternalServerError, "Internal server error", err.Error())
+}
