@@ -94,12 +94,12 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	// set the refresh token cookie
 	setRefreshTokenCookie(c, refreshToken)
 
-	return c.JSON(http.StatusCreated, map[string]any{
-		"access_token": accessToken,
-		"user": map[string]any{
-			"email":          newUser.Email,
-			"email_verified": newUser.EmailVerified,
-			"role":           newUser.Role,
+	return c.JSON(http.StatusCreated, AuthResponse{
+		AccessToken: accessToken,
+		User: UserResponse{
+			Email:         newUser.Email,
+			EmailVerified: newUser.EmailVerified,
+			Role:          newUser.Role,
 		},
 	})
 }
