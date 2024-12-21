@@ -20,19 +20,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
+	"KonferCA/SPUR/internal/middleware"
 )
-
-// Custom validator
-type CustomValidator struct {
-	validator *validator.Validate
-}
-
-func (cv *CustomValidator) Validate(i interface{}) error {
-	if err := cv.validator.Struct(i); err != nil {
-		return err
-	}
-	return nil
-}
 
 func TestAuthEndpoints(t *testing.T) {
 	// Setup test environment
@@ -48,7 +37,7 @@ func TestAuthEndpoints(t *testing.T) {
 	}
 
 	// Set up validator
-	s.GetEcho().Validator = &CustomValidator{validator: validator.New()}
+	s.GetEcho().Validator = middleware.NewRequestValidator()
 
 	// Create test user
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("testpassword123"), bcrypt.DefaultCost)
