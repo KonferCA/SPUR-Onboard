@@ -150,6 +150,7 @@ func TestAuthEndpoints(t *testing.T) {
 							assert.True(t, cookie.HttpOnly)
 							assert.True(t, cookie.Secure)
 							assert.Equal(t, http.SameSiteStrictMode, cookie.SameSite)
+							assert.Equal(t, "/api/v1/auth/verify", cookie.Path)
 						}
 					}
 					assert.True(t, foundRefreshToken)
