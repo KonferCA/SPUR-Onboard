@@ -23,7 +23,12 @@ func Success(c echo.Context, code int, message string) error {
 	if message == "" {
 		message = http.StatusText(code)
 	}
-	return c.JSON(code, BasicResponse{Message: message})
+
+	return c.JSON(code, APISuccess{
+		Type:    SuccessTypeOK,
+		Message: message,
+		Code:    code,
+	})
 }
 
 /*
@@ -47,7 +52,50 @@ func Fail(c echo.Context, code int, publicErrMsg string, internalErr error) erro
 	if publicErrMsg == "" {
 		publicErrMsg = http.StatusText(code)
 	}
-	return echo.NewHTTPError(code, publicErrMsg)
+
+	errorType := determineErrorType(code)
+
+	return &APIError{
+		Type:    errorType,
+		Message: publicErrMsg,
+		Details: getErrorDetails(internalErr),
+		Code:    code,
+	}
+}
+
+/*
+Helper function to determine the error type based on the http status code.
+
+Returns the error type.
+*/
+func determineErrorType(code int) ErrorType {
+	switch code {
+	case http.StatusBadRequest:
+		return ErrorTypeBadRequest
+	case http.StatusUnauthorized:
+		return ErrorTypeAuth
+	case http.StatusForbidden:
+		return ErrorTypeForbidden
+	case http.StatusNotFound:
+		return ErrorTypeNotFound
+	case http.StatusServiceUnavailable:
+		return ErrorTypeUnavailable
+	default:
+		return ErrorTypeInternal
+	}
+}
+
+/*
+Helper function to get the error details.
+
+Returns the error details as a string.
+*/
+func getErrorDetails(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	return err.Error()
 }
 
 /*
