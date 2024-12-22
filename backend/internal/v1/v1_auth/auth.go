@@ -114,7 +114,7 @@ func (h *Handler) handleLogin(c echo.Context) error {
 	}
 
 	// validate request
-	if err := c.Validate(req); err != nil {
+	if err := c.Validate(&req); err != nil {
 		return v1_common.Fail(c, http.StatusBadRequest, "Validation failed", err)
 	}
 
