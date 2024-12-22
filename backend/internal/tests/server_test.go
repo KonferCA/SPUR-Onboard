@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -118,22 +119,23 @@ func TestServer(t *testing.T) {
 
 			reader := bytes.NewReader(reqBodyBytes)
 			req := httptest.NewRequest(http.MethodPost, url, reader)
+			req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)
 			assert.Equal(t, http.StatusCreated, rec.Code)
 
 			// read in the response body
-			resBodyBytes, err := io.ReadAll(rec.Body)
+			var resBody v1_auth.AuthResponse
+			err = json.Unmarshal(rec.Body.Bytes(), &resBody)
 			assert.NoError(t, err)
-			var resBody map[string]any
-			err = json.Unmarshal(resBodyBytes, &resBody)
-			assert.NoError(t, err)
+
+			t.Log(resBody)
 
 			// make sure that the response body has all the expected fields
 			// it should have the an access token
-			assert.NotEmpty(t, resBody["access_token"])
-			assert.NotEmpty(t, resBody["user"])
+			assert.NotEmpty(t, resBody.AccessToken)
+			assert.NotEmpty(t, resBody.User)
 
 			// get the token salt of newly created user
 			row := s.DBPool.QueryRow(ctx, "SELECT token_salt FROM users WHERE email = $1;", email)
@@ -142,7 +144,7 @@ func TestServer(t *testing.T) {
 			assert.NoError(t, err)
 
 			//  make sure it generated a valid access token by verifying it
-			claims, err := jwt.VerifyTokenWithSalt(resBody["access_token"].(string), salt)
+			claims, err := jwt.VerifyTokenWithSalt(resBody.AccessToken, salt)
 			assert.NoError(t, err)
 			assert.Equal(t, claims.TokenType, jwt.ACCESS_TOKEN_TYPE)
 
@@ -169,6 +171,34 @@ func TestServer(t *testing.T) {
 
 			err = removeTestUser(ctx, email, s)
 			assert.NoError(t, err)
+		})
+
+		t.Run("/api/v1/auth/register - 400 Bad Request - existing user", func(t *testing.T) {
+			url := "/api/v1/auth/register"
+
+			// create context with timeout of 1 minute.
+			// tests should not hang for more than 1 minute.
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			defer cancel()
+
+			// seed with test user
+			_, email, password, err := createTestUser(ctx, s)
+			assert.NoError(t, err)
+			defer removeTestUser(ctx, email, s)
+
+			reqBody := map[string]string{
+				"email":    email,
+				"password": password,
+			}
+			reqBodyBytes, err := json.Marshal(reqBody)
+			assert.NoError(t, err)
+
+			reader := bytes.NewReader(reqBodyBytes)
+			req := httptest.NewRequest(http.MethodPost, url, reader)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusBadRequest, rec.Code)
 		})
 
 		t.Run("/auth/verify-email - 200 OK - valid email token", func(t *testing.T) {
