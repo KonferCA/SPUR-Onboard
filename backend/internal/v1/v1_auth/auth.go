@@ -155,3 +155,60 @@ func (h *Handler) handleVerifyEmail(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, EmailVerifiedStatusResponse{Verified: true})
 }
+
+/*
+Handle incoming requests to verify the refresh token saved in a HTTP-only cookie.
+This route is used for a form to verify persistant authentication and generate
+new access tokens for clients to use.
+
+This route will also respond with the same type of body as register/login because
+it is essentially a passwordless login for the user given that the refresh token
+in the cookie is valid.
+*/
+func (h *Handler) handleVerifyCookie(c echo.Context) error {
+	cookie, err := c.Cookie(COOKIE_REFRESH_TOKEN)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Missing refresh token cookie in request", err)
+	}
+
+	// verify the refresh token in the cookie
+	refreshToken := cookie.Value
+	claims, err := jwt.ParseUnverifiedClaims(refreshToken)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Cookie has invalid value.", err)
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
+	defer cancel()
+
+	// get salt
+	user, err := h.server.GetQueries().GetUserByID(ctx, claims.UserID)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Cookie has invalid value.", err)
+	}
+
+	claims, err = jwt.VerifyTokenWithSalt(refreshToken, user.TokenSalt)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Cookie is not valid.", err)
+	}
+
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, user.TokenSalt)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify cookie.", err)
+	}
+
+	if time.Until(claims.ExpiresAt.Time) < 3*24*time.Hour {
+		// refresh token is about to expired in less than 3 days
+		// set the new generated refresh token in the cookie
+		setRefreshTokenCookie(c, refreshToken)
+	}
+
+	return c.JSON(http.StatusOK, map[string]any{
+		"access_token": accessToken,
+		"user": map[string]any{
+			"email":          user.Email,
+			"email_verified": user.EmailVerified,
+			"role":           string(user.Role),
+		},
+	})
+}
