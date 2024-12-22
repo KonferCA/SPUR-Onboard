@@ -27,5 +27,5 @@ type APIError struct {
 	Message   string    `json:"message"`
 	Details   string    `json:"details,omitempty"`
 	RequestID string    `json:"request_id,omitempty"`
-	Code      int       `json:"-"`
+	Code      int       `json:"code"`
 }
