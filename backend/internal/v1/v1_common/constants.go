@@ -1,6 +1,13 @@
 package v1_common
 
 /*
+Common success types for v1
+*/
+const (
+	SuccessTypeOK SuccessType = "SUCCESS"
+)
+
+/*
 Common error types for v1
 */
 const (
