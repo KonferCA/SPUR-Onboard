@@ -1,6 +1,7 @@
 package tests
 
 import (
+	customMiddleware "KonferCA/SPUR/internal/middleware"
 	"bytes"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
@@ -8,7 +9,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
-	customMiddleware "KonferCA/SPUR/internal/middleware"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,12 +23,14 @@ TestLogger verifies that the logger middleware:
 */
 func TestLogger(t *testing.T) {
 	// capture log output for testing
+	originalLogger := log.Logger
+	defer func() { log.Logger = originalLogger }()
 	var buf bytes.Buffer
 	log.Logger = zerolog.New(&buf)
 
 	// setup echo
 	e := echo.New()
-	
+
 	// setup request ID middleware with a config that ensures ID generation
 	e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
 		Generator: func() string {
@@ -60,7 +62,7 @@ func TestLogger(t *testing.T) {
 
 	// verify each log entry
 	var logEntry map[string]interface{}
-	
+
 	// check info log
 	err := json.Unmarshal(logs[0], &logEntry)
 	assert.NoError(t, err)
@@ -68,14 +70,14 @@ func TestLogger(t *testing.T) {
 	assert.Equal(t, "test info message", logEntry["message"])
 	assert.Equal(t, "test-request-id", logEntry["request_id"])
 	assert.Equal(t, "/test", logEntry["path"])
-	
+
 	// check warning log
 	err = json.Unmarshal(logs[1], &logEntry)
 	assert.NoError(t, err)
 	assert.Equal(t, "warn", logEntry["level"])
 	assert.Equal(t, "test warning", logEntry["message"])
 	assert.Equal(t, "test-request-id", logEntry["request_id"])
-	
+
 	// check error log
 	err = json.Unmarshal(logs[2], &logEntry)
 	assert.NoError(t, err)
@@ -90,19 +92,22 @@ TestLoggerWithoutContext verifies that GetLogger returns
 a default logger when called without proper context
 */
 func TestLoggerWithoutContext(t *testing.T) {
+	originalLogger := log.Logger
+	defer func() { log.Logger = originalLogger }()
 	var buf bytes.Buffer
 	log.Logger = zerolog.New(&buf)
 
 	e := echo.New()
 	c := e.NewContext(nil, nil)
-	
+
 	logger := customMiddleware.GetLogger(c)
 	assert.NotNil(t, logger, "should return default logger")
-	
+
 	logger.Info("test message")
-	
+
 	var logEntry map[string]interface{}
 	err := json.Unmarshal(buf.Bytes(), &logEntry)
 	assert.NoError(t, err)
 	assert.Equal(t, "test message", logEntry["message"])
 }
+
