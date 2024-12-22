@@ -205,11 +205,6 @@ func TestServer(t *testing.T) {
 			email := "test@mail.com"
 			password := "mypassword"
 
-			// seed with test user
-			_, email, password, err := createTestUser(ctx, s)
-			assert.NoError(t, err)
-			defer removeTestUser(ctx, email, s)
-
 			reqBody := map[string]string{
 				"email":    email,
 				"password": password,
@@ -217,8 +212,10 @@ func TestServer(t *testing.T) {
 			reqBodyBytes, err := json.Marshal(reqBody)
 			assert.NoError(t, err)
 
+			// get cookie by normal means
 			reader := bytes.NewReader(reqBodyBytes)
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", reader)
+			req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)

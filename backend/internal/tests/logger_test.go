@@ -26,10 +26,6 @@ func TestLogger(t *testing.T) {
 	originalLogger := log.Logger
 	defer func() { log.Logger = originalLogger }()
 	var buf bytes.Buffer
-	originalLogger := log.Logger
-	defer func() {
-		log.Logger = originalLogger
-	}()
 	log.Logger = zerolog.New(&buf)
 
 	// setup echo
@@ -99,10 +95,6 @@ func TestLoggerWithoutContext(t *testing.T) {
 	originalLogger := log.Logger
 	defer func() { log.Logger = originalLogger }()
 	var buf bytes.Buffer
-	originalLogger := log.Logger
-	defer func() {
-		log.Logger = originalLogger
-	}()
 	log.Logger = zerolog.New(&buf)
 
 	e := echo.New()
@@ -118,4 +110,3 @@ func TestLoggerWithoutContext(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "test message", logEntry["message"])
 }
-
