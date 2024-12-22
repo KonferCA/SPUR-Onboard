@@ -201,6 +201,28 @@ func TestServer(t *testing.T) {
 			assert.Equal(t, http.StatusBadRequest, rec.Code)
 		})
 
+		t.Run("/api/v1/auth/register - 400 Bad Request - invalid body", func(t *testing.T) {
+			url := "/api/v1/auth/register"
+
+			// create request body
+			email := "test"
+			password := "short"
+			reqBody := map[string]string{
+				"email":    email,
+				"password": password,
+			}
+			reqBodyBytes, err := json.Marshal(reqBody)
+			assert.NoError(t, err)
+
+			reader := bytes.NewReader(reqBodyBytes)
+			req := httptest.NewRequest(http.MethodPost, url, reader)
+			req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusBadRequest, rec.Code)
+		})
+
 		t.Run("/auth/verify-email - 200 OK - valid email token", func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer cancel()
