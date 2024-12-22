@@ -7,7 +7,17 @@ type BasicResponse struct {
 	Message string `json:"message"`
 }
 
+type SuccessType string
 type ErrorType string
+
+/*
+Use this for any API response that needs a message.
+*/
+type APISuccess struct {
+	Type    SuccessType `json:"type"`
+	Message string      `json:"message"`
+	Code    int         `json:"-"`
+}
 
 /*
 Use this for any API response that needs a message and a request_id.
