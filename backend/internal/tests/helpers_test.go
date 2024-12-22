@@ -226,7 +226,7 @@ func TestUserContext(t *testing.T) {
 			name: "get valid user id",
 			setupContext: func(c echo.Context) {
 				id := uuid.New()
-				c.Set("used_id", id)
+				c.Set("user_id", id)
 			},
 			testFunc: func(c echo.Context) error {
 				_, err := v1_common.GetUserID(c)

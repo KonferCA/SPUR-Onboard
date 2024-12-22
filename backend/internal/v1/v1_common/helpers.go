@@ -73,7 +73,7 @@ Helper that gets the user id from the context.
 Returns an error if the user id is not found in the context.
 */
 func GetUserID(c echo.Context) (uuid.UUID, error) {
-	userID, ok := c.Get("used_id").(uuid.UUID)
+	userID, ok := c.Get("user_id").(uuid.UUID)
 	if !ok {
 		return uuid.Nil, NewAuthError("user id not found in context")
 	}
