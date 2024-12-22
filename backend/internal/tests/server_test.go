@@ -171,6 +171,76 @@ func TestServer(t *testing.T) {
 			assert.NoError(t, err)
 		})
 
+		t.Run("/api/v1/auth/verify - 200 OK - valid cookie value", func(t *testing.T) {
+			// create context with timeout of 1 minute.
+			// tests should not hang for more than 1 minute.
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			defer cancel()
+
+			// create request body
+			email := "test@mail.com"
+			password := "mypassword"
+			reqBody := map[string]string{
+				"email":    email,
+				"password": password,
+			}
+			reqBodyBytes, err := json.Marshal(reqBody)
+			assert.NoError(t, err)
+
+			reader := bytes.NewReader(reqBodyBytes)
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", reader)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusCreated, rec.Code)
+
+			cookies := rec.Result().Cookies()
+			var refreshCookie *http.Cookie
+			for _, cookie := range cookies {
+				if cookie.Name == v1_auth.COOKIE_REFRESH_TOKEN {
+					refreshCookie = cookie
+					break
+				}
+			}
+
+			assert.Equal(t, refreshCookie.Name, "refresh_token")
+
+			// now we send a request to the actual route being tested
+			// to see if the verification of the cookie works
+			req = httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
+			req.AddCookie(refreshCookie)
+			rec = httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			// read in the response body
+			resBodyBytes, err := io.ReadAll(rec.Body)
+			assert.NoError(t, err)
+			var resBody map[string]any
+			err = json.Unmarshal(resBodyBytes, &resBody)
+			assert.NoError(t, err)
+
+			// the response body should include a new access token upon success
+			assert.NotEmpty(t, resBody["access_token"])
+
+			t.Log(resBody)
+
+			// a new cookie value shouldn't be set since the refresh token hasn't expired yet
+			cookies = rec.Result().Cookies()
+			includesNewCookie := false
+			for _, cookie := range cookies {
+				if cookie.Name == v1_auth.COOKIE_REFRESH_TOKEN {
+					includesNewCookie = true
+					break
+				}
+			}
+			assert.False(t, includesNewCookie)
+
+			err = removeTestUser(ctx, email, s)
+			assert.NoError(t, err)
+		})
+
 		t.Run("/auth/verify-email - 200 OK - valid email token", func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer cancel()
