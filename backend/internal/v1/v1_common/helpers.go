@@ -53,12 +53,12 @@ func Fail(c echo.Context, code int, publicErrMsg string, internalErr error) erro
 		publicErrMsg = http.StatusText(code)
 	}
 
-	errorType := determineErrorType(code)
+	errorType := DetermineErrorType(code)
 
 	return &APIError{
 		Type:    errorType,
 		Message: publicErrMsg,
-		Details: getErrorDetails(internalErr),
+		Details: GetErrorDetails(internalErr),
 		Code:    code,
 	}
 }
@@ -68,7 +68,7 @@ Helper function to determine the error type based on the http status code.
 
 Returns the error type.
 */
-func determineErrorType(code int) ErrorType {
+func DetermineErrorType(code int) ErrorType {
 	switch code {
 	case http.StatusBadRequest:
 		return ErrorTypeBadRequest
@@ -90,7 +90,7 @@ Helper function to get the error details.
 
 Returns the error details as a string.
 */
-func getErrorDetails(err error) string {
+func GetErrorDetails(err error) string {
 	if err == nil {
 		return ""
 	}
