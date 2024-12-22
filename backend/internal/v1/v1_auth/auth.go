@@ -241,7 +241,7 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 
 	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, user.TokenSalt)
 	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify cookie.", err)
+		return v1_common.Fail(c, http.StatusInternalServerError, "Oops, something went wrong.", err)
 	}
 
 	if time.Until(claims.ExpiresAt.Time) < 3*24*time.Hour {
