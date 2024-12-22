@@ -9,6 +9,26 @@ import (
 	"context"
 )
 
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, email, password, role, email_verified, created_at, updated_at, token_salt FROM users WHERE email = $1 LIMIT 1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Password,
+		&i.Role,
+		&i.EmailVerified,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.TokenSalt,
+	)
+	return i, err
+}
+
 const getUserByID = `-- name: GetUserByID :one
 SELECT id, email, role, email_verified, token_salt
 FROM users 
