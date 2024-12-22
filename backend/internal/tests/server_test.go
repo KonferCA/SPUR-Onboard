@@ -12,9 +12,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
+	golangJWT "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -54,7 +56,7 @@ func TestServer(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer cancel()
 
-			// create test user
+			// create testuser
 			userID := uuid.New()
 			_, err = s.DBPool.Exec(ctx, `
                 INSERT INTO users (
@@ -230,6 +232,7 @@ func TestServer(t *testing.T) {
 				}
 			}
 
+			assert.NotNil(t, refreshCookie)
 			assert.Equal(t, refreshCookie.Name, v1_auth.COOKIE_REFRESH_TOKEN)
 
 			// now we send a request to the actual route being tested
@@ -244,12 +247,13 @@ func TestServer(t *testing.T) {
 			// read in the response body
 			resBodyBytes, err := io.ReadAll(rec.Body)
 			assert.NoError(t, err)
-			var resBody map[string]any
+			var resBody v1_auth.AuthResponse
 			err = json.Unmarshal(resBodyBytes, &resBody)
 			assert.NoError(t, err)
 
 			// the response body should include a new access token upon success
-			assert.NotEmpty(t, resBody["access_token"])
+			assert.NotEmpty(t, resBody.AccessToken)
+			assert.NotNil(t, resBody.User)
 
 			// a new cookie value shouldn't be set since the refresh token hasn't expired yet
 			cookies = rec.Result().Cookies()
@@ -264,6 +268,114 @@ func TestServer(t *testing.T) {
 
 			err = removeTestUser(ctx, email, s)
 			assert.NoError(t, err)
+		})
+
+		t.Run("/api/v1/auth/verify - 200 OK - about to expired valid cookie", func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			defer cancel()
+
+			// create new user to generate jwt
+			userID, email, _, err := createTestUser(ctx, s)
+			defer removeTestUser(ctx, email, s)
+
+			salt, err := getTestUserTokenSalt(ctx, email, s)
+			assert.NoError(t, err)
+
+			// this way we can control the exp since the inner function is not exported
+			// set the time to expired in two days
+			exp := time.Now().UTC().Add(2 * 24 * time.Hour)
+			claims := jwt.JWTClaims{
+				UserID:    userID,
+				Role:      db.UserRoleStartupOwner,
+				TokenType: jwt.REFRESH_TOKEN_TYPE,
+				RegisteredClaims: golangJWT.RegisteredClaims{
+					ExpiresAt: golangJWT.NewNumericDate(exp),
+					IssuedAt:  golangJWT.NewNumericDate(time.Now()),
+				},
+			}
+
+			token := golangJWT.NewWithClaims(golangJWT.SigningMethodHS256, claims)
+			// combine base secret with user's salt
+			secret := append([]byte(os.Getenv("JWT_SECRET")), salt...)
+			signed, err := token.SignedString(secret)
+			assert.NoError(t, err)
+
+			cookie := http.Cookie{
+				Name:  v1_auth.COOKIE_REFRESH_TOKEN,
+				Value: signed,
+			}
+
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
+			req.AddCookie(&cookie)
+			rec := httptest.NewRecorder()
+			s.Echo.ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			// should return an access token
+			var resBody v1_auth.AuthResponse
+			err = json.Unmarshal(rec.Body.Bytes(), &resBody)
+			assert.NoError(t, err)
+
+			assert.NotEmpty(t, resBody.AccessToken)
+
+			// should include a new refresh token cookie
+			cookies := rec.Result().Cookies()
+			var refreshCookie *http.Cookie
+			for _, cookie := range cookies {
+				if cookie.Name == v1_auth.COOKIE_REFRESH_TOKEN {
+					refreshCookie = cookie
+					break
+				}
+			}
+
+			assert.NotNil(t, refreshCookie)
+			assert.Equal(t, refreshCookie.Name, v1_auth.COOKIE_REFRESH_TOKEN)
+		})
+
+		t.Run("/api/v1/auth/verify - 401 UNAUTHORIZED - missing cookie in request", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusUnauthorized, rec.Code)
+		})
+
+		t.Run("/api/v1/auth/verify - 401 UNAUTHORIZED - invalid cookie value", func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			defer cancel()
+
+			// create new user to generate jwt
+			userID, email, _, err := createTestUser(ctx, s)
+			defer removeTestUser(ctx, email, s)
+
+			// the refresh token will be invalid since the salt is different
+			_, refreshToken, err := jwt.GenerateWithSalt(userID, db.UserRoleStartupOwner, []byte{0, 1, 2})
+			assert.NoError(t, err)
+
+			cookie := http.Cookie{
+				Name:  v1_auth.COOKIE_REFRESH_TOKEN,
+				Value: refreshToken,
+			}
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
+			req.AddCookie(&cookie)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusUnauthorized, rec.Code)
+		})
+
+		t.Run("/api/v1/auth/verify - 401 UNAUTHORIZED - invalid cookie", func(t *testing.T) {
+			cookie := http.Cookie{
+				Name:  v1_auth.COOKIE_REFRESH_TOKEN,
+				Value: "invalid-refresh-token",
+			}
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
+			req.AddCookie(&cookie)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusUnauthorized, rec.Code)
 		})
 
 		t.Run("/auth/verify-email - 200 OK - valid email token", func(t *testing.T) {
