@@ -72,28 +72,54 @@ func TestSuccess(t *testing.T) {
 
 func TestFail(t *testing.T) {
 	tests := []struct {
-		name         string
-		code         int
-		publicErrMsg string
-		internalErr  error
-		expectedCode int
-		expectedMsg  string
+		name            string
+		code            int
+		publicErrMsg    string
+		internalErr     error
+		expectedCode    int
+		expectedType    v1_common.ErrorType
+		expectedMsg     string
+		expectedDetails string
 	}{
 		{
-			name:         "with custom message and internal error",
-			code:         http.StatusBadRequest,
-			publicErrMsg: "invalid input",
-			internalErr:  errors.New("validation failed"),
-			expectedCode: http.StatusBadRequest,
-			expectedMsg:  "invalid input",
+			name:            "with custom message and internal error",
+			code:            http.StatusBadRequest,
+			publicErrMsg:    "invalid input",
+			internalErr:     errors.New("validation failed"),
+			expectedCode:    http.StatusBadRequest,
+			expectedType:    v1_common.ErrorTypeBadRequest,
+			expectedMsg:     "invalid input",
+			expectedDetails: "validation failed",
 		},
 		{
-			name:         "with empty message",
-			code:         http.StatusNotFound,
-			publicErrMsg: "",
-			internalErr:  nil,
-			expectedCode: http.StatusNotFound,
-			expectedMsg:  http.StatusText(http.StatusNotFound),
+			name:            "with empty message",
+			code:            http.StatusNotFound,
+			publicErrMsg:    "",
+			internalErr:     nil,
+			expectedCode:    http.StatusNotFound,
+			expectedType:    v1_common.ErrorTypeNotFound,
+			expectedMsg:     http.StatusText(http.StatusNotFound),
+			expectedDetails: "",
+		},
+		{
+			name:            "unauthorized error",
+			code:            http.StatusUnauthorized,
+			publicErrMsg:    "not authorized",
+			internalErr:     errors.New("token expired"),
+			expectedCode:    http.StatusUnauthorized,
+			expectedType:    v1_common.ErrorTypeAuth,
+			expectedMsg:     "not authorized",
+			expectedDetails: "token expired",
+		},
+		{
+			name:            "forbidden error",
+			code:            http.StatusForbidden,
+			publicErrMsg:    "access denied",
+			internalErr:     nil,
+			expectedCode:    http.StatusForbidden,
+			expectedType:    v1_common.ErrorTypeForbidden,
+			expectedMsg:     "access denied",
+			expectedDetails: "",
 		},
 	}
 
@@ -105,10 +131,15 @@ func TestFail(t *testing.T) {
 			c := e.NewContext(req, rec)
 
 			err := v1_common.Fail(c, tt.code, tt.publicErrMsg, tt.internalErr)
-			httpErr, ok := err.(*echo.HTTPError)
-			assert.True(t, ok)
-			assert.Equal(t, tt.expectedCode, httpErr.Code)
-			assert.Equal(t, tt.expectedMsg, httpErr.Message)
+
+			apiErr, ok := err.(*v1_common.APIError)
+			assert.True(t, ok, "Expected APIError type")
+			if ok {
+				assert.Equal(t, tt.expectedCode, apiErr.Code)
+				assert.Equal(t, tt.expectedType, apiErr.Type)
+				assert.Equal(t, tt.expectedMsg, apiErr.Message)
+				assert.Equal(t, tt.expectedDetails, apiErr.Details)
+			}
 
 			if tt.internalErr != nil {
 				contextErr, ok := c.Get("internal_error").(error)
