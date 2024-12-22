@@ -133,7 +133,7 @@ func TestAuthEndpoints(t *testing.T) {
 					cookies := rec.Result().Cookies()
 					var foundRefreshToken bool
 					for _, cookie := range cookies {
-						if cookie.Name == "token" {
+						if cookie.Name == v1_auth.COOKIE_REFRESH_TOKEN {
 							foundRefreshToken = true
 							assert.True(t, cookie.HttpOnly)
 							assert.True(t, cookie.Secure)
