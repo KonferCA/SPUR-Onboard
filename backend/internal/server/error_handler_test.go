@@ -172,10 +172,7 @@ func TestErrorHandler(t *testing.T) {
 	}
 
 	originalLogger := log.Logger
-	defer func() {
-		log.Logger = originalLogger
-	}()
-
+	defer func() { log.Logger = originalLogger }()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create a buffer to capture log output

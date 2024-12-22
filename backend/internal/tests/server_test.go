@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -118,22 +119,23 @@ func TestServer(t *testing.T) {
 
 			reader := bytes.NewReader(reqBodyBytes)
 			req := httptest.NewRequest(http.MethodPost, url, reader)
+			req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)
 			assert.Equal(t, http.StatusCreated, rec.Code)
 
 			// read in the response body
-			resBodyBytes, err := io.ReadAll(rec.Body)
+			var resBody v1_auth.AuthResponse
+			err = json.Unmarshal(rec.Body.Bytes(), &resBody)
 			assert.NoError(t, err)
-			var resBody map[string]any
-			err = json.Unmarshal(resBodyBytes, &resBody)
-			assert.NoError(t, err)
+
+			t.Log(resBody)
 
 			// make sure that the response body has all the expected fields
 			// it should have the an access token
-			assert.NotEmpty(t, resBody["access_token"])
-			assert.NotEmpty(t, resBody["user"])
+			assert.NotEmpty(t, resBody.AccessToken)
+			assert.NotEmpty(t, resBody.User)
 
 			// get the token salt of newly created user
 			row := s.DBPool.QueryRow(ctx, "SELECT token_salt FROM users WHERE email = $1;", email)
@@ -142,7 +144,7 @@ func TestServer(t *testing.T) {
 			assert.NoError(t, err)
 
 			//  make sure it generated a valid access token by verifying it
-			claims, err := jwt.VerifyTokenWithSalt(resBody["access_token"].(string), salt)
+			claims, err := jwt.VerifyTokenWithSalt(resBody.AccessToken, salt)
 			assert.NoError(t, err)
 			assert.Equal(t, claims.TokenType, jwt.ACCESS_TOKEN_TYPE)
 
@@ -171,6 +173,28 @@ func TestServer(t *testing.T) {
 			assert.NoError(t, err)
 		})
 
+		t.Run("/api/v1/auth/register - 400 Bad Request - invalid body", func(t *testing.T) {
+			url := "/api/v1/auth/register"
+
+			// create request body
+			email := "test"
+			password := "short"
+			reqBody := map[string]string{
+				"email":    email,
+				"password": password,
+			}
+			reqBodyBytes, err := json.Marshal(reqBody)
+			assert.NoError(t, err)
+
+			reader := bytes.NewReader(reqBodyBytes)
+			req := httptest.NewRequest(http.MethodPost, url, reader)
+			req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusBadRequest, rec.Code)
+		})
+
 		t.Run("/api/v1/auth/verify - 200 OK - valid cookie value", func(t *testing.T) {
 			// create context with timeout of 1 minute.
 			// tests should not hang for more than 1 minute.
@@ -180,6 +204,12 @@ func TestServer(t *testing.T) {
 			// create request body
 			email := "test@mail.com"
 			password := "mypassword"
+
+			// seed with test user
+			_, email, password, err := createTestUser(ctx, s)
+			assert.NoError(t, err)
+			defer removeTestUser(ctx, email, s)
+
 			reqBody := map[string]string{
 				"email":    email,
 				"password": password,
@@ -203,7 +233,7 @@ func TestServer(t *testing.T) {
 				}
 			}
 
-			assert.Equal(t, refreshCookie.Name, "refresh_token")
+			assert.Equal(t, refreshCookie.Name, v1_auth.COOKIE_REFRESH_TOKEN)
 
 			// now we send a request to the actual route being tested
 			// to see if the verification of the cookie works
@@ -223,8 +253,6 @@ func TestServer(t *testing.T) {
 
 			// the response body should include a new access token upon success
 			assert.NotEmpty(t, resBody["access_token"])
-
-			t.Log(resBody)
 
 			// a new cookie value shouldn't be set since the refresh token hasn't expired yet
 			cookies = rec.Result().Cookies()

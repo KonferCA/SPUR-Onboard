@@ -6,9 +6,7 @@ import (
 	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"context"
-	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"time"
 
@@ -20,6 +18,12 @@ const (
 	// Name of the cookie that holds the refresh token.
 	COOKIE_REFRESH_TOKEN string = "refresh_token"
 )
+
+// verify password hash using bcrypt
+func verifyPassword(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
 
 /*
 Simple route handler that just returns whether the email has been verified or not in JSON body.
@@ -41,14 +45,12 @@ Route handles incoming requests to register/create a new account.
 - HTTP-only cookie is also set with the refresh token value
 */
 func (h *Handler) handleRegister(c echo.Context) error {
-	reqBodyBytes, err := io.ReadAll(c.Request().Body)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "", err)
+	var reqBody AuthRequest
+	if err := c.Bind(&reqBody); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
 	}
-	var reqBody RegisterRequest
-	err = json.Unmarshal(reqBodyBytes, &reqBody)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "", err)
+	if err := c.Validate(&reqBody); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
 	}
 
 	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
@@ -88,12 +90,57 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	// set the refresh token cookie
 	setRefreshTokenCookie(c, refreshToken)
 
-	return c.JSON(http.StatusCreated, map[string]any{
-		"access_token": accessToken,
-		"user": map[string]any{
-			"email":          newUser.Email,
-			"email_verified": newUser.EmailVerified,
-			"role":           newUser.Role,
+	return c.JSON(http.StatusCreated, AuthResponse{
+		AccessToken: accessToken,
+		User: UserResponse{
+			Email:         newUser.Email,
+			EmailVerified: newUser.EmailVerified,
+			Role:          newUser.Role,
+		},
+	})
+}
+
+/*
+ * Handles user login flow:
+ * 1. Validates email/password
+ * 2. Generates access/refresh tokens
+ * 3. Sets HTTP-only cookie with refresh token
+ * 4. Returns access token and user info
+ */
+func (h *Handler) handleLogin(c echo.Context) error {
+	var req AuthRequest
+	if err := c.Bind(&req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request format", err)
+	}
+
+	// validate request
+	if err := c.Validate(&req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Validation failed", err)
+	}
+
+	queries := db.New(h.server.GetDB())
+	user, err := queries.GetUserByEmail(c.Request().Context(), req.Email)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Invalid email or password", nil)
+	}
+
+	if !verifyPassword(req.Password, user.Password) {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Invalid email or password", nil)
+	}
+
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, user.TokenSalt)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to generate tokens", err)
+	}
+
+	setRefreshTokenCookie(c, refreshToken)
+
+	return c.JSON(http.StatusOK, AuthResponse{
+		AccessToken: accessToken,
+		User: UserResponse{
+			Email:         user.Email,
+			EmailVerified: user.EmailVerified,
+			Role:          user.Role,
 		},
 	})
 }

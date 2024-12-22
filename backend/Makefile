@@ -4,7 +4,7 @@ NAME ?= name
 TEST_DB_USER ?= postgres
 TEST_DB_PASSWORD ?= postgres
 TEST_DB_NAME ?= postgres
-TEST_DB_HOST_PORT ?= 5432
+TEST_DB_HOST_PORT ?= 5433
 TEST_DB_URL ?= postgres://$(TEST_DB_USER):$(TEST_DB_PASSWORD)@localhost:$(TEST_DB_HOST_PORT)/$(TEST_DB_NAME)?sslmode=disable
 POSTGRESQL_VERSION ?= 16
 

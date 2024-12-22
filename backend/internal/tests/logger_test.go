@@ -23,6 +23,8 @@ TestLogger verifies that the logger middleware:
 */
 func TestLogger(t *testing.T) {
 	// capture log output for testing
+	originalLogger := log.Logger
+	defer func() { log.Logger = originalLogger }()
 	var buf bytes.Buffer
 	originalLogger := log.Logger
 	defer func() {
@@ -94,6 +96,8 @@ TestLoggerWithoutContext verifies that GetLogger returns
 a default logger when called without proper context
 */
 func TestLoggerWithoutContext(t *testing.T) {
+	originalLogger := log.Logger
+	defer func() { log.Logger = originalLogger }()
 	var buf bytes.Buffer
 	originalLogger := log.Logger
 	defer func() {
