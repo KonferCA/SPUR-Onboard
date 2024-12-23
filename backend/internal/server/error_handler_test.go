@@ -138,7 +138,7 @@ func TestErrorHandler(t *testing.T) {
 		expectedStatus   int
 		expectedType     v1_common.ErrorType
 		expectedMsg      string
-		expectedDetails  string
+		expectedDetails  interface{}
 		checkLoggedError bool
 	}{
 		{
@@ -174,8 +174,18 @@ func TestErrorHandler(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedType:   v1_common.ErrorTypeValidation,
 			expectedMsg:    "validation failed",
-			expectedDetails: "field 'Email' failed on 'email' validation. got: invalid-email, condition: ; " +
-				"field 'Age' failed on 'gt' validation. got: -1, condition: 0",
+			expectedDetails: map[string]map[string]interface{}{
+				"email": {
+					"tag":       "email",
+					"value":     "invalid-email",
+					"condition": "",
+				},
+				"age": {
+					"tag":       "gt",
+					"value":     float64(-1),
+					"condition": "0",
+				},
+			},
 			checkLoggedError: false,
 		},
 		{
@@ -229,7 +239,14 @@ func TestErrorHandler(t *testing.T) {
 			assert.Equal(t, tt.expectedType, response.Type, "Error type mismatch")
 			assert.Equal(t, tt.expectedMsg, response.Message, "Error message mismatch")
 			assert.Equal(t, "test-request-id", response.RequestID, "Request ID mismatch")
-			assert.Equal(t, tt.expectedDetails, response.Details, "Details mismatch")
+			if tt.expectedType == v1_common.ErrorTypeValidation {
+				var detailsMap map[string]map[string]interface{}
+				err = json.Unmarshal([]byte(response.Details), &detailsMap)
+				assert.NoError(t, err, "Failed to parse validation details as JSON")
+				assert.Equal(t, tt.expectedDetails, detailsMap, "Validation details mismatch")
+			} else {
+				assert.Equal(t, tt.expectedDetails, response.Details, "Details mismatch")
+			}
 
 			// verify log entry
 			logLines := strings.Split(strings.TrimSpace(buf.String()), "\n")
