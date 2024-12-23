@@ -12,4 +12,5 @@ func (s *Server) setupMiddlewares() {
 
 	s.Echo.Use(middleware.RequestID())
 	s.Echo.Use(middleware.LoggerMiddleware())
+	s.Echo.Use(middleware.CORS())
 }
