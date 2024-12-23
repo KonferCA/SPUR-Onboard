@@ -8,6 +8,7 @@ import (
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -95,6 +96,8 @@ Route handles incoming requests to register/create a new account.
 - HTTP-only cookie is also set with the refresh token value
 */
 func (h *Handler) handleRegister(c echo.Context) error {
+	logger := middleware.GetLogger(c)
+
 	var reqBody AuthRequest
 	if err := c.Bind(&reqBody); err != nil {
 		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
@@ -144,6 +147,8 @@ func (h *Handler) handleRegister(c echo.Context) error {
 
 	// set the refresh token cookie
 	setRefreshTokenCookie(c, refreshToken)
+
+	logger.Info(fmt.Sprintf("New user created with email: %s", newUser.Email))
 
 	return c.JSON(http.StatusCreated, AuthResponse{
 		AccessToken: accessToken,
