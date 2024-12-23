@@ -2,6 +2,7 @@ package server
 
 import (
 	"KonferCA/SPUR/internal/v1/v1_common"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -52,17 +53,24 @@ func errorHandler(err error, c echo.Context) {
 		code = http.StatusBadRequest
 		errType = v1_common.ErrorTypeValidation
 		message = "validation failed"
-		var errMsgs []string
+		fieldErrors := make(map[string]map[string]interface{})
+
 		for _, err := range e {
-			errMsgs = append(errMsgs, fmt.Sprintf(
-				"field '%s' failed on '%s' validation. got: %v, condition: %s",
-				err.Field(),
-				err.Tag(),
-				err.Value(),
-				err.Param(),
-			))
+			fieldName := strings.ToLower(err.Field())
+			fieldErrors[fieldName] = map[string]interface{}{
+				"tag":       err.Tag(),
+				"value":     err.Value(),
+				"condition": err.Param(),
+			}
 		}
-		details = strings.Join(errMsgs, "; ")
+
+		detailsBytes, err := json.Marshal(fieldErrors)
+		if err != nil {
+			details = "error formatting validation details"
+			log.Error().Err(err).Msg("failed to format validation details")
+		} else {
+			details = string(detailsBytes)
+		}
 	case *v1_common.APIError:
 		code = e.Code
 		errType = e.Type
