@@ -5,8 +5,8 @@ import (
 	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/server"
 	"KonferCA/SPUR/internal/v1/v1_auth"
-  "KonferCA/SPUR/internal/v1/v1_common"
-  
+	"KonferCA/SPUR/internal/v1/v1_common"
+
 	"bytes"
 	"context"
 	"encoding/json"
@@ -447,6 +447,72 @@ func TestServer(t *testing.T) {
 			assert.Equal(t, http.StatusBadRequest, rec.Code)
 			assert.Equal(t, v1_common.ErrorTypeBadRequest, apiErr.Type)
 			assert.Equal(t, "Failed to verify email. Invalid or expired token.", apiErr.Message)
+		})
+
+		t.Run("/api/v1/auth/logout - 200 OK - successfully logout", func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+			defer cancel()
+
+			// register user
+			email := "test@mail.com"
+			password := "mypassword123"
+			authReq := v1_auth.AuthRequest{
+				Email:    email,
+				Password: password,
+			}
+			data, err := json.Marshal(authReq)
+			assert.NoError(t, err)
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewReader(data))
+			req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusCreated, rec.Code)
+			defer removeTestUser(ctx, email, s)
+
+			// get the cookie
+			cookies := rec.Result().Cookies()
+			var tokenCookie *http.Cookie
+			for _, cookie := range cookies {
+				if cookie.Name == v1_auth.COOKIE_REFRESH_TOKEN {
+					tokenCookie = cookie
+					break
+				}
+			}
+			if tokenCookie == nil {
+				t.Fatal("Refresh token cookie not found")
+			}
+			assert.NoError(t, err)
+			assert.NotNil(t, tokenCookie)
+			assert.NotEmpty(t, tokenCookie.Value)
+
+			req = httptest.NewRequest(http.MethodGet, "/api/v1/auth/logout", nil)
+			req.AddCookie(tokenCookie)
+			rec = httptest.NewRecorder()
+
+			s.Echo.ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			// make sure the cookie value has been unset
+			tokenCookie = nil
+			cookies = rec.Result().Cookies()
+			for _, cookie := range cookies {
+				if cookie.Name == v1_auth.COOKIE_REFRESH_TOKEN {
+					tokenCookie = cookie
+					break
+				}
+			}
+			if tokenCookie == nil {
+				t.Fatal("Refresh token cookie not found")
+			}
+			assert.NoError(t, err)
+			assert.NotNil(t, tokenCookie)
+			assert.Empty(t, tokenCookie.Value)
+			// make sure the expiration date is less than right now
+			// and max-age is negative to indicate the browser to remove the cookie
+			assert.True(t, time.Now().After(tokenCookie.Expires))
+			assert.Equal(t, -1, tokenCookie.MaxAge)
 		})
 	})
 }

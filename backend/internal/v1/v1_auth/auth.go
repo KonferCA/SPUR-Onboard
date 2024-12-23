@@ -319,3 +319,11 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 		},
 	})
 }
+
+/*
+Handle incoming logout requests. This will empty out the refresh token cookie.
+*/
+func (h *Handler) handleLogout(c echo.Context) error {
+	unsetRefreshTokenCookie(c)
+	return v1_common.Success(c, http.StatusOK, "Successfully logged out.")
+}

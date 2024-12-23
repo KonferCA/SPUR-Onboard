@@ -40,4 +40,5 @@ func SetupAuthRoutes(e *echo.Group, s interfaces.CoreServer) {
 	e.GET("/auth/verify", h.handleVerifyCookie)
 	e.GET("/auth/verify-email", h.handleVerifyEmail, authLimiter.RateLimit())
 	e.POST("/auth/register", h.handleRegister, authLimiter.RateLimit())
+	e.GET("/auth/logout", h.handleLogout, authLimiter.RateLimit())
 }
