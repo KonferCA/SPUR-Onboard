@@ -101,16 +101,6 @@ func (q *Queries) NewUser(ctx context.Context, arg NewUserParams) (NewUserRow, e
 	return i, err
 }
 
-const userExistsByEmail = `-- name: UserExistsByEmail :one
-SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)
-`
-
-func (q *Queries) UserExistsByEmail(ctx context.Context, email string) (bool, error) {
-	row := q.db.QueryRow(ctx, userExistsByEmail, email)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
-}
 const updateUserEmailVerifiedStatus = `-- name: UpdateUserEmailVerifiedStatus :exec
 UPDATE users SET email_verified = $1 WHERE id = $2
 `
@@ -123,4 +113,15 @@ type UpdateUserEmailVerifiedStatusParams struct {
 func (q *Queries) UpdateUserEmailVerifiedStatus(ctx context.Context, arg UpdateUserEmailVerifiedStatusParams) error {
 	_, err := q.db.Exec(ctx, updateUserEmailVerifiedStatus, arg.EmailVerified, arg.ID)
 	return err
+}
+
+const userExistsByEmail = `-- name: UserExistsByEmail :one
+SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)
+`
+
+func (q *Queries) UserExistsByEmail(ctx context.Context, email string) (bool, error) {
+	row := q.db.QueryRow(ctx, userExistsByEmail, email)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
