@@ -11,16 +11,15 @@ import (
 
 const createTeamMember = `-- name: CreateTeamMember :one
 INSERT INTO team_members (
-    id, company_id, first_name, last_name, 
+    company_id, first_name, last_name, 
     title, bio, linkedin_url, is_account_owner
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7
 )
 RETURNING id, company_id, first_name, last_name, title, bio, linkedin_url, is_account_owner, created_at, updated_at
 `
 
 type CreateTeamMemberParams struct {
-	ID             string
 	CompanyID      string
 	FirstName      string
 	LastName       string
@@ -32,7 +31,6 @@ type CreateTeamMemberParams struct {
 
 func (q *Queries) CreateTeamMember(ctx context.Context, arg CreateTeamMemberParams) (TeamMember, error) {
 	row := q.db.QueryRow(ctx, createTeamMember,
-		arg.ID,
 		arg.CompanyID,
 		arg.FirstName,
 		arg.LastName,
