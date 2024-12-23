@@ -4,6 +4,7 @@ import (
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -32,7 +33,7 @@ func errorHandler(err error, c echo.Context) {
 		code    = http.StatusInternalServerError
 		message = "internal server error"
 		errType = v1_common.ErrorTypeInternal
-		details = ""
+		details string
 	)
 
 	internalErr, _ := c.Get("internal_error").(error)
@@ -51,7 +52,17 @@ func errorHandler(err error, c echo.Context) {
 		code = http.StatusBadRequest
 		errType = v1_common.ErrorTypeValidation
 		message = "validation failed"
-		details = e.Error()
+		var errMsgs []string
+		for _, err := range e {
+			errMsgs = append(errMsgs, fmt.Sprintf(
+				"field '%s' failed on '%s' validation. got: %v, condition: %s",
+				err.Field(),
+				err.Tag(),
+				err.Value(),
+				err.Param(),
+			))
+		}
+		details = strings.Join(errMsgs, "; ")
 	case *v1_common.APIError:
 		code = e.Code
 		errType = e.Type
@@ -59,28 +70,31 @@ func errorHandler(err error, c echo.Context) {
 		details = e.Details
 	default:
 		if internalErr != nil {
-			details = internalErr.Error()
+			log.Error().Err(internalErr).Msg("internal error occurred")
 		} else {
-			details = err.Error()
+			log.Error().Err(err).Msg("unexpected error occurred")
 		}
+		details = "an unexpected error occurred. please try again later"
 	}
 
 	requestID := c.Request().Header.Get(echo.HeaderXRequestID)
 
 	// log with more context
-	logger := log.With().
+	logContext := log.With().
 		Str("request_error", fmt.Sprintf("code=%d, message=%s", code, message)).
-		Str("request_id", c.Response().Header().Get(echo.HeaderXRequestID)).
+		Str("request_id", requestID).
 		Str("method", c.Request().Method).
 		Str("path", c.Request().URL.Path).
 		Int("status", code).
-		Str("user_agent", c.Request().UserAgent()).
-		Logger()
+		Str("user_agent", c.Request().UserAgent())
 
 	if internalErr != nil {
-		logger = logger.With().Err(internalErr).Logger()
+		logContext = logContext.Str("error", internalErr.Error())
+	} else if err != nil && code == http.StatusInternalServerError {
+		logContext = logContext.Str("error", err.Error())
 	}
 
+	logger := logContext.Logger()
 	logger.Error().Msg("request error")
 
 	apiError := &v1_common.APIError{
@@ -92,7 +106,8 @@ func errorHandler(err error, c echo.Context) {
 	}
 
 	if !c.Response().Committed {
-		c.Response().WriteHeader(code)
-		_ = c.JSON(code, apiError)
+		if err := c.JSON(code, apiError); err != nil {
+			log.Error().Err(err).Msg("failed to send error response")
+		}
 	}
 }
