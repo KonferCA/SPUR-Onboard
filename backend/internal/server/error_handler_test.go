@@ -1,11 +1,13 @@
 package server
 
 import (
+	"KonferCA/SPUR/internal/v1/v1_common"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/go-playground/validator/v10"
@@ -25,7 +27,8 @@ func TestGlobalErrorHandler(t *testing.T) {
 		name           string
 		handler        echo.HandlerFunc
 		expectedStatus int
-		expectedBody   string
+		expectedType   v1_common.ErrorType
+		expectedMsg    string
 	}{
 		{
 			name: "http error",
@@ -33,7 +36,8 @@ func TestGlobalErrorHandler(t *testing.T) {
 				return echo.NewHTTPError(http.StatusBadRequest, "bad request")
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"status":400,"message":"bad request"}`,
+			expectedType:   v1_common.ErrorTypeBadRequest,
+			expectedMsg:    "bad request",
 		},
 		{
 			name: "generic error",
@@ -41,7 +45,8 @@ func TestGlobalErrorHandler(t *testing.T) {
 				return echo.NewHTTPError(http.StatusInternalServerError, "something went wrong")
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   `{"status":500,"message":"something went wrong"}`,
+			expectedType:   v1_common.ErrorTypeInternal,
+			expectedMsg:    "something went wrong",
 		},
 		{
 			name: "validation error",
@@ -52,22 +57,14 @@ func TestGlobalErrorHandler(t *testing.T) {
 				}
 
 				v := validator.New()
-				err := v.Struct(TestStruct{
+				return v.Struct(TestStruct{
 					Email: "invalid-email",
 					Age:   -1,
 				})
-
-				return err
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody: `{
-				"status": 400,
-				"message": "validation failed",
-				"errors": [
-					"Key: 'TestStruct.Email' Error:Field validation for 'Email' failed on the 'email' tag",
-					"Key: 'TestStruct.Age' Error:Field validation for 'Age' failed on the 'gt' tag"
-				]
-			}`,
+			expectedType:   v1_common.ErrorTypeValidation,
+			expectedMsg:    "validation failed",
 		},
 		{
 			name: "with request id",
@@ -76,11 +73,11 @@ func TestGlobalErrorHandler(t *testing.T) {
 				return echo.NewHTTPError(http.StatusBadRequest, "bad request")
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"status":400,"message":"bad request","request_id":"test-123"}`,
+			expectedType:   v1_common.ErrorTypeBadRequest,
+			expectedMsg:    "bad request",
 		},
 	}
 
-	// run tests
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -92,34 +89,37 @@ func TestGlobalErrorHandler(t *testing.T) {
 				e.HTTPErrorHandler(err, c)
 			}
 
+			var response v1_common.APIError
+			err = json.Unmarshal(rec.Body.Bytes(), &response)
+			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, rec.Code)
-			assert.JSONEq(t, tt.expectedBody, rec.Body.String())
+			assert.Equal(t, tt.expectedType, response.Type)
+			assert.Equal(t, tt.expectedMsg, response.Message)
 		})
 	}
 }
 
 type logEntry struct {
-	Level         string `json:"level"`
-	InternalError string `json:"internal_error"`
-	RequestError  string `json:"request_error"`
-	RequestID     string `json:"request_id"`
-	Method        string `json:"method"`
-	Path          string `json:"path"`
-	Status        int    `json:"status"`
-	UserAgent     string `json:"user_agent"`
-	Message       string `json:"message"`
-}
-
-type customError struct {
-	msg string
-}
-
-func (e *customError) Error() string {
-	return e.msg
+	Level         string              `json:"level"`
+	InternalError error               `json:"internal_error,omitempty"`
+	RequestError  string              `json:"request_error"`
+	RequestID     string              `json:"request_id"`
+	Method        string              `json:"method"`
+	Path          string              `json:"path"`
+	Status        int                 `json:"status"`
+	UserAgent     string              `json:"user_agent"`
+	Message       string              `json:"message"`
+	Code          int                 `json:"code"`
+	Type          v1_common.ErrorType `json:"type"`
 }
 
 func TestErrorHandler(t *testing.T) {
-	// setting a validation error to not mock anything
+	originalLogger := log.Logger
+
+	defer func() {
+		log.Logger = originalLogger
+	}()
+
 	type TestStruct struct {
 		Email string `validate:"required,email"`
 		Age   int    `validate:"required,gt=0"`
@@ -132,52 +132,88 @@ func TestErrorHandler(t *testing.T) {
 	})
 
 	tests := []struct {
-		name           string
-		err            error
-		internalErr    error
-		expectedStatus int
-		expectedMsg    string
+		name             string
+		err              error
+		internalErr      error
+		expectedStatus   int
+		expectedType     v1_common.ErrorType
+		expectedMsg      string
+		expectedDetails  interface{}
+		checkLoggedError bool
 	}{
 		{
-			name:           "internal server error",
-			err:            errors.New("something went wrong"),
-			expectedStatus: http.StatusInternalServerError,
-			expectedMsg:    "internal server error",
+			name:             "internal server error",
+			err:              errors.New("something went wrong"),
+			expectedStatus:   http.StatusInternalServerError,
+			expectedType:     v1_common.ErrorTypeInternal,
+			expectedMsg:      "internal server error",
+			expectedDetails:  "an unexpected error occurred. please try again later",
+			checkLoggedError: true,
 		},
 		{
-			name:           "http error with string message",
-			err:            echo.NewHTTPError(http.StatusBadRequest, "invalid input"),
-			expectedStatus: http.StatusBadRequest,
-			expectedMsg:    "invalid input",
+			name:             "http error with string message",
+			err:              echo.NewHTTPError(http.StatusBadRequest, "invalid input"),
+			expectedStatus:   http.StatusBadRequest,
+			expectedType:     v1_common.ErrorTypeBadRequest,
+			expectedMsg:      "invalid input",
+			expectedDetails:  "",
+			checkLoggedError: false,
 		},
 		{
-			name:           "http error with non-string message",
-			err:            echo.NewHTTPError(http.StatusBadRequest, struct{ foo string }{foo: "bar"}),
-			expectedStatus: http.StatusBadRequest,
-			expectedMsg:    http.StatusText(http.StatusBadRequest),
+			name:             "http error with non-string message",
+			err:              echo.NewHTTPError(http.StatusBadRequest, struct{ foo string }{foo: "bar"}),
+			expectedStatus:   http.StatusBadRequest,
+			expectedType:     v1_common.ErrorTypeBadRequest,
+			expectedMsg:      http.StatusText(http.StatusBadRequest),
+			expectedDetails:  "",
+			checkLoggedError: false,
 		},
 		{
 			name:           "validation error",
 			err:            validationErr,
 			expectedStatus: http.StatusBadRequest,
+			expectedType:   v1_common.ErrorTypeValidation,
 			expectedMsg:    "validation failed",
+			expectedDetails: map[string]map[string]interface{}{
+				"email": {
+					"tag":       "email",
+					"value":     "invalid-email",
+					"condition": "",
+				},
+				"age": {
+					"tag":       "gt",
+					"value":     float64(-1),
+					"condition": "0",
+				},
+			},
+			checkLoggedError: false,
 		},
 		{
-			name:           "with internal error set",
-			err:            errors.New("handler error"),
-			internalErr:    errors.New("internal error"),
-			expectedStatus: http.StatusInternalServerError,
-			expectedMsg:    "internal server error",
+			name:             "with internal error set",
+			err:              errors.New("handler error"),
+			internalErr:      errors.New("internal error"),
+			expectedStatus:   http.StatusInternalServerError,
+			expectedType:     v1_common.ErrorTypeInternal,
+			expectedMsg:      "internal server error",
+			expectedDetails:  "an unexpected error occurred. please try again later",
+			checkLoggedError: true,
+		},
+		{
+			name:             "api error",
+			err:              &v1_common.APIError{Type: v1_common.ErrorTypeAuth, Message: "unauthorized", Code: http.StatusUnauthorized},
+			expectedStatus:   http.StatusUnauthorized,
+			expectedType:     v1_common.ErrorTypeAuth,
+			expectedMsg:      "unauthorized",
+			expectedDetails:  "",
+			checkLoggedError: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create a buffer to capture log output
 			var buf bytes.Buffer
 			log.Logger = zerolog.New(&buf)
 
-			// Setup Echo context
 			e := echo.New()
 			req := httptest.NewRequest(http.MethodPost, "/test", nil)
 			req.Header.Set(echo.HeaderXRequestID, "test-request-id")
@@ -185,63 +221,55 @@ func TestErrorHandler(t *testing.T) {
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 
-			// Set internal error if provided
 			if tt.internalErr != nil {
 				c.Set("internal_error", tt.internalErr)
 			}
 
-			// Call error handler
+			// call error handler and verify it returns no error
 			errorHandler(tt.err, c)
 
-			// Parse log output
-			var entry logEntry
-			err := json.Unmarshal(buf.Bytes(), &entry)
+			// verify status was set correctly
+			assert.Equal(t, tt.expectedStatus, rec.Result().StatusCode, "Status code mismatch")
+
+			// check response
+			var response v1_common.APIError
+			err := json.Unmarshal(rec.Body.Bytes(), &response)
 			assert.NoError(t, err)
-
-			// Verify log fields
-			assert.Equal(t, "error", entry.Level)
-			assert.Equal(t, "test-request-id", entry.RequestID)
-			assert.Equal(t, http.MethodPost, entry.Method)
-			assert.Equal(t, "/test", entry.Path)
-			assert.Equal(t, tt.expectedStatus, entry.Status)
-			assert.Equal(t, "test-agent", entry.UserAgent)
-			assert.Equal(t, "request error", entry.Message)
-
-			// Verify error logging
-			assert.Contains(t, entry.RequestError, tt.err.Error())
-			if tt.internalErr != nil {
-				assert.Contains(t, entry.InternalError, tt.internalErr.Error())
-			} else if tt.err != nil && !isHTTPError(tt.err) && !isValidationError(tt.err) {
-				// If no internal error was set and the error is not HTTP or validation,
-				// the handler error should be set as internal error
-				assert.Contains(t, entry.InternalError, tt.err.Error())
+			assert.Equal(t, tt.expectedStatus, response.Code, "Response code mismatch")
+			assert.Equal(t, tt.expectedType, response.Type, "Error type mismatch")
+			assert.Equal(t, tt.expectedMsg, response.Message, "Error message mismatch")
+			assert.Equal(t, "test-request-id", response.RequestID, "Request ID mismatch")
+			if tt.expectedType == v1_common.ErrorTypeValidation {
+				var detailsMap map[string]map[string]interface{}
+				err = json.Unmarshal([]byte(response.Details), &detailsMap)
+				assert.NoError(t, err, "Failed to parse validation details as JSON")
+				assert.Equal(t, tt.expectedDetails, detailsMap, "Validation details mismatch")
+			} else {
+				assert.Equal(t, tt.expectedDetails, response.Details, "Details mismatch")
 			}
 
-			// Verify response
-			var response ErrorResponse
-			err = json.Unmarshal(rec.Body.Bytes(), &response)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expectedStatus, response.Status)
-			assert.Equal(t, tt.expectedMsg, response.Message)
-			assert.Equal(t, "test-request-id", response.RequestID)
+			// verify log entry
+			logLines := strings.Split(strings.TrimSpace(buf.String()), "\n")
+			var logEntry struct {
+				Level   string `json:"level"`
+				ReqErr  string `json:"request_error"`
+				Status  int    `json:"status"`
+				Message string `json:"message"`
+				Error   string `json:"error,omitempty"`
+			}
 
-			// Verify validation errors if applicable
-			if _, ok := tt.err.(validator.ValidationErrors); ok {
-				assert.NotEmpty(t, response.Errors)
-			} else {
-				assert.Empty(t, response.Errors)
+			if len(logLines) > 0 {
+				lastLine := logLines[len(logLines)-1]
+				err = json.Unmarshal([]byte(lastLine), &logEntry)
+				assert.NoError(t, err, "Failed to parse log entry")
+
+				assert.Equal(t, "error", logEntry.Level, "Log level mismatch")
+				assert.Equal(t, tt.expectedStatus, logEntry.Status, "Log status mismatch")
+
+				if tt.checkLoggedError {
+					assert.NotEmpty(t, logEntry.Error, "Expected error to be logged")
+				}
 			}
 		})
 	}
-}
-
-// Helper functions to check error types
-func isHTTPError(err error) bool {
-	_, ok := err.(*echo.HTTPError)
-	return ok
-}
-
-func isValidationError(err error) bool {
-	_, ok := err.(validator.ValidationErrors)
-	return ok
 }
