@@ -9,11 +9,20 @@ import (
 	"net/http"
 )
 
-// Helper function to format timestamps
+/*
+ * Formats Unix timestamp to RFC3339 string
+ * Used for consistent date formatting in responses
+ */
 func formatTime(t int64) string {
 	return time.Unix(t, 0).Format(time.RFC3339)
 }
 
+/*
+ * Creates a new team member for a company
+ * Endpoint: POST /companies/:company_id/team
+ * Request body: AddTeamMemberRequest
+ * Response: TeamMemberResponse
+ */
 func (h *Handler) handleAddTeamMember(c echo.Context) error {
 	// Get company ID from path
 	companyID := c.Param("company_id")
@@ -60,6 +69,11 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 	return c.JSON(http.StatusCreated, response)
 }
 
+/*
+ * Retrieves all team members for a company
+ * Endpoint: GET /companies/:company_id/team
+ * Response: TeamMembersResponse containing array of TeamMemberResponse
+ */
 func (h *Handler) handleGetTeamMembers(c echo.Context) error {
 	// Get company ID from path
 	companyID := c.Param("company_id")
@@ -92,6 +106,11 @@ func (h *Handler) handleGetTeamMembers(c echo.Context) error {
 	return c.JSON(http.StatusOK, TeamMembersResponse{TeamMembers: teamMembers})
 }
 
+/*
+ * Retrieves a specific team member by ID
+ * Endpoint: GET /companies/:company_id/team/:member_id
+ * Response: TeamMemberResponse
+ */
 func (h *Handler) handleGetTeamMember(c echo.Context) error {
 	// Get and validate IDs from path
 	companyID := c.Param("company_id")
@@ -131,6 +150,12 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+/*
+ * Updates an existing team member's information
+ * Endpoint: PUT /companies/:company_id/team/:member_id
+ * Request body: UpdateTeamMemberRequest
+ * Response: TeamMemberResponse
+ */
 func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 	// Get and validate IDs from path
 	companyID := c.Param("company_id")
@@ -184,6 +209,11 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+/*
+ * Deletes a team member from a company
+ * Endpoint: DELETE /companies/:company_id/team/:member_id
+ * Response: Success message
+ */
 func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
 	// Get and validate IDs from path
 	companyID := c.Param("company_id")

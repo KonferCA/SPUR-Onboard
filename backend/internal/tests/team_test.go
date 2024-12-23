@@ -17,6 +17,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+/*
+ * TestTeamEndpoints runs a complete test suite for team member operations
+ * Tests:
+ *   - Adding a new team member
+ *   - Retrieving team members
+ *   - Updating team member details
+ *   - Deleting a team member
+ * Each test includes setup and validation of the operation
+ */
 func TestTeamEndpoints(t *testing.T) {
 	// Setup test environment
 	setupEnv()
