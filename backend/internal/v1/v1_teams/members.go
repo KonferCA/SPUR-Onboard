@@ -32,11 +32,8 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 
 	// Parse and validate request body
 	var req AddTeamMemberRequest
-	if err := c.Bind(&req); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request format", err)
-	}
-	if err := c.Validate(&req); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Validation failed", err)
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request data", err)
 	}
 
 	// Create team member in database
@@ -54,7 +51,7 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create team member", err)
 	}
 
-	// Return success response
+	// Return success response with member data
 	response := TeamMemberResponse{
 		ID:             member.ID,
 		FirstName:      member.FirstName,
@@ -77,14 +74,14 @@ func (h *Handler) handleGetTeamMembers(c echo.Context) error {
 	// Get company ID from path
 	companyID := c.Param("company_id")
 	if _, err := uuid.Parse(companyID); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid company ID format", err)
+		return v1_common.NewValidationError("Invalid company ID format")
 	}
 
 	// Get team members from database
 	queries := db.New(h.server.GetDB())
 	members, err := queries.ListTeamMembers(c.Request().Context(), companyID)
 	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to fetch team members", err)
+		return v1_common.NewInternalError(err)
 	}
 
 	// Convert to response type
@@ -114,12 +111,12 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 	// Get and validate IDs from path
 	companyID := c.Param("company_id")
 	if _, err := uuid.Parse(companyID); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid company ID format", err)
+		return v1_common.NewValidationError("Invalid company ID format")
 	}
 
 	memberID := c.Param("member_id")
 	if _, err := uuid.Parse(memberID); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid member ID format", err)
+		return v1_common.NewValidationError("Invalid member ID format")
 	}
 
 	// Get team member from database
@@ -130,9 +127,9 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 	})
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return v1_common.Fail(c, http.StatusNotFound, "Team member not found", err)
+			return v1_common.NewNotFoundError("Team member")
 		}
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to fetch team member", err)
+		return v1_common.NewInternalError(err)
 	}
 
 	response := TeamMemberResponse{
@@ -159,21 +156,18 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 	// Get and validate IDs from path
 	companyID := c.Param("company_id")
 	if _, err := uuid.Parse(companyID); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid company ID format", err)
+		return v1_common.NewValidationError("Invalid company ID format")
 	}
 
 	memberID := c.Param("member_id")
 	if _, err := uuid.Parse(memberID); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid member ID format", err)
+		return v1_common.NewValidationError("Invalid member ID format")
 	}
 
 	// Parse and validate request body
 	var req UpdateTeamMemberRequest
-	if err := c.Bind(&req); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request format", err)
-	}
-	if err := c.Validate(&req); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Validation failed", err)
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return err
 	}
 
 	// Update team member in database
@@ -189,9 +183,9 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 	})
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return v1_common.Fail(c, http.StatusNotFound, "Team member not found", err)
+			return v1_common.NewNotFoundError("Team member")
 		}
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to update team member", err)
+		return v1_common.NewInternalError(err)
 	}
 
 	response := TeamMemberResponse{
