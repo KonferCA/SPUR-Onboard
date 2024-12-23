@@ -8,11 +8,16 @@ import (
 )
 
 func SetupRoutes(e *echo.Group, s interfaces.CoreServer) {
-	h := Handler{server: s}
+	h := &Handler{server: s}
 
-	e.POST("/companies/:company_id/team", h.handleAddTeamMember, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner))
-	e.GET("/companies/:company_id/team", h.handleGetTeamMembers, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner))
-	e.GET("/companies/:company_id/team/:member_id", h.handleGetTeamMember, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner))
-	e.PUT("/companies/:company_id/team/:member_id", h.handleUpdateTeamMember, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner))
-	e.DELETE("/companies/:company_id/team/:member_id", h.handleDeleteTeamMember, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner))
+	team := e.Group("/companies/:company_id/team")
+	
+	// For GET routes, we need to allow both owners and investors
+	team.GET("", h.handleGetTeamMembers, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner, db.UserRoleInvestor))
+	team.GET("/:member_id", h.handleGetTeamMember, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner, db.UserRoleInvestor))
+	
+	// For modification routes, only allow owners
+	team.POST("", h.handleAddTeamMember, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner))
+	team.PUT("/:member_id", h.handleUpdateTeamMember, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner))
+	team.DELETE("/:member_id", h.handleDeleteTeamMember, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner))
 }

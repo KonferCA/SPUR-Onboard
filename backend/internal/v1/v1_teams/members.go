@@ -27,13 +27,18 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 	// Get company ID from path
 	companyID := c.Param("company_id")
 	if _, err := uuid.Parse(companyID); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid company ID format", err)
+		return v1_common.NewValidationError("Invalid company ID format")
+	}
+
+	// Company access validation
+	if err := h.validateCompanyAccess(c, companyID, true); err != nil {
+		return err
 	}
 
 	// Parse and validate request body
 	var req AddTeamMemberRequest
 	if err := v1_common.BindandValidate(c, &req); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request data", err)
+		return err
 	}
 
 	// Create team member in database
@@ -48,7 +53,7 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		IsAccountOwner: false,
 	})
 	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create team member", err)
+		return v1_common.NewInternalError(err)
 	}
 
 	// Return success response with member data
@@ -75,6 +80,11 @@ func (h *Handler) handleGetTeamMembers(c echo.Context) error {
 	companyID := c.Param("company_id")
 	if _, err := uuid.Parse(companyID); err != nil {
 		return v1_common.NewValidationError("Invalid company ID format")
+	}
+
+	// Company access validation - allow non-owners to view
+	if err := h.validateCompanyAccess(c, companyID, false); err != nil {
+		return err
 	}
 
 	// Get team members from database
@@ -119,6 +129,11 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 		return v1_common.NewValidationError("Invalid member ID format")
 	}
 
+	// Company access validation - allow non-owners to view
+	if err := h.validateCompanyAccess(c, companyID, false); err != nil {
+		return err
+	}
+
 	// Get team member from database
 	queries := db.New(h.server.GetDB())
 	member, err := queries.GetTeamMember(c.Request().Context(), db.GetTeamMemberParams{
@@ -127,21 +142,21 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 	})
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return v1_common.NewNotFoundError("Team member")
+			return v1_common.NewNotFoundError("Team member not found")
 		}
 		return v1_common.NewInternalError(err)
 	}
 
 	response := TeamMemberResponse{
 		ID:             member.ID,
-		FirstName:      member.FirstName,
-		LastName:       member.LastName,
-		Title:         member.Title,
-		Bio:           member.Bio,
-		LinkedinUrl:   member.LinkedinUrl,
-		IsAccountOwner: member.IsAccountOwner,
-		CreatedAt:     formatTime(member.CreatedAt),
-		UpdatedAt:     formatTime(member.UpdatedAt),
+			FirstName:      member.FirstName,
+			LastName:       member.LastName,
+			Title:         member.Title,
+			Bio:           member.Bio,
+			LinkedinUrl:   member.LinkedinUrl,
+			IsAccountOwner: member.IsAccountOwner,
+			CreatedAt:     formatTime(member.CreatedAt),
+				UpdatedAt:     formatTime(member.UpdatedAt),
 	}
 	return c.JSON(http.StatusOK, response)
 }
@@ -164,6 +179,11 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 		return v1_common.NewValidationError("Invalid member ID format")
 	}
 
+	// Validate company access (only owners can update)
+	if err := h.validateCompanyAccess(c, companyID, true); err != nil {
+		return err
+	}
+
 	// Parse and validate request body
 	var req UpdateTeamMemberRequest
 	if err := v1_common.BindandValidate(c, &req); err != nil {
@@ -183,21 +203,21 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 	})
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return v1_common.NewNotFoundError("Team member")
+			return v1_common.NewNotFoundError("Team member not found")
 		}
 		return v1_common.NewInternalError(err)
 	}
 
 	response := TeamMemberResponse{
 		ID:             member.ID,
-		FirstName:      member.FirstName,
-		LastName:       member.LastName,
-		Title:         member.Title,
-		Bio:           member.Bio,
-		LinkedinUrl:   member.LinkedinUrl,
-		IsAccountOwner: member.IsAccountOwner,
-		CreatedAt:     formatTime(member.CreatedAt),
-		UpdatedAt:     formatTime(member.UpdatedAt),
+			FirstName:      member.FirstName,
+			LastName:       member.LastName,
+			Title:         member.Title,
+			Bio:           member.Bio,
+			LinkedinUrl:   member.LinkedinUrl,
+			IsAccountOwner: member.IsAccountOwner,
+			CreatedAt:     formatTime(member.CreatedAt),
+			UpdatedAt:     formatTime(member.UpdatedAt),
 	}
 	return c.JSON(http.StatusOK, response)
 }
@@ -208,29 +228,73 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
  * Response: Success message
  */
 func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
-	// Get and validate IDs from path
 	companyID := c.Param("company_id")
 	if _, err := uuid.Parse(companyID); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid company ID format", err)
+		return v1_common.NewValidationError("Invalid company ID format")
 	}
 
 	memberID := c.Param("member_id")
 	if _, err := uuid.Parse(memberID); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid member ID format", err)
+		return v1_common.NewValidationError("Invalid member ID format")
 	}
 
-	// Delete team member from database
+	// Validate company access (only owners can delete)
+	if err := h.validateCompanyAccess(c, companyID, true); err != nil {
+		return err
+	}
+
 	queries := db.New(h.server.GetDB())
-	err := queries.DeleteTeamMember(c.Request().Context(), db.DeleteTeamMemberParams{
-		ID:        memberID,
+
+	// First check if member exists
+	_, err := queries.GetTeamMember(c.Request().Context(), db.GetTeamMemberParams{
+		ID: memberID,
 		CompanyID: companyID,
 	})
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return v1_common.Fail(c, http.StatusNotFound, "Team member not found", err)
+			return v1_common.NewNotFoundError("Team member not found")
 		}
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to delete team member", err)
+		return v1_common.NewInternalError(err)
+	}
+
+	// Delete team member
+	err = queries.DeleteTeamMember(c.Request().Context(), db.DeleteTeamMemberParams{
+		ID:        memberID,
+		CompanyID: companyID,
+	})
+	if err != nil {
+		return v1_common.NewInternalError(err)
 	}
 
 	return v1_common.Success(c, http.StatusOK, "Team member successfully deleted")
+}
+
+func (h *Handler) validateCompanyAccess(c echo.Context, companyID string, requireOwner bool) error {
+	user := c.Get("user").(*db.GetUserByIDRow)
+	if user == nil {
+		return v1_common.NewAuthError("User not found in context")
+	}
+
+	queries := db.New(h.server.GetDB())
+
+	// First check if user is the company owner
+	company, err := queries.GetCompany(c.Request().Context(), companyID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return v1_common.NewNotFoundError("Company not found")
+		}
+		return v1_common.NewInternalError(err)
+	}
+
+	// If user is the owner, they have full access
+	if company.OwnerID == user.ID {
+		return nil
+	}
+
+	// For non-owners, check if they're an investor and if owner access isn't required
+	if !requireOwner && user.Role == db.UserRoleInvestor {
+		return nil // Allow investors to view
+	}
+
+	return v1_common.NewAuthError("Not authorized to access this company")
 }
