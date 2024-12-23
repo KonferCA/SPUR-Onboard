@@ -5,6 +5,8 @@ import (
 	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/server"
 	"KonferCA/SPUR/internal/v1/v1_auth"
+  "KonferCA/SPUR/internal/v1/v1_common"
+  
 	"bytes"
 	"context"
 	"encoding/json"
@@ -412,15 +414,13 @@ func TestServer(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)
+
+			var apiErr v1_common.APIError
+			err := json.NewDecoder(rec.Body).Decode(&apiErr)
+			assert.NoError(t, err)
 			assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-			resBodyBytes, err := io.ReadAll(rec.Body)
-			assert.Nil(t, err)
-
-			var resBody map[string]any
-			err = json.Unmarshal(resBodyBytes, &resBody)
-			assert.Nil(t, err)
-			assert.Equal(t, "Missing required query parameter: 'token'", resBody["message"])
+			assert.Equal(t, v1_common.ErrorTypeBadRequest, apiErr.Type)
+			assert.Equal(t, "Missing required query parameter: 'token'", apiErr.Message)
 		})
 
 		t.Run("/auth/verify-email - 400 Bad Request - deny expired email token", func(t *testing.T) {
@@ -430,7 +430,6 @@ func TestServer(t *testing.T) {
 			assert.Nil(t, err)
 			defer removeTestUser(ctx, email, s)
 
-			// generate a test email token that is expired
 			exp := time.Now().Add(-(time.Minute * 30)).UTC()
 			tokenID, err := createTestEmailToken(ctx, userID, exp, s)
 			assert.Nil(t, err)
@@ -441,15 +440,13 @@ func TestServer(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)
+
+			var apiErr v1_common.APIError
+			err = json.NewDecoder(rec.Body).Decode(&apiErr)
+			assert.NoError(t, err)
 			assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-			resBodyBytes, err := io.ReadAll(rec.Body)
-			assert.Nil(t, err)
-
-			var resBody map[string]any
-			err = json.Unmarshal(resBodyBytes, &resBody)
-			assert.Nil(t, err)
-			assert.Equal(t, "Failed to verify email. Invalid or expired token.", resBody["message"])
+			assert.Equal(t, v1_common.ErrorTypeBadRequest, apiErr.Type)
+			assert.Equal(t, "Failed to verify email. Invalid or expired token.", apiErr.Message)
 		})
 	})
 }

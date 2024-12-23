@@ -4,13 +4,16 @@ import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/middleware"
+	"KonferCA/SPUR/internal/service"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -23,6 +26,54 @@ const (
 func verifyPassword(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
+}
+
+/*
+Helper function that sends a new verification email. It can be use to send new verification emails
+or for resending the verification email to the same recipient again.
+
+Keep in mind that the recipient must be the same user.
+*/
+func sendEmailVerification(userID, email string, queries *db.Queries) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	exists, err := queries.ExistsVerifyEmailTokenByUserID(ctx, userID)
+	if err != nil {
+		log.Error().Err(err).Str("user_id", userID).Str("email", email).Msg("Failed to send verification email.")
+		return
+	}
+
+	if exists {
+		// remove existing one
+		err := queries.RemoveVerifyEmailTokenByUserID(ctx, userID)
+		if err != nil {
+			log.Error().Err(err).Str("user_id", userID).Str("email", email).Msg("Failed to send verification email.")
+			return
+		}
+	}
+
+	exp := time.Now().Add(time.Minute * 30).UTC()
+	tokenID, err := queries.NewVerifyEmailToken(ctx, db.NewVerifyEmailTokenParams{
+		UserID:    userID,
+		ExpiresAt: exp.Unix(),
+	})
+	if err != nil {
+		log.Error().Err(err).Str("user_id", userID).Str("email", email).Msg("Failed to send verification email.")
+		return
+	}
+
+	emailToken, err := jwt.GenerateVerifyEmailToken(email, tokenID, exp)
+	if err != nil {
+		log.Error().Err(err).Str("user_id", userID).Str("email", email).Msg("Failed to send verification email.")
+		return
+	}
+
+	err = service.SendVerficationEmail(ctx, email, emailToken)
+	if err != nil {
+		log.Error().Err(err).Str("user_id", userID).Str("email", email).Msg("Failed to send verification email.")
+		return
+	}
 }
 
 /*
@@ -45,6 +96,8 @@ Route handles incoming requests to register/create a new account.
 - HTTP-only cookie is also set with the refresh token value
 */
 func (h *Handler) handleRegister(c echo.Context) error {
+	logger := middleware.GetLogger(c)
+
 	var reqBody AuthRequest
 	if err := c.Bind(&reqBody); err != nil {
 		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
@@ -81,14 +134,21 @@ func (h *Handler) handleRegister(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", err)
 	}
 
+	// send verification email using goroutine to not block
+	// at this point, the user has successfully been created
+	// so sending the verification email now is safe.
+	go sendEmailVerification(newUser.ID, newUser.Email, h.server.GetQueries())
+
 	// generate new access and refresh tokens
 	accessToken, refreshToken, err := jwt.GenerateWithSalt(newUser.ID, newUser.Role, newUser.TokenSalt)
 	if err != nil {
-		return v1_common.Success(c, http.StatusOK, "Registration complete but failed to sign in. Please sign in manually.")
+		return v1_common.Fail(c, http.StatusCreated, "Registration complete but failed to sign in. Please sign in manually.", err)
 	}
 
 	// set the refresh token cookie
 	setRefreshTokenCookie(c, refreshToken)
+
+	logger.Info(fmt.Sprintf("New user created with email: %s", newUser.Email))
 
 	return c.JSON(http.StatusCreated, AuthResponse{
 		AccessToken: accessToken,

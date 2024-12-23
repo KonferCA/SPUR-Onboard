@@ -6,11 +6,11 @@ import (
 	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/server"
 	"KonferCA/SPUR/internal/v1/v1_auth"
+	"KonferCA/SPUR/internal/v1/v1_common"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -54,9 +54,9 @@ func TestAuthEndpoints(t *testing.T) {
 
 	// Insert test user
 	_, err = s.GetDB().Exec(context.Background(), `
-		INSERT INTO users (id, email, password, role, email_verified, created_at, updated_at, token_salt)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	`, testUser.ID, testUser.Email, testUser.Password, testUser.Role, testUser.EmailVerified,
+        INSERT INTO users (id, email, password, role, email_verified, created_at, updated_at, token_salt)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `, testUser.ID, testUser.Email, testUser.Password, testUser.Role, testUser.EmailVerified,
 		testUser.CreatedAt, testUser.UpdatedAt, testUser.TokenSalt)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
@@ -68,6 +68,10 @@ func TestAuthEndpoints(t *testing.T) {
 			payload        v1_auth.AuthRequest
 			expectedStatus int
 			checkResponse  bool
+			expectedError  *struct {
+				errorType    v1_common.ErrorType
+				errorMessage string
+			}
 		}{
 			{
 				name: "Valid Login",
@@ -85,7 +89,13 @@ func TestAuthEndpoints(t *testing.T) {
 					Password: "wrongpassword",
 				},
 				expectedStatus: http.StatusUnauthorized,
-				checkResponse:  false,
+				expectedError: &struct {
+					errorType    v1_common.ErrorType
+					errorMessage string
+				}{
+					errorType:    v1_common.ErrorTypeAuth,
+					errorMessage: "Invalid email or password",
+				},
 			},
 			{
 				name: "Invalid Email",
@@ -94,7 +104,13 @@ func TestAuthEndpoints(t *testing.T) {
 					Password: "testpassword123",
 				},
 				expectedStatus: http.StatusUnauthorized,
-				checkResponse:  false,
+				expectedError: &struct {
+					errorType    v1_common.ErrorType
+					errorMessage string
+				}{
+					errorType:    v1_common.ErrorTypeAuth,
+					errorMessage: "Invalid email or password",
+				},
 			},
 			{
 				name: "Invalid Email Format",
@@ -103,19 +119,23 @@ func TestAuthEndpoints(t *testing.T) {
 					Password: "testpassword123",
 				},
 				expectedStatus: http.StatusBadRequest,
-				checkResponse:  false,
+				expectedError: &struct {
+					errorType    v1_common.ErrorType
+					errorMessage string
+				}{
+					errorType:    v1_common.ErrorTypeBadRequest,
+					errorMessage: "Validation failed",
+				},
 			},
 		}
 
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
-				// Create request
 				jsonBody, _ := json.Marshal(tc.payload)
 				req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(jsonBody))
 				req.Header.Set("Content-Type", "application/json")
 				rec := httptest.NewRecorder()
 
-				// Send request through the server
 				s.GetEcho().ServeHTTP(rec, req)
 
 				assert.Equal(t, tc.expectedStatus, rec.Code)
@@ -142,6 +162,12 @@ func TestAuthEndpoints(t *testing.T) {
 						}
 					}
 					assert.True(t, foundRefreshToken)
+				} else if tc.expectedError != nil {
+					var errResp v1_common.APIError
+					err := json.NewDecoder(rec.Body).Decode(&errResp)
+					assert.NoError(t, err)
+					assert.Equal(t, tc.expectedError.errorType, errResp.Type)
+					assert.Contains(t, errResp.Message, tc.expectedError.errorMessage)
 				}
 			})
 		}
@@ -161,6 +187,10 @@ func TestAuthEndpoints(t *testing.T) {
 			setupAuth      func(req *http.Request)
 			expectedStatus int
 			expectedBody   map[string]interface{}
+			expectedError  *struct {
+				errorType    v1_common.ErrorType
+				errorMessage string
+			}
 		}{
 			{
 				name: "Valid Token",
@@ -178,7 +208,13 @@ func TestAuthEndpoints(t *testing.T) {
 					// No auth header
 				},
 				expectedStatus: http.StatusUnauthorized,
-				expectedBody:   nil,
+				expectedError: &struct {
+					errorType    v1_common.ErrorType
+					errorMessage string
+				}{
+					errorType:    v1_common.ErrorTypeAuth,
+					errorMessage: "missing authorization header",
+				},
 			},
 			{
 				name: "Invalid Token",
@@ -186,7 +222,13 @@ func TestAuthEndpoints(t *testing.T) {
 					req.Header.Set("Authorization", "Bearer invalid-token")
 				},
 				expectedStatus: http.StatusUnauthorized,
-				expectedBody:   nil,
+				expectedError: &struct {
+					errorType    v1_common.ErrorType
+					errorMessage string
+				}{
+					errorType:    v1_common.ErrorTypeAuth,
+					errorMessage: "invalid token",
+				},
 			},
 		}
 
@@ -196,18 +238,21 @@ func TestAuthEndpoints(t *testing.T) {
 				tc.setupAuth(req)
 				rec := httptest.NewRecorder()
 
-				// Send request through the server
 				s.GetEcho().ServeHTTP(rec, req)
 
 				assert.Equal(t, tc.expectedStatus, rec.Code)
 
 				if tc.expectedBody != nil {
-					resBodyBytes, err := io.ReadAll(rec.Body)
-					assert.NoError(t, err)
 					var response map[string]interface{}
-					err = json.Unmarshal(resBodyBytes, &response)
+					err := json.NewDecoder(rec.Body).Decode(&response)
 					assert.NoError(t, err)
 					assert.Equal(t, tc.expectedBody, response)
+				} else if tc.expectedError != nil {
+					var errResp v1_common.APIError
+					err := json.NewDecoder(rec.Body).Decode(&errResp)
+					assert.NoError(t, err)
+					assert.Equal(t, tc.expectedError.errorType, errResp.Type)
+					assert.Equal(t, tc.expectedError.errorMessage, errResp.Message)
 				}
 			})
 		}
