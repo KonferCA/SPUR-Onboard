@@ -139,7 +139,7 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	// generate new access and refresh tokens
 	accessToken, refreshToken, err := jwt.GenerateWithSalt(newUser.ID, newUser.Role, newUser.TokenSalt)
 	if err != nil {
-		return v1_common.Success(c, http.StatusOK, "Registration complete but failed to sign in. Please sign in manually.")
+		return v1_common.Fail(c, http.StatusCreated, "Registration complete but failed to sign in. Please sign in manually.", err)
 	}
 
 	// set the refresh token cookie
