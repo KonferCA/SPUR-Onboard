@@ -42,7 +42,6 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 	// Create team member in database
 	queries := db.New(h.server.GetDB())
 	member, err := queries.CreateTeamMember(c.Request().Context(), db.CreateTeamMemberParams{
-		ID:             uuid.New().String(),
 		CompanyID:      companyID,
 		FirstName:      req.FirstName,
 		LastName:       req.LastName,
