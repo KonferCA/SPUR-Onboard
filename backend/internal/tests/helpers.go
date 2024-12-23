@@ -33,6 +33,16 @@ func createTestUser(ctx context.Context, s *server.Server) (string, string, stri
 }
 
 /*
+Helper function that queries the token_salt of a test user with email.
+*/
+func getTestUserTokenSalt(ctx context.Context, email string, s *server.Server) ([]byte, error) {
+	row := s.DBPool.QueryRow(ctx, "SELECT token_salt FROM users WHERE email = $1;", email)
+	var salt []byte
+	err := row.Scan(&salt)
+	return salt, err
+}
+
+/*
 Simple wrapper with SQL to remove a user from the database. Ideally, you want to use this
 only for the test user created by the function createTestUser()
 */

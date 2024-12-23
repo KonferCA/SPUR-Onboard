@@ -4,6 +4,7 @@ import (
 	"KonferCA/SPUR/common"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -13,6 +14,7 @@ Helper function that abstract away the different cookie configuration needed
 based on the app environment for the refresh token cookie.
 */
 func getRefreshTokenCookieConfig() *http.Cookie {
+	exp := time.Now().UTC().Add(24 * 7 * time.Hour)
 	cookie := &http.Cookie{
 		Name: COOKIE_REFRESH_TOKEN,
 		// this is a static path, that it should only be allowed in
@@ -21,6 +23,9 @@ func getRefreshTokenCookieConfig() *http.Cookie {
 		Secure:   os.Getenv("APP_ENV") != common.DEVELOPMENT_ENV,
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
+		Expires:  exp,
+		// Max-Age set to 7 days in seconds
+		MaxAge: 7 * 24 * 60 * 60,
 	}
 
 	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
