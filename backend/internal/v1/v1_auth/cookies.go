@@ -43,3 +43,16 @@ func setRefreshTokenCookie(c echo.Context, value string) {
 	cookie.Value = value
 	c.SetCookie(cookie)
 }
+
+/*
+Unsets the refresh token cookie. Make the right configuration
+that tells the browser to remove the cookie.
+*/
+func unsetRefreshTokenCookie(c echo.Context) {
+	cookie := getRefreshTokenCookieConfig()
+	cookie.Value = ""
+	// expires and max-age tells the browser to remove the cookie
+	cookie.Expires = time.Now().UTC()
+	cookie.MaxAge = -1
+	c.SetCookie(cookie)
+}
