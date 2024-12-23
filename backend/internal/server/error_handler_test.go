@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/go-playground/validator/v10"
@@ -131,33 +132,41 @@ func TestErrorHandler(t *testing.T) {
 	})
 
 	tests := []struct {
-		name           string
-		err            error
-		internalErr    error
-		expectedStatus int
-		expectedType   v1_common.ErrorType
-		expectedMsg    string
+		name             string
+		err              error
+		internalErr      error
+		expectedStatus   int
+		expectedType     v1_common.ErrorType
+		expectedMsg      string
+		expectedDetails  string
+		checkLoggedError bool
 	}{
 		{
-			name:           "internal server error",
-			err:            errors.New("something went wrong"),
-			expectedStatus: http.StatusInternalServerError,
-			expectedType:   v1_common.ErrorTypeInternal,
-			expectedMsg:    "internal server error",
+			name:             "internal server error",
+			err:              errors.New("something went wrong"),
+			expectedStatus:   http.StatusInternalServerError,
+			expectedType:     v1_common.ErrorTypeInternal,
+			expectedMsg:      "internal server error",
+			expectedDetails:  "an unexpected error occurred. please try again later",
+			checkLoggedError: true,
 		},
 		{
-			name:           "http error with string message",
-			err:            echo.NewHTTPError(http.StatusBadRequest, "invalid input"),
-			expectedStatus: http.StatusBadRequest,
-			expectedType:   v1_common.ErrorTypeBadRequest,
-			expectedMsg:    "invalid input",
+			name:             "http error with string message",
+			err:              echo.NewHTTPError(http.StatusBadRequest, "invalid input"),
+			expectedStatus:   http.StatusBadRequest,
+			expectedType:     v1_common.ErrorTypeBadRequest,
+			expectedMsg:      "invalid input",
+			expectedDetails:  "",
+			checkLoggedError: false,
 		},
 		{
-			name:           "http error with non-string message",
-			err:            echo.NewHTTPError(http.StatusBadRequest, struct{ foo string }{foo: "bar"}),
-			expectedStatus: http.StatusBadRequest,
-			expectedType:   v1_common.ErrorTypeBadRequest,
-			expectedMsg:    http.StatusText(http.StatusBadRequest),
+			name:             "http error with non-string message",
+			err:              echo.NewHTTPError(http.StatusBadRequest, struct{ foo string }{foo: "bar"}),
+			expectedStatus:   http.StatusBadRequest,
+			expectedType:     v1_common.ErrorTypeBadRequest,
+			expectedMsg:      http.StatusText(http.StatusBadRequest),
+			expectedDetails:  "",
+			checkLoggedError: false,
 		},
 		{
 			name:           "validation error",
@@ -165,21 +174,28 @@ func TestErrorHandler(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedType:   v1_common.ErrorTypeValidation,
 			expectedMsg:    "validation failed",
+			expectedDetails: "field 'Email' failed on 'email' validation. got: invalid-email, condition: ; " +
+				"field 'Age' failed on 'gt' validation. got: -1, condition: 0",
+			checkLoggedError: false,
 		},
 		{
-			name:           "with internal error set",
-			err:            errors.New("handler error"),
-			internalErr:    errors.New("internal error"),
-			expectedStatus: http.StatusInternalServerError,
-			expectedType:   v1_common.ErrorTypeInternal,
-			expectedMsg:    "internal server error",
+			name:             "with internal error set",
+			err:              errors.New("handler error"),
+			internalErr:      errors.New("internal error"),
+			expectedStatus:   http.StatusInternalServerError,
+			expectedType:     v1_common.ErrorTypeInternal,
+			expectedMsg:      "internal server error",
+			expectedDetails:  "an unexpected error occurred. please try again later",
+			checkLoggedError: true,
 		},
 		{
-			name:           "api error",
-			err:            &v1_common.APIError{Type: v1_common.ErrorTypeAuth, Message: "unauthorized", Code: http.StatusUnauthorized},
-			expectedStatus: http.StatusUnauthorized,
-			expectedType:   v1_common.ErrorTypeAuth,
-			expectedMsg:    "unauthorized",
+			name:             "api error",
+			err:              &v1_common.APIError{Type: v1_common.ErrorTypeAuth, Message: "unauthorized", Code: http.StatusUnauthorized},
+			expectedStatus:   http.StatusUnauthorized,
+			expectedType:     v1_common.ErrorTypeAuth,
+			expectedMsg:      "unauthorized",
+			expectedDetails:  "",
+			checkLoggedError: false,
 		},
 	}
 
@@ -213,22 +229,29 @@ func TestErrorHandler(t *testing.T) {
 			assert.Equal(t, tt.expectedType, response.Type, "Error type mismatch")
 			assert.Equal(t, tt.expectedMsg, response.Message, "Error message mismatch")
 			assert.Equal(t, "test-request-id", response.RequestID, "Request ID mismatch")
+			assert.Equal(t, tt.expectedDetails, response.Details, "Details mismatch")
 
 			// verify log entry
+			logLines := strings.Split(strings.TrimSpace(buf.String()), "\n")
 			var logEntry struct {
 				Level   string `json:"level"`
 				ReqErr  string `json:"request_error"`
 				Status  int    `json:"status"`
 				Message string `json:"message"`
+				Error   string `json:"error,omitempty"`
 			}
-			err = json.Unmarshal(buf.Bytes(), &logEntry)
-			assert.NoError(t, err)
-			assert.Equal(t, "error", logEntry.Level)
-			assert.Equal(t, tt.expectedStatus, logEntry.Status)
 
-			// check validation errors
-			if _, ok := tt.err.(validator.ValidationErrors); ok {
-				assert.NotEmpty(t, response.Details)
+			if len(logLines) > 0 {
+				lastLine := logLines[len(logLines)-1]
+				err = json.Unmarshal([]byte(lastLine), &logEntry)
+				assert.NoError(t, err, "Failed to parse log entry")
+
+				assert.Equal(t, "error", logEntry.Level, "Log level mismatch")
+				assert.Equal(t, tt.expectedStatus, logEntry.Status, "Log status mismatch")
+
+				if tt.checkLoggedError {
+					assert.NotEmpty(t, logEntry.Error, "Expected error to be logged")
+				}
 			}
 		})
 	}
