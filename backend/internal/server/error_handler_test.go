@@ -113,6 +113,12 @@ type logEntry struct {
 }
 
 func TestErrorHandler(t *testing.T) {
+	originalLogger := log.Logger
+
+	defer func() {
+		log.Logger = originalLogger
+	}()
+
 	type TestStruct struct {
 		Email string `validate:"required,email"`
 		Age   int    `validate:"required,gt=0"`
