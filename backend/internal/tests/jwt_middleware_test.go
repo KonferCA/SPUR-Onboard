@@ -11,6 +11,8 @@ import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/middleware"
+	"KonferCA/SPUR/internal/server"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
@@ -26,7 +28,7 @@ func TestJWTMiddleware(t *testing.T) {
 	ctx := context.Background()
 	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"), 
+		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_PORT"),
 		os.Getenv("DB_NAME"),
@@ -63,14 +65,15 @@ func TestJWTMiddleware(t *testing.T) {
 	}
 
 	// Create Echo instance with the middleware
-	e := echo.New()
+	s, err := server.New()
+	assert.NoError(t, err)
 	middlewareConfig := middleware.AuthConfig{
 		AcceptTokenType: jwt.ACCESS_TOKEN_TYPE,
 		AcceptUserRoles: []db.UserRole{db.UserRoleStartupOwner},
 	}
-	e.Use(middleware.AuthWithConfig(middlewareConfig, dbPool))
+	s.Echo.Use(middleware.AuthWithConfig(middlewareConfig, dbPool))
 
-	e.GET("/protected", func(c echo.Context) error {
+	s.Echo.GET("/protected", func(c echo.Context) error {
 		return c.String(http.StatusOK, "protected resource")
 	})
 
@@ -124,7 +127,7 @@ func TestJWTMiddleware(t *testing.T) {
 			if test.token != "" {
 				req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", test.token))
 			}
-			e.ServeHTTP(rec, req)
+			s.Echo.ServeHTTP(rec, req)
 			assert.Equal(t, test.expectedCode, rec.Code)
 		})
 	}
@@ -135,3 +138,4 @@ func TestJWTMiddleware(t *testing.T) {
 		t.Fatalf("failed to clean up test user: %v", err)
 	}
 }
+
