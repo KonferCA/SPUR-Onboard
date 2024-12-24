@@ -486,7 +486,7 @@ func TestServer(t *testing.T) {
 			assert.NotNil(t, tokenCookie)
 			assert.NotEmpty(t, tokenCookie.Value)
 
-			req = httptest.NewRequest(http.MethodGet, "/api/v1/auth/logout", nil)
+			req = httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)
 			req.AddCookie(tokenCookie)
 			rec = httptest.NewRecorder()
 
