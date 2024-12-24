@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"KonferCA/SPUR/internal/v1/v1_common"
 	"net/http"
 	"sync"
 	"time"
@@ -122,9 +123,11 @@ func (rl *RateLimiter) RateLimit() echo.MiddlewareFunc {
 					Dur("remaining", remaining).
 					Msg("request blocked: rate limit exceeded")
 
-				return echo.NewHTTPError(
+				return v1_common.Fail(
+					c,
 					http.StatusTooManyRequests,
 					"too many requests, please try again in "+remaining.Round(time.Second).String(),
+					nil,
 				)
 			}
 
@@ -151,9 +154,11 @@ func (rl *RateLimiter) RateLimit() echo.MiddlewareFunc {
 					Dur("block_duration", blockDuration).
 					Msg("IP blocked: rate limit exceeded")
 
-				return echo.NewHTTPError(
+				return v1_common.Fail(
+					c,
 					http.StatusTooManyRequests,
 					"too many requests, please try again in "+blockDuration.Round(time.Second).String(),
+					nil,
 				)
 			}
 
