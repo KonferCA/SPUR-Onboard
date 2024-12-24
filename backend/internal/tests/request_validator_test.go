@@ -2,6 +2,7 @@ package tests
 
 import (
 	"KonferCA/SPUR/internal/middleware"
+	"KonferCA/SPUR/internal/v1/v1_common"
 	"os"
 	"testing"
 
@@ -169,7 +170,7 @@ func TestValidatorMiddleware(t *testing.T) {
 			err := e.Validator.Validate(tc.input)
 			if tc.expectedError {
 				assert.Error(t, err)
-				httpErr, ok := err.(*echo.HTTPError)
+				httpErr, ok := err.(*v1_common.APIError)
 				assert.True(t, ok)
 				assert.Contains(t, httpErr.Message, tc.errorMessage)
 			} else {
