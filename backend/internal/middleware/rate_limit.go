@@ -2,15 +2,19 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 	"time"
+	"net"
+	"fmt"
+	"io"
 
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
 
 /*
-visitor tracks the request statistics for a single IP address.
+visitor tracks the request statistics for a single IP address. 
 */
 type visitor struct {
 	lastSeen    time.Time
@@ -66,6 +70,114 @@ func NewRateLimiter(config *RateLimiterConfig) *RateLimiter {
 }
 
 /*
+getClientIP attempts to get the real client IP, only trusting Cloudflare headers
+when the request is verified to come from Cloudflare.
+*/
+func getClientIP(c echo.Context) string {
+	// check if request is from cloudflare by verifying CF-Connecting-IP exists
+	// AND the request is from a Cloudflare IP range
+	if cfIP := c.Request().Header.Get("CF-Connecting-IP"); cfIP != "" && isCloudflareIP(c.RealIP()) {
+		return cfIP
+	}
+
+	// if not from cloudflare, only trust the direct remote address
+	return c.RealIP()
+}
+
+var (
+	parsedCloudflareRanges []*net.IPNet
+	ipRangesMutex         sync.RWMutex
+)
+
+const (
+	cfIPv4Endpoint = "https://www.cloudflare.com/ips-v4"
+	cfIPv6Endpoint = "https://www.cloudflare.com/ips-v6"
+	// refresh every 24 hours
+	cfIPRefreshInterval = 24 * time.Hour
+)
+
+func init() {
+	// Initial load of IP ranges
+	if err := refreshCloudflareIPRanges(); err != nil {
+		log.Error().Err(err).Msg("failed to load initial Cloudflare IP ranges")
+	}
+
+	// Start background refresh
+	go func() {
+		ticker := time.NewTicker(cfIPRefreshInterval)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			if err := refreshCloudflareIPRanges(); err != nil {
+				log.Error().Err(err).Msg("failed to refresh Cloudflare IP ranges")
+			}
+		}
+	}()
+}
+
+func refreshCloudflareIPRanges() error {
+	// Fetch both IPv4 and IPv6 ranges
+	ranges := make([]string, 0)
+	
+	for _, endpoint := range []string{cfIPv4Endpoint, cfIPv6Endpoint} {
+		resp, err := http.Get(endpoint)
+		if err != nil {
+			return fmt.Errorf("failed to fetch Cloudflare IPs from %s: %w", endpoint, err)
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to read response body: %w", err)
+		}
+
+		// Split response into lines
+		cidrs := strings.Split(string(body), "\n")
+		for _, cidr := range cidrs {
+			if cidr = strings.TrimSpace(cidr); cidr != "" {
+				ranges = append(ranges, cidr)
+			}
+		}
+	}
+
+	// Parse the new ranges
+	newRanges := make([]*net.IPNet, 0, len(ranges))
+	for _, cidr := range ranges {
+		_, ipnet, err := net.ParseCIDR(cidr)
+		if err != nil {
+			log.Error().Err(err).Str("cidr", cidr).Msg("failed to parse Cloudflare IP range")
+			continue
+		}
+		newRanges = append(newRanges, ipnet)
+	}
+
+	// Update the global ranges atomically
+	ipRangesMutex.Lock()
+	parsedCloudflareRanges = newRanges
+	ipRangesMutex.Unlock()
+
+	log.Info().Int("count", len(newRanges)).Msg("refreshed Cloudflare IP ranges")
+	return nil
+}
+
+func isCloudflareIP(ipStr string) bool {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false
+	}
+
+	ipRangesMutex.RLock()
+	defer ipRangesMutex.RUnlock()
+
+	for _, ipRange := range parsedCloudflareRanges {
+		if ipRange.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
+/*
 RateLimit creates a middleware function that can be applied to specific routes.
 It implements rate limiting based on client IP addresses.
 
@@ -86,7 +198,7 @@ Example (auth):
 func (rl *RateLimiter) RateLimit() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ip := c.RealIP()
+			ip := getClientIP(c)
 			now := time.Now()
 
 			rl.mu.Lock()
