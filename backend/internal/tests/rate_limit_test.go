@@ -16,6 +16,7 @@ func TestRateLimiter(t *testing.T) {
 	t.Run("allows requests within limit", func(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req.Header.Set("CF-Connecting-IP", "192.168.1.100")
 
 		limiter := middleware.NewRateLimiter(&middleware.RateLimiterConfig{
 			Requests:    2,
@@ -46,7 +47,7 @@ func TestRateLimiter(t *testing.T) {
 	t.Run("blocks requests over limit", func(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
-		req.Header.Set("X-Real-IP", "192.168.1.100")
+		req.Header.Set("CF-Connecting-IP", "192.168.1.100")
 
 		limiter := middleware.NewRateLimiter(&middleware.RateLimiterConfig{
 			Requests:    1,
@@ -92,7 +93,7 @@ func TestRateLimiter(t *testing.T) {
 		ips := []string{"192.168.1.1", "192.168.1.2"}
 		for _, ip := range ips {
 			req := httptest.NewRequest(http.MethodGet, "/test", nil)
-			req.Header.Set("X-Real-IP", ip)
+			req.Header.Set("CF-Connecting-IP", ip)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 
@@ -112,13 +113,13 @@ func TestRateLimiter(t *testing.T) {
 	t.Run("allows requests after window reset", func(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
-		req.Header.Set("X-Real-IP", "192.168.1.200")
+		req.Header.Set("CF-Connecting-IP", "192.168.1.200")
 
 		limiter := middleware.NewRateLimiter(&middleware.RateLimiterConfig{
 			Requests:    1,
 			Window:      100 * time.Millisecond,
-			BlockPeriod: 50 * time.Millisecond,
-			MaxBlocks:   2,
+				BlockPeriod: 50 * time.Millisecond,
+				MaxBlocks:   2,
 		})
 
 		handler := func(c echo.Context) error {
@@ -153,7 +154,7 @@ func TestRateLimiter(t *testing.T) {
 	t.Run("applies progressive blocking", func(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
-		req.Header.Set("X-Real-IP", "192.168.1.300")
+		req.Header.Set("CF-Connecting-IP", "192.168.1.300")
 
 		limiter := middleware.NewRateLimiter(&middleware.RateLimiterConfig{
 			Requests:    1,

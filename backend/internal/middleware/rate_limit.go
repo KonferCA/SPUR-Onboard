@@ -86,7 +86,11 @@ Example (auth):
 func (rl *RateLimiter) RateLimit() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ip := c.RealIP()
+			ip := c.Request().Header.Get("CF-Connecting-IP")
+			if ip == "" {
+				return echo.NewHTTPError(http.StatusForbidden, "missing client IP")
+			}
+
 			now := time.Now()
 
 			rl.mu.Lock()
