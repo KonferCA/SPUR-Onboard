@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"KonferCA/SPUR/internal/middleware"
+	"KonferCA/SPUR/internal/v1/v1_common"
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -69,7 +70,7 @@ func TestRateLimiter(t *testing.T) {
 		rec = httptest.NewRecorder()
 		c = e.NewContext(req, rec)
 		err = h(c)
-		he, ok := err.(*echo.HTTPError)
+		he, ok := err.(*v1_common.APIError)
 		assert.True(t, ok)
 		assert.Equal(t, http.StatusTooManyRequests, he.Code)
 	})
@@ -103,7 +104,7 @@ func TestRateLimiter(t *testing.T) {
 			rec = httptest.NewRecorder()
 			c = e.NewContext(req, rec)
 			err = h(c)
-			he, ok := err.(*echo.HTTPError)
+			he, ok := err.(*v1_common.APIError)
 			assert.True(t, ok)
 			assert.Equal(t, http.StatusTooManyRequests, he.Code)
 		}
@@ -137,7 +138,7 @@ func TestRateLimiter(t *testing.T) {
 		c = e.NewContext(req, rec)
 		err = h(c)
 		assert.Error(t, err)
-		he, ok := err.(*echo.HTTPError)
+		he, ok := err.(*v1_common.APIError)
 		assert.True(t, ok)
 		assert.Equal(t, http.StatusTooManyRequests, he.Code)
 
@@ -179,7 +180,7 @@ func TestRateLimiter(t *testing.T) {
 			c = e.NewContext(req, rec)
 			err = h(c)
 			assert.Error(t, err)
-			he, ok := err.(*echo.HTTPError)
+			he, ok := err.(*v1_common.APIError)
 			assert.True(t, ok)
 			assert.Equal(t, http.StatusTooManyRequests, he.Code)
 
