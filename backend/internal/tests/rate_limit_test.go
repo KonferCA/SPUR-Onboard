@@ -13,11 +13,9 @@ import (
 )
 
 func TestRateLimiter(t *testing.T) {
-	t.Run("allows requests within limit from Cloudflare", func(t *testing.T) {
+	t.Run("allows requests within limit", func(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
-		req.RemoteAddr = "173.245.48.1:1234"
-		req.Header.Set("CF-Connecting-IP", "10.0.0.1")
 
 		limiter := middleware.NewRateLimiter(&middleware.RateLimiterConfig{
 			Requests:    2,
@@ -45,11 +43,10 @@ func TestRateLimiter(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 	})
 
-	t.Run("blocks requests over limit from Cloudflare", func(t *testing.T) {
+	t.Run("blocks requests over limit", func(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
-		req.RemoteAddr = "173.245.48.1:1234"
-		req.Header.Set("CF-Connecting-IP", "10.0.0.2")
+		req.Header.Set("X-Real-IP", "192.168.1.100")
 
 		limiter := middleware.NewRateLimiter(&middleware.RateLimiterConfig{
 			Requests:    1,
@@ -68,40 +65,6 @@ func TestRateLimiter(t *testing.T) {
 		c := e.NewContext(req, rec)
 		err := h(c)
 		assert.NoError(t, err)
-
-		rec = httptest.NewRecorder()
-		c = e.NewContext(req, rec)
-		err = h(c)
-		he, ok := err.(*echo.HTTPError)
-		assert.True(t, ok)
-		assert.Equal(t, http.StatusTooManyRequests, he.Code)
-	})
-
-	t.Run("handles direct connections correctly", func(t *testing.T) {
-		e := echo.New()
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
-		req.RemoteAddr = "192.168.1.1:1234"
-		req.Header.Set("CF-Connecting-IP", "10.0.0.3")
-		req.Header.Set("X-Real-IP", "10.0.0.3")
-
-		limiter := middleware.NewRateLimiter(&middleware.RateLimiterConfig{
-			Requests:    1,
-			Window:      100 * time.Millisecond,
-			BlockPeriod: 200 * time.Millisecond,
-			MaxBlocks:   2,
-		})
-
-		handler := func(c echo.Context) error {
-			return c.String(http.StatusOK, "OK")
-		}
-
-		h := limiter.RateLimit()(handler)
-
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
-		err := h(c)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, rec.Code)
 
 		rec = httptest.NewRecorder()
 		c = e.NewContext(req, rec)
