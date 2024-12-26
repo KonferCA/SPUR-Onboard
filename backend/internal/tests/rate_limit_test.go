@@ -16,7 +16,6 @@ func TestRateLimiter(t *testing.T) {
 	t.Run("allows requests within limit", func(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
-		req.Header.Set("CF-Connecting-IP", "192.168.1.100")
 
 		limiter := middleware.NewRateLimiter(&middleware.RateLimiterConfig{
 			Requests:    2,
