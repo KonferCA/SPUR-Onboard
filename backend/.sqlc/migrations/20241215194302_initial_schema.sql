@@ -69,13 +69,15 @@ CREATE TABLE IF NOT EXISTS projects (
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
 
-CREATE TABLE IF NOT EXISTS project_questions (
+CREATE TABLE project_questions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     question varchar NOT NULL,
     section varchar NOT NULL DEFAULT 'overall',
+    required boolean NOT NULL DEFAULT false,
+    validations varchar,
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
-);
+); 
 
 CREATE TABLE IF NOT EXISTS project_answers (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

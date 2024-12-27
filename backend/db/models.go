@@ -189,11 +189,13 @@ type ProjectDocument struct {
 }
 
 type ProjectQuestion struct {
-	ID        string
-	Question  string
-	Section   string
-	CreatedAt int64
-	UpdatedAt int64
+	ID          string
+	Question    string
+	Section     string
+	Required    bool
+	Validations *string
+	CreatedAt   int64
+	UpdatedAt   int64
 }
 
 type TeamMember struct {
