@@ -29,7 +29,20 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 
 	// Project documents
 	docs := projects.Group("/:id/documents")
-	docs.POST("", h.handleUploadProjectDocument)
+	docs.POST("", h.handleUploadProjectDocument, middleware.FileCheck(middleware.FileConfig{
+		MinSize: 1024,                    // 1KB minimum
+		MaxSize: 10 * 1024 * 1024,       // 10MB maximum
+		AllowedTypes: []string{
+			"application/pdf",
+			"application/msword",                                                  		// .doc
+			"application/vnd.openxmlformats-officedocument.wordprocessingml.document", 	// .docx
+			"application/vnd.ms-excel",                                          		// .xls
+			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 		// .xlsx
+			"image/jpeg",
+			"image/png",
+		},
+		StrictValidation: true,
+	}))
 	docs.GET("", h.handleGetProjectDocuments)
 	docs.DELETE("/:document_id", h.handleDeleteProjectDocument)
 }
