@@ -27,18 +27,18 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 	// Get company ID from path
 	companyID := c.Param("company_id")
 	if _, err := uuid.Parse(companyID); err != nil {
-		return v1_common.NewValidationError("Invalid company ID format")
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid company ID format", err)
 	}
 
 	// Company access validation
 	if err := h.validateCompanyAccess(c, companyID, true); err != nil {
-		return err
+		return v1_common.Fail(c, http.StatusUnauthorized, "Not authorized to access this company", err)
 	}
 
 	// Parse and validate request body
 	var req AddTeamMemberRequest
 	if err := v1_common.BindandValidate(c, &req); err != nil {
-		return err
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
 	}
 
 	// Create team member in database
@@ -53,7 +53,7 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		IsAccountOwner: false,
 	})
 	if err != nil {
-		return v1_common.NewInternalError(err)
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create team member", err)
 	}
 
 	// Return success response with member data
@@ -79,19 +79,19 @@ func (h *Handler) handleGetTeamMembers(c echo.Context) error {
 	// Get company ID from path
 	companyID := c.Param("company_id")
 	if _, err := uuid.Parse(companyID); err != nil {
-		return v1_common.NewValidationError("Invalid company ID format")
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid company ID format", err)
 	}
 
 	// Company access validation - allow non-owners to view
 	if err := h.validateCompanyAccess(c, companyID, false); err != nil {
-		return err
+		return v1_common.Fail(c, http.StatusUnauthorized, "Not authorized to access this company", err)
 	}
 
 	// Get team members from database
 	queries := db.New(h.server.GetDB())
 	members, err := queries.ListTeamMembers(c.Request().Context(), companyID)
 	if err != nil {
-		return v1_common.NewInternalError(err)
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to retrieve team members", err)
 	}
 
 	// Convert to response type
@@ -121,17 +121,17 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 	// Get and validate IDs from path
 	companyID := c.Param("company_id")
 	if _, err := uuid.Parse(companyID); err != nil {
-		return v1_common.NewValidationError("Invalid company ID format")
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid company ID format", err)
 	}
 
 	memberID := c.Param("member_id")
 	if _, err := uuid.Parse(memberID); err != nil {
-		return v1_common.NewValidationError("Invalid member ID format")
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid member ID format", err)
 	}
 
 	// Company access validation - allow non-owners to view
 	if err := h.validateCompanyAccess(c, companyID, false); err != nil {
-		return err
+		return v1_common.Fail(c, http.StatusUnauthorized, "Not authorized to access this company", err)
 	}
 
 	// Get team member from database
@@ -142,9 +142,9 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 	})
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return v1_common.NewNotFoundError("Team member not found")
+			return v1_common.Fail(c, http.StatusNotFound, "Team member not found", err)
 		}
-		return v1_common.NewInternalError(err)
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to retrieve team member", err)
 	}
 
 	response := TeamMemberResponse{
@@ -156,7 +156,7 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 			LinkedinUrl:   member.LinkedinUrl,
 			IsAccountOwner: member.IsAccountOwner,
 			CreatedAt:     formatTime(member.CreatedAt),
-				UpdatedAt:     formatTime(member.UpdatedAt),
+					UpdatedAt:     formatTime(member.UpdatedAt),
 	}
 	return c.JSON(http.StatusOK, response)
 }
@@ -171,23 +171,23 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 	// Get and validate IDs from path
 	companyID := c.Param("company_id")
 	if _, err := uuid.Parse(companyID); err != nil {
-		return v1_common.NewValidationError("Invalid company ID format")
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid company ID format", err)
 	}
 
 	memberID := c.Param("member_id")
 	if _, err := uuid.Parse(memberID); err != nil {
-		return v1_common.NewValidationError("Invalid member ID format")
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid member ID format", err)
 	}
 
 	// Validate company access (only owners can update)
 	if err := h.validateCompanyAccess(c, companyID, true); err != nil {
-		return err
+		return v1_common.Fail(c, http.StatusUnauthorized, "Not authorized to access this company", err)
 	}
 
 	// Parse and validate request body
 	var req UpdateTeamMemberRequest
 	if err := v1_common.BindandValidate(c, &req); err != nil {
-		return err
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
 	}
 
 	// Update team member in database
@@ -203,9 +203,9 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 	})
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return v1_common.NewNotFoundError("Team member not found")
+			return v1_common.Fail(c, http.StatusNotFound, "Team member not found", err)
 		}
-		return v1_common.NewInternalError(err)
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to update team member", err)
 	}
 
 	response := TeamMemberResponse{
@@ -230,17 +230,17 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
 	companyID := c.Param("company_id")
 	if _, err := uuid.Parse(companyID); err != nil {
-		return v1_common.NewValidationError("Invalid company ID format")
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid company ID format", err)
 	}
 
 	memberID := c.Param("member_id")
 	if _, err := uuid.Parse(memberID); err != nil {
-		return v1_common.NewValidationError("Invalid member ID format")
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid member ID format", err)
 	}
 
 	// Validate company access (only owners can delete)
 	if err := h.validateCompanyAccess(c, companyID, true); err != nil {
-		return err
+		return v1_common.Fail(c, http.StatusUnauthorized, "Not authorized to access this company", err)
 	}
 
 	queries := db.New(h.server.GetDB())
@@ -252,9 +252,9 @@ func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
 	})
 	if err != nil {
 		if err.Error() == "no rows in result set" {
-			return v1_common.NewNotFoundError("Team member not found")
+			return v1_common.Fail(c, http.StatusNotFound, "Team member not found", err)
 		}
-		return v1_common.NewInternalError(err)
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to retrieve team member", err)
 	}
 
 	// Delete team member
@@ -263,7 +263,7 @@ func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
 		CompanyID: companyID,
 	})
 	if err != nil {
-		return v1_common.NewInternalError(err)
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to delete team member", err)
 	}
 
 	return v1_common.Success(c, http.StatusOK, "Team member successfully deleted")
