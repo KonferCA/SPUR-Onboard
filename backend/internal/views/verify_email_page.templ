@@ -88,26 +88,26 @@ templ VerifyEmailPage(variant VerifyEmailPageVariant, url string, details string
 		<body>
 			<main class={ main() }>
 				<div class={ card() }>
-					<h3>{ getCardTitle(variant) }</h3>
-					<div class={ "space-y", cardContent() }>
+					<h3 data-testid="card-title">{ getCardTitle(variant) }</h3>
+					<div class={ "space-y", cardContent() } data-testid="card-content-container">
 						if variant == SuccessVerifyEmailPage {
-							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class={ checkIcon() }>
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class={ checkIcon() } data-testid="check-icon">
 								<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path>
 							</svg>
 						} else {
-							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class={ xIcon() }>
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class={ xIcon() } data-testid="x-icon">
 								<path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path>
 							</svg>
 						}
 						if details == "" {
-							<p>{ getCardContent(variant) }</p>
+							<p data-testid="card-details">{ getCardContent(variant) }</p>
 						} else {
-							<p>{ details }</p>
+							<p data-testid="card-details">{ details }</p>
 						}
 					</div>
-					<div class={ cardFooter() }>
+					<div class={ cardFooter() } data-testid="card-footer">
 						if variant != InternalErrorEmailPage {
-							<a href={ templ.SafeURL(url) } class={ button() }>Go to Dashboard</a>
+							<a data-testid="go-to-dashboard" href={ templ.SafeURL(url) } class={ button() }>Go to Dashboard</a>
 						}
 					</div>
 				</div>
