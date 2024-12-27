@@ -1,0 +1,88 @@
+package views
+
+type VerifyEmailPageVariant string
+
+const (
+	SuccessVerifyEmailPage VerifyEmailPageVariant = "success"
+	FailVerifyEmailPage    VerifyEmailPageVariant = "fail"
+)
+
+css main() {
+	background-color: #f8fafc;
+	height: 100vh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+css card() {
+	padding: 2rem;
+	border-width: 1px;
+	border-radius: 0.25rem;
+	border-style: solid;
+	border-color: #cbd5e1;
+	box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+	max-width: 28rem;
+}
+
+templ VerifyEmailPage(variant VerifyEmailPageVariant, details string) {
+	<html lang="en">
+		<head>
+			<link rel="icon" type="image/svg+xml" href="/vite.svg"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta charset="UTF-8"/>
+			<title>{ getTitle(variant) }</title>
+			<style type="text/css">
+                * {
+                    margin: 0;
+                    padding: 0;
+                }
+            </style>
+		</head>
+		<body>
+			<main class={ main() }>
+				<div class={ card() }>
+					<h3>{ getCardTitle(variant) }</h3>
+					if details == "" {
+						<p>{ getCardContent(variant) }</p>
+					} else {
+						<p>{ details }</p>
+					}
+				</div>
+			</main>
+		</body>
+	</html>
+}
+
+func getTitle(variant VerifyEmailPageVariant) string {
+	switch variant {
+	case SuccessVerifyEmailPage:
+		return "Email Verified"
+	case FailVerifyEmailPage:
+		return "Email Not Verified"
+	}
+
+	return "Oops... Something went wrong"
+}
+
+func getCardTitle(variant VerifyEmailPageVariant) string {
+	switch variant {
+	case SuccessVerifyEmailPage:
+		return "Your email has been verified."
+	case FailVerifyEmailPage:
+		return "Hmmm... something went wrong"
+	}
+
+	return "Oops... Something went wrong"
+}
+
+func getCardContent(variant VerifyEmailPageVariant) string {
+	switch variant {
+	case SuccessVerifyEmailPage:
+		return "You can close this window now."
+	case FailVerifyEmailPage:
+		return "Please try again by requesting a new verification email.\nIf the problem persists, please try again later."
+	}
+
+	return "Oops... Something went wrong"
+}
