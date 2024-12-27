@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"KonferCA/SPUR/internal/v1/v1_common"
 	"bytes"
 	"fmt"
 	"mime/multipart"
@@ -15,7 +16,7 @@ import (
 
 func TestFileCheck(t *testing.T) {
 	e := echo.New()
-	
+
 	handler := func(c echo.Context) error {
 		return c.String(http.StatusOK, "success")
 	}
@@ -24,19 +25,19 @@ func TestFileCheck(t *testing.T) {
 	createMultipartRequest := func(filename string, content []byte, contentType string) (*http.Request, error) {
 		body := new(bytes.Buffer)
 		writer := multipart.NewWriter(body)
-		
+
 		// Create form file with headers
 		h := make(textproto.MIMEHeader)
 		h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", filename))
 		if contentType != "" {
 			h.Set("Content-Type", contentType)
 		}
-		
+
 		part, err := writer.CreatePart(h)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		part.Write(content)
 		writer.Close()
 
@@ -48,7 +49,7 @@ func TestFileCheck(t *testing.T) {
 
 	// Sample file contents with proper headers
 	jpegHeader := []byte{
-		0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 
+		0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46,
 		0x49, 0x46, 0x00, 0x01,
 	}
 	pngHeader := []byte{
@@ -78,7 +79,7 @@ func TestFileCheck(t *testing.T) {
 				StrictValidation: true,
 			},
 			filename:       "test.jpg",
-			content:       append(jpegHeader, []byte("dummy content")...),
+			content:        append(jpegHeader, []byte("dummy content")...),
 			contentType:    "image/jpeg",
 			expectedStatus: http.StatusOK,
 		},
@@ -91,7 +92,7 @@ func TestFileCheck(t *testing.T) {
 				StrictValidation: false,
 			},
 			filename:       "test.png",
-			content:       append(pngHeader, []byte("dummy content")...),
+			content:        append(pngHeader, []byte("dummy content")...),
 			expectedStatus: http.StatusOK,
 		},
 		{
@@ -103,7 +104,7 @@ func TestFileCheck(t *testing.T) {
 				StrictValidation: true,
 			},
 			filename:       "test.jpg",
-			content:       append(pngHeader, []byte("dummy content")...),
+			content:        append(pngHeader, []byte("dummy content")...),
 			contentType:    "image/jpeg",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "doesn't match actual content type",
@@ -116,7 +117,7 @@ func TestFileCheck(t *testing.T) {
 				AllowedTypes: []string{"image/jpeg"},
 			},
 			filename:       "large.jpg",
-			content:       append(jpegHeader, bytes.Repeat([]byte("a"), 150)...),
+			content:        append(jpegHeader, bytes.Repeat([]byte("a"), 150)...),
 			contentType:    "image/jpeg",
 			expectedStatus: http.StatusRequestEntityTooLarge,
 			expectedError:  "file size",
@@ -129,7 +130,7 @@ func TestFileCheck(t *testing.T) {
 				AllowedTypes: []string{"image/jpeg"},
 			},
 			filename:       "small.jpg",
-			content:       append(jpegHeader, []byte("tiny")...),
+			content:        append(jpegHeader, []byte("tiny")...),
 			contentType:    "image/jpeg",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "below minimum required size",
@@ -142,7 +143,7 @@ func TestFileCheck(t *testing.T) {
 				AllowedTypes: []string{"image/jpeg", "image/png"},
 			},
 			filename:       "document.pdf",
-			content:       append(pdfHeader, []byte("dummy content")...),
+			content:        append(pdfHeader, []byte("dummy content")...),
 			contentType:    "application/pdf",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "file type",
@@ -155,7 +156,7 @@ func TestFileCheck(t *testing.T) {
 				AllowedTypes: []string{"image/jpeg", "image/png", "application/pdf"},
 			},
 			filename:       "document.pdf",
-			content:       append(pdfHeader, []byte("dummy content")...),
+			content:        append(pdfHeader, []byte("dummy content")...),
 			contentType:    "application/pdf",
 			expectedStatus: http.StatusOK,
 		},
@@ -168,7 +169,7 @@ func TestFileCheck(t *testing.T) {
 				StrictValidation: true,
 			},
 			filename:       "document.pdf",
-			content:       append(pdfHeader, []byte("dummy content")...),
+			content:        append(pdfHeader, []byte("dummy content")...),
 			contentType:    "application/pdf",
 			expectedStatus: http.StatusOK,
 		},
@@ -186,7 +187,7 @@ func TestFileCheck(t *testing.T) {
 			err = h(c)
 
 			if tt.expectedStatus != http.StatusOK {
-				he, ok := err.(*echo.HTTPError)
+				he, ok := err.(*v1_common.APIError)
 				assert.True(t, ok)
 				assert.Equal(t, tt.expectedStatus, he.Code)
 				if tt.expectedError != "" {
@@ -208,9 +209,10 @@ func TestFileCheck(t *testing.T) {
 			MinSize: 5,
 			MaxSize: 100,
 		})(handler)
-		
+
 		err := h(c)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, rec.Code)
 	})
-} 
+}
+

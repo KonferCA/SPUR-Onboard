@@ -5,14 +5,15 @@ meta {
 }
 
 post {
-  url: {{URL}}/auth/signup
+  url: http://localhost:3000/user
   body: json
   auth: none
 }
 
 body:json {
   {
-    "email": "",
+    "email": "my@mail.com",
+    "username": "name",
     "password": "mysecurepassword",
     "role": "startup_owner"
   }
