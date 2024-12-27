@@ -17,6 +17,18 @@ import (
     "github.com/stretchr/testify/assert"
 )
 
+/*
+ * TestProjectEndpoints tests the complete project lifecycle and error cases
+ * for the project-related API endpoints. It covers:
+ * - Project creation
+ * - Project listing
+ * - Project retrieval
+ * - Project submission including answering questions
+ * - Error handling for various invalid scenarios
+ *
+ * The test creates a verified user and company first, then runs
+ * through the project workflows using that test data.
+ */
 func TestProjectEndpoints(t *testing.T) {
     // Setup test environment
     setupEnv()
@@ -86,6 +98,12 @@ func TestProjectEndpoints(t *testing.T) {
     var projectID string
 
     t.Run("Create Project", func(t *testing.T) {
+        /*
+         * "Create Project" test verifies:
+         * - Project creation with valid data
+         * - Response contains valid project ID
+         * - Project is associated with correct company
+         */
         projectBody := fmt.Sprintf(`{
             "company_id": "%s",
             "title": "Test Project",
@@ -115,6 +133,11 @@ func TestProjectEndpoints(t *testing.T) {
     })
 
     t.Run("List Projects", func(t *testing.T) {
+        /*
+         * "List Projects" test verifies:
+         * - Endpoint returns 200 OK
+         * - User can see their projects
+         */
         req := httptest.NewRequest(http.MethodGet, "/api/v1/project", nil)
         req.Header.Set("Authorization", "Bearer "+accessToken)
         rec := httptest.NewRecorder()
@@ -124,6 +147,11 @@ func TestProjectEndpoints(t *testing.T) {
     })
 
     t.Run("Get Project", func(t *testing.T) {
+        /*
+         * "Get Project" test verifies:
+         * - Single project retrieval works
+         * - Project details are accessible
+         */
         path := fmt.Sprintf("/api/v1/project/%s", projectID)
         t.Logf("Getting project at path: %s", path)
         
@@ -138,6 +166,16 @@ func TestProjectEndpoints(t *testing.T) {
     })
 
     t.Run("Submit Project", func(t *testing.T) {
+        /*
+         * "Submit Project" test verifies the complete submission flow:
+         * 1. Fetches questions/answers for the project
+         * 2. Updates each answer with valid data:
+         *    - Website URL for company website
+         *    - Detailed product description (>100 chars)
+         *    - Value proposition description
+         * 3. Submits the completed project
+         * 4. Verifies project status changes to 'pending'
+         */
         // First get the questions/answers
         path := fmt.Sprintf("/api/v1/project/%s/answers", projectID)
         req := httptest.NewRequest(http.MethodGet, path, nil)
@@ -217,7 +255,16 @@ func TestProjectEndpoints(t *testing.T) {
         assert.Equal(t, "pending", submitResp.Status)
     })
 
-    // Error cases
+    /*
+     * "Error Cases" test suite verifies proper error handling:
+     * - Invalid project ID returns 404
+     * - Unauthorized access returns 401
+     * - Short answers fail validation
+     * - Invalid URL format fails validation
+     * 
+     * Uses real question/answer IDs from the project to ensure
+     * accurate validation testing.
+     */
     t.Run("Error Cases", func(t *testing.T) {
         // First get the questions/answers to get real IDs
         path := fmt.Sprintf("/api/v1/project/%s/answers", projectID)

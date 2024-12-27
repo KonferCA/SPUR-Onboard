@@ -1,5 +1,11 @@
 package v1_projects
 
+/*
+ * Package v1_projects provides validation utilities for project answers.
+ * This file implements the validation rules and message formatting
+ * for project question answers.
+ */
+
 import (
     "net/url"
     "strings"
@@ -7,12 +13,30 @@ import (
     "regexp"
 )
 
+/*
+ * validationType defines a single validation rule.
+ * Each validation has:
+ * - Name: Rule identifier (e.g., "url", "email")
+ * - Validate: Function to check if answer meets rule
+ * - Message: Human-readable error message
+ */
 type validationType struct {
     Name      string
     Validate  func(string, string) bool  // (answer, param)
     Message   string
 }
 
+/*
+ * validationTypes defines all available validation rules.
+ * Each rule implements specific validation logic:
+ * 
+ * url: Validates URL format using url.ParseRequestURI
+ * email: Checks for @ and . characters
+ * phone: Verifies at least 10 numeric digits
+ * min: Enforces minimum string length
+ * max: Enforces maximum string length
+ * regex: Matches against custom pattern
+ */
 var validationTypes = []validationType{
     {
         Name: "url",
@@ -77,6 +101,14 @@ var validationTypes = []validationType{
     },
 }
 
+/*
+ * parseValidationRule splits a validation rule string into name and parameter.
+ * 
+ * Examples:
+ * - "min=100" returns ("min", "100")
+ * - "url" returns ("url", "")
+ * - "regex=^[0-9]+$" returns ("regex", "^[0-9]+$")
+ */
 func parseValidationRule(rule string) (name string, param string) {
     parts := strings.SplitN(rule, "=", 2)
     name = strings.TrimSpace(parts[0])
@@ -86,6 +118,17 @@ func parseValidationRule(rule string) (name string, param string) {
     return
 }
 
+/*
+ * isValidAnswer checks if an answer meets all validation rules.
+ * 
+ * Parameters:
+ * - answer: The user's answer text
+ * - validations: Comma-separated list of rules (e.g., "min=100,url")
+ * 
+ * Returns:
+ * - true if answer passes all validations
+ * - false if any validation fails
+ */
 func isValidAnswer(answer string, validations string) bool {
     rules := strings.Split(validations, ",")
     
@@ -101,6 +144,19 @@ func isValidAnswer(answer string, validations string) bool {
     return true
 }
 
+/*
+ * getValidationMessage returns human-readable error for failed validation.
+ * 
+ * Parameters:
+ * - validations: Comma-separated list of rules
+ * 
+ * Returns:
+ * - Formatted error message with parameters substituted
+ * - Generic "Invalid input" if validation type not found
+ * 
+ * Example:
+ * For "min=100", returns "Must be at least 100 characters long"
+ */
 func getValidationMessage(validations string) string {
     rules := strings.Split(validations, ",")
     

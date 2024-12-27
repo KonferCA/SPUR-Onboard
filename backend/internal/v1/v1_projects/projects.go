@@ -15,9 +15,18 @@ import (
 	"net/http"
 )
 
+/*
+ * Package v1_projects implements the project management endpoints for the SPUR API.
+ * It handles project creation, retrieval, document management, and submission workflows.
+ */
+
+/*
+ * ValidationError represents a validation failure for a project question.
+ * Used when validating project submissions and answers.
+ */
 type ValidationError struct {
-	Question string `json:"question"`
-	Message  string `json:"message"`
+	Question string `json:"question"` // The question that failed validation
+	Message  string `json:"message"`  // Validation error message
 }
 
 func (h *Handler) handleCreateProject(c echo.Context) error {
@@ -87,6 +96,15 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 	})
 }
 
+/*
+ * handleGetProjects retrieves all projects for a company.
+ * 
+ * Security:
+ * - Requires authenticated user
+ * - Only returns projects for user's company
+ * 
+ * Returns array of ProjectResponse with basic project details
+ */
 func (h *Handler) handleGetProjects(c echo.Context) error {
 	// Get user ID from context
 	userID, err := v1_common.GetUserID(c)
@@ -127,6 +145,13 @@ func (h *Handler) handleGetProjects(c echo.Context) error {
 	return c.JSON(200, response)
 }
 
+/*
+ * handleGetProject retrieves a single project by ID.
+ * 
+ * Security:
+ * - Verifies project belongs to user's company
+ * - Returns 404 if project not found or unauthorized
+ */
 func (h *Handler) handleGetProject(c echo.Context) error {
 	// Get user ID from context
 	userID, err := v1_common.GetUserID(c)
@@ -171,7 +196,16 @@ func (h *Handler) handleGetProject(c echo.Context) error {
 	})
 }
 
-
+/*
+ * handlePatchProjectAnswer updates an answer for a project question.
+ * 
+ * Validation:
+ * - Validates answer content against question rules
+ * - Returns validation errors if content invalid
+ * 
+ * Security:
+ * - Verifies project belongs to user's company
+ */
 func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 	// Get project ID from URL
 	projectID := c.Param("id")
@@ -237,6 +271,17 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 	})
 }
 
+/*
+ * handleGetProjectAnswers retrieves all answers for a project.
+ * 
+ * Returns:
+ * - Question ID and content
+ * - Current answer text
+ * - Question section
+ * 
+ * Security:
+ * - Verifies project belongs to user's company
+ */
 func (h *Handler) handleGetProjectAnswers(c echo.Context) error {
 	// Get project ID from URL
 	projectID := c.Param("id")
@@ -288,6 +333,19 @@ func (h *Handler) handleGetProjectAnswers(c echo.Context) error {
 	})
 }
 
+/*
+ * handleUploadProjectDocument handles file uploads for a project.
+ * 
+ * Flow:
+ * 1. Validates file presence
+ * 2. Verifies project ownership
+ * 3. Uploads file to S3
+ * 4. Creates document record in database
+ * 5. Returns document details
+ * 
+ * Cleanup:
+ * - Deletes S3 file if database insert fails
+ */
 func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
 	// Get file from request
 	file, err := c.FormFile("file")
@@ -367,6 +425,17 @@ func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
 	})
 }
 
+/*
+ * handleGetProjectDocuments retrieves all documents for a project.
+ * 
+ * Returns:
+ * - Document ID, name, URL
+ * - Section assignment
+ * - Creation/update timestamps
+ * 
+ * Security:
+ * - Verifies project belongs to user's company
+ */
 func (h *Handler) handleGetProjectDocuments(c echo.Context) error {
 	// Get user ID from context
 	userID, err := v1_common.GetUserID(c)
@@ -419,6 +488,17 @@ func (h *Handler) handleGetProjectDocuments(c echo.Context) error {
 	})
 }
 
+/*
+ * handleDeleteProjectDocument removes a document from a project.
+ * 
+ * Flow:
+ * 1. Verifies document ownership
+ * 2. Deletes file from S3
+ * 3. Removes database record
+ * 
+ * Security:
+ * - Verifies document belongs to user's project
+ */
 func (h *Handler) handleDeleteProjectDocument(c echo.Context) error {
 	// Get user ID from context
 	userID, err := v1_common.GetUserID(c)
@@ -481,6 +561,14 @@ func (h *Handler) handleDeleteProjectDocument(c echo.Context) error {
 	})
 }
 
+/*
+ * handleListCompanyProjects lists all projects for a company.
+ * Similar to handleGetProjects but with different response format.
+ * 
+ * Returns:
+ * - Array of projects under "projects" key
+ * - Basic project details including status
+ */
 func (h *Handler) handleListCompanyProjects(c echo.Context) error {
 	userID, err := v1_common.GetUserID(c)
 	if err != nil {
@@ -522,6 +610,20 @@ func (h *Handler) handleListCompanyProjects(c echo.Context) error {
 	})
 }
 
+/*
+ * handleSubmitProject handles project submission for review.
+ * 
+ * Validation:
+ * 1. Verifies all required questions answered
+ * 2. Validates all answers against rules
+ * 3. Returns validation errors if any fail
+ * 
+ * Flow:
+ * 1. Collects all project answers
+ * 2. Validates against question rules
+ * 3. Updates project status to 'pending'
+ * 4. Returns success with new status
+ */
 func (h *Handler) handleSubmitProject(c echo.Context) error {
 	// Get user ID and verify ownership first
 	userID, err := v1_common.GetUserID(c)
