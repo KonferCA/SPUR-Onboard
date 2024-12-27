@@ -5,6 +5,7 @@ type VerifyEmailPageVariant string
 const (
 	SuccessVerifyEmailPage VerifyEmailPageVariant = "success"
 	FailVerifyEmailPage    VerifyEmailPageVariant = "fail"
+	InternalErrorEmailPage VerifyEmailPageVariant = "internal"
 )
 
 css main() {
@@ -105,7 +106,7 @@ templ VerifyEmailPage(variant VerifyEmailPageVariant, url string, details string
 						}
 					</div>
 					<div class={ cardFooter() }>
-						if variant == SuccessVerifyEmailPage {
+						if variant != InternalErrorEmailPage {
 							<a href={ templ.SafeURL(url) } class={ button() }>Go to Dashboard</a>
 						}
 					</div>

@@ -13,6 +13,7 @@ type VerifyEmailPageVariant string
 const (
 	SuccessVerifyEmailPage VerifyEmailPageVariant = "success"
 	FailVerifyEmailPage    VerifyEmailPageVariant = "fail"
+	InternalErrorEmailPage VerifyEmailPageVariant = "internal"
 )
 
 func main() templ.CSSClass {
@@ -137,7 +138,7 @@ func VerifyEmailPage(variant VerifyEmailPageVariant, url string, details string)
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(getTitle(variant))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/verify_email_page.templ`, Line: 69, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/verify_email_page.templ`, Line: 70, Col: 29}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -194,7 +195,7 @@ func VerifyEmailPage(variant VerifyEmailPageVariant, url string, details string)
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(getCardTitle(variant))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/verify_email_page.templ`, Line: 90, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/verify_email_page.templ`, Line: 91, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -281,7 +282,7 @@ func VerifyEmailPage(variant VerifyEmailPageVariant, url string, details string)
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(getCardContent(variant))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/verify_email_page.templ`, Line: 102, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/verify_email_page.templ`, Line: 103, Col: 35}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -299,7 +300,7 @@ func VerifyEmailPage(variant VerifyEmailPageVariant, url string, details string)
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(details)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/verify_email_page.templ`, Line: 104, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/verify_email_page.templ`, Line: 105, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -336,7 +337,7 @@ func VerifyEmailPage(variant VerifyEmailPageVariant, url string, details string)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if variant == SuccessVerifyEmailPage {
+		if variant != InternalErrorEmailPage {
 			var templ_7745c5c3_Var18 = []any{button()}
 			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var18...)
 			if templ_7745c5c3_Err != nil {
