@@ -1,0 +1,33 @@
+meta {
+  name: Submit Project
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/project/{{project_id}}/submit
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+}
+
+tests {
+  test("should submit project successfully", function() {
+    expect(res.status).to.equal(200);
+    
+    // Check response properties
+    expect(res.body).to.have.property("message");
+    expect(res.body).to.have.property("status");
+    
+    // Verify values
+    expect(res.body.message).to.equal("Project submitted successfully");
+    expect(res.body.status).to.equal("pending");
+    
+    // Check warnings array exists (might be empty)
+    expect(res.body).to.have.property("warnings");
+    expect(res.body.warnings).to.be.an("array");
+  });
+}

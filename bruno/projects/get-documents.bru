@@ -1,0 +1,33 @@
+meta {
+  name: Get Project Documents
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/project/{{project_id}}/documents
+}
+
+headers {
+  Authorization: Bearer {{access_token}}
+}
+
+tests {
+  // Check status code
+  res.status === 200
+  
+  // Check response structure
+  res.body.documents !== undefined
+  Array.isArray(res.body.documents)
+  
+  // If documents exist, verify first document structure
+  if (res.body.documents.length > 0) {
+    const doc = res.body.documents[0]
+    doc.id !== undefined
+    doc.name !== undefined
+    doc.url !== undefined
+    doc.section !== undefined
+    doc.created_at !== undefined
+    doc.updated_at !== undefined
+  }
+}
