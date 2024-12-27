@@ -39,16 +39,20 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 	}
 
 	// Start a transaction
-	tx, err := h.server.GetDB().Begin(c.Request().Context())
+	ctx := c.Request().Context()
+	tx, err := h.server.GetDB().Begin(ctx)
 	if err != nil {
 		return v1_common.Fail(c, 500, "Failed to start transaction", err)
 	}
-	defer tx.Rollback(c.Request().Context())
+	defer tx.Rollback(ctx) // Will be no-op if committed
 
-	// Create project
+	// Create queries with transaction
+	qtx := h.server.GetQueries().WithTx(tx)
+
+	// Create project within transaction
 	now := time.Now().Unix()
-	description := req.Description // Create a variable to get address of
-	project, err := h.server.GetQueries().CreateProject(c.Request().Context(), db.CreateProjectParams{
+	description := req.Description
+	project, err := qtx.CreateProject(ctx, db.CreateProjectParams{
 		ID:          uuid.New().String(),
 		CompanyID:   company.ID,
 		Title:       req.Title,
@@ -61,21 +65,18 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 		return v1_common.Fail(c, 500, "Failed to create project", err)
 	}
 
-	// Create empty answers for all questions
-	_, err = h.server.GetQueries().CreateProjectAnswers(c.Request().Context(), project.ID)
+	// Create empty answers within same transaction
+	_, err = qtx.CreateProjectAnswers(ctx, project.ID)
 	if err != nil {
 		return v1_common.Fail(c, 500, "Failed to create project answers", err)
 	}
 
-	if err := tx.Commit(c.Request().Context()); err != nil {
+	// Commit the transaction
+	if err := tx.Commit(ctx); err != nil {
 		return v1_common.Fail(c, 500, "Failed to commit transaction", err)
 	}
 
-	description = ""
-	if project.Description != nil {
-		description = *project.Description
-	}
-
+	// Return success response
 	return c.JSON(200, ProjectResponse{
 		ID:          project.ID,
 		Title:       project.Title,
@@ -267,6 +268,11 @@ func (h *Handler) handleGetProjectAnswers(c echo.Context) error {
 }
 
 func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
+	// Get file from request
+	file, err := c.FormFile("file")
+	if err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "No file provided", err)
+	}
 	// Get user ID from context
 	userID, err := v1_common.GetUserID(c)
 	if err != nil {
@@ -292,20 +298,6 @@ func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
 	})
 	if err != nil {
 		return v1_common.Fail(c, 404, "Project not found", err)
-	}
-
-	// Get the file from form
-	file, err := c.FormFile("file")
-	if err != nil {
-		return v1_common.Fail(c, 400, "File is required", err)
-	}
-
-	// Parse other form fields
-	var req UploadDocumentRequest
-	req.Name = c.FormValue("name")
-	req.Section = c.FormValue("section")
-	if req.Name == "" || req.Section == "" {
-		return v1_common.Fail(c, 400, "Name and section are required", nil)
 	}
 
 	// Open the file
@@ -334,9 +326,9 @@ func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
 	// Save document record in database
 	doc, err := h.server.GetQueries().CreateProjectDocument(c.Request().Context(), db.CreateProjectDocumentParams{
 		ProjectID: projectID,
-		Name:      req.Name,
+		Name:      c.FormValue("name"),
 		Url:       fileURL,
-		Section:   req.Section,
+		Section:   c.FormValue("section"),
 	})
 	if err != nil {
 		// Try to cleanup the uploaded file if database insert fails
