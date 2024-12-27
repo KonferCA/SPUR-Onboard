@@ -480,9 +480,6 @@ func TestServer(t *testing.T) {
 		})
 
 		t.Run("/auth/verify-email - 400 Bad Request - deny expired email token", func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-			defer cancel()
-
 			// Create user with unique email
 			email := fmt.Sprintf("test-verify-email-expired-%s@mail.com", uuid.New().String())
 			password := "testpassword123"
@@ -501,6 +498,10 @@ func TestServer(t *testing.T) {
 			rec := httptest.NewRecorder()
 			s.Echo.ServeHTTP(rec, req)
 			assert.Equal(t, http.StatusCreated, rec.Code)
+
+			// Create context for database operations
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+			defer cancel()
 
 			// Get user from database
 			var user db.User
@@ -531,9 +532,6 @@ func TestServer(t *testing.T) {
 		})
 
 		t.Run("/api/v1/auth/logout - 200 OK - successfully logout", func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-			defer cancel()
-
 			// Register user with unique email
 			email := fmt.Sprintf("test-logout-%s@mail.com", uuid.New().String())
 			password := "testpassword123"
