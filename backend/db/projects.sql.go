@@ -395,6 +395,27 @@ func (q *Queries) GetProjectsByCompanyID(ctx context.Context, companyID string) 
 	return items, nil
 }
 
+const getQuestionByAnswerID = `-- name: GetQuestionByAnswerID :one
+SELECT q.id, q.question, q.section, q.required, q.validations, q.created_at, q.updated_at FROM project_questions q
+JOIN project_answers a ON a.question_id = q.id
+WHERE a.id = $1
+`
+
+func (q *Queries) GetQuestionByAnswerID(ctx context.Context, id string) (ProjectQuestion, error) {
+	row := q.db.QueryRow(ctx, getQuestionByAnswerID, id)
+	var i ProjectQuestion
+	err := row.Scan(
+		&i.ID,
+		&i.Question,
+		&i.Section,
+		&i.Required,
+		&i.Validations,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listCompanyProjects = `-- name: ListCompanyProjects :many
 SELECT projects.id, projects.company_id, projects.title, projects.description, projects.status, projects.created_at, projects.updated_at FROM projects
 WHERE company_id = $1

@@ -119,3 +119,8 @@ SET
     status = $1,
     updated_at = extract(epoch from now())
 WHERE id = $2; 
+
+-- name: GetQuestionByAnswerID :one
+SELECT q.* FROM project_questions q
+JOIN project_answers a ON a.question_id = q.id
+WHERE a.id = $1; 

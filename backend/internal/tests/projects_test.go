@@ -14,7 +14,6 @@ import (
 
     "KonferCA/SPUR/db"
     "KonferCA/SPUR/internal/server"
-    "KonferCA/SPUR/internal/v1/v1_common"
     "github.com/stretchr/testify/assert"
 )
 
@@ -171,9 +170,9 @@ func TestProjectEndpoints(t *testing.T) {
             case "Company website":
                 answer = "https://example.com"
             case "What is the core product or service, and what problem does it solve?":
-                answer = "Our product is a blockchain-based authentication system that solves identity verification issues."
+                answer = "Our product is a revolutionary blockchain-based authentication system that solves critical identity verification issues in the digital age. We provide a secure, scalable solution that eliminates fraud while maintaining user privacy and compliance with international regulations. Our system uses advanced cryptography and distributed ledger technology to ensure tamper-proof identity verification."
             case "What is the unique value proposition?":
-                answer = "We provide secure, decentralized identity verification that's faster and more reliable than traditional methods."
+                answer = "We provide secure, decentralized identity verification that's faster and more reliable than traditional methods. Our solution reduces verification time by 90% while increasing security and reducing costs for businesses. We are the only solution that combines biometric verification with blockchain immutability at scale."
             }
 
             // Patch the answer
@@ -220,6 +219,39 @@ func TestProjectEndpoints(t *testing.T) {
 
     // Error cases
     t.Run("Error Cases", func(t *testing.T) {
+        // First get the questions/answers to get real IDs
+        path := fmt.Sprintf("/api/v1/project/%s/answers", projectID)
+        req := httptest.NewRequest(http.MethodGet, path, nil)
+        req.Header.Set("Authorization", "Bearer "+accessToken)
+        rec := httptest.NewRecorder()
+        s.GetEcho().ServeHTTP(rec, req)
+
+        var answersResp struct {
+            Answers []struct {
+                ID         string `json:"id"`
+                QuestionID string `json:"question_id"`
+                Question   string `json:"question"`
+            } `json:"answers"`
+        }
+        err := json.NewDecoder(rec.Body).Decode(&answersResp)
+        assert.NoError(t, err)
+
+        // Find answer ID for the core product question (which has min length validation)
+        var coreQuestionAnswerID string
+        var websiteQuestionAnswerID string
+        for _, a := range answersResp.Answers {
+            if strings.Contains(a.Question, "core product") {
+                coreQuestionAnswerID = a.ID
+            }
+            if strings.Contains(a.Question, "website") {
+                websiteQuestionAnswerID = a.ID
+            }
+        }
+
+        // Ensure we found the questions we need
+        assert.NotEmpty(t, coreQuestionAnswerID, "Should find core product question")
+        assert.NotEmpty(t, websiteQuestionAnswerID, "Should find website question")
+
         tests := []struct {
             name           string
             method        string
@@ -249,6 +281,28 @@ func TestProjectEndpoints(t *testing.T) {
                 expectedCode:  http.StatusUnauthorized,
                 expectedError: "missing authorization header",
             },
+            {
+                name:   "Invalid Answer Length",
+                method: http.MethodPatch,
+                path:   fmt.Sprintf("/api/v1/project/%s/answers", projectID),
+                body:   fmt.Sprintf(`{"content": "too short", "answer_id": "%s"}`, coreQuestionAnswerID),
+                setupAuth: func(req *http.Request) {
+                    req.Header.Set("Authorization", "Bearer "+accessToken)
+                },
+                expectedCode:  http.StatusBadRequest,
+                expectedError: "Must be at least",
+            },
+            {
+                name:   "Invalid URL Format",
+                method: http.MethodPatch,
+                path:   fmt.Sprintf("/api/v1/project/%s/answers", projectID),
+                body:   fmt.Sprintf(`{"content": "not-a-url", "answer_id": "%s"}`, websiteQuestionAnswerID),
+                setupAuth: func(req *http.Request) {
+                    req.Header.Set("Authorization", "Bearer "+accessToken)
+                },
+                expectedCode:  http.StatusBadRequest,
+                expectedError: "Must be a valid URL",
+            },
         }
 
         for _, tc := range tests {
@@ -269,10 +323,21 @@ func TestProjectEndpoints(t *testing.T) {
 
                 assert.Equal(t, tc.expectedCode, rec.Code)
 
-                var errResp v1_common.APIError
+                var errResp struct {
+                    Message string `json:"message"`
+                    ValidationErrors []struct {
+                        Question string `json:"question"`
+                        Message  string `json:"message"`
+                    } `json:"validation_errors"`
+                }
                 err := json.NewDecoder(rec.Body).Decode(&errResp)
                 assert.NoError(t, err)
-                assert.Contains(t, errResp.Message, tc.expectedError)
+
+                if len(errResp.ValidationErrors) > 0 {
+                    assert.Contains(t, errResp.ValidationErrors[0].Message, tc.expectedError)
+                } else {
+                    assert.Contains(t, errResp.Message, tc.expectedError)
+                }
             })
         }
     })

@@ -197,6 +197,27 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
+	// Get the question for this answer to check validations
+	question, err := h.server.GetQueries().GetQuestionByAnswerID(c.Request().Context(), req.AnswerID)
+	if err != nil {
+		return v1_common.Fail(c, 404, "Question not found", err)
+	}
+
+	// Validate the answer if validations exist
+	if question.Validations != nil && *question.Validations != "" {
+		if !isValidAnswer(req.Content, *question.Validations) {
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"message": "Validation failed",
+				"validation_errors": []ValidationError{
+					{
+						Question: question.Question,
+						Message:  getValidationMessage(*question.Validations),
+					},
+				},
+			})
+		}
+	}
+
 	// Update the answer
 	_, err = h.server.GetQueries().UpdateProjectAnswer(c.Request().Context(), db.UpdateProjectAnswerParams{
 		Answer:    req.Content,
