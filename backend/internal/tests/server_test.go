@@ -36,6 +36,17 @@ func TestServer(t *testing.T) {
 	s, err := server.New()
 	assert.Nil(t, err)
 
+	// Add cleanup after all tests
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+		defer cancel()
+		// Remove any test users that might be left
+		_, err := s.DBPool.Exec(ctx, "DELETE FROM users WHERE email LIKE 'test-%@mail.com'")
+		if err != nil {
+			t.Logf("Failed to cleanup test users: %v", err)
+		}
+	})
+
 	t.Run("Test API V1 Health Check Route", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/health", nil)
 		rec := httptest.NewRecorder()
@@ -54,7 +65,7 @@ func TestServer(t *testing.T) {
 
 	t.Run("Test API V1 Auth Routes", func(t *testing.T) {
 		t.Run("/auth/ami-verified - 200 OK", func(t *testing.T) {
-			email := "test@mail.com"
+			email := fmt.Sprintf("test-ami-verified-%s@mail.com", uuid.New().String())
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer cancel()
 
@@ -111,8 +122,8 @@ func TestServer(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
 
-			// create request body
-			email := "test@mail.com"
+			// create request body with unique email
+			email := fmt.Sprintf("test-register-%s@mail.com", uuid.New().String())
 			password := "mypassword"
 			reqBody := map[string]string{
 				"email":    email,
@@ -124,6 +135,7 @@ func TestServer(t *testing.T) {
 			reader := bytes.NewReader(reqBodyBytes)
 			req := httptest.NewRequest(http.MethodPost, url, reader)
 			req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			
 			rec := httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)
@@ -205,8 +217,8 @@ func TestServer(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
 
-			// create request body
-			email := "test@mail.com"
+			// create request body with unique email
+			email := fmt.Sprintf("test-verify-%s@mail.com", uuid.New().String())
 			password := "mypassword"
 
 			reqBody := map[string]string{
@@ -276,19 +288,35 @@ func TestServer(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
 
-			// create new user to generate jwt
-			userID, email, _, err := createTestUser(ctx, s)
-			defer removeTestUser(ctx, email, s)
+			// Create unique email
+			email := fmt.Sprintf("test-verify-expire-%s@mail.com", uuid.New().String())
+			password := "testpassword123"
 
-			salt, err := getTestUserTokenSalt(ctx, email, s)
+			// Register user first
+			reqBody := map[string]string{
+				"email":    email,
+				"password": password,
+			}
+			reqBodyBytes, err := json.Marshal(reqBody)
 			assert.NoError(t, err)
 
-			// this way we can control the exp since the inner function is not exported
-			// set the time to expired in two days
+			reader := bytes.NewReader(reqBodyBytes)
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", reader)
+			req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusCreated, rec.Code)
+
+			// Get user from database
+			var user db.User
+			err = s.DBPool.QueryRow(ctx, "SELECT id, role, token_salt FROM users WHERE email = $1", email).Scan(&user.ID, &user.Role, &user.TokenSalt)
+			assert.NoError(t, err)
+
+			// Create about-to-expire refresh token
 			exp := time.Now().UTC().Add(2 * 24 * time.Hour)
 			claims := jwt.JWTClaims{
-				UserID:    userID,
-				Role:      db.UserRoleStartupOwner,
+				UserID:    user.ID,
+				Role:      user.Role,
 				TokenType: jwt.REFRESH_TOKEN_TYPE,
 				RegisteredClaims: golangJWT.RegisteredClaims{
 					ExpiresAt: golangJWT.NewNumericDate(exp),
@@ -297,8 +325,7 @@ func TestServer(t *testing.T) {
 			}
 
 			token := golangJWT.NewWithClaims(golangJWT.SigningMethodHS256, claims)
-			// combine base secret with user's salt
-			secret := append([]byte(os.Getenv("JWT_SECRET")), salt...)
+			secret := append([]byte(os.Getenv("JWT_SECRET")), user.TokenSalt...)
 			signed, err := token.SignedString(secret)
 			assert.NoError(t, err)
 
@@ -307,18 +334,17 @@ func TestServer(t *testing.T) {
 				Value: signed,
 			}
 
-			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
+			req = httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
 			req.AddCookie(&cookie)
-			rec := httptest.NewRecorder()
+			rec = httptest.NewRecorder()
 			s.Echo.ServeHTTP(rec, req)
 
 			assert.Equal(t, http.StatusOK, rec.Code)
 
-			// should return an access token
+			// Verify response
 			var resBody v1_auth.AuthResponse
 			err = json.Unmarshal(rec.Body.Bytes(), &resBody)
 			assert.NoError(t, err)
-
 			assert.NotEmpty(t, resBody.AccessToken)
 
 			// should include a new refresh token cookie
@@ -333,6 +359,10 @@ func TestServer(t *testing.T) {
 
 			assert.NotNil(t, refreshCookie)
 			assert.Equal(t, refreshCookie.Name, v1_auth.COOKIE_REFRESH_TOKEN)
+
+			// Cleanup
+			err = removeTestUser(ctx, email, s)
+			assert.NoError(t, err)
 		})
 
 		t.Run("/api/v1/auth/verify - 401 UNAUTHORIZED - missing cookie in request", func(t *testing.T) {
@@ -383,19 +413,40 @@ func TestServer(t *testing.T) {
 		t.Run("/auth/verify-email - 200 OK - valid email token", func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer cancel()
-			userID, email, _, err := createTestUser(ctx, s)
-			assert.Nil(t, err)
-			defer removeTestUser(ctx, email, s)
 
-			// generate a test email token
+			// Create user with unique email
+			email := fmt.Sprintf("test-verify-email-%s@mail.com", uuid.New().String())
+			password := "testpassword123"
+
+			// Register user first
+			reqBody := map[string]string{
+				"email":    email,
+				"password": password,
+			}
+			reqBodyBytes, err := json.Marshal(reqBody)
+			assert.NoError(t, err)
+
+			reader := bytes.NewReader(reqBodyBytes)
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", reader)
+			req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusCreated, rec.Code)
+
+			// Get user from database
+			var user db.User
+			err = s.DBPool.QueryRow(ctx, "SELECT id FROM users WHERE email = $1", email).Scan(&user.ID)
+			assert.NoError(t, err)
+
+			// Generate test email token
 			exp := time.Now().Add(time.Minute * 30).UTC()
-			tokenID, err := createTestEmailToken(ctx, userID, exp, s)
+			tokenID, err := createTestEmailToken(ctx, user.ID, exp, s)
 			assert.Nil(t, err)
 			tokenStr, err := jwt.GenerateVerifyEmailToken(email, tokenID, exp)
 			assert.Nil(t, err)
 
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/auth/verify-email?token=%s", tokenStr), nil)
-			rec := httptest.NewRecorder()
+			req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/auth/verify-email?token=%s", tokenStr), nil)
+			rec = httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)
 			assert.Equal(t, http.StatusOK, rec.Code)
@@ -407,12 +458,17 @@ func TestServer(t *testing.T) {
 			err = json.Unmarshal(resBodyBytes, &resBody)
 			assert.Nil(t, err)
 			assert.Equal(t, resBody["verified"], true)
+
+			// Cleanup
+			err = removeTestUser(ctx, email, s)
+			assert.NoError(t, err)
 		})
 
 		t.Run("/auth/verify-email - 400 Bad Request - missing token query parameter", func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify-email", nil)
 			rec := httptest.NewRecorder()
 
+			
 			s.Echo.ServeHTTP(rec, req)
 
 			var apiErr v1_common.APIError
@@ -426,18 +482,39 @@ func TestServer(t *testing.T) {
 		t.Run("/auth/verify-email - 400 Bad Request - deny expired email token", func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer cancel()
-			userID, email, _, err := createTestUser(ctx, s)
-			assert.Nil(t, err)
-			defer removeTestUser(ctx, email, s)
+
+			// Create user with unique email
+			email := fmt.Sprintf("test-verify-email-expired-%s@mail.com", uuid.New().String())
+			password := "testpassword123"
+
+			// Register user first
+			reqBody := map[string]string{
+				"email":    email,
+				"password": password,
+			}
+			reqBodyBytes, err := json.Marshal(reqBody)
+			assert.NoError(t, err)
+
+			reader := bytes.NewReader(reqBodyBytes)
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", reader)
+			req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusCreated, rec.Code)
+
+			// Get user from database
+			var user db.User
+			err = s.DBPool.QueryRow(ctx, "SELECT id FROM users WHERE email = $1", email).Scan(&user.ID)
+			assert.NoError(t, err)
 
 			exp := time.Now().Add(-(time.Minute * 30)).UTC()
-			tokenID, err := createTestEmailToken(ctx, userID, exp, s)
+			tokenID, err := createTestEmailToken(ctx, user.ID, exp, s)
 			assert.Nil(t, err)
 			tokenStr, err := jwt.GenerateVerifyEmailToken(email, tokenID, exp)
 			assert.Nil(t, err)
 
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/auth/verify-email?token=%s", tokenStr), nil)
-			rec := httptest.NewRecorder()
+			req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/auth/verify-email?token=%s", tokenStr), nil)
+			rec = httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)
 
@@ -447,15 +524,19 @@ func TestServer(t *testing.T) {
 			assert.Equal(t, http.StatusBadRequest, rec.Code)
 			assert.Equal(t, v1_common.ErrorTypeBadRequest, apiErr.Type)
 			assert.Equal(t, "Failed to verify email. Invalid or expired token.", apiErr.Message)
+
+			// Cleanup
+			err = removeTestUser(ctx, email, s)
+			assert.NoError(t, err)
 		})
 
 		t.Run("/api/v1/auth/logout - 200 OK - successfully logout", func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer cancel()
 
-			// register user
-			email := "test@mail.com"
-			password := "mypassword123"
+			// Register user with unique email
+			email := fmt.Sprintf("test-logout-%s@mail.com", uuid.New().String())
+			password := "testpassword123"
 			authReq := v1_auth.AuthRequest{
 				Email:    email,
 				Password: password,
@@ -468,7 +549,6 @@ func TestServer(t *testing.T) {
 
 			s.Echo.ServeHTTP(rec, req)
 			assert.Equal(t, http.StatusCreated, rec.Code)
-			defer removeTestUser(ctx, email, s)
 
 			// get the cookie
 			cookies := rec.Result().Cookies()
