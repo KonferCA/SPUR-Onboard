@@ -269,6 +269,25 @@ func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
 	return v1_common.Success(c, http.StatusOK, "Team member successfully deleted")
 }
 
+/*
+ * Validates if the current user has access to the specified company
+ * Access rules:
+ * - Company owners have full access regardless of requireOwner value
+ * - When requireOwner is true, only company owners are allowed
+ * - When requireOwner is false:
+ *   - Company owners are allowed
+ *   - Investors are allowed read-only access
+ *   - Other users are denied access
+ *
+ * Parameters:
+ *   - c: Echo context containing the authenticated user
+ *   - companyID: ID of the company to check access for
+ *   - requireOwner: If true, only allows company owners. If false, allows owners and investors.
+ *
+ * Returns:
+ *   - nil if access is granted
+ *   - error if access is denied or validation fails
+ */
 func (h *Handler) validateCompanyAccess(c echo.Context, companyID string, requireOwner bool) error {
 	user := c.Get("user").(*db.GetUserByIDRow)
 	if user == nil {
