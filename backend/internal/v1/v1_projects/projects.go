@@ -510,8 +510,32 @@ func (h *Handler) handleListCompanyProjects(c echo.Context) error {
 }
 
 func (h *Handler) handleSubmitProject(c echo.Context) error {
+	// Get user ID and verify ownership first
+	userID, err := v1_common.GetUserID(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	// Get company owned by user
+	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID.String())
+	if err != nil {
+		return v1_common.Fail(c, http.StatusNotFound, "Company not found", err)
+	}
+
 	projectID := c.Param("id")
-	
+	if projectID == "" {
+		return v1_common.Fail(c, http.StatusBadRequest, "Project ID is required", nil)
+	}
+
+	// Verify project belongs to company
+	_, err = h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
+		ID:        projectID,
+		CompanyID: company.ID,
+	})
+	if err != nil {
+		return v1_common.Fail(c, http.StatusNotFound, "Project not found", err)
+	}
+
 	// Get all questions and answers for this project
 	answers, err := h.server.GetQueries().GetProjectAnswers(c.Request().Context(), projectID)
 	if err != nil {

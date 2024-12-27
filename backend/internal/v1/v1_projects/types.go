@@ -55,3 +55,17 @@ type ValidationResult struct {
 	Level   string `json:"level"` // "error" or "warning"
 	Message string `json:"message"`
 }
+
+type SubmitProjectRequest struct {
+	Answers []AnswerSubmission `json:"answers" validate:"required,dive"`
+}
+
+type AnswerSubmission struct {
+	QuestionID string `json:"question_id" validate:"required"`
+	Answer     string `json:"answer" validate:"required"`
+}
+
+type SubmitProjectResponse struct {
+	Message string         `json:"message"`
+	Status  db.ProjectStatus `json:"status"`
+}
