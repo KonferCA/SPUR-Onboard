@@ -10,19 +10,26 @@ import (
 func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	h := &Handler{server: s}
 
-	projects := g.Group("/project")
-	projects.Use(middleware.AuthWithConfig(middleware.AuthConfig{
+	// Base project routes
+	projects := g.Group("/project", middleware.AuthWithConfig(middleware.AuthConfig{
 		AcceptTokenType: "access_token",
 		AcceptUserRoles: []db.UserRole{db.UserRoleStartupOwner},
 	}, s.GetDB()))
-	
+
+	// Project management
 	projects.POST("/new", h.handleCreateProject)
 	projects.GET("", h.handleListCompanyProjects)
 	projects.GET("/:id", h.handleGetProject)
-	projects.GET("/:id/answers", h.handleGetProjectAnswers)
-	projects.PATCH("/:id/answer", h.handlePatchProjectAnswer)
-	projects.POST("/:id/document", h.handleUploadProjectDocument)
-	projects.GET("/:id/documents", h.handleGetProjectDocuments)
-	projects.DELETE("/:id/document/:document_id", h.handleDeleteProjectDocument)
-	projects.POST("/:id/submit", h.handleSubmitProject, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner))
+	projects.POST("/:id/submit", h.handleSubmitProject)
+
+	// Project answers
+	answers := projects.Group("/:id/answers")
+	answers.GET("", h.handleGetProjectAnswers)
+	answers.PATCH("", h.handlePatchProjectAnswer)
+
+	// Project documents
+	docs := projects.Group("/:id/documents")
+	docs.POST("", h.handleUploadProjectDocument)
+	docs.GET("", h.handleGetProjectDocuments)
+	docs.DELETE("/:document_id", h.handleDeleteProjectDocument)
 }
