@@ -6,10 +6,12 @@ import (
 	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/service"
 	"KonferCA/SPUR/internal/v1/v1_common"
+	"KonferCA/SPUR/internal/views"
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -215,52 +217,92 @@ func (h *Handler) handleVerifyEmail(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
 	defer cancel()
 
+	viewUrl := fmt.Sprintf("%s/dashboard", os.Getenv("BACKEND_URL"))
+
 	tokenStr := c.QueryParam("token")
 	if tokenStr == "" {
-		return v1_common.Fail(c, http.StatusBadRequest, "Missing required query parameter: 'token'", nil)
+		view := views.VerifyEmailPage(views.FailVerifyEmailPage, viewUrl, "Missing validation token. Please get a new link from the dashboard.")
+		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
+			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+		}
+		return nil
 	}
 
 	claims, err := jwt.VerifyEmailToken(tokenStr)
 	if err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Failed to verify email. Invalid or expired token.", err)
+		logger.Error(err, "Failed to verify email token")
+		view := views.VerifyEmailPage(views.FailVerifyEmailPage, viewUrl, "The verification link is invalid or expired. You can get a new link in the dashboard.")
+		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
+			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+		}
+		return nil
 	}
 
 	token, err := db.New(h.server.GetDB()).GetVerifyEmailTokenByID(ctx, claims.ID)
 	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify email.", err)
+		logger.Error(err, "Failed to get email token from the database.")
+		view := views.VerifyEmailPage(views.InternalErrorEmailPage, viewUrl, "")
+		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
+			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+		}
+		return nil
 	}
 
 	// start transaction to make sure that both user email verified status and the email token are deleted
 	tx, err := h.server.GetDB().Begin(ctx)
 	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify email.", err)
+		logger.Error(err, "Failed to start transaction to update user and remove email token from database.")
+		view := views.VerifyEmailPage(views.InternalErrorEmailPage, viewUrl, "")
+		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
+			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+		}
+		return nil
 	}
 	q := db.New(h.server.GetDB()).WithTx(tx)
 	err = q.UpdateUserEmailVerifiedStatus(ctx, db.UpdateUserEmailVerifiedStatusParams{EmailVerified: true, ID: token.UserID})
 	if err != nil {
+		logger.Error(err, "Failed to update user in database.")
 		if err := tx.Rollback(ctx); err != nil {
 			logger.Error(err, "Failed to rollback")
 		}
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify email.", err)
+		view := views.VerifyEmailPage(views.InternalErrorEmailPage, viewUrl, "")
+		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
+			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+		}
+		return nil
 	}
 
 	err = q.RemoveVerifyEmailTokenByID(ctx, token.ID)
 	if err != nil {
+		logger.Error(err, "Failed to remove email token from database.")
 		if err := tx.Rollback(ctx); err != nil {
 			logger.Error(err, "Failed to rollback")
 		}
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify email.", err)
+		view := views.VerifyEmailPage(views.InternalErrorEmailPage, viewUrl, "")
+		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
+			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+		}
+		return nil
 	}
 
 	err = tx.Commit(ctx)
 	if err != nil {
+		logger.Error(err, "Failed to commit changes.")
 		if err := tx.Rollback(ctx); err != nil {
 			logger.Error(err, "Failed to rollback")
 		}
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify email.", err)
+		view := views.VerifyEmailPage(views.InternalErrorEmailPage, viewUrl, "")
+		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
+			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+		}
+		return nil
 	}
 
-	return c.JSON(http.StatusOK, EmailVerifiedStatusResponse{Verified: true})
+	view := views.VerifyEmailPage(views.SuccessVerifyEmailPage, viewUrl, "")
+	if err := view.Render(c.Request().Context(), c.Response()); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+	}
+	return nil
 }
 
 /*
