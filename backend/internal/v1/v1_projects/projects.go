@@ -62,7 +62,6 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 	now := time.Now().Unix()
 	description := req.Description
 	project, err := qtx.CreateProject(ctx, db.CreateProjectParams{
-		ID:          uuid.New().String(),
 		CompanyID:   company.ID,
 		Title:       req.Title,
 		Description: &description,
