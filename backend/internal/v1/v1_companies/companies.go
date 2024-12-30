@@ -10,6 +10,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+/*
+ * handleCreateCompany is the handler for creating a new company.
+ * Endpoint: POST /company/new
+ * Request body: CreateCompanyRequest
+ * Response: CompanyResponse
+ */
 func (h *Handler) handleCreateCompany(c echo.Context) error {
 	var req CreateCompanyRequest
 	if err := v1_common.BindandValidate(c, &req); err != nil {
@@ -57,6 +63,12 @@ func (h *Handler) handleCreateCompany(c echo.Context) error {
 	})
 }
 
+/*
+ * handleUpdateCompany is the handler for updating a company.
+ * Endpoint: PUT /company
+ * Request body: UpdateCompanyRequest
+ * Response: CompanyResponse
+ */
 func (h *Handler) handleUpdateCompany(c echo.Context) error {
 	var req UpdateCompanyRequest
 	if err := v1_common.BindandValidate(c, &req); err != nil {
@@ -114,6 +126,11 @@ func (h *Handler) handleUpdateCompany(c echo.Context) error {
 	})
 }
 
+/*
+ * handleGetCompany is the handler for getting a company.
+ * Endpoint: GET /company/:id
+ * Response: CompanyResponse
+ */
 func (h *Handler) handleGetCompany(c echo.Context) error {
 	user, ok := c.Get("user").(*db.GetUserByIDRow)
 	if !ok {
