@@ -1,0 +1,150 @@
+package views
+
+type VerifyEmailPageVariant string
+
+const (
+	SuccessVerifyEmailPage VerifyEmailPageVariant = "success"
+	FailVerifyEmailPage    VerifyEmailPageVariant = "fail"
+	InternalErrorEmailPage VerifyEmailPageVariant = "internal"
+)
+
+css main() {
+	background-color: #f8fafc;
+	height: 100vh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+css xIcon() {
+	width: 4rem;
+	color: #dc2626;
+}
+
+css checkIcon() {
+	width: 4rem;
+	color: #22c55e;
+}
+
+css card() {
+	padding: 1.5rem;
+	border-width: 1px;
+	border-radius: 0.25rem;
+	border-style: solid;
+	border-color: #cbd5e1;
+	box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+	max-width: 28rem;
+}
+
+css cardContent() {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	color: #475569;
+}
+
+css button() {
+	text-decoration: none;
+	color: white;
+	padding: 1rem 2rem;
+	background-color: black;
+	border-radius: 0.25rem;
+	max-width: 24rem;
+	display: inline-block;
+}
+
+css cardFooter() {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-top: 1rem;
+}
+
+templ VerifyEmailPage(variant VerifyEmailPageVariant, url string, details string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<link rel="icon" type="image/svg+xml" href="/vite.svg"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta charset="UTF-8"/>
+			<title>{ getTitle(variant) }</title>
+			<style type="text/css">
+                * {
+                    margin: 0;
+                    padding: 0;
+                    font-size: 1rem;
+                    line-height: 1.5rem;
+                }
+                h3 {
+                    text-align: center;
+                    font-size: 1.5rem;
+                    line-height: 2rem;
+                }
+                .space-y > * + * {
+                    margin-top: 0.5rem;
+                }
+            </style>
+		</head>
+		<body>
+			<main class={ main() }>
+				<div class={ card() }>
+					<h3 data-testid="card-title">{ getCardTitle(variant) }</h3>
+					<div class={ "space-y", cardContent() } data-testid="card-content-container">
+						if variant == SuccessVerifyEmailPage {
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class={ checkIcon() } data-testid="check-icon">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path>
+							</svg>
+						} else {
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class={ xIcon() } data-testid="x-icon">
+								<path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path>
+							</svg>
+						}
+						if details == "" {
+							<p data-testid="card-details">{ getCardContent(variant) }</p>
+						} else {
+							<p data-testid="card-details">{ details }</p>
+						}
+					</div>
+					<div class={ cardFooter() } data-testid="card-footer">
+						if variant != InternalErrorEmailPage {
+							<a data-testid="go-to-dashboard" href={ templ.SafeURL(url) } class={ button() }>Go to Dashboard</a>
+						}
+					</div>
+				</div>
+			</main>
+		</body>
+	</html>
+}
+
+func getTitle(variant VerifyEmailPageVariant) string {
+	switch variant {
+	case SuccessVerifyEmailPage:
+		return "Email Verified Successfully"
+	case FailVerifyEmailPage:
+		return "Email Not Verified"
+	}
+
+	return "Oops... Something went wrong"
+}
+
+func getCardTitle(variant VerifyEmailPageVariant) string {
+	switch variant {
+	case SuccessVerifyEmailPage:
+		return "Email Verified Successfully"
+	case FailVerifyEmailPage:
+		return "Failed to Verify Email"
+	}
+
+	return "Oops... Something went wrong"
+}
+
+func getCardContent(variant VerifyEmailPageVariant) string {
+	switch variant {
+	case SuccessVerifyEmailPage:
+		return "Thank you for verifying your email address. You can now close this window or click the button below to go open the dashboard."
+	case FailVerifyEmailPage:
+		return "Please try again by requesting a new verification email.\nIf the problem persists, please try again later."
+	}
+
+	return "Oops... Something went wrong"
+}

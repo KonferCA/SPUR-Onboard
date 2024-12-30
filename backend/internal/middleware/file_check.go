@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
 	"mime/multipart"
 	"net/http"
@@ -15,14 +16,15 @@ FileConfig holds configuration for the file validation middleware.
 MinSize and MaxSize are in bytes.
 
 Example:
-    1MB = 1 * 1024 * 1024 bytes
-    10MB = 10 * 1024 * 1024 bytes
+
+	1MB = 1 * 1024 * 1024 bytes
+	10MB = 10 * 1024 * 1024 bytes
 */
 type FileConfig struct {
 	MinSize          int64
 	MaxSize          int64
 	AllowedTypes     []string // ex. ["image/jpeg", "image/png", "application/pdf"]
-	StrictValidation bool // If true, always verify content type matches header
+	StrictValidation bool     // If true, always verify content type matches header
 }
 
 /*
@@ -31,15 +33,16 @@ FileCheck middleware ensures uploaded files meet specified criteria:
 - MIME type validation
 
 Usage:
-    e.POST("/upload", handler, middleware.FileCheck(middleware.FileConfig{
-        MinSize: 1024,        // 1KB minimum
-        MaxSize: 10485760,    // 10MB maximum
-        AllowedTypes: []string{
-            "image/jpeg",
-            "image/png",
-            "application/pdf",
-        },
-    }))
+
+	e.POST("/upload", handler, middleware.FileCheck(middleware.FileConfig{
+	    MinSize: 1024,        // 1KB minimum
+	    MaxSize: 10485760,    // 10MB maximum
+	    AllowedTypes: []string{
+	        "image/jpeg",
+	        "image/png",
+	        "application/pdf",
+	    },
+	}))
 */
 func FileCheck(config FileConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -52,17 +55,17 @@ func FileCheck(config FileConfig) echo.MiddlewareFunc {
 			// first check content-length as early rejection
 			contentLength := c.Request().ContentLength
 			if contentLength == -1 {
-				return echo.NewHTTPError(http.StatusBadRequest, "content length required")
+				return v1_common.Fail(c, http.StatusBadRequest, "content length required", nil)
 			}
 
 			if contentLength > config.MaxSize {
-				return echo.NewHTTPError(http.StatusRequestEntityTooLarge,
-					fmt.Sprintf("file size %d exceeds maximum allowed size of %d", contentLength, config.MaxSize))
+				return v1_common.Fail(c, http.StatusRequestEntityTooLarge,
+					fmt.Sprintf("file size %d exceeds maximum allowed size of %d", contentLength, config.MaxSize), nil)
 			}
 
 			// parse multipart form with max size limit to prevent memory exhaustion
 			if err := c.Request().ParseMultipartForm(config.MaxSize); err != nil {
-				return echo.NewHTTPError(http.StatusRequestEntityTooLarge, "file too large")
+				return v1_common.Fail(c, http.StatusRequestEntityTooLarge, "file too large", err)
 			}
 
 			// check actual file sizes and MIME types
@@ -87,12 +90,12 @@ func validateFile(file *multipart.FileHeader, config FileConfig) error {
 	// Check file size
 	size := file.Size
 	if size > config.MaxSize {
-		return echo.NewHTTPError(http.StatusRequestEntityTooLarge,
-			fmt.Sprintf("file %s size %d exceeds maximum allowed size of %d", file.Filename, size, config.MaxSize))
+		return v1_common.NewError(v1_common.ErrorTypeValidation, http.StatusRequestEntityTooLarge,
+			fmt.Sprintf("file %s size %d exceeds maximum allowed size of %d", file.Filename, size, config.MaxSize), "")
 	}
 	if size < config.MinSize {
-		return echo.NewHTTPError(http.StatusBadRequest,
-			fmt.Sprintf("file %s size %d below minimum required size of %d", file.Filename, size, config.MinSize))
+		return v1_common.NewError(v1_common.ErrorTypeValidation, http.StatusBadRequest,
+			fmt.Sprintf("file %s size %d below minimum required size of %d", file.Filename, size, config.MinSize), "")
 	}
 
 	// Check MIME type if restrictions are specified
@@ -104,22 +107,22 @@ func validateFile(file *multipart.FileHeader, config FileConfig) error {
 		if declaredType == "" || config.StrictValidation {
 			f, err := file.Open()
 			if err != nil {
-				return echo.NewHTTPError(http.StatusBadRequest, "could not read file")
+				return v1_common.NewError(v1_common.ErrorTypeValidation, http.StatusBadRequest, "could not read file", "")
 			}
 			defer f.Close()
 
 			mime, err := mimetype.DetectReader(f)
 			if err != nil {
-				return echo.NewHTTPError(http.StatusBadRequest, "could not detect file type")
+				return v1_common.NewError(v1_common.ErrorTypeValidation, http.StatusBadRequest, "could not detect file type", "")
 			}
 
 			actualType := mime.String()
 
 			// If we have both types, verify they match (when strict validation is enabled)
 			if declaredType != "" && config.StrictValidation && !strings.EqualFold(declaredType, actualType) {
-				return echo.NewHTTPError(http.StatusBadRequest,
-					fmt.Sprintf("declared Content-Type (%s) doesn't match actual content type (%s)", 
-						declaredType, actualType))
+				return v1_common.NewError(v1_common.ErrorTypeValidation, http.StatusBadRequest,
+					fmt.Sprintf("declared Content-Type (%s) doesn't match actual content type (%s)",
+						declaredType, actualType), "")
 			}
 
 			// Use actual type if no declared type, otherwise use declared type
@@ -137,9 +140,9 @@ func validateFile(file *multipart.FileHeader, config FileConfig) error {
 		}
 
 		if !isAllowed {
-			return echo.NewHTTPError(http.StatusBadRequest,
-				fmt.Sprintf("file type %s not allowed for %s. Allowed types: %v", 
-					declaredType, file.Filename, config.AllowedTypes))
+			return v1_common.NewError(v1_common.ErrorTypeValidation, http.StatusBadRequest,
+				fmt.Sprintf("file type %s not allowed for %s. Allowed types: %v",
+					declaredType, file.Filename, config.AllowedTypes), "")
 		}
 	}
 

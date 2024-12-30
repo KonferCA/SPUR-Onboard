@@ -2,15 +2,14 @@ package middleware
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
-	"net/http"
 	"os"
 	"reflect"
 	"regexp"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
 
@@ -67,7 +66,7 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 	if err := cv.validator.Struct(i); err != nil {
 		log.Error().Err(err).Msg("validation error")
 
-		return echo.NewHTTPError(http.StatusBadRequest, formatValidationErrors(err))
+		return v1_common.NewValidationError(formatValidationErrors(err))
 	}
 
 	return nil

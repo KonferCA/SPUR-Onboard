@@ -6,6 +6,7 @@ import (
 
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/jwt"
+	"KonferCA/SPUR/internal/v1/v1_common"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
@@ -27,24 +28,24 @@ func AuthWithConfig(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc
 			// get the authorization header
 			auth := c.Request().Header.Get(echo.HeaderAuthorization)
 			if auth == "" {
-				return echo.NewHTTPError(http.StatusUnauthorized, "missing authorization header")
+				return v1_common.Fail(c, http.StatusUnauthorized, "missing authorization header", nil)
 			}
 
 			// check bearer format
 			parts := strings.Split(auth, " ")
 			if len(parts) != 2 || parts[0] != "Bearer" {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid authorization format")
+				return v1_common.Fail(c, http.StatusUnauthorized, "invalid authorization format", nil)
 			}
 
 			// get user salt from db using claims
 			claims, err := jwt.ParseUnverifiedClaims(parts[1])
 			if err != nil {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
+				return v1_common.Fail(c, http.StatusUnauthorized, "invalid token", err)
 			}
 
 			// validate token type
 			if claims.TokenType != config.AcceptTokenType {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token type")
+				return v1_common.Fail(c, http.StatusUnauthorized, "invalid token type", nil)
 			}
 
 			// check if user role is allowed
@@ -56,19 +57,19 @@ func AuthWithConfig(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc
 				}
 			}
 			if !roleValid {
-				return echo.NewHTTPError(http.StatusForbidden, "insufficient permissions")
+				return v1_common.Fail(c, http.StatusForbidden, "insufficient permissions", nil)
 			}
 
 			// get user's token salt and user data from db
 			user, err := queries.GetUserByID(c.Request().Context(), claims.UserID)
 			if err != nil {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
+				return v1_common.Fail(c, http.StatusUnauthorized, "invalid token", nil)
 			}
 
 			// verify token with user's salt
 			claims, err = jwt.VerifyTokenWithSalt(parts[1], user.TokenSalt)
 			if err != nil {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
+				return v1_common.Fail(c, http.StatusUnauthorized, "invalid token", nil)
 			}
 
 			// store claims and user in context for handlers
@@ -81,4 +82,5 @@ func AuthWithConfig(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc
 			return next(c)
 		}
 	}
-} 
+}
+

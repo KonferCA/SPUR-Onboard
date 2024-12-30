@@ -1,12 +1,15 @@
 package middleware
 
 import (
+	"KonferCA/SPUR/internal/v1/v1_common"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
+	"KonferCA/SPUR/common"
 )
 
 /*
@@ -86,7 +89,26 @@ Example (auth):
 func (rl *RateLimiter) RateLimit() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			ip := c.RealIP()
+			var ip string
+			
+			env := os.Getenv("APP_ENV")
+			if env == common.TEST_ENV || env == common.DEVELOPMENT_ENV {
+				ip = c.Request().Header.Get("CF-Connecting-IP")
+				if ip == "" {
+					ip = c.Request().Header.Get("X-Real-IP")
+					if ip == "" {
+						// Fallback to direct IP in test/dev
+						ip = c.RealIP()
+					}
+				}
+			} else {
+				ip = c.Request().Header.Get("CF-Connecting-IP")
+			}
+
+			if ip == "" {
+				return echo.NewHTTPError(http.StatusForbidden, "missing client IP")
+			}
+
 			now := time.Now()
 
 			rl.mu.Lock()
@@ -122,9 +144,11 @@ func (rl *RateLimiter) RateLimit() echo.MiddlewareFunc {
 					Dur("remaining", remaining).
 					Msg("request blocked: rate limit exceeded")
 
-				return echo.NewHTTPError(
+				return v1_common.Fail(
+					c,
 					http.StatusTooManyRequests,
 					"too many requests, please try again in "+remaining.Round(time.Second).String(),
+					nil,
 				)
 			}
 
@@ -151,9 +175,11 @@ func (rl *RateLimiter) RateLimit() echo.MiddlewareFunc {
 					Dur("block_duration", blockDuration).
 					Msg("IP blocked: rate limit exceeded")
 
-				return echo.NewHTTPError(
+				return v1_common.Fail(
+					c,
 					http.StatusTooManyRequests,
 					"too many requests, please try again in "+blockDuration.Round(time.Second).String(),
+					nil,
 				)
 			}
 
