@@ -12,12 +12,21 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 )
+
+type CompanyState struct {
+	ID            string
+	OwnerID       string
+	Name          string
+	WalletAddress string
+	LinkedinUrl   string
+	CreatedAt     int64
+	UpdatedAt     int64
+}
 
 func TestCompanyEndpoints(t *testing.T) {
 	ctx := context.Background()
@@ -66,16 +75,20 @@ func TestCompanyEndpoints(t *testing.T) {
 
 	e := s.GetEcho()
 
+	companies := make(map[string]CompanyState)
+
 	t.Run("Create Company", func(t *testing.T) {
 		testCases := []struct {
 			name     string
 			token    string
+			userID   string
 			request  map[string]interface{}
 			wantCode int
 		}{
 			{
-				name:  "Valid company creation",
-				token: testUsers[0].token,
+				name:   "Valid company creation",
+				token:  testUsers[0].token,
+				userID: ownerID.String(),
 				request: map[string]interface{}{
 					"name":           "Test Company",
 					"wallet_address": "0x1234567890123456789012345678901234567890123456789012345678901234",
@@ -84,8 +97,9 @@ func TestCompanyEndpoints(t *testing.T) {
 				wantCode: http.StatusCreated,
 			},
 			{
-				name:  "Invalid wallet address",
-				token: testUsers[1].token,
+				name:   "Invalid wallet address",
+				token:  testUsers[1].token,
+				userID: otherOwnerID.String(),
 				request: map[string]interface{}{
 					"name":           "Bad Wallet",
 					"wallet_address": "invalid",
@@ -94,8 +108,9 @@ func TestCompanyEndpoints(t *testing.T) {
 				wantCode: http.StatusBadRequest,
 			},
 			{
-				name:  "Invalid LinkedIn URL",
-				token: testUsers[1].token,
+				name:   "Invalid LinkedIn URL",
+				token:  testUsers[1].token,
+				userID: otherOwnerID.String(),
 				request: map[string]interface{}{
 					"name":           "Bad LinkedIn",
 					"wallet_address": "0x1234567890123456789012345678901234567890123456789012345678901234",
@@ -104,8 +119,9 @@ func TestCompanyEndpoints(t *testing.T) {
 				wantCode: http.StatusBadRequest,
 			},
 			{
-				name:  "Investor cannot create company",
-				token: testUsers[2].token,
+				name:   "Investor cannot create company",
+				token:  testUsers[2].token,
+				userID: investorID.String(),
 				request: map[string]interface{}{
 					"name":         "Investor Company",
 					"linkedin_url": "https://linkedin.com/company/test",
@@ -132,6 +148,19 @@ func TestCompanyEndpoints(t *testing.T) {
 					var response map[string]interface{}
 					err = json.Unmarshal(rec.Body.Bytes(), &response)
 					require.NoError(t, err)
+
+					companies[tc.userID] = CompanyState{
+						ID:            response["id"].(string),
+						OwnerID:       response["owner_id"].(string),
+						Name:          response["name"].(string),
+						WalletAddress: response["wallet_address"].(string),
+						LinkedinUrl:   response["linkedin_url"].(string),
+						CreatedAt:     int64(response["created_at"].(float64)),
+						UpdatedAt:     int64(response["updated_at"].(float64)),
+					}
+
+					t.Logf("Created company for owner %s: %+v", tc.userID, companies[tc.userID])
+
 					require.Equal(t, tc.request["name"], response["name"])
 					require.Equal(t, tc.request["linkedin_url"], response["linkedin_url"])
 					if tc.request["wallet_address"] != nil {
@@ -143,45 +172,6 @@ func TestCompanyEndpoints(t *testing.T) {
 	})
 
 	t.Run("Get Company", func(t *testing.T) {
-		companyID := uuid.New()
-		now := time.Now().Unix()
-		_, err := s.GetDB().Exec(ctx, `
-			INSERT INTO companies (
-				id,
-				owner_id, 
-				name, 
-				linkedin_url, 
-				wallet_address, 
-				created_at, 
-				updated_at
-			)
-			VALUES ($1, $2, $3, $4, $5, $6, $6)
-		`,
-			companyID,
-			ownerID.String(),
-			"Test Company",
-			"https://linkedin.com/company/test",
-			"0x1234567890123456789012345678901234567890123456789012345678901234",
-			now,
-		)
-		require.NoError(t, err)
-
-		var storedCompany db.Company
-		err = s.GetDB().QueryRow(ctx, `
-			SELECT id, owner_id, name, linkedin_url, wallet_address, created_at, updated_at 
-			FROM companies 
-			WHERE id = $1
-		`, companyID).Scan(
-			&storedCompany.ID,
-			&storedCompany.OwnerID,
-			&storedCompany.Name,
-			&storedCompany.LinkedinUrl,
-			&storedCompany.WalletAddress,
-			&storedCompany.CreatedAt,
-			&storedCompany.UpdatedAt,
-		)
-		require.NoError(t, err)
-
 		testCases := []struct {
 			name      string
 			token     string
@@ -201,7 +191,7 @@ func TestCompanyEndpoints(t *testing.T) {
 				token:     testUsers[3].token,
 				userID:    adminID,
 				wantCode:  http.StatusOK,
-				urlSuffix: "/" + storedCompany.ID,
+				urlSuffix: "/" + companies[ownerID.String()].ID,
 			},
 			{
 				name:      "Other owner cannot access company",
@@ -234,29 +224,33 @@ func TestCompanyEndpoints(t *testing.T) {
 					err = json.Unmarshal(rec.Body.Bytes(), &response)
 					require.NoError(t, err)
 
-					require.Equal(t, storedCompany.ID, response["id"])
-					require.Equal(t, storedCompany.OwnerID, response["owner_id"])
-					require.Equal(t, storedCompany.Name, response["name"])
-					require.Equal(t, storedCompany.LinkedinUrl, response["linkedin_url"])
-					require.Equal(t, *storedCompany.WalletAddress, response["wallet_address"])
+					expectedCompany := companies[ownerID.String()]
+
+					t.Logf("Comparing - Expected Company: %+v", expectedCompany)
+					t.Logf("Response body: %+v", response)
+
+					require.Equal(t, expectedCompany.ID, response["id"])
+					require.Equal(t, expectedCompany.OwnerID, response["owner_id"])
+					require.Equal(t, expectedCompany.Name, response["name"])
+					require.Equal(t, expectedCompany.LinkedinUrl, response["linkedin_url"])
+					require.Equal(t, expectedCompany.WalletAddress, response["wallet_address"])
 				}
 			})
 		}
-
-		_, err = s.GetDB().Exec(ctx, "DELETE FROM companies WHERE id = $1", companyID)
-		require.NoError(t, err)
 	})
 
 	t.Run("Update Company", func(t *testing.T) {
 		testCases := []struct {
 			name     string
 			token    string
+			userID   string
 			request  map[string]interface{}
 			wantCode int
 		}{
 			{
-				name:  "Owner can update company",
-				token: testUsers[0].token,
+				name:   "Owner can update company",
+				token:  testUsers[0].token,
+				userID: ownerID.String(),
 				request: map[string]interface{}{
 					"name":           "Updated Company",
 					"wallet_address": "0x9876543210987654321098765432109876543210987654321098765432109876",
@@ -265,24 +259,27 @@ func TestCompanyEndpoints(t *testing.T) {
 				wantCode: http.StatusOK,
 			},
 			{
-				name:  "Invalid wallet address",
-				token: testUsers[0].token,
+				name:   "Invalid wallet address",
+				token:  testUsers[0].token,
+				userID: ownerID.String(),
 				request: map[string]interface{}{
 					"wallet_address": "invalid",
 				},
 				wantCode: http.StatusBadRequest,
 			},
 			{
-				name:  "Invalid LinkedIn URL",
-				token: testUsers[0].token,
+				name:   "Invalid LinkedIn URL",
+				token:  testUsers[0].token,
+				userID: ownerID.String(),
 				request: map[string]interface{}{
 					"linkedin_url": "https://invalid.com",
 				},
 				wantCode: http.StatusBadRequest,
 			},
 			{
-				name:  "Other owner cannot update",
-				token: testUsers[1].token,
+				name:   "Other owner cannot update",
+				token:  testUsers[1].token,
+				userID: otherOwnerID.String(),
 				request: map[string]interface{}{
 					"name": "Unauthorized Update",
 				},
@@ -308,6 +305,18 @@ func TestCompanyEndpoints(t *testing.T) {
 					var response map[string]interface{}
 					err = json.Unmarshal(rec.Body.Bytes(), &response)
 					require.NoError(t, err)
+
+					companies[tc.userID] = CompanyState{
+						ID:            response["id"].(string),
+						OwnerID:       response["owner_id"].(string),
+						Name:          response["name"].(string),
+						WalletAddress: response["wallet_address"].(string),
+						LinkedinUrl:   response["linkedin_url"].(string),
+						CreatedAt:     int64(response["created_at"].(float64)),
+						UpdatedAt:     int64(response["updated_at"].(float64)),
+					}
+
+					t.Logf("Updated company for owner %s: %+v", tc.userID, companies[tc.userID])
 
 					if tc.request["name"] != nil {
 						require.Equal(t, tc.request["name"], response["name"])
