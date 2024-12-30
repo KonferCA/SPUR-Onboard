@@ -118,3 +118,19 @@ WHERE id = $2;
 SELECT q.* FROM project_questions q
 JOIN project_answers a ON a.question_id = q.id
 WHERE a.id = $1; 
+
+-- name: GetProjectQuestion :one
+SELECT * FROM project_questions 
+WHERE id = $1 
+LIMIT 1;
+
+-- name: CreateProjectAnswer :one
+INSERT INTO project_answers (
+    project_id,
+    question_id,
+    answer
+) VALUES (
+    $1, -- project_id
+    $2, -- question_id
+    $3  -- answer
+) RETURNING *; 

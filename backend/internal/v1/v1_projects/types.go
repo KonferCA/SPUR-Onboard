@@ -69,3 +69,24 @@ type SubmitProjectResponse struct {
 	Message string         `json:"message"`
 	Status  db.ProjectStatus `json:"status"`
 }
+
+// Request Types
+type CreateAnswerRequest struct {
+	Content    string `json:"content" validate:"required"`
+	QuestionID string `json:"question_id" validate:"required,uuid"`
+}
+
+type ValidationError struct {
+	Question string `json:"question"`
+	Message  string `json:"message"`
+}
+
+// Response Types
+type AnswerResponse struct {
+	ID         string `json:"id"`
+	ProjectID  string `json:"project_id"`
+	QuestionID string `json:"question_id"`
+	Answer     string `json:"answer"`
+	CreatedAt  string `json:"created_at"`
+	UpdatedAt  string `json:"updated_at"`
+}

@@ -20,15 +20,6 @@ import (
  * It handles project creation, retrieval, document management, and submission workflows.
  */
 
-/*
- * ValidationError represents a validation failure for a project question.
- * Used when validating project submissions and answers.
- */
-type ValidationError struct {
-	Question string `json:"question"` // The question that failed validation
-	Message  string `json:"message"`  // Validation error message
-}
-
 func (h *Handler) handleCreateProject(c echo.Context) error {
 	var req CreateProjectRequest
 	if err := v1_common.BindandValidate(c, &req); err != nil {
@@ -47,44 +38,21 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
-	// Start a transaction
-	ctx := c.Request().Context()
-	tx, err := h.server.GetDB().Begin(ctx)
-	if err != nil {
-		return v1_common.Fail(c, 500, "Failed to start transaction", err)
-	}
-	defer tx.Rollback(ctx) // Will be no-op if committed
-
-	// Create queries with transaction
-	qtx := h.server.GetQueries().WithTx(tx)
-
-	// Create project within transaction
+	// Create project
 	now := time.Now().Unix()
 	description := req.Description
-	project, err := qtx.CreateProject(ctx, db.CreateProjectParams{
+	project, err := h.server.GetQueries().CreateProject(c.Request().Context(), db.CreateProjectParams{
 		CompanyID:   company.ID,
 		Title:       req.Title,
 		Description: &description,
-		Status:      db.ProjectStatusDraft,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+			Status:      db.ProjectStatusDraft,
+			CreatedAt:   now,
+			UpdatedAt:   now,
 	})
 	if err != nil {
 		return v1_common.Fail(c, 500, "Failed to create project", err)
 	}
 
-	// Create empty answers within same transaction
-	_, err = qtx.CreateProjectAnswers(ctx, project.ID)
-	if err != nil {
-		return v1_common.Fail(c, 500, "Failed to create project answers", err)
-	}
-
-	// Commit the transaction
-	if err := tx.Commit(ctx); err != nil {
-		return v1_common.Fail(c, 500, "Failed to commit transaction", err)
-	}
-
-	// Return success response
 	return c.JSON(200, ProjectResponse{
 		ID:          project.ID,
 		Title:       project.Title,
@@ -249,7 +217,6 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 	if question.Validations != nil && *question.Validations != "" {
 		if !isValidAnswer(req.Content, *question.Validations) {
 			return c.JSON(http.StatusBadRequest, map[string]interface{}{
-				"message": "Validation failed",
 				"validation_errors": []ValidationError{
 					{
 						Question: question.Question,
@@ -728,4 +695,76 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		"message": "Project submitted successfully",
 		"status": "pending",
 	})
+}
+
+/*
+ * handleGetQuestions returns all available project questions.
+ * Used by the frontend to:
+ * - Show all questions that need to be answered
+ * - Display which questions are required
+ * - Show validation rules for each question
+ * 
+ * Returns:
+ * - Array of questions with their details
+ * - Each question includes: ID, text, section, required flag, validation rules
+ */
+func (h *Handler) handleGetQuestions(c echo.Context) error {
+	// Get all questions from database
+	questions, err := h.server.GetQueries().GetProjectQuestions(c.Request().Context())
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
+	}
+
+	// Return questions array
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"questions": questions,
+	})
+}
+
+func (h *Handler) handleCreateAnswer(c echo.Context) error {
+	var req CreateAnswerRequest
+	
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		if strings.Contains(err.Error(), "required") {
+			return v1_common.Fail(c, http.StatusBadRequest, "Question ID is required", err)
+		}
+		return v1_common.Fail(c, http.StatusNotFound, "Question not found", err)
+	}
+
+	// Get project ID from URL
+	projectID := c.Param("id")
+	if projectID == "" {
+		return v1_common.Fail(c, http.StatusBadRequest, "Project ID is required", nil)
+	}
+
+	// Verify question exists and validate answer
+	question, err := h.server.GetQueries().GetProjectQuestion(c.Request().Context(), req.QuestionID)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusNotFound, "Question not found", err)
+	}
+
+	if question.Validations != nil {
+		if !isValidAnswer(req.Content, *question.Validations) {
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"validation_errors": []ValidationError{
+					{
+						Question: question.Question,
+						Message:  getValidationMessage(*question.Validations),
+					},
+				},
+			})
+		}
+	}
+
+	// Create the answer
+	answer, err := h.server.GetQueries().CreateProjectAnswer(c.Request().Context(), db.CreateProjectAnswerParams{
+		ProjectID:  projectID,
+		QuestionID: req.QuestionID,
+		Answer:     req.Content,
+	})
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create answer", err)
+	}
+
+	return c.JSON(http.StatusOK, answer)
 }

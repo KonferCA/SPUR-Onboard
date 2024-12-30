@@ -168,67 +168,69 @@ func TestProjectEndpoints(t *testing.T) {
     t.Run("Submit Project", func(t *testing.T) {
         /*
          * "Submit Project" test verifies the complete submission flow:
-         * 1. Fetches questions/answers for the project
-         * 2. Updates each answer with valid data:
-         *    - Website URL for company website
-         *    - Detailed product description (>100 chars)
-         *    - Value proposition description
-         * 3. Submits the completed project
-         * 4. Verifies project status changes to 'pending'
+         * 1. Creates initial project
+         * 2. Creates answers for required questions
+         * 3. Updates each answer with valid data
+         * 4. Submits the completed project
+         * 5. Verifies project status changes to 'pending'
          */
-        // First get the questions/answers
-        path := fmt.Sprintf("/api/v1/project/%s/answers", projectID)
-        req := httptest.NewRequest(http.MethodGet, path, nil)
+        // First get the available questions
+        req := httptest.NewRequest(http.MethodGet, "/api/v1/questions", nil)
         req.Header.Set("Authorization", "Bearer "+accessToken)
         rec := httptest.NewRecorder()
         s.GetEcho().ServeHTTP(rec, req)
 
         if !assert.Equal(t, http.StatusOK, rec.Code) {
-            t.Logf("Get answers response: %s", rec.Body.String())
+            t.Logf("Get questions response: %s", rec.Body.String())
             t.FailNow()
         }
 
-        var answersResp struct {
-            Answers []struct {
-                ID         string `json:"id"`
-                QuestionID string `json:"question_id"`
-                Question   string `json:"question"`
-                Answer     string `json:"answer"`
-                Section    string `json:"section"`
-            } `json:"answers"`
+        var questionsResp struct {
+            Questions []struct {
+                ID       string `json:"id"`
+                Question string `json:"question"`
+                Section  string `json:"section"`
+            } `json:"questions"`
         }
-        err := json.NewDecoder(rec.Body).Decode(&answersResp)
+        err := json.NewDecoder(rec.Body).Decode(&questionsResp)
         assert.NoError(t, err)
-        assert.NotEmpty(t, answersResp.Answers, "Should have questions to answer")
+        assert.NotEmpty(t, questionsResp.Questions, "Should have questions available")
 
-        // First patch each answer individually
-        for _, q := range answersResp.Answers {
+        // Create answers for each question
+        for _, q := range questionsResp.Questions {
             var answer string
             switch q.Question {
             case "Company website":
                 answer = "https://example.com"
             case "What is the core product or service, and what problem does it solve?":
-                answer = "Our product is a revolutionary blockchain-based authentication system that solves critical identity verification issues in the digital age. We provide a secure, scalable solution that eliminates fraud while maintaining user privacy and compliance with international regulations. Our system uses advanced cryptography and distributed ledger technology to ensure tamper-proof identity verification."
+                answer = "Our product is a revolutionary blockchain-based authentication system that solves critical identity verification issues in the digital age. We provide a secure, scalable solution that eliminates fraud while maintaining user privacy and compliance with international regulations."
             case "What is the unique value proposition?":
-                answer = "We provide secure, decentralized identity verification that's faster and more reliable than traditional methods. Our solution reduces verification time by 90% while increasing security and reducing costs for businesses. We are the only solution that combines biometric verification with blockchain immutability at scale."
+                answer = "Our product is a revolutionary blockchain-based authentication system that solves critical identity verification issues in the digital age. We provide a secure, scalable solution that eliminates fraud while maintaining user privacy and compliance with international regulations."
+            default:
+                continue // Skip non-required questions
             }
 
-            // Patch the answer
-            patchBody := map[string]string{
-                "content":   answer,
-                "answer_id": q.ID,
+            // Create the answer
+            createBody := map[string]interface{}{
+                "content":     answer,
+                "project_id":  projectID,
+                "question_id": q.ID,
             }
-            patchJSON, err := json.Marshal(patchBody)
+            createJSON, err := json.Marshal(createBody)
             assert.NoError(t, err)
 
-            patchReq := httptest.NewRequest(http.MethodPatch, path, bytes.NewReader(patchJSON))
-            patchReq.Header.Set("Authorization", "Bearer "+accessToken)
-            patchReq.Header.Set("Content-Type", "application/json")
-            patchRec := httptest.NewRecorder()
-            s.GetEcho().ServeHTTP(patchRec, patchReq)
+            createReq := httptest.NewRequest(
+                http.MethodPost, 
+                fmt.Sprintf("/api/v1/project/%s/answer", projectID),
+                bytes.NewReader(createJSON),
+            )
+            createReq.Header.Set("Authorization", "Bearer "+accessToken)
+            createReq.Header.Set("Content-Type", "application/json")
+            createRec := httptest.NewRecorder()
+            s.GetEcho().ServeHTTP(createRec, createReq)
 
-            if !assert.Equal(t, http.StatusOK, patchRec.Code) {
-                t.Logf("Patch answer response: %s", patchRec.Body.String())
+            if !assert.Equal(t, http.StatusOK, createRec.Code) {
+                t.Logf("Create answer response: %s", createRec.Body.String())
             }
         }
 
@@ -349,6 +351,28 @@ func TestProjectEndpoints(t *testing.T) {
                 },
                 expectedCode:  http.StatusBadRequest,
                 expectedError: "Must be a valid URL",
+            },
+            {
+                name:   "Create Answer Without Question",
+                method: http.MethodPost,
+                path:   fmt.Sprintf("/api/v1/project/%s/answer", projectID),
+                body:   `{"content": "some answer"}`, // Missing question_id
+                setupAuth: func(req *http.Request) {
+                    req.Header.Set("Authorization", "Bearer "+accessToken)
+                },
+                expectedCode:  http.StatusBadRequest,
+                expectedError: "Question ID is required",
+            },
+            {
+                name:   "Create Answer For Invalid Question",
+                method: http.MethodPost,
+                path:   fmt.Sprintf("/api/v1/project/%s/answer", projectID),
+                body:   `{"content": "some answer", "question_id": "invalid-id"}`,
+                setupAuth: func(req *http.Request) {
+                    req.Header.Set("Authorization", "Bearer "+accessToken)
+                },
+                expectedCode:  http.StatusNotFound,
+                expectedError: "Question not found",
             },
         }
 

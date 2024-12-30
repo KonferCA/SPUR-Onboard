@@ -25,6 +25,7 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	// Project answers
 	answers := projects.Group("/:id/answers")
 	answers.GET("", h.handleGetProjectAnswers)
+	projects.POST("/:id/answer", h.handleCreateAnswer)
 	answers.PATCH("", h.handlePatchProjectAnswer)
 
 	// Project documents
@@ -45,4 +46,6 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	}))
 	docs.GET("", h.handleGetProjectDocuments)
 	docs.DELETE("/:document_id", h.handleDeleteProjectDocument)
+	
+	g.GET("/questions", h.handleGetQuestions)
 }

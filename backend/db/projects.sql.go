@@ -53,6 +53,38 @@ func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (P
 	return i, err
 }
 
+const createProjectAnswer = `-- name: CreateProjectAnswer :one
+INSERT INTO project_answers (
+    project_id,
+    question_id,
+    answer
+) VALUES (
+    $1, -- project_id
+    $2, -- question_id
+    $3  -- answer
+) RETURNING id, project_id, question_id, answer, created_at, updated_at
+`
+
+type CreateProjectAnswerParams struct {
+	ProjectID  string
+	QuestionID string
+	Answer     string
+}
+
+func (q *Queries) CreateProjectAnswer(ctx context.Context, arg CreateProjectAnswerParams) (ProjectAnswer, error) {
+	row := q.db.QueryRow(ctx, createProjectAnswer, arg.ProjectID, arg.QuestionID, arg.Answer)
+	var i ProjectAnswer
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.QuestionID,
+		&i.Answer,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createProjectAnswers = `-- name: CreateProjectAnswers :many
 INSERT INTO project_answers (id, project_id, question_id, answer)
 SELECT 
@@ -318,6 +350,27 @@ func (q *Queries) GetProjectDocuments(ctx context.Context, projectID string) ([]
 		return nil, err
 	}
 	return items, nil
+}
+
+const getProjectQuestion = `-- name: GetProjectQuestion :one
+SELECT id, question, section, required, validations, created_at, updated_at FROM project_questions 
+WHERE id = $1 
+LIMIT 1
+`
+
+func (q *Queries) GetProjectQuestion(ctx context.Context, id string) (ProjectQuestion, error) {
+	row := q.db.QueryRow(ctx, getProjectQuestion, id)
+	var i ProjectQuestion
+	err := row.Scan(
+		&i.ID,
+		&i.Question,
+		&i.Section,
+		&i.Required,
+		&i.Validations,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getProjectQuestions = `-- name: GetProjectQuestions :many
