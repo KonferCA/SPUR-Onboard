@@ -9,18 +9,27 @@ type Handler struct {
 	server interfaces.CoreServer
 }
 
+/*
+CreateCompanyRequest represents the request body for creating a new company.
+*/
 type CreateCompanyRequest struct {
 	Name          string `json:"name" validate:"required,min=1,max=255"`
 	WalletAddress string `json:"wallet_address,omitempty" validate:"omitempty,wallet_address"`
 	LinkedinURL   string `json:"linkedin_url" validate:"required,linkedin_url"`
 }
 
+/*
+UpdateCompanyRequest represents the request body for updating a company.
+*/
 type UpdateCompanyRequest struct {
 	Name          string `json:"name,omitempty" validate:"omitempty,min=1,max=255"`
 	WalletAddress string `json:"wallet_address,omitempty" validate:"omitempty,wallet_address"`
 	LinkedinURL   string `json:"linkedin_url,omitempty" validate:"omitempty,linkedin_url"`
 }
 
+/*
+CompanyResponse represents the response body for a company.
+*/
 type CompanyResponse struct {
 	ID            string  `json:"id"`
 	OwnerID       string  `json:"owner_id"`
@@ -31,6 +40,9 @@ type CompanyResponse struct {
 	UpdatedAt     int64   `json:"updated_at"`
 }
 
+/*
+CompaniesResponse represents the response body for a list of companies.
+*/
 type CompaniesResponse struct {
 	Companies []CompanyResponse `json:"companies"`
 }
