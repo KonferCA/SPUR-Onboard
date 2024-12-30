@@ -32,12 +32,7 @@ SET
     updated_at = extract(epoch from now())
 WHERE 
     project_answers.id = $2 
-    AND project_id = $3 
-    AND project_id IN (
-        SELECT projects.id 
-        FROM projects 
-        WHERE projects.company_id = $4
-    )
+    AND project_id = $3
 RETURNING *; 
 
 -- name: GetProjectAnswers :many

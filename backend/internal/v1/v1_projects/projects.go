@@ -212,10 +212,16 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 		return v1_common.Fail(c, 400, "Project ID is required", nil)
 	}
 
-	// Get user ID from context
+	// Get user ID from context and get their company
 	userID, err := v1_common.GetUserID(c)
 	if err != nil {
 		return v1_common.Fail(c, 401, "Unauthorized", err)
+	}
+
+	// Get company owned by user
+	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID.String())
+	if err != nil {
+		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
 	// Parse request body
@@ -224,10 +230,13 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 		return v1_common.Fail(c, 400, "Invalid request body", err)
 	}
 
-	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID.String())
+	// Verify project belongs to user's company
+	_, err = h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
+		ID:        projectID,
+		CompanyID: company.ID,
+	})
 	if err != nil {
-		return v1_common.Fail(c, 404, "Company not found", err)
+		return v1_common.Fail(c, 404, "Project not found", err)
 	}
 
 	// Get the question for this answer to check validations
@@ -256,7 +265,6 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 		Answer:    req.Content,
 		ID:        req.AnswerID,
 		ProjectID: projectID,
-		CompanyID: company.ID,
 	})
 	if err != nil {
 		if err == sql.ErrNoRows {

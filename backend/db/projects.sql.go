@@ -454,12 +454,7 @@ SET
     updated_at = extract(epoch from now())
 WHERE 
     project_answers.id = $2 
-    AND project_id = $3 
-    AND project_id IN (
-        SELECT projects.id 
-        FROM projects 
-        WHERE projects.company_id = $4
-    )
+    AND project_id = $3
 RETURNING id, project_id, question_id, answer, created_at, updated_at
 `
 
@@ -467,16 +462,10 @@ type UpdateProjectAnswerParams struct {
 	Answer    string
 	ID        string
 	ProjectID string
-	CompanyID string
 }
 
 func (q *Queries) UpdateProjectAnswer(ctx context.Context, arg UpdateProjectAnswerParams) (ProjectAnswer, error) {
-	row := q.db.QueryRow(ctx, updateProjectAnswer,
-		arg.Answer,
-		arg.ID,
-		arg.ProjectID,
-		arg.CompanyID,
-	)
+	row := q.db.QueryRow(ctx, updateProjectAnswer, arg.Answer, arg.ID, arg.ProjectID)
 	var i ProjectAnswer
 	err := row.Scan(
 		&i.ID,
