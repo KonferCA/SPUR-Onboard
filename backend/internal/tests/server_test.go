@@ -480,43 +480,23 @@ func TestServer(t *testing.T) {
 		})
 
 		t.Run("/auth/verify-email - 400 Bad Request - deny expired email token", func(t *testing.T) {
-			// Create user with unique email
-			email := fmt.Sprintf("test-verify-email-expired-%s@mail.com", uuid.New().String())
-			password := "testpassword123"
-
-			// Register user first
-			reqBody := map[string]string{
-				"email":    email,
-				"password": password,
-			}
-			reqBodyBytes, err := json.Marshal(reqBody)
-			assert.NoError(t, err)
-
-			reader := bytes.NewReader(reqBodyBytes)
-			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", reader)
-			req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
-			rec := httptest.NewRecorder()
-			s.Echo.ServeHTTP(rec, req)
-			assert.Equal(t, http.StatusCreated, rec.Code)
-
-			// Create context for database operations
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer cancel()
 
-			// Get user from database
-			var user db.User
-			err = s.DBPool.QueryRow(ctx, "SELECT id FROM users WHERE email = $1", email).Scan(&user.ID)
+			
+			userID, email, _, err := createTestUser(ctx, s)
 			assert.NoError(t, err)
 
+			// Generate expired email token using helper
 			exp := time.Now().Add(-(time.Minute * 30)).UTC()
-			tokenID, err := createTestEmailToken(ctx, user.ID, exp, s)
+			tokenID, err := createTestEmailToken(ctx, userID, exp, s)
 			assert.Nil(t, err)
 			tokenStr, err := jwt.GenerateVerifyEmailToken(email, tokenID, exp)
 			assert.Nil(t, err)
 
-			req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/auth/verify-email?token=%s", tokenStr), nil)
-			rec = httptest.NewRecorder()
-
+			// Test the expired token
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/auth/verify-email?token=%s", tokenStr), nil)
+			rec := httptest.NewRecorder()
 			s.Echo.ServeHTTP(rec, req)
 
 			var apiErr v1_common.APIError

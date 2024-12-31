@@ -5,6 +5,7 @@ import (
 	"KonferCA/SPUR/internal/server"
 	"context"
 	"time"
+	"fmt"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -17,7 +18,7 @@ The function returns userID, email, password, error
 */
 func createTestUser(ctx context.Context, s *server.Server) (string, string, string, error) {
 	userID := uuid.New().String()
-	email := "test@mail.com"
+	email := fmt.Sprintf("test-%s@mail.com", uuid.New().String())
 	password := "password"
 	
 	// Hash the password
@@ -27,15 +28,15 @@ func createTestUser(ctx context.Context, s *server.Server) (string, string, stri
 	}
 
 	_, err = s.DBPool.Exec(ctx, `
-                INSERT INTO users (
-                    id,
-                    email, 
-                    password, 
-                    role, 
-                    email_verified, 
-                    token_salt
-                )
-                VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))`,
+        INSERT INTO users (
+            id,
+            email, 
+            password, 
+            role, 
+            email_verified, 
+            token_salt
+        )
+        VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))`,
 		userID, email, string(hashedPassword), db.UserRoleStartupOwner, false)
 	
 	return userID, email, password, err
@@ -66,11 +67,11 @@ if the test doesn't remove it by default, such as the verify email handler.
 */
 func createTestEmailToken(ctx context.Context, userID string, exp time.Time, s *server.Server) (string, error) {
 	row := s.DBPool.QueryRow(ctx, `
-                INSERT INTO verify_email_tokens (
-                    user_id, 
-                    expires_at
-                )
-                VALUES ($1, $2) RETURNING id;`,
+        INSERT INTO verify_email_tokens (
+            user_id, 
+            expires_at
+        )
+        VALUES ($1, $2) RETURNING id;`,
 		userID, exp.Unix())
 	var tokenID string
 	err := row.Scan(&tokenID)
