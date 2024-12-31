@@ -5,7 +5,6 @@ import (
 	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/server"
 	"KonferCA/SPUR/internal/v1/v1_auth"
-	"KonferCA/SPUR/internal/v1/v1_common"
 
 	"bytes"
 	"context"
@@ -468,19 +467,23 @@ func TestServer(t *testing.T) {
 			assert.NoError(t, err)
 		})
 
-		t.Run("/auth/verify-email - 400 Bad Request - missing token query parameter", func(t *testing.T) {
+		t.Run("/auth/verify-email - missing token query parameter", func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify-email", nil)
 			rec := httptest.NewRecorder()
 
-			
 			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusOK, rec.Code)
 
-			var apiErr v1_common.APIError
-			err := json.NewDecoder(rec.Body).Decode(&apiErr)
+			doc, err := goquery.NewDocumentFromReader(rec.Body)
 			assert.NoError(t, err)
-			assert.Equal(t, http.StatusBadRequest, rec.Code)
-			assert.Equal(t, v1_common.ErrorTypeBadRequest, apiErr.Type)
-			assert.Equal(t, "Missing required query parameter: 'token'", apiErr.Message)
+			title := doc.Find(`[data-testid="card-title"]`).Text()
+			assert.Equal(t, title, "Failed to Verify Email")
+			details := doc.Find(`[data-testid="card-details"]`).Text()
+			assert.Contains(t, details, "Missing validation token")
+			icon := doc.Find(`[data-testid="x-icon"]`)
+			assert.Equal(t, 1, icon.Length())
+			button := doc.Find(`[data-testid="go-to-dashboard"]`)
+			assert.Equal(t, 1, button.Length())
 		})
 
 		t.Run("/auth/verify-email - deny expired email token", func(t *testing.T) {
