@@ -629,13 +629,18 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusBadRequest, "Project ID is required", nil)
 	}
 
-	// Verify project belongs to company
-	_, err = h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
+	// Verify project belongs to company and check status
+	project, err := h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
 		ID:        projectID,
 		CompanyID: company.ID,
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusNotFound, "Project not found", err)
+	}
+
+	// Only allow submission if project is in draft status
+	if project.Status != db.ProjectStatusDraft {
+		return v1_common.Fail(c, http.StatusBadRequest, "Only draft projects can be submitted", nil)
 	}
 
 	// Get all questions and answers for this project
