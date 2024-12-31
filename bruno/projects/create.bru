@@ -1,0 +1,47 @@
+meta {
+  name: Create Project
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/project/new
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+}
+
+body:json {
+  {
+    "title": "Test Project via Bruno",
+    "description": "This is a test project created through Bruno automation"
+  }
+}
+
+tests {
+  test("should create project successfully", function() {
+    expect(res.status).to.equal(200);
+    
+    // Direct property checks on response body
+    expect(res.body).to.have.property("id");
+    expect(res.body).to.have.property("title");
+    expect(res.body).to.have.property("description");
+    expect(res.body).to.have.property("status");
+    expect(res.body).to.have.property("created_at");
+    expect(res.body).to.have.property("updated_at");
+    
+    // Verify values
+    expect(res.body.title).to.equal("Test Project via Bruno");
+    expect(res.body.description).to.equal("This is a test project created through Bruno automation");
+    expect(res.body.status).to.equal("draft");
+    
+    // Save project ID for future requests
+    if (res.body && res.body.id) {
+      bru.setVar("project_id", res.body.id);
+    }
+  });
+}

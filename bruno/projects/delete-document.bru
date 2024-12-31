@@ -1,0 +1,21 @@
+meta {
+  name: Delete Project Document
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/project/{{project_id}}/document/{{document_id}}
+}
+
+headers {
+  Authorization: Bearer {{access_token}}
+}
+
+tests {
+  // Check status code
+  res.status === 200
+  
+  // Check response message
+  res.body.message === "Document deleted successfully"
+} 

@@ -1,0 +1,42 @@
+meta {
+  name: Upload Project Document
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/project/{{project_id}}/document
+  body: multipartForm
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{access_token}}
+}
+
+body:multipart-form {
+  file: @file(test-files/sample.pdf)
+  name: Business Plan
+  section: business_overview
+}
+
+tests {
+  // Check status code
+  res.status === 201
+  
+  // Check response structure
+  res.body.id !== undefined
+  res.body.name !== undefined
+  res.body.url !== undefined
+  res.body.section !== undefined
+  res.body.created_at !== undefined
+  res.body.updated_at !== undefined
+  
+  // Verify values
+  res.body.name === "Business Plan"
+  res.body.section === "business_overview"
+  res.body.url.includes(".s3.us-east-1.amazonaws.com/")
+  
+  // Save document ID for future requests
+  bru.setEnvVar("document_id", res.body.id)
+}

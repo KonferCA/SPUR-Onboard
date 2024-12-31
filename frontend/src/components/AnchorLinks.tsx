@@ -1,6 +1,7 @@
 import React, { FC, ReactNode, useEffect, useState } from 'react';
 import { ScrollLink } from '@components';
-import { isElementInView } from '@utils';
+import { isAtEndOfPage, isElementInView } from '@utils';
+import clsx from 'clsx';
 
 export interface AnchorLinkItem {
     label: string;
@@ -18,7 +19,16 @@ type ControlledLink = AnchorLinkItem & {
 
 export interface AnchorLinksProps {
     links: AnchorLinkItem[];
-    children: (link: ControlledLink) => ReactNode;
+    /*
+     * Optionally pass a function as children to have control over how each link
+     * should look. This also allows the usage of stateful components as children
+     * that are controlled by the page using the AnchorLinks component.
+     */
+    children?: (link: ControlledLink) => ReactNode;
+    /*
+     * onClick handler for when a link item is clicked. Pass this if additional operations
+     * are desired on top of scrolling to the target.
+     */
     onClick?:
         | ((
               link: ControlledLink,
@@ -96,22 +106,30 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
 
                 // find closest to top
                 if (visibleLinks.length) {
-                    const closest: ControlledLink = visibleLinks.reduce(
-                        (closest, current) => {
-                            const closestDistance = Math.abs(
-                                closest.el!.getBoundingClientRect().top
-                            );
-                            const currentDistance = Math.abs(
-                                current.el!.getBoundingClientRect().top
-                            );
-                            return currentDistance < closestDistance
-                                ? current
-                                : closest;
-                        }
-                    );
+                    if (isAtEndOfPage()) {
+                        // set the last visible section to active if bottom of page has been reached
+                        newLinks[
+                            visibleLinks[visibleLinks.length - 1].index
+                        ].active = true;
+                    } else {
+                        // get the visible section closest to the top of page
+                        const closest: ControlledLink = visibleLinks.reduce(
+                            (closest, current) => {
+                                const closestDistance = Math.abs(
+                                    closest.el!.getBoundingClientRect().top
+                                );
+                                const currentDistance = Math.abs(
+                                    current.el!.getBoundingClientRect().top
+                                );
+                                return currentDistance < closestDistance
+                                    ? current
+                                    : closest;
+                            }
+                        );
 
-                    // set the closest index active
-                    newLinks[closest.index].active = true;
+                        // set the closest index active
+                        newLinks[closest.index].active = true;
+                    }
                 }
 
                 return newLinks;
@@ -139,7 +157,19 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
                             to={link.el ?? link.target}
                             offset={link.offset}
                         >
-                            {children(link)}
+                            {typeof children === 'function' ? (
+                                children(link)
+                            ) : (
+                                <span
+                                    className={clsx(
+                                        'transition hover:text-gray-800 hover:cursor-pointer',
+                                        link.active && 'text-black',
+                                        !link.active && 'text-gray-400'
+                                    )}
+                                >
+                                    {link.label}
+                                </span>
+                            )}
                         </ScrollLink>
                     </li>
                 ))}
