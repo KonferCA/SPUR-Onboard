@@ -41,6 +41,11 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
+	// Check user role
+	if user.Role != db.UserRoleStartupOwner && user.Role != db.UserRoleAdmin {
+		return v1_common.Fail(c, http.StatusForbidden, "Only startup owners and admins can create projects", nil)
+	}
+
 	// Get company owned by user
 	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
 	if err != nil {
@@ -137,6 +142,11 @@ func (h *Handler) handleGetProject(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
+	// Check user role
+	if user.Role != db.UserRoleStartupOwner && user.Role != db.UserRoleAdmin {
+		return v1_common.Fail(c, http.StatusForbidden, "Only startup owners and admins can view projects", nil)
+	}
+
 	// Get company owned by user
 	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
 	if err != nil {
@@ -201,6 +211,11 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 	user, err := getUserFromContext(c)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	// Check user role
+	if user.Role != db.UserRoleStartupOwner && user.Role != db.UserRoleAdmin {
+		return v1_common.Fail(c, http.StatusForbidden, "Only startup owners and admins can modify projects", nil)
 	}
 
 	// Get the question for this answer to check validations
