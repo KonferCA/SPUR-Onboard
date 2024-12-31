@@ -22,6 +22,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
+	"github.com/PuerkitoBio/goquery"
 )
 
 /*
@@ -451,13 +452,16 @@ func TestServer(t *testing.T) {
 			s.Echo.ServeHTTP(rec, req)
 			assert.Equal(t, http.StatusOK, rec.Code)
 
-			resBodyBytes, err := io.ReadAll(rec.Body)
-			assert.Nil(t, err)
-
-			var resBody map[string]any
-			err = json.Unmarshal(resBodyBytes, &resBody)
-			assert.Nil(t, err)
-			assert.Equal(t, resBody["verified"], true)
+			doc, err := goquery.NewDocumentFromReader(rec.Body)
+			assert.NoError(t, err)
+			title := doc.Find(`[data-testid="card-title"]`).Text()
+			assert.Equal(t, title, "Email Verified Successfully")
+			details := doc.Find(`[data-testid="card-details"]`).Text()
+			assert.Contains(t, details, "Thank you for verifying your email address")
+			icon := doc.Find(`[data-testid="check-icon"]`)
+			assert.Equal(t, 1, icon.Length())
+			button := doc.Find(`[data-testid="go-to-dashboard"]`)
+			assert.Equal(t, 1, button.Length())
 
 			// Cleanup
 			err = removeTestUser(ctx, email, s)
@@ -479,11 +483,10 @@ func TestServer(t *testing.T) {
 			assert.Equal(t, "Missing required query parameter: 'token'", apiErr.Message)
 		})
 
-		t.Run("/auth/verify-email - 400 Bad Request - deny expired email token", func(t *testing.T) {
+		t.Run("/auth/verify-email - deny expired email token", func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer cancel()
 
-			
 			userID, email, _, err := createTestUser(ctx, s)
 			assert.NoError(t, err)
 
@@ -498,13 +501,18 @@ func TestServer(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/auth/verify-email?token=%s", tokenStr), nil)
 			rec := httptest.NewRecorder()
 			s.Echo.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusOK, rec.Code)
 
-			var apiErr v1_common.APIError
-			err = json.NewDecoder(rec.Body).Decode(&apiErr)
+			doc, err := goquery.NewDocumentFromReader(rec.Body)
 			assert.NoError(t, err)
-			assert.Equal(t, http.StatusBadRequest, rec.Code)
-			assert.Equal(t, v1_common.ErrorTypeBadRequest, apiErr.Type)
-			assert.Equal(t, "Failed to verify email. Invalid or expired token.", apiErr.Message)
+			title := doc.Find(`[data-testid="card-title"]`).Text()
+			assert.Equal(t, title, "Failed to Verify Email")
+			details := doc.Find(`[data-testid="card-details"]`).Text()
+			assert.Contains(t, details, "The verification link is invalid or expired")
+			icon := doc.Find(`[data-testid="x-icon"]`)
+			assert.Equal(t, 1, icon.Length())
+			button := doc.Find(`[data-testid="go-to-dashboard"]`)
+			assert.Equal(t, 1, button.Length())
 
 			// Cleanup
 			err = removeTestUser(ctx, email, s)
