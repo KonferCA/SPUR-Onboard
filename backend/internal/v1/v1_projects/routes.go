@@ -13,7 +13,7 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	// Base project routes
 	projects := g.Group("/project", middleware.AuthWithConfig(middleware.AuthConfig{
 		AcceptTokenType: "access_token",
-		AcceptUserRoles: []db.UserRole{db.UserRoleStartupOwner},
+		AcceptUserRoles: []db.UserRole{db.UserRoleStartupOwner, db.UserRoleAdmin},
 	}, s.GetDB()))
 
 	// Project management
