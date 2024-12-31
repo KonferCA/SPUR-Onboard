@@ -185,15 +185,22 @@ func (h *Handler) handleGetProject(c echo.Context) error {
  * - Verifies project belongs to user's company
  */
 func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
-	user, err := getUserFromContext(c)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	// Validate static parameters first
+	projectID := c.Param("id")
+	if projectID == "" {
+		return v1_common.Fail(c, http.StatusBadRequest, "Project ID is required", nil)
 	}
 
-	// Parse request body first for validation
+	// Parse and validate request body
 	var req PatchAnswerRequest
 	if err := c.Bind(&req); err != nil {
 		return v1_common.Fail(c, 400, "Invalid request body", err)
+	}
+
+	// Get authenticated user
+	user, err := getUserFromContext(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
 	// Get the question for this answer to check validations
@@ -202,7 +209,7 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 		return v1_common.Fail(c, 404, "Question not found", err)
 	}
 
-	// Validate the answer content first
+	// Validate the answer content
 	if question.Validations != nil && *question.Validations != "" {
 		if !isValidAnswer(req.Content, *question.Validations) {
 			return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -222,15 +229,10 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
-	projectID := c.Param("id")
-	if projectID == "" {
-		return v1_common.Fail(c, 400, "Project ID is required", nil)
-	}
-
 	// Get project and verify status
 	project, err := h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
 		ID:        projectID,
-			CompanyID: company.ID,
+		CompanyID: company.ID,
 	})
 	if err != nil {
 		return v1_common.Fail(c, 404, "Project not found", err)
