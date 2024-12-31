@@ -1,0 +1,33 @@
+meta {
+  name: Get Project
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/project/{{project_id}}
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+}
+
+tests {
+  test("should get project successfully", function() {
+    expect(res.status).to.equal(200);
+    
+    // Check all required fields
+    expect(res.body).to.have.property("id");
+    expect(res.body).to.have.property("title");
+    expect(res.body).to.have.property("description");
+    expect(res.body).to.have.property("status");
+    expect(res.body).to.have.property("created_at");
+    expect(res.body).to.have.property("updated_at");
+    
+    // Verify it's the project we created
+    expect(res.body.id).to.equal(bru.getVar("project_id"));
+    expect(res.body.title).to.equal("Test Project via Bruno");
+  });
+} 

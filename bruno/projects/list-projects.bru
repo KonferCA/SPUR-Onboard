@@ -1,0 +1,33 @@
+meta {
+  name: List Company Projects
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/project
+}
+
+headers {
+  Authorization: Bearer {{access_token}}
+}
+
+tests {
+  // Check status code
+  res.status === 200
+  
+  // Check response structure
+  res.body.projects !== undefined
+  Array.isArray(res.body.projects)
+  
+  // If there are projects, check their structure
+  if (res.body.projects.length > 0) {
+    const project = res.body.projects[0]
+    project.id !== undefined
+    project.title !== undefined
+    project.description !== undefined
+    project.status !== undefined
+    project.created_at !== undefined
+    project.updated_at !== undefined
+  }
+} 

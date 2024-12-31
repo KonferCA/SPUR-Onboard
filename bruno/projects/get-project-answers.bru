@@ -1,0 +1,30 @@
+meta {
+  name: Get Project Answers
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/project/{{project_id}}/answers
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+}
+
+tests {
+  test("should get project answers", function() {
+    expect(res.status).to.equal(200);
+    
+    // Check answers array exists
+    expect(res.body).to.have.property("answers");
+    expect(res.body.answers).to.be.an("array");
+    
+    // Save first answer ID for patch test
+    if (res.body.answers && res.body.answers.length > 0) {
+      bru.setVar("answer_id", res.body.answers[0].id);
+    }
+  });
+} 

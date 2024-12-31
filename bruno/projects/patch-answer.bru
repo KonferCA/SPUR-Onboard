@@ -1,0 +1,33 @@
+meta {
+  name: Patch Project Answer
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/project/{{project_id}}/answer
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{access_token}}
+}
+
+body:json {
+  {
+    "content": "This is my updated answer",
+    "answer_id": "{{answer_id}}"
+  }
+}
+
+tests {
+  test("should update answer successfully", function() {
+    expect(res.status).to.equal(200);
+    
+    // Check success message
+    expect(res.body).to.have.property("message");
+    expect(res.body.message).to.equal("Answer updated successfully");
+  });
+}

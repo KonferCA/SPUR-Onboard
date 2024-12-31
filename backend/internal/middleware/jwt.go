@@ -37,39 +37,41 @@ func AuthWithConfig(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc
 				return v1_common.Fail(c, http.StatusUnauthorized, "invalid authorization format", nil)
 			}
 
-			// get user salt from db using claims
+			// Parse claims without verification first
 			claims, err := jwt.ParseUnverifiedClaims(parts[1])
 			if err != nil {
 				return v1_common.Fail(c, http.StatusUnauthorized, "invalid token", err)
 			}
 
-			// validate token type
-			if claims.TokenType != config.AcceptTokenType {
-				return v1_common.Fail(c, http.StatusUnauthorized, "invalid token type", nil)
-			}
-
-			// check if user role is allowed
-			roleValid := false
-			for _, role := range config.AcceptUserRoles {
-				if claims.Role.Valid() && claims.Role == role {
-					roleValid = true
-					break
-				}
-			}
-			if !roleValid {
-				return v1_common.Fail(c, http.StatusForbidden, "insufficient permissions", nil)
-			}
-
-			// get user's token salt and user data from db
+			// Get user's salt from database
 			user, err := queries.GetUserByID(c.Request().Context(), claims.UserID)
 			if err != nil {
 				return v1_common.Fail(c, http.StatusUnauthorized, "invalid token", nil)
 			}
 
-			// verify token with user's salt
+			// Verify token with user's salt
 			claims, err = jwt.VerifyTokenWithSalt(parts[1], user.TokenSalt)
 			if err != nil {
 				return v1_common.Fail(c, http.StatusUnauthorized, "invalid token", nil)
+			}
+
+			// Verify token type
+			if claims.TokenType != config.AcceptTokenType {
+				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token type")
+			}
+
+			// Verify user role if roles specified
+			if len(config.AcceptUserRoles) > 0 {
+				validRole := false
+				for _, role := range config.AcceptUserRoles {
+					if claims.Role == role {
+						validRole = true
+						break
+					}
+				}
+				if !validRole {
+					return echo.NewHTTPError(http.StatusForbidden, "insufficient permissions")
+				}
 			}
 
 			// store claims and user in context for handlers
