@@ -20,22 +20,36 @@ import (
  * It handles project creation, retrieval, document management, and submission workflows.
  */
 
-func (h *Handler) handleCreateProject(c echo.Context) error {
-	var req CreateProjectRequest
-	if err := v1_common.BindandValidate(c, &req); err != nil {
-		return v1_common.Fail(c, 400, "Invalid request", err)
+// Helper function to get validated user from context
+func getUserFromContext(c echo.Context) (*db.GetUserByIDRow, error) {
+	userVal := c.Get("user")
+	if userVal == nil {
+		return nil, fmt.Errorf("user not found in context")
 	}
 
-	// Get user ID from context
-	userID, err := v1_common.GetUserID(c)
+	user, ok := userVal.(*db.GetUserByIDRow)
+	if !ok {
+		return nil, fmt.Errorf("invalid user type in context")
+	}
+
+	return user, nil
+}
+
+func (h *Handler) handleCreateProject(c echo.Context) error {
+	user, err := getUserFromContext(c)
 	if err != nil {
-		return v1_common.Fail(c, 401, "Unauthorized", err)
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
 	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID.String())
+	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
 	if err != nil {
 		return v1_common.Fail(c, 404, "Company not found", err)
+	}
+
+	var req CreateProjectRequest
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, 400, "Invalid request", err)
 	}
 
 	// Create project
@@ -45,9 +59,9 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 		CompanyID:   company.ID,
 		Title:       req.Title,
 		Description: &description,
-			Status:      db.ProjectStatusDraft,
-			CreatedAt:   now,
-			UpdatedAt:   now,
+		Status:      db.ProjectStatusDraft,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	})
 	if err != nil {
 		return v1_common.Fail(c, 500, "Failed to create project", err)
@@ -73,14 +87,12 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
  * Returns array of ProjectResponse with basic project details
  */
 func (h *Handler) handleGetProjects(c echo.Context) error {
-	// Get user ID from context
-	userID, err := v1_common.GetUserID(c)
-	if err != nil {
-		return v1_common.Fail(c, 401, "Unauthorized", err)
-	}
+	// Get user from claims
+	user := c.Get("user").(db.User)
+	userID := user.ID
 
 	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID.String())
+	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID)
 	if err != nil {
 		return v1_common.Fail(c, 404, "Company not found", err)
 	}
@@ -120,22 +132,21 @@ func (h *Handler) handleGetProjects(c echo.Context) error {
  * - Returns 404 if project not found or unauthorized
  */
 func (h *Handler) handleGetProject(c echo.Context) error {
-	// Get user ID from context
-	userID, err := v1_common.GetUserID(c)
+	user, err := getUserFromContext(c)
 	if err != nil {
-		return v1_common.Fail(c, 401, "Unauthorized", err)
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	// Get company owned by user
+	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
+	if err != nil {
+		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
 	// Get project ID from URL
 	projectID := c.Param("id")
 	if projectID == "" {
 		return v1_common.Fail(c, 400, "Project ID is required", nil)
-	}
-
-	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID.String())
-	if err != nil {
-		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
 	// Get project (with company ID check for security)
@@ -174,22 +185,21 @@ func (h *Handler) handleGetProject(c echo.Context) error {
  * - Verifies project belongs to user's company
  */
 func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
+	user, err := getUserFromContext(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	// Get company owned by user
+	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
+	if err != nil {
+		return v1_common.Fail(c, 404, "Company not found", err)
+	}
+
 	// Get project ID from URL
 	projectID := c.Param("id")
 	if projectID == "" {
 		return v1_common.Fail(c, 400, "Project ID is required", nil)
-	}
-
-	// Get user ID from context and get their company
-	userID, err := v1_common.GetUserID(c)
-	if err != nil {
-		return v1_common.Fail(c, 401, "Unauthorized", err)
-	}
-
-	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID.String())
-	if err != nil {
-		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
 	// Parse request body
@@ -257,22 +267,21 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
  * - Verifies project belongs to user's company
  */
 func (h *Handler) handleGetProjectAnswers(c echo.Context) error {
+	user, err := getUserFromContext(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	// Get company owned by user
+	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
+	if err != nil {
+		return v1_common.Fail(c, 404, "Company not found", err)
+	}
+
 	// Get project ID from URL
 	projectID := c.Param("id")
 	if projectID == "" {
 		return v1_common.Fail(c, 400, "Project ID is required", nil)
-	}
-
-	// Get user ID from context
-	userID, err := v1_common.GetUserID(c)
-	if err != nil {
-		return v1_common.Fail(c, 401, "Unauthorized", err)
-	}
-
-	// Verify company ownership
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID.String())
-	if err != nil {
-		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
 	// Get project answers
@@ -321,15 +330,15 @@ func (h *Handler) handleGetProjectAnswers(c echo.Context) error {
  * - Deletes S3 file if database insert fails
  */
 func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
+	user, err := getUserFromContext(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
 	// Get file from request
 	file, err := c.FormFile("file")
 	if err != nil {
 		return v1_common.Fail(c, http.StatusBadRequest, "No file provided", err)
-	}
-	// Get user ID from context
-	userID, err := v1_common.GetUserID(c)
-	if err != nil {
-		return v1_common.Fail(c, 401, "Unauthorized", err)
 	}
 
 	// Get project ID from URL
@@ -338,8 +347,8 @@ func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
 		return v1_common.Fail(c, 400, "Project ID is required", nil)
 	}
 
-	// Get company owned by user to verify ownership
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID.String())
+	// Get company owned by user
+	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
 	if err != nil {
 		return v1_common.Fail(c, 404, "Company not found", err)
 	}
@@ -411,22 +420,21 @@ func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
  * - Verifies project belongs to user's company
  */
 func (h *Handler) handleGetProjectDocuments(c echo.Context) error {
-	// Get user ID from context
-	userID, err := v1_common.GetUserID(c)
+	user, err := getUserFromContext(c)
 	if err != nil {
-		return v1_common.Fail(c, 401, "Unauthorized", err)
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	// Get company owned by user
+	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
+	if err != nil {
+		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
 	// Get project ID from URL
 	projectID := c.Param("id")
 	if projectID == "" {
 		return v1_common.Fail(c, 400, "Project ID is required", nil)
-	}
-
-	// Get company owned by user to verify ownership
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID.String())
-	if err != nil {
-		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
 	// Verify project belongs to company
@@ -474,11 +482,9 @@ func (h *Handler) handleGetProjectDocuments(c echo.Context) error {
  * - Verifies document belongs to user's project
  */
 func (h *Handler) handleDeleteProjectDocument(c echo.Context) error {
-	// Get user ID from context
-	userID, err := v1_common.GetUserID(c)
-	if err != nil {
-		return v1_common.Fail(c, 401, "Unauthorized", nil)
-	}
+	// Get user from claims
+	user := c.Get("user").(db.User)
+	userID := user.ID
 
 	// Get project ID and document ID from URL
 	projectID := c.Param("id")
@@ -488,7 +494,7 @@ func (h *Handler) handleDeleteProjectDocument(c echo.Context) error {
 	}
 
 	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID.String())
+	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID)
 	if err != nil {
 		return v1_common.Fail(c, 404, "Company not found", nil)
 	}
@@ -544,15 +550,15 @@ func (h *Handler) handleDeleteProjectDocument(c echo.Context) error {
  * - Basic project details including status
  */
 func (h *Handler) handleListCompanyProjects(c echo.Context) error {
-	userID, err := v1_common.GetUserID(c)
+	user, err := getUserFromContext(c)
 	if err != nil {
-		return v1_common.Fail(c, 401, "Unauthorized", nil)
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
 	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID.String())
+	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
 	if err != nil {
-		return v1_common.Fail(c, 404, "Company not found", nil)
+		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
 	// Get all projects for this company
@@ -599,16 +605,15 @@ func (h *Handler) handleListCompanyProjects(c echo.Context) error {
  * 4. Returns success with new status
  */
 func (h *Handler) handleSubmitProject(c echo.Context) error {
-	// Get user ID and verify ownership first
-	userID, err := v1_common.GetUserID(c)
+	user, err := getUserFromContext(c)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
 	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), userID.String())
+	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
 	if err != nil {
-		return v1_common.Fail(c, http.StatusNotFound, "Company not found", err)
+		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
 	projectID := c.Param("id")

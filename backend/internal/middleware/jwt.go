@@ -10,7 +10,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
-	"github.com/google/uuid"
 )
 
 // Auth creates a middleware that validates JWT access tokens with specified user roles
@@ -81,7 +80,6 @@ func AuthWithConfig(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc
 				Salt:      user.TokenSalt,
 			})
 			c.Set("user", &user)
-			c.Set("user_id", uuid.MustParse(claims.UserID))
 
 			return next(c)
 		}
