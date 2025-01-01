@@ -173,3 +173,19 @@ WHERE id = $1;
 SELECT * FROM projects 
 WHERE id = $1 
 LIMIT 1; 
+
+-- name: ResolveProjectComment :one
+UPDATE project_comments
+SET 
+    resolved = true,
+    updated_at = extract(epoch from now())
+WHERE id = $1 AND project_id = $2
+RETURNING *;
+
+-- name: UnresolveProjectComment :one
+UPDATE project_comments
+SET 
+    resolved = false,
+    updated_at = extract(epoch from now())
+WHERE id = $1 AND project_id = $2
+RETURNING *; 

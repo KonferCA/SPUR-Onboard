@@ -412,4 +412,66 @@ func TestProjectEndpoints(t *testing.T) {
             })
         }
     })
+
+    t.Run("Comment Resolution", func(t *testing.T) {
+        // Create an admin user for testing
+        _, adminEmail, adminPassword, err := createTestAdminUser(ctx, s)
+        assert.NoError(t, err)
+        defer removeTestUser(ctx, adminEmail, s)
+
+        // Login as admin
+        adminToken := loginAndGetToken(t, s, adminEmail, adminPassword)
+
+        // Create a test comment first
+        commentBody := fmt.Sprintf(`{
+            "comment": "Test comment",
+            "target_id": "%s"
+        }`, projectID)
+
+        req := httptest.NewRequest(http.MethodPost, 
+            fmt.Sprintf("/api/v1/project/%s/comments", projectID),
+            strings.NewReader(commentBody))
+        req.Header.Set("Authorization", "Bearer "+adminToken)
+        req.Header.Set("Content-Type", "application/json")
+        rec := httptest.NewRecorder()
+        s.GetEcho().ServeHTTP(rec, req)
+
+        assert.Equal(t, http.StatusCreated, rec.Code)
+
+        var commentResp map[string]interface{}
+        err = json.NewDecoder(rec.Body).Decode(&commentResp)
+        assert.NoError(t, err)
+
+        commentID := commentResp["id"].(string)
+
+        // Test resolving the comment
+        req = httptest.NewRequest(http.MethodPost,
+            fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectID, commentID),
+            nil)
+        req.Header.Set("Authorization", "Bearer "+adminToken)
+        rec = httptest.NewRecorder()
+        s.GetEcho().ServeHTTP(rec, req)
+
+        assert.Equal(t, http.StatusOK, rec.Code)
+
+        // Test unresolving the comment
+        req = httptest.NewRequest(http.MethodPost,
+            fmt.Sprintf("/api/v1/project/%s/comments/%s/unresolve", projectID, commentID),
+            nil)
+        req.Header.Set("Authorization", "Bearer "+adminToken)
+        rec = httptest.NewRecorder()
+        s.GetEcho().ServeHTTP(rec, req)
+
+        assert.Equal(t, http.StatusOK, rec.Code)
+
+        // Test non-admin cannot resolve/unresolve
+        req = httptest.NewRequest(http.MethodPost,
+            fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectID, commentID),
+            nil)
+        req.Header.Set("Authorization", "Bearer "+accessToken)
+        rec = httptest.NewRecorder()
+        s.GetEcho().ServeHTTP(rec, req)
+
+        assert.Equal(t, http.StatusForbidden, rec.Code)
+    })
 }

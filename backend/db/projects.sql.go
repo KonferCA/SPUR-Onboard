@@ -134,7 +134,7 @@ INSERT INTO project_comments (
     $2, -- target_id
     $3, -- comment
     $4  -- commenter_id
-) RETURNING id, project_id, target_id, comment, commenter_id, created_at, updated_at
+) RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at
 `
 
 type CreateProjectCommentParams struct {
@@ -158,6 +158,7 @@ func (q *Queries) CreateProjectComment(ctx context.Context, arg CreateProjectCom
 		&i.TargetID,
 		&i.Comment,
 		&i.CommenterID,
+		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -362,7 +363,7 @@ func (q *Queries) GetProjectByIDAdmin(ctx context.Context, id string) (Project, 
 }
 
 const getProjectComment = `-- name: GetProjectComment :one
-SELECT id, project_id, target_id, comment, commenter_id, created_at, updated_at FROM project_comments
+SELECT id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at FROM project_comments
 WHERE id = $1 AND project_id = $2
 LIMIT 1
 `
@@ -381,6 +382,7 @@ func (q *Queries) GetProjectComment(ctx context.Context, arg GetProjectCommentPa
 		&i.TargetID,
 		&i.Comment,
 		&i.CommenterID,
+		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -388,7 +390,7 @@ func (q *Queries) GetProjectComment(ctx context.Context, arg GetProjectCommentPa
 }
 
 const getProjectComments = `-- name: GetProjectComments :many
-SELECT id, project_id, target_id, comment, commenter_id, created_at, updated_at FROM project_comments
+SELECT id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at FROM project_comments
 WHERE project_id = $1
 ORDER BY created_at DESC
 `
@@ -408,6 +410,7 @@ func (q *Queries) GetProjectComments(ctx context.Context, projectID string) ([]P
 			&i.TargetID,
 			&i.Comment,
 			&i.CommenterID,
+			&i.Resolved,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -632,6 +635,66 @@ func (q *Queries) ListCompanyProjects(ctx context.Context, companyID string) ([]
 	return items, nil
 }
 
+const resolveProjectComment = `-- name: ResolveProjectComment :one
+UPDATE project_comments
+SET 
+    resolved = true,
+    updated_at = extract(epoch from now())
+WHERE id = $1 AND project_id = $2
+RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at
+`
+
+type ResolveProjectCommentParams struct {
+	ID        string
+	ProjectID string
+}
+
+func (q *Queries) ResolveProjectComment(ctx context.Context, arg ResolveProjectCommentParams) (ProjectComment, error) {
+	row := q.db.QueryRow(ctx, resolveProjectComment, arg.ID, arg.ProjectID)
+	var i ProjectComment
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.TargetID,
+		&i.Comment,
+		&i.CommenterID,
+		&i.Resolved,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const unresolveProjectComment = `-- name: UnresolveProjectComment :one
+UPDATE project_comments
+SET 
+    resolved = false,
+    updated_at = extract(epoch from now())
+WHERE id = $1 AND project_id = $2
+RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at
+`
+
+type UnresolveProjectCommentParams struct {
+	ID        string
+	ProjectID string
+}
+
+func (q *Queries) UnresolveProjectComment(ctx context.Context, arg UnresolveProjectCommentParams) (ProjectComment, error) {
+	row := q.db.QueryRow(ctx, unresolveProjectComment, arg.ID, arg.ProjectID)
+	var i ProjectComment
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.TargetID,
+		&i.Comment,
+		&i.CommenterID,
+		&i.Resolved,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const updateProjectAnswer = `-- name: UpdateProjectAnswer :one
 UPDATE project_answers 
 SET 
@@ -668,7 +731,7 @@ UPDATE project_comments
 SET comment = $2,
     updated_at = extract(epoch from now())
 WHERE id = $1
-RETURNING id, project_id, target_id, comment, commenter_id, created_at, updated_at
+RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at
 `
 
 type UpdateProjectCommentParams struct {
@@ -685,6 +748,7 @@ func (q *Queries) UpdateProjectComment(ctx context.Context, arg UpdateProjectCom
 		&i.TargetID,
 		&i.Comment,
 		&i.CommenterID,
+		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

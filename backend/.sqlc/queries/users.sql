@@ -20,3 +20,13 @@ SELECT * FROM users WHERE email = $1 LIMIT 1;
 
 -- name: UpdateUserEmailVerifiedStatus :exec
 UPDATE users SET email_verified = $1 WHERE id = $2;
+
+-- name: CreateUser :one
+INSERT INTO users (
+    email,
+    password,
+    role,
+    email_verified
+) VALUES (
+    $1, $2, $3, false
+) RETURNING *;

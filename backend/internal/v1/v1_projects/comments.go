@@ -5,6 +5,7 @@ import (
     "KonferCA/SPUR/internal/v1/v1_common"
     "github.com/labstack/echo/v4"
     "net/http"
+    "database/sql"
 )
 
 /*
@@ -194,5 +195,89 @@ func (h *Handler) handleUpdateProjectComment(c echo.Context) error {
 
     return c.JSON(http.StatusOK, map[string]string{
         "message": "Comment updated successfully",
+    })
+}
+
+func (h *Handler) handleResolveComment(c echo.Context) error {
+    user, err := getUserFromContext(c)
+    if err != nil {
+        return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+    }
+
+    // Verify user is admin
+    if user.Role != db.UserRoleAdmin {
+        return v1_common.Fail(c, http.StatusForbidden, "Only admins can resolve comments", nil)
+    }
+
+    // Get IDs from URL
+    projectID := c.Param("id")
+    commentID := c.Param("comment_id")
+    if projectID == "" || commentID == "" {
+        return v1_common.Fail(c, http.StatusBadRequest, "Project ID and Comment ID are required", nil)
+    }
+
+    // Resolve the comment
+    comment, err := h.server.GetQueries().ResolveProjectComment(c.Request().Context(), db.ResolveProjectCommentParams{
+        ID:        commentID,
+        ProjectID: projectID,
+    })
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return v1_common.Fail(c, http.StatusNotFound, "Comment not found", err)
+        }
+        return v1_common.Fail(c, http.StatusInternalServerError, "Failed to resolve comment", err)
+    }
+
+    return c.JSON(http.StatusOK, CommentResponse{
+        ID:          comment.ID,
+        ProjectID:   comment.ProjectID,
+        TargetID:    comment.TargetID,
+        Comment:     comment.Comment,
+        CommenterID: comment.CommenterID,
+        Resolved:    comment.Resolved,
+        CreatedAt:   comment.CreatedAt,
+        UpdatedAt:   comment.UpdatedAt,
+    })
+}
+
+func (h *Handler) handleUnresolveComment(c echo.Context) error {
+    user, err := getUserFromContext(c)
+    if err != nil {
+        return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+    }
+
+    // Check for admin role
+    if user.Role != db.UserRoleAdmin {
+        return v1_common.Fail(c, http.StatusForbidden, "Only admins can unresolve comments", nil)
+    }
+
+    // Get IDs from URL
+    projectID := c.Param("id")
+    commentID := c.Param("comment_id")
+    if projectID == "" || commentID == "" {
+        return v1_common.Fail(c, http.StatusBadRequest, "Project ID and Comment ID are required", nil)
+    }
+
+    // Unresolve the comment
+    comment, err := h.server.GetQueries().UnresolveProjectComment(c.Request().Context(), db.UnresolveProjectCommentParams{
+        ID:        commentID,
+        ProjectID: projectID,
+    })
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return v1_common.Fail(c, http.StatusNotFound, "Comment not found", err)
+        }
+        return v1_common.Fail(c, http.StatusInternalServerError, "Failed to unresolve comment", err)
+    }
+
+    return c.JSON(http.StatusOK, CommentResponse{
+        ID:          comment.ID,
+        ProjectID:   comment.ProjectID,
+        TargetID:    comment.TargetID,
+        Comment:     comment.Comment,
+        CommenterID: comment.CommenterID,
+        Resolved:    comment.Resolved,
+        CreatedAt:   comment.CreatedAt,
+        UpdatedAt:   comment.UpdatedAt,
     })
 }

@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS project_comments (
     target_id uuid NOT NULL,
     comment text NOT NULL,
     commenter_id uuid NOT NULL REFERENCES users(id),
+    resolved boolean NOT NULL DEFAULT false,
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );

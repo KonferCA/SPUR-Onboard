@@ -60,4 +60,6 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	comments.GET("/:comment_id", h.handleGetProjectComment)
 	comments.POST("", h.handleCreateProjectComment)
 	comments.PUT("/:comment_id", h.handleUpdateProjectComment)
+	comments.POST("/:comment_id/resolve", h.handleResolveComment)
+	comments.POST("/:comment_id/unresolve", h.handleUnresolveComment)
 }

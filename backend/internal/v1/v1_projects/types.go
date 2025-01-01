@@ -97,6 +97,7 @@ type CommentResponse struct {
 	TargetID    string `json:"target_id"`
 	Comment     string `json:"comment"`
 	CommenterID string `json:"commenter_id"`
+	Resolved   bool   `json:"resolved"`
 	CreatedAt   int64  `json:"created_at"`
 	UpdatedAt   int64  `json:"updated_at"`
 }
