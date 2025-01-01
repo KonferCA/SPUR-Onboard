@@ -175,7 +175,7 @@ func TestProjectEndpoints(t *testing.T) {
          * 5. Verifies project status changes to 'pending'
          */
         // First get the available questions
-        req := httptest.NewRequest(http.MethodGet, "/api/v1/questions", nil)
+        req := httptest.NewRequest(http.MethodGet, "/api/v1/project/questions", nil)
         req.Header.Set("Authorization", "Bearer "+accessToken)
         rec := httptest.NewRecorder()
         s.GetEcho().ServeHTTP(rec, req)
@@ -221,7 +221,7 @@ func TestProjectEndpoints(t *testing.T) {
 
             createReq := httptest.NewRequest(
                 http.MethodPost, 
-                fmt.Sprintf("/api/v1/project/%s/answer", projectID),
+                fmt.Sprintf("/api/v1/project/%s/answers", projectID),
                 bytes.NewReader(createJSON),
             )
             createReq.Header.Set("Authorization", "Bearer "+accessToken)
@@ -355,7 +355,7 @@ func TestProjectEndpoints(t *testing.T) {
             {
                 name:   "Create Answer Without Question",
                 method: http.MethodPost,
-                path:   fmt.Sprintf("/api/v1/project/%s/answer", projectID),
+                path:   fmt.Sprintf("/api/v1/project/%s/answers", projectID),
                 body:   `{"content": "some answer"}`, // Missing question_id
                 setupAuth: func(req *http.Request) {
                     req.Header.Set("Authorization", "Bearer "+accessToken)
@@ -366,7 +366,7 @@ func TestProjectEndpoints(t *testing.T) {
             {
                 name:   "Create Answer For Invalid Question",
                 method: http.MethodPost,
-                path:   fmt.Sprintf("/api/v1/project/%s/answer", projectID),
+                path:   fmt.Sprintf("/api/v1/project/%s/answers", projectID),
                 body:   `{"content": "some answer", "question_id": "invalid-id"}`,
                 setupAuth: func(req *http.Request) {
                     req.Header.Set("Authorization", "Bearer "+accessToken)
