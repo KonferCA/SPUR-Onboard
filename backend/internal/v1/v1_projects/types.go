@@ -90,3 +90,26 @@ type AnswerResponse struct {
 	CreatedAt  string `json:"created_at"`
 	UpdatedAt  string `json:"updated_at"`
 }
+
+type CommentResponse struct {
+	ID          string `json:"id"`
+	ProjectID   string `json:"project_id"`
+	TargetID    string `json:"target_id"`
+	Comment     string `json:"comment"`
+	CommenterID string `json:"commenter_id"`
+	CreatedAt   int64  `json:"created_at"`
+	UpdatedAt   int64  `json:"updated_at"`
+}
+
+type CommentsResponse struct {
+	Comments []CommentResponse `json:"comments"`
+}
+
+type CreateCommentRequest struct {
+	Comment  string `json:"comment" validate:"required"`
+	TargetID string `json:"target_id" validate:"required,uuid"`
+}
+
+type UpdateCommentRequest struct {
+	Comment string `json:"comment" validate:"required"`
+}
