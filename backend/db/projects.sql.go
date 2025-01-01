@@ -123,6 +123,47 @@ func (q *Queries) CreateProjectAnswers(ctx context.Context, projectID string) ([
 	return items, nil
 }
 
+const createProjectComment = `-- name: CreateProjectComment :one
+INSERT INTO project_comments (
+    project_id,
+    target_id,
+    comment,
+    commenter_id
+) VALUES (
+    $1, -- project_id
+    $2, -- target_id
+    $3, -- comment
+    $4  -- commenter_id
+) RETURNING id, project_id, target_id, comment, commenter_id, created_at, updated_at
+`
+
+type CreateProjectCommentParams struct {
+	ProjectID   string
+	TargetID    string
+	Comment     string
+	CommenterID string
+}
+
+func (q *Queries) CreateProjectComment(ctx context.Context, arg CreateProjectCommentParams) (ProjectComment, error) {
+	row := q.db.QueryRow(ctx, createProjectComment,
+		arg.ProjectID,
+		arg.TargetID,
+		arg.Comment,
+		arg.CommenterID,
+	)
+	var i ProjectComment
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.TargetID,
+		&i.Comment,
+		&i.CommenterID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createProjectDocument = `-- name: CreateProjectDocument :one
 INSERT INTO project_documents (
     id,
@@ -168,6 +209,16 @@ func (q *Queries) CreateProjectDocument(ctx context.Context, arg CreateProjectDo
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const deleteProjectComment = `-- name: DeleteProjectComment :exec
+DELETE FROM project_comments
+WHERE id = $1
+`
+
+func (q *Queries) DeleteProjectComment(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, deleteProjectComment, id)
+	return err
 }
 
 const deleteProjectDocument = `-- name: DeleteProjectDocument :one
@@ -287,6 +338,87 @@ func (q *Queries) GetProjectByID(ctx context.Context, arg GetProjectByIDParams) 
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const getProjectByIDAdmin = `-- name: GetProjectByIDAdmin :one
+SELECT id, company_id, title, description, status, created_at, updated_at FROM projects 
+WHERE id = $1 
+LIMIT 1
+`
+
+func (q *Queries) GetProjectByIDAdmin(ctx context.Context, id string) (Project, error) {
+	row := q.db.QueryRow(ctx, getProjectByIDAdmin, id)
+	var i Project
+	err := row.Scan(
+		&i.ID,
+		&i.CompanyID,
+		&i.Title,
+		&i.Description,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getProjectComment = `-- name: GetProjectComment :one
+SELECT id, project_id, target_id, comment, commenter_id, created_at, updated_at FROM project_comments
+WHERE id = $1 AND project_id = $2
+LIMIT 1
+`
+
+type GetProjectCommentParams struct {
+	ID        string
+	ProjectID string
+}
+
+func (q *Queries) GetProjectComment(ctx context.Context, arg GetProjectCommentParams) (ProjectComment, error) {
+	row := q.db.QueryRow(ctx, getProjectComment, arg.ID, arg.ProjectID)
+	var i ProjectComment
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.TargetID,
+		&i.Comment,
+		&i.CommenterID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getProjectComments = `-- name: GetProjectComments :many
+SELECT id, project_id, target_id, comment, commenter_id, created_at, updated_at FROM project_comments
+WHERE project_id = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetProjectComments(ctx context.Context, projectID string) ([]ProjectComment, error) {
+	rows, err := q.db.Query(ctx, getProjectComments, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ProjectComment
+	for rows.Next() {
+		var i ProjectComment
+		if err := rows.Scan(
+			&i.ID,
+			&i.ProjectID,
+			&i.TargetID,
+			&i.Comment,
+			&i.CommenterID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getProjectDocument = `-- name: GetProjectDocument :one
@@ -525,6 +657,34 @@ func (q *Queries) UpdateProjectAnswer(ctx context.Context, arg UpdateProjectAnsw
 		&i.ProjectID,
 		&i.QuestionID,
 		&i.Answer,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateProjectComment = `-- name: UpdateProjectComment :one
+UPDATE project_comments
+SET comment = $2,
+    updated_at = extract(epoch from now())
+WHERE id = $1
+RETURNING id, project_id, target_id, comment, commenter_id, created_at, updated_at
+`
+
+type UpdateProjectCommentParams struct {
+	ID      string
+	Comment string
+}
+
+func (q *Queries) UpdateProjectComment(ctx context.Context, arg UpdateProjectCommentParams) (ProjectComment, error) {
+	row := q.db.QueryRow(ctx, updateProjectComment, arg.ID, arg.Comment)
+	var i ProjectComment
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.TargetID,
+		&i.Comment,
+		&i.CommenterID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
