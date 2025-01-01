@@ -134,3 +134,42 @@ INSERT INTO project_answers (
     $2, -- question_id
     $3  -- answer
 ) RETURNING *; 
+
+-- name: GetProjectComments :many
+SELECT * FROM project_comments
+WHERE project_id = $1
+ORDER BY created_at DESC;
+
+-- name: GetProjectComment :one
+SELECT * FROM project_comments
+WHERE id = $1 AND project_id = $2
+LIMIT 1;
+
+-- name: CreateProjectComment :one
+INSERT INTO project_comments (
+    project_id,
+    target_id,
+    comment,
+    commenter_id
+) VALUES (
+    $1, -- project_id
+    $2, -- target_id
+    $3, -- comment
+    $4  -- commenter_id
+) RETURNING *;
+
+-- name: UpdateProjectComment :one
+UPDATE project_comments
+SET comment = $2,
+    updated_at = extract(epoch from now())
+WHERE id = $1
+RETURNING *;
+
+-- name: DeleteProjectComment :exec
+DELETE FROM project_comments
+WHERE id = $1; 
+
+-- name: GetProjectByIDAdmin :one
+SELECT * FROM projects 
+WHERE id = $1 
+LIMIT 1; 
