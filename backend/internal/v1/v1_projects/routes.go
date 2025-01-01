@@ -10,22 +10,25 @@ import (
 func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	h := &Handler{server: s}
 
-	// Base project routes
+	// Base project routes with auth
 	projects := g.Group("/project", middleware.AuthWithConfig(middleware.AuthConfig{
 		AcceptTokenType: "access_token",
 		AcceptUserRoles: []db.UserRole{db.UserRoleStartupOwner, db.UserRoleAdmin},
 	}, s.GetDB()))
 
-	// Project management
+	// Static routes
+	projects.GET("/questions", h.handleGetQuestions)
 	projects.POST("/new", h.handleCreateProject)
 	projects.GET("", h.handleListCompanyProjects)
+
+	// Dynamic :id routes
 	projects.GET("/:id", h.handleGetProject)
 	projects.POST("/:id/submit", h.handleSubmitProject)
 
 	// Project answers
 	answers := projects.Group("/:id/answers")
 	answers.GET("", h.handleGetProjectAnswers)
-	projects.POST("/:id/answer", h.handleCreateAnswer)
+	answers.POST("", h.handleCreateAnswer)
 	answers.PATCH("", h.handlePatchProjectAnswer)
 
 	// Project documents
@@ -47,5 +50,14 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	docs.GET("", h.handleGetProjectDocuments)
 	docs.DELETE("/:document_id", h.handleDeleteProjectDocument)
 	
-	g.GET("/questions", h.handleGetQuestions)
+	// Project comments
+	comments := projects.Group("/:id/comments", middleware.AuthWithConfig(middleware.AuthConfig{
+		AcceptTokenType: "access_token",
+		AcceptUserRoles: []db.UserRole{db.UserRoleAdmin},
+	}, s.GetDB()))
+
+	comments.GET("", h.handleGetProjectComments)
+	comments.GET("/:comment_id", h.handleGetProjectComment)
+	comments.POST("", h.handleCreateProjectComment)
+	comments.PUT("/:comment_id", h.handleUpdateProjectComment)
 }
