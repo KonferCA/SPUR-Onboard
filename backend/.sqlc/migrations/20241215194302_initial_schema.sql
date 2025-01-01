@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS project_comments (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     target_id uuid NOT NULL,
-    comment uuid NOT NULL,
+    comment text NOT NULL,
     commenter_id uuid NOT NULL REFERENCES users(id),
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
