@@ -16,12 +16,6 @@ import (
  * - Returns 404 if project not found
  */
 func (h *Handler) handleGetProjectComments(c echo.Context) error {
-    // Get authenticated admin
-    _, err := getUserFromContext(c)
-    if err != nil {
-        return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
-    }
-
     // Get project ID from URL
     projectID := c.Param("id")
     if projectID == "" {
@@ -64,12 +58,6 @@ func (h *Handler) handleGetProjectComments(c echo.Context) error {
  * - Returns 404 if comment not found
  */
 func (h *Handler) handleGetProjectComment(c echo.Context) error {
-    // Get authenticated admin (we know it's admin from middleware)
-    _, err := getUserFromContext(c)
-    if err != nil {
-        return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
-    }
-
     // Get project and comment IDs from URL
     projectID := c.Param("id")
     commentID := c.Param("comment_id")
@@ -172,14 +160,8 @@ func (h *Handler) handleUpdateProjectComment(c echo.Context) error {
         return v1_common.Fail(c, http.StatusBadRequest, "Project ID and Comment ID are required", nil)
     }
 
-    // Get authenticated admin
-    _, err := getUserFromContext(c)
-    if err != nil {
-        return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
-    }
-
     // Verify project exists using admin query
-    _, err = h.server.GetQueries().GetProjectByIDAdmin(c.Request().Context(), projectID)
+    _, err := h.server.GetQueries().GetProjectByIDAdmin(c.Request().Context(), projectID)
     if err != nil {
         return v1_common.Fail(c, http.StatusNotFound, "Project not found", err)
     }
@@ -199,16 +181,6 @@ func (h *Handler) handleUpdateProjectComment(c echo.Context) error {
 }
 
 func (h *Handler) handleResolveComment(c echo.Context) error {
-    user, err := getUserFromContext(c)
-    if err != nil {
-        return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
-    }
-
-    // Verify user is admin
-    if user.Role != db.UserRoleAdmin {
-        return v1_common.Fail(c, http.StatusForbidden, "Only admins can resolve comments", nil)
-    }
-
     // Get IDs from URL
     projectID := c.Param("id")
     commentID := c.Param("comment_id")
@@ -241,16 +213,6 @@ func (h *Handler) handleResolveComment(c echo.Context) error {
 }
 
 func (h *Handler) handleUnresolveComment(c echo.Context) error {
-    user, err := getUserFromContext(c)
-    if err != nil {
-        return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
-    }
-
-    // Check for admin role
-    if user.Role != db.UserRoleAdmin {
-        return v1_common.Fail(c, http.StatusForbidden, "Only admins can unresolve comments", nil)
-    }
-
     // Get IDs from URL
     projectID := c.Param("id")
     commentID := c.Param("comment_id")
