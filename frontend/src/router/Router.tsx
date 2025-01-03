@@ -12,8 +12,7 @@ import {
     CreateCompany,
 } from '@pages';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
-import { RegistrationGuard } from '@/components/layout/RegistrationGuard';
+import { ProtectedRoute, RegistrationGuard } from '@router';
 
 const Router = () => (
     <AuthProvider>

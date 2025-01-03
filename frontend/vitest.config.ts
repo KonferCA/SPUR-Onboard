@@ -29,6 +29,7 @@ export default defineConfig({
                 __dirname,
                 './src/components/layout'
             ),
+            '@templates': path.resolve(__dirname, './src/templates'),
             '@pages': path.resolve(__dirname, './src/pages'),
             '@utils': path.resolve(__dirname, './src/utils'),
             '@services': path.resolve(__dirname, './src/services'),
