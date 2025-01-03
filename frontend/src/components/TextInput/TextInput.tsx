@@ -1,7 +1,8 @@
 import { forwardRef } from 'react';
 import { Field, Label, Input } from '@headlessui/react';
 
-interface TextInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface TextInputProps
+    extends React.InputHTMLAttributes<HTMLInputElement> {
     label?: string;
     error?: string;
     description?: string;

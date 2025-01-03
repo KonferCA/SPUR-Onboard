@@ -10,7 +10,7 @@ export interface AnchorLinkItem {
     offset?: number;
 }
 
-type ControlledLink = AnchorLinkItem & {
+export type ControlledLink = AnchorLinkItem & {
     el: HTMLElement | null;
     isInView: boolean;
     active: boolean;

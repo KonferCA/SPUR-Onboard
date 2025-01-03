@@ -1,18 +1,18 @@
 import { useState, useRef } from 'react';
 import { FiUpload, FiX } from 'react-icons/fi';
 
-interface FileUploadProps {
-  onFilesChange?: (files: File[]) => void;
-  children?: React.ReactNode;
-  className?: string;
-  maxSizeMB?: number;
+export interface FileUploadProps {
+    onFilesChange?: (files: File[]) => void;
+    children?: React.ReactNode;
+    className?: string;
+    maxSizeMB?: number;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ 
+const FileUpload: React.FC<FileUploadProps> = ({
     onFilesChange,
     children,
     className = '',
-    maxSizeMB = 50
+    maxSizeMB = 50,
 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
@@ -56,7 +56,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
     const handleFiles = (files: File[]) => {
         // check file types
-        const validFiles = files.filter(file => 
+        const validFiles = files.filter((file) =>
             ['application/pdf', 'image/png', 'image/jpeg'].includes(file.type)
         );
 
@@ -67,7 +67,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
         // check file sizes
         const oversizedFiles = validFiles.filter(
-            file => file.size > maxSizeMB * 1024 * 1024
+            (file) => file.size > maxSizeMB * 1024 * 1024
         );
 
         if (oversizedFiles.length > 0) {
@@ -78,16 +78,16 @@ const FileUpload: React.FC<FileUploadProps> = ({
         // update state and call onChange
         const newFiles = [...uploadedFiles, ...validFiles];
         setUploadedFiles(newFiles);
-        
+
         if (onFilesChange) {
             onFilesChange(newFiles);
         }
     };
 
     const removeFile = (fileToRemove: File) => {
-        const newFiles = uploadedFiles.filter(file => file !== fileToRemove);
+        const newFiles = uploadedFiles.filter((file) => file !== fileToRemove);
         setUploadedFiles(newFiles);
-        
+
         if (onFilesChange) {
             onFilesChange(newFiles);
         }
@@ -101,9 +101,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
     return (
         <div className={`w-full ${className}`}>
-            <div 
+            <div
                 className={`border-2 border-dashed rounded-lg p-6 ${
-                    isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                    isDragging
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-300'
                 }`}
                 onDragEnter={handleDragIn}
                 onDragLeave={handleDragOut}
@@ -114,7 +116,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
                     <div className="text-center">
                         <div className="flex items-center justify-center gap-3">
                             <FiUpload className="text-gray-400 text-2xl" />
-                            <h3 className="text-sm font-medium">Drag and drop here</h3>
+                            <h3 className="text-sm font-medium">
+                                Drag and drop here
+                            </h3>
                         </div>
                         <p className="text-sm text-gray-500 mt-2">or</p>
                         <button
@@ -139,12 +143,14 @@ const FileUpload: React.FC<FileUploadProps> = ({
             {uploadedFiles.length > 0 && (
                 <div className="mt-4 space-y-2">
                     {uploadedFiles.map((file, index) => (
-                        <div 
+                        <div
                             key={index}
                             className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
                         >
                             <div className="flex items-center gap-3">
-                                <span className="text-sm font-medium">{file.name}</span>
+                                <span className="text-sm font-medium">
+                                    {file.name}
+                                </span>
                                 <span className="text-sm text-gray-500">
                                     {formatFileSize(file.size)}
                                 </span>
@@ -163,4 +169,5 @@ const FileUpload: React.FC<FileUploadProps> = ({
     );
 };
 
-export { FileUpload }; 
+export { FileUpload };
+

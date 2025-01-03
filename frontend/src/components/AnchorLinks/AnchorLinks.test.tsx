@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { AnchorLinks } from '@components';
-import type { AnchorLinkItem } from '@components';
+import { AnchorLinks } from './AnchorLinks';
+import type { AnchorLinkItem, ControlledLink } from './AnchorLinks';
 
 describe('AnchorLinks', () => {
     const links: AnchorLinkItem[] = [
@@ -28,7 +28,7 @@ describe('AnchorLinks', () => {
     it('should render all provided links using rendering function', () => {
         render(
             <AnchorLinks links={links}>
-                {(link) => <button>{link.label}</button>}
+                {(link: ControlledLink) => <button>{link.label}</button>}
             </AnchorLinks>
         );
         links.forEach((link) => {

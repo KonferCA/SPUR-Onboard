@@ -1,7 +1,8 @@
 import { forwardRef } from 'react';
 import { Field, Label, Textarea } from '@headlessui/react';
 
-interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+export interface TextAreaProps
+    extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     label?: string;
     error?: string;
     description?: string;
@@ -11,11 +12,23 @@ interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 }
 
 const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
-    ({ label, error, description, className = '', value, required, onChange, ...props }, ref) => {
+    (
+        {
+            label,
+            error,
+            description,
+            className = '',
+            value,
+            required,
+            onChange,
+            ...props
+        },
+        ref
+    ) => {
         const inputProps = onChange
             ? { value, onChange }
             : { defaultValue: value };
-        
+
         const sharedClassNames = `
             w-full px-4 py-2
             bg-white 
@@ -57,11 +70,9 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
                             {description}
                         </div>
                     )}
-                    
+
                     {error && (
-                        <div className="mt-1 text-sm text-red-500">
-                            {error}
-                        </div>
+                        <div className="mt-1 text-sm text-red-500">{error}</div>
                     )}
                 </Field>
             </div>
@@ -71,3 +82,4 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
 
 TextArea.displayName = 'TextArea';
 export { TextArea };
+

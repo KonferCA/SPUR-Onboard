@@ -2,13 +2,13 @@ import { Fragment } from 'react';
 import { Listbox, Transition } from '@headlessui/react';
 import { FiChevronDown } from 'react-icons/fi';
 
-interface DropdownOption {
+export interface DropdownOption {
     id: string | number;
     label: string;
     value: string;
 }
 
-interface DropdownProps {
+export interface DropdownProps {
     label?: string;
     options: DropdownOption[];
     value: DropdownOption | null;
@@ -21,7 +21,7 @@ const Dropdown: React.FC<DropdownProps> = ({
     options,
     value,
     onChange,
-    placeholder = 'Select'
+    placeholder = 'Select',
 }) => {
     return (
         <div className="w-full">
@@ -36,7 +36,11 @@ const Dropdown: React.FC<DropdownProps> = ({
                 <div className="relative">
                     <Listbox.Button className="relative w-full py-3 px-4 text-left bg-white rounded-lg border border-gray-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                         <span className="block truncate text-base">
-                            {value?.label || <span className="text-gray-500">{placeholder}</span>}
+                            {value?.label || (
+                                <span className="text-gray-500">
+                                    {placeholder}
+                                </span>
+                            )}
                         </span>
                         <span className="absolute inset-y-0 right-0 flex items-center pr-4">
                             <FiChevronDown
@@ -45,7 +49,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                             />
                         </span>
                     </Listbox.Button>
-                    
+
                     <Transition
                         as={Fragment}
                         leave="transition ease-in duration-100"
@@ -58,15 +62,21 @@ const Dropdown: React.FC<DropdownProps> = ({
                                     key={option.id}
                                     className={({ active }) =>
                                         `cursor-pointer select-none relative py-3 px-4 ${
-                                            active ? 'bg-gray-100' : 'text-gray-900'
+                                            active
+                                                ? 'bg-gray-100'
+                                                : 'text-gray-900'
                                         }`
                                     }
                                     value={option}
                                 >
                                     {({ selected }) => (
-                                        <span className={`block truncate ${
-                                            selected ? 'font-medium' : 'font-normal'
-                                        }`}>
+                                        <span
+                                            className={`block truncate ${
+                                                selected
+                                                    ? 'font-medium'
+                                                    : 'font-normal'
+                                            }`}
+                                        >
                                             {option.label}
                                         </span>
                                     )}
@@ -80,4 +90,5 @@ const Dropdown: React.FC<DropdownProps> = ({
     );
 };
 
-export { Dropdown }; 
+export { Dropdown };
+
