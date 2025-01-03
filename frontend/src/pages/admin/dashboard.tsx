@@ -1,5 +1,6 @@
 import { FiFolder, FiBook, FiUsers, FiSettings } from 'react-icons/fi';
-import { Button, Section, Grid, FormContainer } from '@components';
+import { Button, FormContainer } from '@components';
+import { Section, Grid } from '@layouts';
 import { DashboardTemplate } from '@/templates';
 
 const adminMenuItems = [

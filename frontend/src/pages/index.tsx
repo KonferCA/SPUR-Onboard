@@ -5,9 +5,8 @@ import {
     Button,
     Dropdown,
     AnchorLinks,
-    PageLayout,
-    Section
 } from '@components';
+import { PageLayout, Section } from '@layouts';
 
 // sample industries data
 const industries = [
@@ -20,32 +19,35 @@ const industries = [
 ];
 
 const Landing: React.FC = () => {
-    const [selectedIndustry, setSelectedIndustry] = useState<typeof industries[0] | null>(null);
+    const [selectedIndustry, setSelectedIndustry] = useState<
+        (typeof industries)[0] | null
+    >(null);
 
     return (
         <PageLayout>
             <Section width="narrow" padding="normal">
                 <h1 className="text-3xl font-bold mb-8">Landing</h1>
-                
+
                 <div className="space-y-8">
-                    <TextInput
-                        label="Hi"
-                        value="Hellooo"
-                    />
-                    
+                    <TextInput label="Hi" value="Hellooo" />
+
                     <FileUpload className="w-full" />
-                    
+
                     <div id="dropdown">
                         <Dropdown
                             label="Industry"
                             options={industries}
                             value={selectedIndustry}
-                            onChange={(value) => setSelectedIndustry(value as typeof industries[0])}
+                            onChange={(value) =>
+                                setSelectedIndustry(
+                                    value as (typeof industries)[0]
+                                )
+                            }
                         />
                     </div>
-                    
+
                     <div className="h-[1500px]"></div>
-                    
+
                     <div id="buttons" className="flex flex-wrap gap-4">
                         <Button>Click me</Button>
                         <Button variant="secondary">Secondary</Button>
@@ -74,7 +76,9 @@ const Landing: React.FC = () => {
                             <span
                                 className={
                                     'transition hover:text-gray-800 ' +
-                                    (link.active ? 'text-black' : 'text-gray-400')
+                                    (link.active
+                                        ? 'text-black'
+                                        : 'text-gray-400')
                                 }
                             >
                                 {link.label}
