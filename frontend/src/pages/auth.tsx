@@ -1,8 +1,9 @@
+import { createFileRoute } from '@tanstack/react-router';
 import { useState, useEffect, FormEvent } from 'react';
 import { Button, TextInput, TextArea } from '@components';
 import { register, signin, RegisterError, ApiError } from '@services';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from '@tanstack/react-router';
 import { getApiUrl } from '@/utils';
 import { getCompany } from '@/services/company';
 
@@ -68,9 +69,9 @@ const LoginRegister = ({
     onLogin,
 }: LoginRegisterProps) => (
     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg">
-        <h3 className="text-center mb-4 font-light">Register or Login</h3>
+        <h3 className="text-center mb-4 font-light">AuthPage or Login</h3>
         <hr className="border-gray-400" />
-        <h2 className="text-2xl mt-4 font-normal">Register for Spur+Konfer</h2>
+        <h2 className="text-2xl mt-4 font-normal">AuthPage for Spur+Konfer</h2>
 
         <form onSubmit={onSubmit} className="space-y-4 mt-4">
             <TextInput
@@ -100,7 +101,7 @@ const LoginRegister = ({
                 variant="primary"
                 disabled={isLoading}
             >
-                {isLoading ? 'Please wait...' : 'Register'}
+                {isLoading ? 'Please wait...' : 'AuthPage'}
             </Button>
 
             <div className="text-center mt-4">
@@ -288,7 +289,7 @@ const FormDetails = ({
                     size="lg"
                     variant="primary"
                 >
-                    Register
+                    AuthPage
                 </Button>
             </div>
 
@@ -323,8 +324,8 @@ const RegistrationComplete = ({ onComplete }: RegistrationCompleteProps) => {
     );
 };
 
-const Register = () => {
-    const navigate = useNavigate();
+const AuthPage = () => {
+    const navigate = useNavigate({ from: '/auth' });
     const location = useLocation();
     const { user, accessToken, companyId, setAuth, clearAuth } = useAuth();
     const [currentStep, setCurrentStep] = useState<RegistrationStep>(() => {
@@ -447,11 +448,11 @@ const Register = () => {
 
             // Redirect based on user role
             if (signinResp.user.role === 'admin') {
-                navigate('/admin/projects', { replace: true });
+                navigate({ to: '/admin/dashboard', replace: true });
             } else if (signinResp.user.role === 'startup_owner') {
-                navigate('/dashboard', { replace: true });
+                navigate({ to: '/user/dashboard', replace: true });
             } else if (signinResp.user.role === 'investor') {
-                navigate('/dashboard', { replace: true }); // or a specific investor dashboard
+                navigate({ to: '/user/dashboard', replace: true });
             }
         } catch (error) {
             clearAuth();
@@ -538,7 +539,7 @@ const Register = () => {
             case 'registration-complete':
                 return (
                     <RegistrationComplete
-                        onComplete={() => navigate('/dashboard')}
+                        onComplete={() => navigate({ to: '/user/dashboard' })}
                     />
                 );
         }
@@ -550,11 +551,11 @@ const Register = () => {
                 setCurrentStep('verify-email');
             } else if (user) {
                 if (user.role === 'admin') {
-                    navigate('/admin/dashboard', { replace: true });
+                    navigate({ to: '/admin/dashboard', replace: true });
                 } else if (user.role === 'startup_owner') {
-                    navigate('/dashboard', { replace: true });
+                    navigate({ to: '/user/dashboard', replace: true });
                 } else if (user.role === 'investor') {
-                    navigate('/dashboard', { replace: true }); // or a specific investor dashboard
+                    navigate({ to: '/user/dashboard', replace: true });
                 }
             }
         }
@@ -567,4 +568,6 @@ const Register = () => {
     );
 };
 
-export { Register };
+export const Route = createFileRoute('/auth')({
+    component: AuthPage,
+});

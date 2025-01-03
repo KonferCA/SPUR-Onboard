@@ -28,6 +28,7 @@ export default defineConfig({
             '@components': path.resolve(__dirname, './src/components'),
             '@layouts': path.resolve(__dirname, './src/layouts'),
             '@templates': path.resolve(__dirname, './src/templates'),
+            '@contexts': path.resolve(__dirname, './src/contexts'),
             '@router': path.resolve(__dirname, './src/router'),
             '@pages': path.resolve(__dirname, './src/pages'),
             '@utils': path.resolve(__dirname, './src/utils'),

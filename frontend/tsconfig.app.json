@@ -11,6 +11,7 @@
             "@/*": ["./src/*"],
             "@layouts": ["./src/layouts/index"],
             "@templates": ["./src/templates/index"],
+            "@contexts": ["./src/contexts/index"],
             "@router": ["./src/router/index"],
             "@components": ["./src/components/index"],
             "@hooks": ["./src/hooks/index"],

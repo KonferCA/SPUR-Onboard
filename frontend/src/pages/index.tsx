@@ -7,6 +7,7 @@ import {
     AnchorLinks,
 } from '@components';
 import { PageLayout, Section } from '@layouts';
+import { createFileRoute } from '@tanstack/react-router';
 
 // sample industries data
 const industries = [
@@ -91,4 +92,6 @@ const Landing: React.FC = () => {
     );
 };
 
-export { Landing };
+export const Route = createFileRoute('/')({
+    component: Landing,
+});

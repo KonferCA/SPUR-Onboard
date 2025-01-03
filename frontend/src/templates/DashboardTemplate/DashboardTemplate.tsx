@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from '@tanstack/react-router';
 import { PageLayout, Stack } from '@layouts';
 
 interface MenuItem {

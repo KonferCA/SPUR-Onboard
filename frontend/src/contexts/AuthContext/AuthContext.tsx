@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import type { User } from '@/types';
 
-interface AuthContextType {
+export interface AuthState {
     user: User | null;
     companyId: string | null;
     accessToken: string | null;
@@ -14,7 +14,7 @@ interface AuthContextType {
     setCompanyId: (companyId: string | null) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
