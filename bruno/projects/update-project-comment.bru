@@ -1,0 +1,42 @@
+meta {
+  name: Update Project Comment
+  type: http
+  seq: 12
+}
+
+put {
+  url: {{baseUrl}}/project/{{project_id}}/comments/{{comment_id}}
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{access_token}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "comment": "This is an updated comment"
+  }
+}
+
+tests {
+  test("should update project comment", function() {
+    expect(res.status).to.equal(200);
+    
+    // Check all required fields
+    expect(res.body).to.have.property("id");
+    expect(res.body).to.have.property("project_id");
+    expect(res.body).to.have.property("target_id");
+    expect(res.body).to.have.property("comment");
+    expect(res.body).to.have.property("commenter_id");
+    expect(res.body).to.have.property("created_at");
+    expect(res.body).to.have.property("updated_at");
+    
+    // Verify data matches request
+    expect(res.body.id).to.equal(bru.getVar("comment_id"));
+    expect(res.body.project_id).to.equal(bru.getVar("project_id"));
+    expect(res.body.comment).to.equal("This is an updated comment");
+  });
+}

@@ -174,6 +174,7 @@ type ProjectComment struct {
 	TargetID    string
 	Comment     string
 	CommenterID string
+	Resolved    bool
 	CreatedAt   int64
 	UpdatedAt   int64
 }

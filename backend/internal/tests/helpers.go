@@ -6,8 +6,14 @@ import (
 	"context"
 	"time"
 	"fmt"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -114,4 +120,55 @@ Removes a test company from the database.
 func removeTestCompany(ctx context.Context, companyID string, s *server.Server) error {
 	_, err := s.DBPool.Exec(ctx, "DELETE FROM companies WHERE id = $1", companyID)
 	return err
+}
+
+func createTestAdminUser(ctx context.Context, s *server.Server) (string, string, string, error) {
+	userID := uuid.New().String()
+	email := fmt.Sprintf("admin_%s@test.com", uuid.New().String())
+	password := "Test1234!"
+
+	// Hash the password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	// Create admin user directly in database
+	_, err = s.DBPool.Exec(ctx, `
+		INSERT INTO users (
+			id,
+			email,
+			password,
+			role,
+			email_verified,
+			token_salt
+		)
+		VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))`,
+		userID, email, string(hashedPassword), db.UserRoleAdmin, true)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	return userID, email, password, nil
+}
+
+func loginAndGetToken(t *testing.T, s *server.Server, email, password string) string {
+	loginBody := fmt.Sprintf(`{"email":"%s","password":"%s"}`, email, password)
+	
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(loginBody))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	s.GetEcho().ServeHTTP(rec, req)
+	
+	assert.Equal(t, http.StatusOK, rec.Code, "Login should succeed")
+
+	var loginResp map[string]interface{}
+	err := json.NewDecoder(rec.Body).Decode(&loginResp)
+	assert.NoError(t, err, "Should decode login response")
+	
+	accessToken, ok := loginResp["access_token"].(string)
+	assert.True(t, ok, "Response should contain access_token")
+	assert.NotEmpty(t, accessToken, "Access token should not be empty")
+
+	return accessToken
 }
