@@ -1,0 +1,38 @@
+services:
+  app:
+    container_name: spur-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "6970:6969"
+    environment:
+      - PORT=6969
+      - DB_HOST=spur-postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=postgres
+    networks:
+      - app-network
+    depends_on:
+      - uptime-kuma
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    volumes:
+      - ./docker/uptime-kuma/data:/app/data
+    ports:
+      - "3001:3001"
+    restart: always
+    networks:
+      - app-network
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  app-network:
+    external: true
