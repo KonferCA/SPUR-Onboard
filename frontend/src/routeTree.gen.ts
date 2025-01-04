@@ -16,6 +16,7 @@ import { Route as rootRoute } from './pages/__root'
 import { Route as AuthImport } from './pages/auth'
 import { Route as IndexImport } from './pages/index'
 import { Route as UserIndexImport } from './pages/user/index'
+import { Route as SyshealthIndexImport } from './pages/syshealth/index'
 import { Route as AdminIndexImport } from './pages/admin/index'
 import { Route as UserAuthImport } from './pages/user/_auth'
 import { Route as UserAppshellImport } from './pages/user/_appshell'
@@ -65,6 +66,12 @@ const UserIndexRoute = UserIndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => UserRoute,
+} as any)
+
+const SyshealthIndexRoute = SyshealthIndexImport.update({
+  id: '/syshealth/',
+  path: '/syshealth/',
+  getParentRoute: () => rootRoute,
 } as any)
 
 const AdminIndexRoute = AdminIndexImport.update({
@@ -216,6 +223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexImport
       parentRoute: typeof AdminImport
     }
+    '/syshealth/': {
+      id: '/syshealth/'
+      path: '/syshealth'
+      fullPath: '/syshealth'
+      preLoaderRoute: typeof SyshealthIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/user/': {
       id: '/user/'
       path: '/'
@@ -356,6 +370,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminAuthRouteWithChildren
   '/user': typeof UserAuthRouteWithChildren
   '/admin/': typeof AdminIndexRoute
+  '/syshealth': typeof SyshealthIndexRoute
   '/user/': typeof UserIndexRoute
   '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute
   '/user/dashboard': typeof UserAuthAppshellDashboardRoute
@@ -372,6 +387,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/admin': typeof AdminIndexRoute
   '/user': typeof UserIndexRoute
+  '/syshealth': typeof SyshealthIndexRoute
   '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute
   '/user/dashboard': typeof UserAuthAppshellDashboardRoute
   '/user/projects': typeof UserAuthAppshellProjectsRoute
@@ -393,6 +409,7 @@ export interface FileRoutesById {
   '/user/_appshell': typeof UserAppshellRoute
   '/user/_auth': typeof UserAuthRouteWithChildren
   '/admin/': typeof AdminIndexRoute
+  '/syshealth/': typeof SyshealthIndexRoute
   '/user/': typeof UserIndexRoute
   '/admin/_auth/_appshell/dashboard': typeof AdminAuthAppshellDashboardRoute
   '/user/_auth/_appshell/dashboard': typeof UserAuthAppshellDashboardRoute
@@ -412,6 +429,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/user'
     | '/admin/'
+    | '/syshealth'
     | '/user/'
     | '/admin/dashboard'
     | '/user/dashboard'
@@ -427,6 +445,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/user'
+    | '/syshealth'
     | '/admin/dashboard'
     | '/user/dashboard'
     | '/user/projects'
@@ -446,6 +465,7 @@ export interface FileRouteTypes {
     | '/user/_appshell'
     | '/user/_auth'
     | '/admin/'
+    | '/syshealth/'
     | '/user/'
     | '/admin/_auth/_appshell/dashboard'
     | '/user/_auth/_appshell/dashboard'
@@ -463,6 +483,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   AdminRoute: typeof AdminRouteWithChildren
   UserRoute: typeof UserRouteWithChildren
+  SyshealthIndexRoute: typeof SyshealthIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -470,6 +491,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   AdminRoute: AdminRouteWithChildren,
   UserRoute: UserRouteWithChildren,
+  SyshealthIndexRoute: SyshealthIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -485,7 +507,8 @@ export const routeTree = rootRoute
         "/",
         "/auth",
         "/admin",
-        "/user"
+        "/user",
+        "/syshealth/"
       ]
     },
     "/": {
@@ -541,6 +564,9 @@ export const routeTree = rootRoute
     "/admin/": {
       "filePath": "admin/index.tsx",
       "parent": "/admin"
+    },
+    "/syshealth/": {
+      "filePath": "syshealth/index.tsx"
     },
     "/user/": {
       "filePath": "user/index.tsx",
