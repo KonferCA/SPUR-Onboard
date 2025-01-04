@@ -16,6 +16,7 @@ V1 healthcheck endpoint handler.
 */
 func (h *Handler) handleHealthCheck(c echo.Context) error {
 	report := HealthReport{
+		Status:    "healthy",
 		Timestamp: time.Now(),
 		System:    getSystemInfo(),
 	}
@@ -23,14 +24,99 @@ func (h *Handler) handleHealthCheck(c echo.Context) error {
 	dbInfo := checkDatabase(h.server.GetQueries())
 	report.Database = dbInfo
 
+	dbStatus := "unhealthy"
 	if dbInfo.Connected {
-		report.Status = "healthy"
-	} else {
-		report.Status = "unhealthy"
+		dbStatus = "healthy"
+	}
+
+	report.Services = []ServiceStatus{
+		{
+			Name:     "API",
+			Status:   "healthy",
+			LastPing: time.Now(),
+			Latency:  0,
+		},
+		{
+			Name:     "Database",
+			Status:   dbStatus,
+			LastPing: time.Now(),
+			Latency:  dbInfo.LatencyMs,
+			Message:  dbInfo.Error,
+		},
+	}
+
+	report.Status = determineOverallStatus(report)
+
+	if report.Status == "unhealthy" {
 		return c.JSON(http.StatusServiceUnavailable, report)
 	}
 
 	return c.JSON(http.StatusOK, report)
+}
+
+/*
+handleLiveCheck is a handler function that checks if the service is alive.
+*/
+func (h *Handler) handleLiveCheck(c echo.Context) error {
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":  "healthy",
+		"message": "Service is alive",
+	})
+}
+
+/*
+handleReadyCheck is a handler function that checks if the service is ready to serve requests.
+*/
+func (h *Handler) handleReadyCheck(c echo.Context) error {
+	dbInfo := checkDatabase(h.server.GetQueries())
+	if !dbInfo.Connected {
+		return c.JSON(http.StatusServiceUnavailable, map[string]interface{}{
+			"status":  "unhealthy",
+			"message": "Database not ready",
+			"error":   dbInfo.Error,
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":  "healthy",
+		"message": "Service is ready",
+	})
+}
+
+/*
+handleMetrics is a handler function that returns the metrics of the backend.
+*/
+func (h *Handler) handleMetrics(c echo.Context) error {
+	var mem runtime.MemStats
+	runtime.ReadMemStats(&mem)
+
+	metrics := MetricsResponse{
+		CPU: struct {
+			Usage float64 `json:"usage"`
+		}{
+			Usage: 0, // TODO: implement actual CPU usage
+		},
+		Memory: struct {
+			Total     uint64  `json:"total"`
+			Used      uint64  `json:"used"`
+			Free      uint64  `json:"free"`
+			UsagePerc float64 `json:"usage_percentage"`
+		}{
+			Total:     mem.TotalAlloc,
+			Used:      mem.Alloc,
+			Free:      mem.Sys - mem.Alloc,
+			UsagePerc: float64(mem.Alloc) / float64(mem.Sys) * 100,
+		},
+		Goroutines: runtime.NumGoroutine(),
+		Database: struct {
+			ConnectionCount int     `json:"connection_count"`
+			AvgLatencyMs    float64 `json:"avg_latency_ms"`
+		}{
+			AvgLatencyMs: checkDatabase(h.server.GetQueries()).LatencyMs,
+		},
+	}
+
+	return c.JSON(http.StatusOK, metrics)
 }
 
 /*
@@ -79,4 +165,34 @@ func checkDatabase(queries *db.Queries) DatabaseInfo {
 	info.PostgresVersion = version
 
 	return info
+}
+
+/*
+determineOverallStatus is a helper function that determines the overall status of the healthcheck report based on the status of the database and services.
+*/
+func determineOverallStatus(report HealthReport) string {
+	if !report.Database.Connected {
+		return "unhealthy"
+	}
+
+	hasUnhealthy := false
+	hasDegraded := false
+
+	for _, service := range report.Services {
+		switch service.Status {
+		case "unhealthy":
+			hasUnhealthy = true
+		case "degraded":
+			hasDegraded = true
+		}
+	}
+
+	if hasUnhealthy {
+		return "unhealthy"
+	}
+	if hasDegraded {
+		return "degraded"
+	}
+
+	return "healthy"
 }
