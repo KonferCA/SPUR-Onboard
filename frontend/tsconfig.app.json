@@ -9,8 +9,11 @@
 
         "paths": {
             "@/*": ["./src/*"],
+            "@layouts": ["./src/layouts/index"],
+            "@templates": ["./src/templates/index"],
+            "@contexts": ["./src/contexts/index"],
+            "@router": ["./src/router/index"],
             "@components": ["./src/components/index"],
-            "@components/layout": ["./src/components/layout/index"],
             "@hooks": ["./src/hooks/index"],
             "@pages": ["./src/pages/index"],
             "@utils": ["./src/utils/index"],

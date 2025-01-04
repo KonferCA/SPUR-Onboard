@@ -1,5 +1,3 @@
-export { Router } from './Router';
-
 export {
     scrollToWithOffset,
     scrollTo,

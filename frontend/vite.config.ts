@@ -1,18 +1,24 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 import * as path from 'path';
 
 export default defineConfig({
-    plugins: [react()],
+    plugins: [
+        TanStackRouterVite({
+            routesDirectory: './src/pages',
+        }),
+        react(),
+    ],
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
             '@assets': path.resolve(__dirname, './src/assets'),
+            '@layouts': path.resolve(__dirname, './src/layouts'),
+            '@templates': path.resolve(__dirname, './src/templates'),
+            '@contexts': path.resolve(__dirname, './src/contexts'),
+            '@router': path.resolve(__dirname, './src/router'),
             '@components': path.resolve(__dirname, './src/components'),
-            '@components/layout': path.resolve(
-                __dirname,
-                './src/components/layout'
-            ),
             '@pages': path.resolve(__dirname, './src/pages'),
             '@utils': path.resolve(__dirname, './src/utils'),
             '@t': path.resolve(__dirname, './src/types'),
