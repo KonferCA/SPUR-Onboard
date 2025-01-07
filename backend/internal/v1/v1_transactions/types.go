@@ -8,9 +8,9 @@ type Handler struct {
 
 type CreateTransactionRequest struct {
     ProjectID   string `json:"project_id" validate:"required,uuid4"`
-    TxHash      string `json:"tx_hash" validate:"required"`
-    FromAddress string `json:"from_address" validate:"required"`
-    ToAddress   string `json:"to_address" validate:"required"`
+    TxHash      string `json:"tx_hash" validate:"required,wallet_address"`
+    FromAddress string `json:"from_address" validate:"required,wallet_address"`
+    ToAddress   string `json:"to_address" validate:"required,wallet_address"`
     ValueAmount string `json:"value_amount" validate:"required,numeric"`
 }
 

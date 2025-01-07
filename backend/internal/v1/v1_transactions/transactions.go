@@ -11,18 +11,8 @@ import (
 
 func (h *Handler) handleCreateTransaction(c echo.Context) error {
 	var req CreateTransactionRequest
-	if err := c.Bind(&req); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
-	}
-
-	// Validate request
-	if err := c.Validate(&req); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Validation failed", err)
-	}
-
-	// Validate project ID format
-	if _, err := uuid.Parse(req.ProjectID); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid project ID format", err)
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return err
 	}
 
 	// Get project to verify it exists and get company_id
