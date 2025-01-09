@@ -4,8 +4,6 @@ import (
 	"os"
 	"time"
 
-	"KonferCA/SPUR/db"
-
 	golangJWT "github.com/golang-jwt/jwt/v5"
 )
 
@@ -16,13 +14,13 @@ const (
 )
 
 // Generates JWT tokens for the given user. Returns the access token, refresh token and error (nil if no error)
-func GenerateWithSalt(userID string, role db.UserRole, salt []byte) (string, string, error) {
-	accessToken, err := generateTokenWithSalt(userID, role, ACCESS_TOKEN_TYPE, time.Now().Add(10*time.Minute), salt)
+func GenerateWithSalt(userID string, permissions uint32, salt []byte) (string, string, error) {
+	accessToken, err := generateTokenWithSalt(userID, permissions, ACCESS_TOKEN_TYPE, time.Now().Add(10*time.Minute), salt)
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := generateTokenWithSalt(userID, role, REFRESH_TOKEN_TYPE, time.Now().Add(24*7*time.Hour), salt)
+	refreshToken, err := generateTokenWithSalt(userID, permissions, REFRESH_TOKEN_TYPE, time.Now().Add(24*7*time.Hour), salt)
 	if err != nil {
 		return "", "", err
 	}
@@ -51,11 +49,11 @@ func GenerateVerifyEmailToken(email string, id string, exp time.Time) (string, e
 }
 
 // Private helper method to generate a token with user's salt
-func generateTokenWithSalt(userID string, role db.UserRole, tokenType string, exp time.Time, salt []byte) (string, error) {
+func generateTokenWithSalt(userID string, permissions uint32, tokenType string, exp time.Time, salt []byte) (string, error) {
 	claims := JWTClaims{
-		UserID:    userID,
-		Role:      role,
-		TokenType: tokenType,
+		UserID:      userID,
+		Permissions: permissions,
+		TokenType:   tokenType,
 		RegisteredClaims: golangJWT.RegisteredClaims{
 			ExpiresAt: golangJWT.NewNumericDate(exp),
 			IssuedAt:  golangJWT.NewNumericDate(time.Now()),
