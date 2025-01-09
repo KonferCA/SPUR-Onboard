@@ -6,18 +6,24 @@ import (
 
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/jwt"
+	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 )
 
-// Auth creates a middleware that validates JWT access tokens with specified user roles
-func Auth(dbPool *pgxpool.Pool, roles ...db.UserRole) echo.MiddlewareFunc {
+// Auth creates a middleware that validates JWT access tokens with required permissions
+func Auth(dbPool *pgxpool.Pool, requiredPerms ...uint32) echo.MiddlewareFunc {
 	return AuthWithConfig(AuthConfig{
 		AcceptTokenType: jwt.ACCESS_TOKEN_TYPE,
-		AcceptUserRoles: roles,
+		RequiredPermissions: requiredPerms,
 	}, dbPool)
+}
+
+type AuthConfig struct {
+	AcceptTokenType      string
+	RequiredPermissions  []uint32
 }
 
 // AuthWithConfig creates a middleware with custom configuration for JWT validation
@@ -60,16 +66,10 @@ func AuthWithConfig(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token type")
 			}
 
-			// Verify user role if roles specified
-			if len(config.AcceptUserRoles) > 0 {
-				validRole := false
-				for _, role := range config.AcceptUserRoles {
-					if claims.Role == role {
-						validRole = true
-						break
-					}
-				}
-				if !validRole {
+			// Verify user permissions if required
+			if len(config.RequiredPermissions) > 0 {
+				// Check if user has ALL required permissions
+				if !permissions.HasAllPermissions(user.Permissions, config.RequiredPermissions...) {
 					return echo.NewHTTPError(http.StatusForbidden, "insufficient permissions")
 				}
 			}
