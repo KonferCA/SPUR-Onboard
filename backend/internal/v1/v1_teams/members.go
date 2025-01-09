@@ -4,6 +4,7 @@ import (
 	"time"
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/v1/v1_common"
+	"KonferCA/SPUR/internal/permissions"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"net/http"
@@ -276,7 +277,7 @@ func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
  * - When requireOwner is true, only company owners are allowed
  * - When requireOwner is false:
  *   - Company owners are allowed
- *   - Investors are allowed read-only access
+ *   - Users with ViewAllProjects permission are allowed read-only access
  *   - Other users are denied access
  *
  * Parameters:
@@ -310,9 +311,9 @@ func (h *Handler) validateCompanyAccess(c echo.Context, companyID string, requir
 		return nil
 	}
 
-	// For non-owners, check if they're an investor and if owner access isn't required
-	if !requireOwner && user.Role == db.UserRoleInvestor {
-		return nil // Allow investors to view
+	// For non-owners, check if they have view permissions and owner access isn't required
+	if !requireOwner && permissions.HasAllPermissions(user.Permissions, permissions.PermViewAllProjects) {
+		return nil // Allow users with view permissions
 	}
 
 	return v1_common.NewAuthError("Not authorized to access this company")
