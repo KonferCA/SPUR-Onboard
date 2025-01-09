@@ -283,7 +283,7 @@ func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
  * Parameters:
  *   - c: Echo context containing the authenticated user
  *   - companyID: ID of the company to check access for
- *   - requireOwner: If true, only allows company owners. If false, allows owners and investors.
+ *   - requireOwner: If true, only allows company owners. If false, allows owners and users with ViewAllProjects permission.
  *
  * Returns:
  *   - nil if access is granted
