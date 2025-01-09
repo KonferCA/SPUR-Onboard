@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"KonferCA/SPUR/internal/v1/v1_common"
+	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/db"
 )
 
@@ -13,6 +14,15 @@ func (h *Handler) handleCreateTransaction(c echo.Context) error {
 	var req CreateTransactionRequest
 	if err := v1_common.BindandValidate(c, &req); err != nil {
 		return err
+	}
+
+	// Get user from context and verify permissions
+	user := c.Get("user").(*db.GetUserByIDRow)
+	if !permissions.HasAnyPermission(user.Permissions, 
+		permissions.PermInvestInProjects,
+		permissions.PermManageProjects,
+	) {
+		return v1_common.NewForbiddenError("not authorized to create transactions")
 	}
 
 	// Get project to verify it exists and get company_id
@@ -36,6 +46,7 @@ func (h *Handler) handleCreateTransaction(c echo.Context) error {
 		FromAddress: req.FromAddress,
 		ToAddress:   req.ToAddress,
 		ValueAmount: numericAmount,
+		CreatedBy:   user.ID, // Track who created the transaction
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create transaction", err)
@@ -50,5 +61,6 @@ func (h *Handler) handleCreateTransaction(c echo.Context) error {
 		FromAddress: tx.FromAddress,
 		ToAddress:   tx.ToAddress,
 		ValueAmount: req.ValueAmount,
+		CreatedBy:   tx.CreatedBy,
 	})
 }

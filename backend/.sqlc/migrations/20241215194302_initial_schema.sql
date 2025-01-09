@@ -111,7 +111,10 @@ CREATE TABLE IF NOT EXISTS transactions (
     tx_hash varchar NOT NULL,
     from_address varchar NOT NULL,
     to_address varchar NOT NULL,
-    value_amount decimal(65,18) NOT NULL
+    value_amount decimal(65,18) NOT NULL,
+    created_by uuid NOT NULL REFERENCES users(id),
+    created_at bigint NOT NULL DEFAULT extract(epoch from now()),
+    updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

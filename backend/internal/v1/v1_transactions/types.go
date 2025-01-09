@@ -22,4 +22,5 @@ type TransactionResponse struct {
     FromAddress string `json:"from_address"`
     ToAddress   string `json:"to_address"`
     ValueAmount string `json:"value_amount"`
+    CreatedBy   string `json:"created_by"`
 }

@@ -159,6 +159,9 @@ type Transaction struct {
 	FromAddress string
 	ToAddress   string
 	ValueAmount pgtype.Numeric
+	CreatedBy   string
+	CreatedAt   int64
+	UpdatedAt   int64
 }
 
 type User struct {
