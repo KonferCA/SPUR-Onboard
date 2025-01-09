@@ -1,14 +1,13 @@
 package middleware
 
 import (
-	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/jwt"
 )
 
 // AuthConfig holds the configuration for the Auth middleware
 type AuthConfig struct {
-	AcceptTokenType string
-	AcceptUserRoles []db.UserRole
+	AcceptTokenType      string
+	RequiredPermissions  []uint32
 }
 
 // AuthClaims represents the claims we'll store in the context
