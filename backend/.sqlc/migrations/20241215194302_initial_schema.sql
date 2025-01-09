@@ -4,12 +4,6 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 SET TIME ZONE 'UTC';
 
-CREATE TYPE user_role AS ENUM (
-    'admin',
-    'startup_owner',
-    'investor'
-);
-
 CREATE TYPE project_status AS ENUM (
     'draft',
     'pending',
@@ -22,7 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     email varchar UNIQUE NOT NULL,
     password char(256) NOT NULL,
-    role user_role NOT NULL,
+    permissions integer NOT NULL DEFAULT 0,
     email_verified boolean NOT NULL DEFAULT false,
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now()),
@@ -151,5 +145,4 @@ DROP TABLE IF EXISTS verify_email_tokens;
 DROP TABLE IF EXISTS users;
 
 DROP TYPE IF EXISTS project_status;
-DROP TYPE IF EXISTS user_role;
 -- +goose StatementEnd
