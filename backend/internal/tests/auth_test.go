@@ -4,6 +4,7 @@ import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/middleware"
+	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/server"
 	"KonferCA/SPUR/internal/v1/v1_auth"
 	"KonferCA/SPUR/internal/v1/v1_common"
@@ -45,7 +46,7 @@ func TestAuthEndpoints(t *testing.T) {
 		ID:            userID.String(),
 		Email:         "test@example.com",
 		Password:      string(hashedPassword),
-		Role:          db.UserRoleStartupOwner,
+		Permissions:   permissions.PermStartupOwner,
 		EmailVerified: true,
 		CreatedAt:     time.Now().Unix(),
 		UpdatedAt:     time.Now().Unix(),
@@ -54,10 +55,10 @@ func TestAuthEndpoints(t *testing.T) {
 
 	// Insert test user
 	_, err = s.GetDB().Exec(context.Background(), `
-        INSERT INTO users (id, email, password, role, email_verified, created_at, updated_at, token_salt)
+        INSERT INTO users (id, email, password, permissions, email_verified, created_at, updated_at, token_salt)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    `, testUser.ID, testUser.Email, testUser.Password, testUser.Role, testUser.EmailVerified,
-		testUser.CreatedAt, testUser.UpdatedAt, testUser.TokenSalt)
+    `, testUser.ID, testUser.Email, testUser.Password, testUser.Permissions,
+		testUser.EmailVerified, testUser.CreatedAt, testUser.UpdatedAt, testUser.TokenSalt)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
@@ -147,7 +148,7 @@ func TestAuthEndpoints(t *testing.T) {
 					assert.NotEmpty(t, response.AccessToken)
 					assert.Equal(t, tc.payload.Email, response.User.Email)
 					assert.True(t, response.User.EmailVerified)
-					assert.Equal(t, db.UserRoleStartupOwner, response.User.Role)
+					assert.Equal(t, permissions.PermStartupOwner, response.User.Permissions)
 
 					// Verify cookie
 					cookies := rec.Result().Cookies()
@@ -179,7 +180,7 @@ func TestAuthEndpoints(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Generate valid token for test user
-		accessToken, _, err := jwt.GenerateWithSalt(user.ID, user.Role, user.TokenSalt)
+		accessToken, _, err := jwt.GenerateWithSalt(user.ID, user.Permissions, user.TokenSalt)
 		assert.NoError(t, err)
 
 		tests := []struct {
