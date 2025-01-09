@@ -2,6 +2,7 @@ package v1_companies
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"errors"
 	"net/http"
@@ -27,7 +28,8 @@ func (h *Handler) handleCreateCompany(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", errors.New("failed to cast user type from context"))
 	}
 
-	if user.Role != db.UserRoleStartupOwner {
+	// Check if user has startup owner permissions
+	if !permissions.HasAllPermissions(user.Permissions, permissions.PermSubmitProject) {
 		return v1_common.NewForbiddenError("only startup owners can create companies")
 	}
 
@@ -86,7 +88,10 @@ func (h *Handler) handleUpdateCompany(c echo.Context) error {
 		return v1_common.NewNotFoundError("company")
 	}
 
-	if company.OwnerID != user.ID && user.Role != db.UserRoleAdmin {
+	// Check if user is owner or admin
+	isOwner := company.OwnerID == user.ID
+	isAdmin := permissions.HasAllPermissions(user.Permissions, permissions.PermManageUsers)
+	if !isOwner && !isAdmin {
 		return v1_common.NewForbiddenError("not authorized to update this company")
 	}
 
@@ -139,7 +144,8 @@ func (h *Handler) handleGetCompany(c echo.Context) error {
 
 	companyID := c.Param("id")
 	if companyID != "" {
-		if user.Role != db.UserRoleAdmin {
+		// Check if user has admin permissions to view any company
+		if !permissions.HasAllPermissions(user.Permissions, permissions.PermViewAllProjects) {
 			return v1_common.NewForbiddenError("not authorized to access this company")
 		}
 
