@@ -29,7 +29,7 @@ ADD COLUMN options VARCHAR(255)[];
 INSERT INTO project_questions (question, section, sub_section, input_type, required, validations) VALUES 
     -- SUB-SECTION: Business Overview
     ('What is the core product or service, and what problem does it solve?', 'The Basics', 'Business Overview', 'textarea', true, ''),
-    ('What is the unique value proposition?', 'The Basics', 'Business Overview', true, ''),
+    ('What is the unique value proposition?', 'The Basics', 'Business Overview', 'textarea', true, ''),
     ('What is the size and growth rate of the target market?', 'The Basics', 'Business Overview', 'textarea', true, ''),
     ('Who are the main competitors, and how is the business differentiated from them?', 'The Basics', 'Business Overview', 'textarea', true, ''),
 
