@@ -22,8 +22,9 @@ ORDER BY created_at DESC;
 
 -- name: GetProjectByID :one
 SELECT * FROM projects 
-WHERE id = $1 AND company_id = $2 
-LIMIT 1; 
+WHERE id = $1 
+  AND (company_id = $2 OR $3 & 1 = 1) -- Check for PermViewAllProjects (1 << 0)
+LIMIT 1;
 
 -- name: UpdateProjectAnswer :one
 UPDATE project_answers 
@@ -168,11 +169,6 @@ RETURNING *;
 -- name: DeleteProjectComment :exec
 DELETE FROM project_comments
 WHERE id = $1; 
-
--- name: GetProjectByIDAdmin :one
-SELECT * FROM projects 
-WHERE id = $1 
-LIMIT 1; 
 
 -- name: ResolveProjectComment :one
 UPDATE project_comments
