@@ -17,6 +17,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
+	"KonferCA/SPUR/internal/permissions"
 )
 
 const (
@@ -128,9 +129,9 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	}
 
 	newUser, err := q.NewUser(ctx, db.NewUserParams{
-		Email:    reqBody.Email,
-		Password: string(passwordHash),
-		Role:     db.UserRoleStartupOwner,
+		Email:       reqBody.Email,
+		Password:    string(passwordHash),
+		Permissions: permissions.PermStartupOwner,
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", err)
@@ -157,7 +158,7 @@ func (h *Handler) handleRegister(c echo.Context) error {
 		User: UserResponse{
 			Email:         newUser.Email,
 			EmailVerified: newUser.EmailVerified,
-			Role:          newUser.Role,
+			Permissions:   newUser.Permissions,
 		},
 	})
 }
@@ -202,7 +203,7 @@ func (h *Handler) handleLogin(c echo.Context) error {
 		User: UserResponse{
 			Email:         user.Email,
 			EmailVerified: user.EmailVerified,
-			Role:          user.Role,
+			Permissions:   user.Permissions,
 		},
 	})
 }
