@@ -10,7 +10,7 @@ import (
 )
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password, role, email_verified, created_at, updated_at, token_salt FROM users WHERE email = $1 LIMIT 1
+SELECT id, email, password, permissions, email_verified, created_at, updated_at, token_salt FROM users WHERE email = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -20,7 +20,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.ID,
 		&i.Email,
 		&i.Password,
-		&i.Role,
+		&i.Permissions,
 		&i.EmailVerified,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -30,7 +30,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, role, email_verified, token_salt
+SELECT id, email, permissions, email_verified, token_salt
 FROM users 
 WHERE id = $1
 `
@@ -38,7 +38,7 @@ WHERE id = $1
 type GetUserByIDRow struct {
 	ID            string
 	Email         string
-	Role          UserRole
+	Permissions   int32
 	EmailVerified bool
 	TokenSalt     []byte
 }
@@ -49,7 +49,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (GetUserByIDRow, e
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
-		&i.Role,
+		&i.Permissions,
 		&i.EmailVerified,
 		&i.TokenSalt,
 	)
@@ -69,33 +69,33 @@ func (q *Queries) GetUserEmailVerifiedStatusByEmail(ctx context.Context, email s
 
 const newUser = `-- name: NewUser :one
 INSERT INTO users
-(email, password, role)
+(email, password, permissions)
 VALUES
-($1, $2, $3) RETURNING id, email, email_verified, role, token_salt
+($1, $2, $3) RETURNING id, email, email_verified, permissions, token_salt
 `
 
 type NewUserParams struct {
-	Email    string
-	Password string
-	Role     UserRole
+	Email       string
+	Password    string
+	Permissions int32
 }
 
 type NewUserRow struct {
 	ID            string
 	Email         string
 	EmailVerified bool
-	Role          UserRole
+	Permissions   int32
 	TokenSalt     []byte
 }
 
 func (q *Queries) NewUser(ctx context.Context, arg NewUserParams) (NewUserRow, error) {
-	row := q.db.QueryRow(ctx, newUser, arg.Email, arg.Password, arg.Role)
+	row := q.db.QueryRow(ctx, newUser, arg.Email, arg.Password, arg.Permissions)
 	var i NewUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.EmailVerified,
-		&i.Role,
+		&i.Permissions,
 		&i.TokenSalt,
 	)
 	return i, err

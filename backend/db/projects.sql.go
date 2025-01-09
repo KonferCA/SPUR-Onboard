@@ -317,38 +317,19 @@ func (q *Queries) GetProjectAnswers(ctx context.Context, projectID string) ([]Ge
 
 const getProjectByID = `-- name: GetProjectByID :one
 SELECT id, company_id, title, description, status, created_at, updated_at FROM projects 
-WHERE id = $1 AND company_id = $2 
+WHERE id = $1 
+  AND (company_id = $2 OR $3 & 1 = 1) -- Check for PermViewAllProjects (1 << 0)
 LIMIT 1
 `
 
 type GetProjectByIDParams struct {
 	ID        string
 	CompanyID string
+	Column3   interface{}
 }
 
 func (q *Queries) GetProjectByID(ctx context.Context, arg GetProjectByIDParams) (Project, error) {
-	row := q.db.QueryRow(ctx, getProjectByID, arg.ID, arg.CompanyID)
-	var i Project
-	err := row.Scan(
-		&i.ID,
-		&i.CompanyID,
-		&i.Title,
-		&i.Description,
-		&i.Status,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getProjectByIDAdmin = `-- name: GetProjectByIDAdmin :one
-SELECT id, company_id, title, description, status, created_at, updated_at FROM projects 
-WHERE id = $1 
-LIMIT 1
-`
-
-func (q *Queries) GetProjectByIDAdmin(ctx context.Context, id string) (Project, error) {
-	row := q.db.QueryRow(ctx, getProjectByIDAdmin, id)
+	row := q.db.QueryRow(ctx, getProjectByID, arg.ID, arg.CompanyID, arg.Column3)
 	var i Project
 	err := row.Scan(
 		&i.ID,
