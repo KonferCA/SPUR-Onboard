@@ -1,9 +1,6 @@
 package v1_auth
 
-import (
-	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/interfaces"
-)
+import "KonferCA/SPUR/internal/interfaces"
 
 /*
 Main Handler struct for V1 auth routes.
@@ -34,7 +31,7 @@ type AuthResponse struct {
 }
 
 type UserResponse struct {
-	Email         string      `json:"email"`
-	EmailVerified bool        `json:"email_verified"`
-	Role          db.UserRole `json:"role"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	Permissions   uint32 `json:"permissions"`
 }
