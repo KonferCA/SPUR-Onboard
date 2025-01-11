@@ -1,10 +1,5 @@
 -- +goose Up
 -- +goose StatementBegin
--- alter project questions table to include a sub-section column
--- sub-section helps organize questions into smaller groups (how they are grouped in UI/UX)
-ALTER TABLE IF EXISTS project_questions
-ADD COLUMN sub_section VARCHAR(255) NOT NULL;
-
 -- enum type for different input types
 CREATE TYPE input AS ENUM (
     'textinput', -- single line input
@@ -12,9 +7,16 @@ CREATE TYPE input AS ENUM (
     'select', -- single selection/dropdown input
     'checkbox', -- checkbox question with one or more choices
     'radio', -- single selection with one or more choices
+    -- team creation is a list of objects with the basic information of a team member
     'team', -- team creation input
     'file' -- file upload input
 );
+
+-- alter project questions table to include a sub-section column
+-- sub-section helps organize questions into smaller groups (how they are grouped in UI/UX)
+ALTER TABLE IF EXISTS project_questions
+ADD COLUMN sub_section VARCHAR(255) NOT NULL;
+
 -- alter project questions table to include the type of input the question is for frontend use.
 ALTER TABLE IF EXISTS project_questions
 ADD COLUMN input_type input NOT NULL;
@@ -26,65 +28,70 @@ ADD COLUMN options VARCHAR(255)[];
 -- seed database with initial default questions
 
 -- SECTION: The Basics
-INSERT INTO project_questions (question, section, sub_section, input_type, required, validations) VALUES 
-    -- SUB-SECTION: Business Overview
-    ('What is the core product or service, and what problem does it solve?', 'The Basics', 'Business Overview', 'textarea', true, ''),
-    ('What is the unique value proposition?', 'The Basics', 'Business Overview', 'textarea', true, ''),
-    ('What is the size and growth rate of the target market?', 'The Basics', 'Business Overview', 'textarea', true, ''),
-    ('Who are the main competitors, and how is the business differentiated from them?', 'The Basics', 'Business Overview', 'textarea', true, ''),
+INSERT INTO project_questions (sub_section_order, question, section, sub_section, input_type, options, required, validations) VALUES 
+    -- SUB-SECTION: Company Pitch
+    (0, 'Include a link to a 5-minute video of you or your company pitching itself.', 'The Basics', 'Company Pitch', 'textinput', NULL, false, 'url'),
+    (1, 'Please upload a pitch deck.', 'The Basics', 'Company Pitch', 'textinput|file', false, 'url'),
 
-    -- SUB-SECTION: Market Analysis
-    ('Who are the target customers, and what are their needs?', 'The Basics', 'Market Analysis', 'textarea', true, ''),
-    ('What is the total addressable market (TAM), and how much can the startup realistically capture?', 'The Basics', 'Market Analysis', 'textarea', true, ''),
-    ('What are the main market trends and drivers?', 'The Basics', 'Market Analysis', 'textarea', true, ''),
-    ('What are the main market trends and drivers?', 'The Basics', 'Market Analysis', 'textarea', true, ''),
-    ('Are there any significant barriers to entry or competitive advantages?', 'The Basics', 'Market Analysis', 'textarea', true, ''),
+    -- SUB-SECTION: Business Overview
+    (0, 'What is the core product or service, and what problem does it solve?', 'The Basics', 'Business Overview', 'textarea', NULL, true, ''),
+    (1, 'What is the unique value proposition?', 'The Basics', 'Business Overview', 'textarea', NULL, true, ''),
+    (2, 'Who are the main competitors, and how is the business differentiated from them?', 'The Basics', 'Business Overview', 'textarea', NULL, true, ''),
+    (3, "What is the company's mission?", 'The Basics', 'Business Overview', 'textinput', NULL, true, ''),
+    (4, "What is the company's business plan?", 'The Basics', 'Business Overview', 'textinput|file', NULL, true, ''),
+
+    -- SUB-SECTION: Market Analysis & Research
+    (0, 'Who are the target customers, and what are their needs?', 'The Basics', 'Market Analysis & Research', 'textarea', NULL, true, ''),
+    (1, 'What is the size and growth rate of the target market?', 'The Basics', 'Market Analysis & Research', 'textarea', NULL, true, ''),
+    (2, 'What is the total addressable market (TAM), and how much can the startup realistically capture?', 'The Basics', 'Market Analysis & Research', 'textarea', NULL, true, ''),
+    (3, 'What are the main market trends and drivers?', 'The Basics', 'Market Analysis & Research', 'textarea', NULL, false, ''),
+    (4, 'Are there any significant barriers to entry or competitive advantages?', 'The Basics', 'Market Analysis & Research', 'textarea', NULL, false, ''),
+    (5, "Do you have any market research-related documents you'd like to inlcude?", 'The Basics', 'Market Analysis & Research', 'textinput|file', NULL, false, 'url'),
+    (6, "Do you have any customer data-related documents you'd like to include?", 'The Basics', 'Market Analysis & Research', 'textinput|file', NULL, false, 'url'),
 
     -- SUB-SECTION: Product or Service
-    ('What stage of development is the product in (idea, prototype, MVP, production)?', 'The Basics', 'Product or Service', 'textarea', true, ''),
-    ('What feedback has been received from early customers or beta users?', 'The Basics', 'Product or Service', 'textarea', true, ''),
-    ('Are any intellectual property (IP) protections, such as patents or trademarks in place?', 'The Basics', 'Product or Service', 'textarea', true, ''),
-    ('How scalable is the product/service?', 'The Basics', 'Product or Service', 'textarea', true, ''),
+    (0, 'What stage of development is the product in (idea, prototype, MVP, production)?', 'The Basics', 'Product or Service', 'select', '{Idea,Prototype,MVP,Production}', true, ''),
+    (1, 'How scalable is the product/service?', 'The Basics', 'Product or Service', 'textarea', NULL, true, ''),
+    (2, 'What feedback has been received from early customers or beta users?', 'The Basics', 'Product or Service', 'textarea', NULL, false, ''),
+    (3, 'Are any intellectual property (IP) protections, such as patents or trademarks in place?', 'The Basics', 'Product or Service', 'textarea', NULL, false, ''),
 
     -- SUB-SECTION: Traction
-    ('How many customers or users does the startup currently have?', 'The Basics', 'Traction', 'textarea', true, ''),
-    ('Are there partnerships, contracts, or letters of interest in place?', 'The Basics', 'Traction', 'textarea', true, ''),
-    ('Has the startup received media coverage, awards, or endorsements?', 'The Basics', 'Traction', 'textarea', true, ''),
-    ('What milestones has the startup achieved so far?', 'The Basics', 'Traction', 'textarea', true, ''),
+    (0, 'How many customers or users does the startup currently have?', 'The Basics', 'Traction', 'textarea', NULL, true, ''),
+    (1, 'Are there partnerships in place?', 'The Basics', 'Traction', 'textarea', NULL, true, ''),
+    (2, 'Has the startup received media coverage, awards, or endorsements?', 'The Basics', 'Traction', 'textarea', NULL, true, ''),
+    (3, 'What milestones has the startup achieved so far?', 'The Basics', 'Traction', 'textarea', NULL, true, ''),
 
     -- SUB-SECTION: Risks and Challenges
-    ('What are the major risks (market, operational, competitive, regulatory)?', 'The Basics', 'Risks and Challenges', 'textarea', true, ''),
-    ('How does the startup plan to mitigate these risks?', 'The Basics', 'Risks and Challenges', 'textarea', true, ''),
-    ('Are there any pending legal or compliance issues?', 'The Basics', 'Risks and Challenges', 'textarea', true, ''),
-    ('Are there any key dependencies (e.g., suppliers, technology)?', 'The Basics', 'Risks and Challenges', 'textarea', true, ''),
+    (0, 'What are the major risks (market, operational, competitive, regulatory)?', 'The Basics', 'Risks and Challenges', 'textarea', NULL, true, ''),
+    (1, 'How does the startup plan to mitigate these risks?', 'The Basics', 'Risks and Challenges', 'textarea', NULL, true, ''),
+    (2, 'Are there any key dependencies (e.g., suppliers, technology)?', 'The Basics', 'Risks and Challenges', 'textinput', NULL, true, ''),
 
     -- SUB-SECTION: Exit Strategy
-    ('What is the long-term vision for the business?', 'The Basics', 'Exit Strategy', 'textarea', true, ''),
-    ('Does the startup have a defined exit strategy (e.g., acquisition, IPO)?', 'The Basics', 'Exit Strategy', 'textarea', true, ''),
-    ('Are there potential acquirers or exit opportunities in the market?', 'The Basics', 'Exit Strategy', 'textarea', true, ''),
-    ('What is the projected return on investment (ROI) for investors?', 'The Basics', 'Exit Strategy', 'textarea', true, ''),
+    (0, 'What is the long-term vision for the business?', 'The Basics', 'Exit Strategy', 'textarea', NULL, true, ''),
+    (1, 'Does the startup have a defined exit strategy (e.g., acquisition, IPO)?', 'The Basics', 'Exit Strategy', 'textarea', NULL, true, ''),
+    (2, 'Are there potential acquirers or exit opportunities in the market?', 'The Basics', 'Exit Strategy', 'textinput', NULL, false, ''),
+    (3, 'What is the projected return on investment (ROI) for investors?', 'The Basics', 'Exit Strategy', 'textarea', NULL, false, ''),
 
     -- SUB-SECTION: Alignment and Impact
-    ('Does the startup align with SPUR’s values and mission?', 'The Basics', 'Alignment and Impact', 'textarea', true, ''),
-    ('What is the potential for a positive impact?', 'The Basics', 'Alignment and Impact', 'textarea', true, ''),
-    ('What is their mission?', 'The Basics', 'Alignment and Impact', 'textarea', true, ''),
-    ('How does the startup contribute to local or global communities?', 'The Basics', 'Alignment and Impact', 'textarea', true, ''),
+    (0, 'Does the startup align with SPUR’s values and mission?', 'The Basics', 'Alignment and Impact', 'textarea', NULL, true, ''),
+    (1, "How does the startup align with SPUR's strategic priorities and goals?", 'The Basics', 'Alignment and Impact', 'textarea', NULL, true, ''),
+    (2, "Are there potential synergies with other startups or partners from SPUR?", 'The Basics', 'Alignment and Impact', 'textarea', NULL, true, ''),
+    (3, "Can SPUR provide unique value beyond funding (e.g., mentorship, networking)?", 'The Basics', 'Alignment and Impact', 'textarea', NULL, true, ''),
+    (4, "Are you open to mentorship, guidance or collaboration from SPUR or its network?", 'The Basics', 'Alignment and Impact', 'textarea', NULL, true, ''),
+    (5, 'What is the potential for a positive impact?', 'The Basics', 'Alignment and Impact', 'textarea', NULL, true, ''),
+    (6, 'How does the startup contribute to local or global communities?', 'The Basics', 'Alignment and Impact', 'textarea', NULL, true, ''),
 
     -- SUB-SECTION: Legal and Compliance
-    ('Is the company properly registered and in good legal standing?', 'The Basics', 'Legal and Compliance', 'textarea', true, ''),
-    ('Are the ownership and equity structures clear and documented?', 'The Basics', 'Legal and Compliance', 'textarea', true, ''),
-    ('Are there any outstanding legal disputes or liabilities?', 'The Basics', 'Legal and Compliance', 'textarea', true, ''),
-    ('Does the company comply with industry-specific regulations?', 'The Basics', 'Legal and Compliance', 'textarea', true, ''),
-
-    -- SUB-SECTION: Strategic Fit with SPUR
-    ('How does the startup align with SPUR’s strategic priorities and goals?', 'The Basics', 'Strategic Fit with SPUR', 'textarea', true, ''),
-    ('Are there potential synergies with other startups or partners from SPUR?', 'The Basics', 'Strategic Fit with SPUR', 'textarea', true, ''),
-    ('Can SPUR provide unique value beyond funding (e.g., mentorship, networking)?', 'The Basics', 'Strategic Fit with SPUR', 'textarea', true, '');
+    (0, 'Is the company properly registered and in good legal standing?', 'The Basics', 'Legal and Compliance', 'textinput', NULL, true, ''),
+    (1, 'Are the ownership and equity structures clear and documented?', 'The Basics', 'Legal and Compliance', 'textinput', NULL, true, ''),
+    (2, 'Are there any outstanding legal disputes or liabilities?', 'The Basics', 'Legal and Compliance', 'textinput', NULL, true, ''),
+    (3, 'Does the company comply with industry-specific regulations?', 'The Basics', 'Legal and Compliance', 'textinput', NULL, true, ''),
+    (4, "Do you have any contracts, agreements, or letters of intent you'd like to include?", 'The Basics', 'Legal and Compliance', 'textinput|file', NULL, false, 'url'),
 
 -- SECTION: The Team
 INSERT INTO project_questions (question, section, sub_section, input_type, required, validations) VALUES 
     -- SUB-SECTION: Team Members
-    ('', 'The Team', 'Team Members', 'team', false, ''),
+    ('', 'The Team', 'Team Members', 'team', true, ''),
 
     -- SUB-SECTION: Team Background
     ('Who are the founders and key team members, and what are their backgrounds?', 'The Team', 'Team Background', 'textarea', true, ''),
@@ -132,20 +139,58 @@ INSERT INTO project_questions (question, section, sub_section, input_type, requi
     ('Relationships and Networking', 'The Team', 'Problem-Solving and Resillience', 'checkbox', true, ''),
     ('Can you share an example of a major challenge you’ve faced and how you resolved it', 'The Team', 'Problem-Solving and Resillience', 'textarea', true, ''),
     ('Can you share an example of a major challenge you’ve faced and how you resolved it', 'The Team', 'Problem-Solving and Resillience', 'textarea', true, ''),
-    ('Can you share an example of a major challenge you’ve faced and how you resolved it', 'The Team', 'Problem-Solving and Resillience', 'textarea', true, '');
+    ('Can you share an example of a major challenge you’ve faced and how you resolved it', 'The Team', 'Problem-Solving and Resillience', 'textarea', true, ''),
 
--- TODO: add remaining questions for problem solving
--- TODO: design new schema that can represent the different types of inputs for each question.
+    -- SUB-SECTION: Relationships and Networking
+    ('What key partnerships, relationships, or networks have you built to support your business?', 'The Team', 'Relationships and Networking', 'textarea', true, ''),
+    ('How do you approach building relationships with customers, suppliers, and investors?', 'The Team', 'Relationships and Networking', 'textarea', true, ''),
+    ('Are you active in relevant industry communities or events?', 'The Team', 'Relationships and Networking', 'textarea', true, ''),
+
+    -- SUB-SECTION: Personality and Soft Skills
+    ('How would your team describe your management style and personality?', 'The Team', 'Personality and Soft Skilss', 'textarea', true, ''),
+    ('How do you handle feedback or criticism?', 'The Team', 'Personality and Soft Skilss', 'textarea', true, ''),
+    ('What are your leadership strengths, and what areas are you actively working to improve?', 'The Team', 'Personality and Soft Skilss', 'textarea', true, ''),
+    ('How do you maintain your focus and energy while balancing the demands of entrepreneurship?', 'The Team', 'Personality and Soft Skilss', 'textarea', true, '');
+
+-- SECTION: The History nothing in notion yet
+-- INSERT INTO project_questions (question, section, sub_section, input_type, required, validations) VALUES
+
+-- SECTION: The Financials
+INSERT INTO project_questions (question, section, sub_section, input_type, required, validations) VALUES
+    -- SUB-SECTION: Financial and Strategic Understanding
+    ('Do you clearly understand your financial metrics (e.g., revenue, expenses, cash flow)?', 'The Financials', 'Financial and Strategic Understanding', 'textarea', true, ''),
+    ('What is your business scaling strategy, and how will you fund growth?', 'The Financials', 'Financial and Strategic Understanding', 'textarea', true, ''),
+    ('How do you prioritize spending and allocate resources?', 'The Financials', 'Financial and Strategic Understanding', 'textarea', true, ''),
+    ('What is your exit strategy, and how does it align with investor expectations?', 'The Financials', 'Financial and Strategic Understanding', 'textarea', true, ''),
+
+    -- SUB-SECTION: Financial Overview
+    ('What is the current revenue and growth rate?', 'The Financials', 'Financial Overview', 'textarea', true, ''),
+    ('What are the gross and net profit margins?', 'The Financials', 'Financial Overview', 'textarea', true, ''),
+    ('What is the customer acquisition cost (CAC) and lifetime value (LTV)?', 'The Financials', 'Financial Overview', 'textarea', true, ''),
+    ('Are the financial projections realistic and based on credible assumptions?', 'The Financials', 'Financial Overview', 'textarea', true, ''),
+    ('What is the current burn rate, and how much runway is left?', 'The Financials', 'Financial Overview', 'textarea', true, ''),
+
+    -- SUB-SECTION: Financial Needs & Usage
+    ('How much funding is the startup seeking, and what will it be used for?', 'The Financials', 'Financial Needs & Usage', 'textarea', true, ''),
+    ('What milestones will the funding help achieve?', 'The Financials', 'Financial Needs & Usage', 'textarea', true, ''),
+    ('Are there other sources of funding (e.g., grants, loans, existing investors)?', 'The Financials', 'Financial Needs & Usage', 'textarea', true, ''),
+    ('What is the proposed valuation, and is it justified?', 'The Financials', 'Financial Needs & Usage', 'textarea', true, '');
+
 
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-DELETE FROM project_questions WHERE section = 'business_overview'; 
+DELETE FROM project_questions; 
+
+ALTER TABLE IF EXISTS project_questions
+DROP COLUMN options;
 
 ALTER TABLE IF EXISTS project_questions
 DROP COLUMN input_type;
 
 ALTER TABLE IF EXISTS project_questions
 DROP COLUMN sub_section;
+
+DROP TYPE IF EXISTS input;
 -- +goose StatementEnd
