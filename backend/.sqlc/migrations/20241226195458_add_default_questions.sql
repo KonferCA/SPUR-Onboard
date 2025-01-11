@@ -78,93 +78,94 @@ INSERT INTO project_questions (sub_section_order, question, section, sub_section
     (4, 'Do you have any contracts, agreements, or letters of intent you''d like to include?', 'The Basics', 'Legal and Compliance', 'textinput|file', NULL, false, 'url');
 
 -- SECTION: The Team
-INSERT INTO project_questions (sub_section_order, question, section, sub_section, input_type, required, validations) VALUES 
+INSERT INTO project_questions (sub_section_order, question, section, sub_section, input_type, options, required, validations) VALUES 
     -- SUB-SECTION: Team Members
-    (0, '', 'The Team', 'Team Members', 'team', true, ''),
+    (0, '', 'The Team', 'Team Members', 'team', NULL, true, ''),
 
     -- SUB-SECTION: Team Background
-    (0, 'Who are the founders and key team members, and what are their backgrounds?', 'The Team', 'Team Background', 'textarea', true, ''),
-    (1, 'Do they have relevant experience in the industry?', 'The Team', 'Team Background', 'textarea', true, ''),
-    (2, 'How committed are the founders (e.g., full-time, personal investment)?', 'The Team', 'Team Background', 'textarea', true, ''),
-    (3, 'Does the team have a balanced skill set (technical, operational, marketing, finance)?', 'The Team', 'Team Background', 'textarea', true, ''),
+    (0, 'Who are the founders and key team members, and what are their backgrounds?', 'The Team', 'Team Background', 'textarea', NULL, true, ''),
+    (1, 'Do they have relevant experience in the industry?', 'The Team', 'Team Background', 'textarea', NULL, true, ''),
+    (2, 'How committed are the founders (e.g., full-time, personal investment)?', 'The Team', 'Team Background', 'textarea', NULL, true, ''),
+    (3, 'Does the team have a balanced skill set (technical, operational, marketing, finance)?', 'The Team', 'Team Background', 'textarea', NULL, true, ''),
 
     -- SUB-SECTION: Personal Background
-    (0, 'What is your professional and educational background?', 'The Team', 'Personal Background', 'textarea', true, ''),
-    (1, 'What relevant experience do you have in this industry or market?', 'The Team', 'Personal Background', 'textarea', true, ''),
-    (2, 'Have you successfully launched or managed any startups or businesses before? If so, what were the outcomes?', 'The Team', 'Personal Background', 'textarea', true, ''),
-    (3, 'What lessons did you learn from your previous ventures, both successful and unsuccessful?', 'The Team', 'Personal Background', 'textarea', true, ''),
-    (4, 'How well do you understand the technical and operational aspects of your business?', 'The Team', 'Personal Background', 'textarea', true, ''),
+    (0, 'What is your professional and educational background?', 'The Team', 'Personal Background', 'textarea', NULL, true, ''),
+    (1, 'What relevant experience do you have in this industry or market?', 'The Team', 'Personal Background', 'textarea', NULL, true, ''),
+    (2, 'Have you successfully launched or managed any startups or businesses before? If so, what were the outcomes?', 'The Team', 'Personal Background', 'textarea', NULL, true, ''),
+    (3, 'What lessons did you learn from your previous ventures, both successful and unsuccessful?', 'The Team', 'Personal Background', 'textarea', NULL, true, ''),
+    (4, 'How well do you understand the technical and operational aspects of your business?', 'The Team', 'Personal Background', 'textarea', NULL, true, ''),
 
     -- SUB-SECTION: Vision and Motivation
-    (0, 'What inspired you to start this business?', 'The Team', 'Vision and Motivation', 'textarea', true, ''),
-    (0, 'What is the long-term vision for the company, and how do you plan to achieve it?', 'The Team', 'Vision and Motivation', 'textarea', true, ''),
-    (0, 'What motivates you to continue pursuing this business, especially during challenging times?', 'The Team', 'Vision and Motivation', 'textarea', true, ''),
-    (0, 'How do you measure success for yourself and your business?', 'The Team', 'Vision and Motivation', 'textarea', true, ''),
+    (0, 'What inspired you to start this business?', 'The Team', 'Vision and Motivation', 'textarea', NULL, true, ''),
+    (1, 'What is the long-term vision for the company, and how do you plan to achieve it?', 'The Team', 'Vision and Motivation', 'textarea', NULL, true, ''),
+    (2, 'What motivates you to continue pursuing this business, especially during challenging times?', 'The Team', 'Vision and Motivation', 'textarea', NULL, true, ''),
+    (3, 'How do you measure success for yourself and your business?', 'The Team', 'Vision and Motivation', 'textarea', NULL, true, ''),
 
     -- SUB-SECTION: Leadership
-    (0, 'What is your leadership style?', 'The Team', 'Leadership', 'textarea', true, ''),
-    (0, 'How do you manage and motivate your team?', 'The Team', 'Leadership', 'textarea', true, ''),
-    (0, 'How do you handle conflict within the team and/or with external stakeholders?', 'The Team', 'Leadership', 'textarea', true, ''),
-    (0, 'Are you comfortable delegating responsibilities, or do you tend to take on too much yourself?', 'The Team', 'Leadership', 'textarea', true, ''),
-    (0, 'What processes do you have in place to attract, retain, and develop talent?', 'The Team', 'Leadership', 'textarea', true, ''),
+    (0, 'What is your leadership style?', 'The Team', 'Leadership', 'textarea', NULL, true, ''),
+    (1, 'How do you manage and motivate your team?', 'The Team', 'Leadership', 'textarea', NULL, true, ''),
+    (2, 'How do you handle conflict within the team and/or with external stakeholders?', 'The Team', 'Leadership', 'textarea', NULL, true, ''),
+    (3, 'Are you comfortable delegating responsibilities, or do you tend to take on too much yourself?', 'The Team', 'Leadership', 'textarea', NULL, true, ''),
+    (4, 'What processes do you have in place to attract, retain, and develop talent?', 'The Team', 'Leadership', 'textarea', NULL, true, ''),
 
     -- SUB-SECTION: Personal Commitment
-    (0, 'How committed are you to this venture?', 'The Team', 'Personal Commitment', 'textarea', true, ''),
-    (0, 'How much personal capital have you invested in the business?', 'The Team', 'Personal Commitment', 'textarea', true, ''),
-    (0, 'Are there any other obligations or ventures that could divide your focus?', 'The Team', 'Personal Commitment', 'textarea', true, ''),
-    (0, 'How long do you see yourself staying actively involved in the business?', 'The Team', 'Personal Commitment', 'textarea', true, ''),
+    (0, 'How committed are you to this venture?', 'The Team', 'Personal Commitment', 'textarea', NULL, true, ''),
+    (1, 'How much personal capital have you invested in the business?', 'The Team', 'Personal Commitment', 'textarea', NULL, true, ''),
+    (2, 'Are there any other obligations or ventures that could divide your focus?', 'The Team', 'Personal Commitment', 'textarea', NULL, true, ''),
+    (3, 'How long do you see yourself staying actively involved in the business?', 'The Team', 'Personal Commitment', 'textarea', NULL, true, ''),
 
     -- SUB-SECTION: Knowledge and Preparedness
-    (0, 'How well do you understand your target market, customer needs, and competitive landscape?', 'The Team', 'Knowledge and Preparedness', 'textarea', true, ''),
-    (0, 'What research or validation have you done to confirm demand for your product or service?', 'The Team', 'Knowledge and Preparedness', 'textarea', true, ''),
-    (0, 'Do you have a roadmap for the next 12 months, 3 years, and 5 years?', 'The Team', 'Knowledge and Preparedness', 'textarea', true, ''),
-    (0, 'What contingencies have you planned for potential risks or challenges?', 'The Team', 'Knowledge and Preparedness', 'textarea', true, ''),
+    (0, 'How well do you understand your target market, customer needs, and competitive landscape?', 'The Team', 'Knowledge and Preparedness', 'textarea', NULL, true, ''),
+    (1, 'What research or validation have you done to confirm demand for your product or service?', 'The Team', 'Knowledge and Preparedness', 'textarea', NULL, true, ''),
+    (2, 'Do you have a roadmap for the next 12 months, 3 years, and 5 years?', 'The Team', 'Knowledge and Preparedness', 'textarea', NULL, true, ''),
+    (3, 'What contingencies have you planned for potential risks or challenges?', 'The Team', 'Knowledge and Preparedness', 'textarea', NULL, true, ''),
 
     -- SUB-SECTION: Problem-Solving and Resillience
-    (0, 'Can you share an example of a major challenge you’ve faced and how you resolved it', 'The Team', 'Problem-Solving and Resillience', 'textarea', true, ''),
-    (0, 'How do you make decisions under pressure or with incomplete information?', 'The Team', 'Problem-Solving and Resillience', 'textarea', true, ''),
-    (0, 'What are the biggest risks to your business, and how do you plan to mitigate them', 'The Team', 'Problem-Solving and Resillience', 'textarea', true, ''),
-    (0, 'How do you handle setbacks or failures?', 'The Team', 'Problem-Solving and Resillience', 'textarea', true, ''),
-    (0, 'Relationships and Networking', 'The Team', 'Problem-Solving and Resillience', 'checkbox', true, ''),
-    (0, 'Can you share an example of a major challenge you’ve faced and how you resolved it', 'The Team', 'Problem-Solving and Resillience', 'textarea', true, ''),
-    (0, 'Can you share an example of a major challenge you’ve faced and how you resolved it', 'The Team', 'Problem-Solving and Resillience', 'textarea', true, ''),
-    (0, 'Can you share an example of a major challenge you’ve faced and how you resolved it', 'The Team', 'Problem-Solving and Resillience', 'textarea', true, ''),
+    (0, 'Can you share an example of a major challenge you’ve faced and how you resolved it', 'The Team', 'Problem-Solving and Resillience', 'textarea', NULL, true, ''),
+    (1, 'How do you make decisions under pressure or with incomplete information?', 'The Team', 'Problem-Solving and Resillience', 'textarea', NULL, true, ''),
+    (2, 'What are the biggest risks to your business, and how do you plan to mitigate them', 'The Team', 'Problem-Solving and Resillience', 'textarea', NULL, true, ''),
+    (3, 'How do you handle setbacks or failures?', 'The Team', 'Problem-Solving and Resillience', 'textarea', NULL, true, ''),
 
     -- SUB-SECTION: Relationships and Networking
-    (0, 'What key partnerships, relationships, or networks have you built to support your business?', 'The Team', 'Relationships and Networking', 'textarea', true, ''),
-    (0, 'How do you approach building relationships with customers, suppliers, and investors?', 'The Team', 'Relationships and Networking', 'textarea', true, ''),
-    (0, 'Are you active in relevant industry communities or events?', 'The Team', 'Relationships and Networking', 'textarea', true, ''),
+    (0, 'What key partnerships, relationships, or networks have you built to support your business?', 'The Team', 'Relationships and Networking', 'textarea', NULL, true, ''),
+    (1, 'How do you approach building relationships with customers, suppliers, and investors?', 'The Team', 'Relationships and Networking', 'textarea', NULL, true, ''),
+    (2, 'Are you active in relevant industry communities or events?', 'The Team', 'Relationships and Networking', 'textarea', NULL, true, ''),
 
     -- SUB-SECTION: Personality and Soft Skills
-    (0, 'How would your team describe your management style and personality?', 'The Team', 'Personality and Soft Skilss', 'textarea', true, ''),
-    (0, 'How do you handle feedback or criticism?', 'The Team', 'Personality and Soft Skilss', 'textarea', true, ''),
-    (0, 'What are your leadership strengths, and what areas are you actively working to improve?', 'The Team', 'Personality and Soft Skilss', 'textarea', true, ''),
-    (0, 'How do you maintain your focus and energy while balancing the demands of entrepreneurship?', 'The Team', 'Personality and Soft Skilss', 'textarea', true, '');
+    (0, 'How would your team describe your management style and personality?', 'The Team', 'Personality and Soft Skilss', 'textarea', NULL, true, ''),
+    (1, 'How do you handle feedback or criticism?', 'The Team', 'Personality and Soft Skilss', 'textarea', NULL, true, ''),
+    (2, 'What are your leadership strengths, and what areas are you actively working to improve?', 'The Team', 'Personality and Soft Skilss', 'textarea', NULL, true, ''),
+    (3, 'How do you maintain your focus and energy while balancing the demands of entrepreneurship?', 'The Team', 'Personality and Soft Skilss', 'textarea', NULL, true, '');
 
 -- SECTION: The History nothing in notion yet
 -- INSERT INTO project_questions (question, section, sub_section, input_type, required, validations) VALUES
 
 -- SECTION: The Financials
-INSERT INTO project_questions (sub_section_order, question, section, sub_section, input_type, required, validations) VALUES
+INSERT INTO project_questions (sub_section_order, question, section, sub_section, input_type, options, required, validations) VALUES
     -- SUB-SECTION: Financial and Strategic Understanding
-    (0, 'Do you clearly understand your financial metrics (e.g., revenue, expenses, cash flow)?', 'The Financials', 'Financial and Strategic Understanding', 'textarea', true, ''),
-    (0, 'What is your business scaling strategy, and how will you fund growth?', 'The Financials', 'Financial and Strategic Understanding', 'textarea', true, ''),
-    (0, 'How do you prioritize spending and allocate resources?', 'The Financials', 'Financial and Strategic Understanding', 'textarea', true, ''),
-    (0, 'What is your exit strategy, and how does it align with investor expectations?', 'The Financials', 'Financial and Strategic Understanding', 'textarea', true, ''),
+    (0, 'Do you clearly understand your financial metrics (e.g., revenue, expenses, cash flow)?', 'The Financials', 'Financial and Strategic Understanding', 'textarea', NULL, true, ''),
+    (1, 'What is your business scaling strategy, and how will you fund growth?', 'The Financials', 'Financial and Strategic Understanding', 'textarea', NULL, true, ''),
+    (2, 'How do you prioritize spending and allocate resources?', 'The Financials', 'Financial and Strategic Understanding', 'textarea', NULL, true, ''),
+    (3, 'What is your exit strategy, and how does it align with investor expectations?', 'The Financials', 'Financial and Strategic Understanding', 'textarea', NULL, true, ''),
 
     -- SUB-SECTION: Financial Overview
-    (0, 'What is the current revenue and growth rate?', 'The Financials', 'Financial Overview', 'textarea', true, ''),
-    (0, 'What are the gross and net profit margins?', 'The Financials', 'Financial Overview', 'textarea', true, ''),
-    (0, 'What is the customer acquisition cost (CAC) and lifetime value (LTV)?', 'The Financials', 'Financial Overview', 'textarea', true, ''),
-    (0, 'Are the financial projections realistic and based on credible assumptions?', 'The Financials', 'Financial Overview', 'textarea', true, ''),
-    (0, 'What is the current burn rate, and how much runway is left?', 'The Financials', 'Financial Overview', 'textarea', true, ''),
+    (0, 'What is the current revenue and growth rate?', 'The Financials', 'Financial Overview', 'textarea', NULL, true, ''),
+    (1, 'What are the gross and net profit margins?', 'The Financials', 'Financial Overview', 'textarea', NULL, true, ''),
+    (2, 'What is the customer acquisition cost (CAC) and lifetime value (LTV)?', 'The Financials', 'Financial Overview', 'textarea', NULL, true, ''),
+    (3, 'Are the financial projections realistic and based on credible assumptions?', 'The Financials', 'Financial Overview', 'textarea', NULL, true, ''),
+    (4, 'What is the current burn rate, and how much runway is left?', 'The Financials', 'Financial Overview', 'textarea', NULL, true, ''),
 
     -- SUB-SECTION: Financial Needs & Usage
-    (0, 'How much funding is the startup seeking, and what will it be used for?', 'The Financials', 'Financial Needs & Usage', 'textarea', true, ''),
-    (0, 'What milestones will the funding help achieve?', 'The Financials', 'Financial Needs & Usage', 'textarea', true, ''),
-    (0, 'Are there other sources of funding (e.g., grants, loans, existing investors)?', 'The Financials', 'Financial Needs & Usage', 'textarea', true, ''),
-    (0, 'What is the proposed valuation, and is it justified?', 'The Financials', 'Financial Needs & Usage', 'textarea', true, '');
+    (0, 'How much funding is the startup seeking, and what will it be used for?', 'The Financials', 'Financial Needs & Usage', 'textarea', NULL, true, ''),
+    (1, 'What milestones will the funding help achieve?', 'The Financials', 'Financial Needs & Usage', 'textarea', NULL, true, ''),
+    (2, 'Are there other sources of funding (e.g., grants, loans, existing investors)?', 'The Financials', 'Financial Needs & Usage', 'textarea', NULL, true, ''),
+    (3, 'What is the proposed valuation, and is it justified?', 'The Financials', 'Financial Needs & Usage', 'textarea', NULL, true, ''),
 
+    -- SUB-SECTION: Documents
+    (0, 'Cap table', 'The Financials', 'Documents', 'file', NULL, true, ''),
+    (1, 'Income statement', 'The Financials', 'Documents', 'file', NULL, true, ''),
+    (2, 'Balance sheet', 'The Financials', 'Documents', 'file', NULL, true, ''),
+    (3, 'Cash flow', 'The Financials', 'Documents', 'file', NULL, true, '');
 
 -- +goose StatementEnd
 
