@@ -7,6 +7,7 @@ import (
 	"KonferCA/SPUR/internal/v1/v1_health"
 	"KonferCA/SPUR/internal/v1/v1_projects"
 	"KonferCA/SPUR/internal/v1/v1_teams"
+	"KonferCA/SPUR/internal/v1/v1_transactions"
 )
 
 func SetupRoutes(s interfaces.CoreServer) {
@@ -18,4 +19,5 @@ func SetupRoutes(s interfaces.CoreServer) {
 	v1_companies.SetupCompanyRoutes(g, s)
 	v1_projects.SetupRoutes(g, s)
 	v1_teams.SetupRoutes(g, s)
+	v1_transactions.SetupTransactionRoutes(g, s)
 }
