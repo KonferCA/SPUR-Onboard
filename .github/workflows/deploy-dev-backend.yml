@@ -1,193 +1,224 @@
 name: Deploy Dev Backend
 on:
-  workflow_dispatch:
-  push:
-    branches: ['main']
-    paths:
-      - 'backend/**'
+    workflow_dispatch:
+    push:
+        branches: ['main']
+        paths:
+        - 'backend/**'
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    environment: Dev
-    defaults:
-      run:
-        shell: bash
-        working-directory: backend
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    deploy:
+        runs-on: ubuntu-latest
+        environment: Dev
+        defaults:
+            run:
+                shell: bash
+                working-directory: backend
+        steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
 
-      - name: Create env file
-        run: |
-          cat << EOF > .env
-          APP_ENV=${{ secrets.APP_ENV }}
-          APP_NAME=${{ secrets.APP_NAME }}
-          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_REGION=${{ secrets.AWS_REGION }}
-          AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}
-          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          BACKEND_URL=${{ secrets.BACKEND_URL }}
-          DB_HOST=${{ secrets.DB_HOST }}
-          DB_NAME=${{ secrets.DB_NAME }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          DB_PORT=${{ secrets.DB_PORT }}
-          DB_SSLMODE=${{ secrets.DB_SSLMODE }}
-          DB_USER=${{ secrets.DB_USER }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          JWT_SECRET_VERIFY_EMAIL=${{ secrets.JWT_SECRET_VERIFY_EMAIL }}
-          NOREPLY_EMAIL=${{ secrets.NOREPLY_EMAIL }}
-          PORT=${{ secrets.PORT }}
-          POSTGRES_USER=${{ secrets.DB_USER }}
-          POSTGRES_DB=${{ secrets.DB_NAME }}
-          POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
-          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
-          EOF
+        - name: Create env file
+          run: |
+            cat << EOF > .env
+            APP_ENV=${{ secrets.APP_ENV }}
+            APP_NAME=${{ secrets.APP_NAME }}
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            BACKEND_URL=${{ secrets.BACKEND_URL }}
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_PORT=${{ secrets.DB_PORT }}
+            DB_SSLMODE=${{ secrets.DB_SSLMODE }}
+            DB_USER=${{ secrets.DB_USER }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_SECRET_VERIFY_EMAIL=${{ secrets.JWT_SECRET_VERIFY_EMAIL }}
+            NOREPLY_EMAIL=${{ secrets.NOREPLY_EMAIL }}
+            PORT=${{ secrets.PORT }}
+            POSTGRES_USER=${{ secrets.DB_USER }}
+            POSTGRES_DB=${{ secrets.DB_NAME }}
+            POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+            EOF
 
-      - name: Setup VPS fingerprint
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          echo "${{ secrets.VPS_IP }} ${{ secrets.VPS_FINGERPRINT }}" >> ~/.ssh/known_hosts
+        - name: Setup VPS fingerprint
+          run: |
+            mkdir -p ~/.ssh
+            echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            echo "${{ secrets.VPS_IP }} ${{ secrets.VPS_FINGERPRINT }}" >> ~/.ssh/known_hosts
 
-      - name: Setup Rsync
-        uses: GuillaumeFalourd/setup-rsync@v1.2
+        - name: Setup Rsync
+          uses: GuillaumeFalourd/setup-rsync@v1.2
 
-      - name: Setup VPS File System Tree
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          APP_ENV: ${{ secrets.APP_ENV }}
-        with:
-          host: ${{ secrets.VPS_IP }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_KEY }}
-          envs: APP_ENV
-          script: |
-            mkdir -p "$HOME/$APP_ENV/migrations"
+        - name: Setup VPS File System Tree
+          uses: appleboy/ssh-action@v1.0.3
+          env:
+            APP_ENV: ${{ secrets.APP_ENV }}
+            with:
+            host: ${{ secrets.VPS_IP }}
+            username: ${{ secrets.VPS_USER }}
+            key: ${{ secrets.VPS_KEY }}
+            envs: APP_ENV
+            script: |
+                mkdir -p "$HOME/$APP_ENV/migrations"
 
-      - name: Upload .env
-        run: |
-          rsync -avz --progress .env ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_ENV }}/
+        - name: Upload .env
+          run: |
+            rsync -avz --progress .env ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_ENV }}/
 
-      - name: Upload Migrations
-        run: |
-          rsync -avz --delete --progress .sqlc/migrations/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_ENV }}/migrations/
+        - name: Upload Migrations
+          run: |
+            rsync -avz --delete --progress .sqlc/migrations/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_ENV }}/migrations/
 
-      - name: Boot Postgres and Run Migrations
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
-          DB_USER: ${{ secrets.DB_USER }}
-          APP_NAME: ${{ secrets.APP_NAME }}
-          APP_ENV: ${{ secrets.APP_ENV }}
-        with:
-          host: ${{ secrets.VPS_IP }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_KEY }}
-          envs: DB_NAME,DB_PASSWORD,DB_PORT,DB_SSLMODE,DB_USER,APP_NAME,APP_ENV
-          script: |
-            cd "$HOME/$APP_ENV"
+        - name: Boot Postgres and Run Migrations
+          uses: appleboy/ssh-action@v1.0.3
+          env:
+            DB_NAME: ${{ secrets.DB_NAME }}
+            DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+            DB_PORT: ${{ secrets.DB_PORT }}
+            DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
+            DB_USER: ${{ secrets.DB_USER }}
+            APP_NAME: ${{ secrets.APP_NAME }}
+            APP_ENV: ${{ secrets.APP_ENV }}
+            with:
+            host: ${{ secrets.VPS_IP }}
+            username: ${{ secrets.VPS_USER }}
+            key: ${{ secrets.VPS_KEY }}
+            envs: DB_NAME,DB_PASSWORD,DB_PORT,DB_SSLMODE,DB_USER,APP_NAME,APP_ENV
+            script: |
+                cd "$HOME/$APP_ENV"
 
-            POSTGRES_DATA_DIR="$HOME/$APP_ENV/postgres"
-            mkdir -p $POSTGRES_DATA_DIR
-            POSTGRES_CONTAINER="$APP_NAME-$APP_ENV-postgres"
+                POSTGRES_DATA_DIR="$HOME/$APP_ENV/postgres"
+                mkdir -p $POSTGRES_DATA_DIR
+                POSTGRES_CONTAINER="$APP_NAME-$APP_ENV-postgres"
 
-            if ! docker ps --filter "name=$POSTGRES_CONTAINER" --format '{{.Names}}' | grep -q "^$POSTGRES_CONTAINER"; then
-                echo "PostgreSQL container not found. Starting new container..."
-                docker stop $POSTGRES_CONTAINER || true
-                docker rm $POSTGRES_CONTAINER || true
+                if ! docker ps --filter "name=$POSTGRES_CONTAINER" --format '{{.Names}}' | grep -q "^$POSTGRES_CONTAINER"; then
+                    echo "PostgreSQL container not found. Starting new container..."
+                    docker stop $POSTGRES_CONTAINER || true
+                    docker rm $POSTGRES_CONTAINER || true
+                    docker run -d \
+                    --name "$POSTGRES_CONTAINER" \
+                    -p "$DB_PORT:5432" \
+                    -v "$POSTGRES_DATA_DIR:/var/lib/postgresql/data" \
+                    --env POSTGRES_USER="${{ secrets.DB_USER }}" \
+                    --env POSTGRES_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+                    --env POSTGRES_DB="${{ secrets.DB_NAME }}" \
+                    postgres:16
+
+                    # Wait for PostgreSQL to be ready
+                    echo "Waiting for PostgreSQL to be ready..."
+                    RETRY_COUNT=0
+                    MAX_RETRIES=10
+                    while ! docker exec "$POSTGRES_CONTAINER" pg_isready -q; do
+                    RETRY_COUNT=$((RETRY_COUNT + 1))
+                    if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+                        echo "Error: PostgreSQL failed to start after $MAX_RETRIES attempts"
+                        exit 1
+                    fi
+                    echo "Waiting for PostgreSQL to be ready..."
+                    sleep 1
+                    done
+                    echo "Postgres is ready!"
+                else
+                    echo "PostgreSQL container is already running"
+                fi
+
+                # Force the version to the latest actual migration
+                goose -dir "$HOME/$APP_ENV/migrations" postgres \
+                "postgres://$DB_USER:$DB_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" force 20241219000000
+
+                # Run migrations up
+                goose -dir "$HOME/$APP_ENV/migrations" postgres \
+                "postgres://$DB_USER:$DB_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" up
+
+        - name: Build Docker Image
+          run: |
+            docker build -t ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest .
+            docker save -o image.tar ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest
+
+        - name: Setup Docker Network
+          uses: appleboy/ssh-action@v1.0.3
+          env:
+            APP_NAME: ${{ secrets.APP_NAME }}
+            APP_ENV: ${{ secrets.APP_ENV }}
+          with:
+            host: ${{ secrets.VPS_IP }}
+            username: ${{ secrets.VPS_USER }}
+            key: ${{ secrets.VPS_KEY }}
+            envs: APP_NAME,APP_ENV
+            script: |
+                NETWORK_NAME="${APP_NAME}-${APP_ENV}-network"                
+                if ! docker network inspect "$NETWORK_NAME" >/dev/null 2>&1; then
+                    docker network create "$NETWORK_NAME"
+                fi
+
+        - name: Upload Docker Image
+          run: |
+            rsync -avz image.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_ENV }}/
+
+        - name: Deploy Go App on VPS
+          uses: appleboy/ssh-action@v1.0.3
+          env:
+            DB_NAME: ${{ secrets.DB_NAME }}
+            DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+            DB_PORT: ${{ secrets.DB_PORT }}
+            DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
+            DB_USER: ${{ secrets.DB_USER }}
+            APP_NAME: ${{ secrets.APP_NAME }}
+            APP_ENV: ${{ secrets.APP_ENV }}
+          with:
+            host: ${{ secrets.VPS_IP }}
+            username: ${{ secrets.VPS_USER }}
+            key: ${{ secrets.VPS_KEY }}
+            envs: DB_NAME,DB_PASSWORD,DB_PORT,DB_SSLMODE,DB_USER,APP_NAME,APP_ENV
+            script: |
+                cd $HOME/$APP_ENV
+
+                echo "Stopping and removing existing container if present..."
+                CONTAINER="$APP_NAME-$APP_ENV"
+                docker stop $CONTAINER || true
+                docker rm $CONTAINER || true
+
+                echo "Loading pre-built docker image..."
+                docker load -i image.tar
+
+                echo "Starting new application container..."
                 docker run -d \
-                  --name "$POSTGRES_CONTAINER" \
-                  -p "$DB_PORT:5432" \
-                  -v "$POSTGRES_DATA_DIR:/var/lib/postgresql/data" \
-                  --env POSTGRES_USER="${{ secrets.DB_USER }}" \
-                  --env POSTGRES_PASSWORD="${{ secrets.DB_PASSWORD }}" \
-                  --env POSTGRES_DB="${{ secrets.DB_NAME }}" \
-                  postgres:16
+                --name $CONTAINER \
+                --env-file .env \
+                --network=host --add-host=host.docker.internal:host-gateway \
+                "$APP_NAME-$APP_ENV:latest"
 
-                # Wait for PostgreSQL to be ready
-                echo "Waiting for PostgreSQL to be ready..."
-                RETRY_COUNT=0
-                MAX_RETRIES=10
-                while ! docker exec "$POSTGRES_CONTAINER" pg_isready -q; do
-                  RETRY_COUNT=$((RETRY_COUNT + 1))
-                  if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
-                    echo "Error: PostgreSQL failed to start after $MAX_RETRIES attempts"
-                    exit 1
-                  fi
-                  echo "Waiting for PostgreSQL to be ready..."
-                  sleep 1
-                done
-                echo "Postgres is ready!"
-            else
-                echo "PostgreSQL container is already running"
-            fi
+                     KUMA_CONTAINER="${APP_NAME}-${APP_ENV}-kuma"
+                if ! docker ps --filter "name=$KUMA_CONTAINER" --format '{{.Names}}' | grep -q "^$KUMA_CONTAINER"; then
+                    echo "Starting Uptime Kuma container..."
+                    docker run -d \
+                        --name $KUMA_CONTAINER \
+                        --network=$NETWORK_NAME \
+                        -p "3001:3001" \
+                        -v "$HOME/$APP_ENV/docker/uptime-kuma/data:/app/data" \
+                        --security-opt no-new-privileges:true \
+                        louislam/uptime-kuma:1
+                else
+                    echo "Uptime Kuma container is already running"
+                    docker network connect $NETWORK_NAME $KUMA_CONTAINER || true
+                fi
 
-            # Force the version to the latest actual migration
-            goose -dir "$HOME/$APP_ENV/migrations" postgres \
-              "postgres://$DB_USER:$DB_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" force 20241219000000
+                echo "Done: $APP_ENV Deployment"
 
-            # Run migrations up
-            goose -dir "$HOME/$APP_ENV/migrations" postgres \
-              "postgres://$DB_USER:$DB_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" up
-
-      - name: Build Docker Image
-        run: |
-          docker build -t ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest .
-          docker save -o image.tar ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest
-
-      - name: Upload Docker Image
-        run: |
-          rsync -avz image.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_ENV }}/
-
-      - name: Deploy Go App on VPS
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
-          DB_USER: ${{ secrets.DB_USER }}
-          APP_NAME: ${{ secrets.APP_NAME }}
-          APP_ENV: ${{ secrets.APP_ENV }}
-        with:
-          host: ${{ secrets.VPS_IP }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_KEY }}
-          envs: DB_NAME,DB_PASSWORD,DB_PORT,DB_SSLMODE,DB_USER,APP_NAME,APP_ENV
-          script: |
-            cd $HOME/$APP_ENV
-
-            echo "Stopping and removing existing container if present..."
-            CONTAINER="$APP_NAME-$APP_ENV"
-            docker stop $CONTAINER || true
-            docker rm $CONTAINER || true
-
-            echo "Loading pre-built docker image..."
-            docker load -i image.tar
-
-            echo "Starting new application container..."
-            docker run -d \
-              --name $CONTAINER \
-              --env-file .env \
-              --network=host --add-host=host.docker.internal:host-gateway \
-              "$APP_NAME-$APP_ENV:latest"
-
-            echo "Done: $APP_ENV Deployment"
-
-      - name: Post Deployment Clean Up on VPS
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          APP_ENV: ${{ secrets.APP_ENV }}
-        with:
-          host: ${{ secrets.VPS_IP }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_KEY }}
-          envs: APP_ENV
-          script: |
-            rm -rf $HOME/$APP_ENV/migrations
-            rm -f $HOME/$APP_ENV/image.tar
-            rm -f $HOME/$APP_ENV/.env
+        - name: Post Deployment Clean Up on VPS
+          uses: appleboy/ssh-action@v1.0.3
+          env:
+            APP_ENV: ${{ secrets.APP_ENV }}
+          with:
+            host: ${{ secrets.VPS_IP }}
+            username: ${{ secrets.VPS_USER }}
+            key: ${{ secrets.VPS_KEY }}
+            envs: APP_ENV
+            script: |
+                rm -rf $HOME/$APP_ENV/migrations
+                rm -f $HOME/$APP_ENV/image.tar
+                rm -f $HOME/$APP_ENV/.env
