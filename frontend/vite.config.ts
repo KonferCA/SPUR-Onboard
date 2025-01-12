@@ -10,15 +10,17 @@ export default defineConfig({
         }),
         react(),
     ],
+
     server: {
         proxy: {
             '/api': {
                 target: 'http://localhost:6969',
                 changeOrigin: true,
                 secure: false,
-        },
+            },
         }
     },
+    
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
