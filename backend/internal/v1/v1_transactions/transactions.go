@@ -18,15 +18,19 @@ func (h *Handler) handleCreateTransaction(c echo.Context) error {
 
 	// Get user from context and verify permissions
 	user := c.Get("user").(*db.GetUserByIDRow)
-	if !permissions.HasAnyPermission(user.Permissions, 
+	if !permissions.HasAnyPermission(uint32(user.Permissions), 
 		permissions.PermInvestInProjects,
-		permissions.PermManageProjects,
+		permissions.PermManageInvestments,
 	) {
 		return v1_common.NewForbiddenError("not authorized to create transactions")
 	}
 
 	// Get project to verify it exists and get company_id
-	project, err := h.server.GetQueries().GetProjectByIDAdmin(c.Request().Context(), req.ProjectID)
+	project, err := h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
+		ID:        req.ProjectID,
+		CompanyID: "00000000-0000-0000-0000-000000000000", // Zero UUID since we want to check permissions
+		Column3:   uint32(user.Permissions),
+	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusNotFound, "Project not found", err)
 	}

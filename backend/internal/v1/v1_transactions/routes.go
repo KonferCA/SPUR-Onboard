@@ -13,7 +13,7 @@ func SetupTransactionRoutes(g *echo.Group, s interfaces.CoreServer) {
 	// POST /api/v1/transactions
 	transactions := g.Group("/transactions")
 	transactions.POST("", h.handleCreateTransaction, middleware.Auth(s.GetDB(), 
-		permissions.PermInvestInProjects, // Investors can create transactions
-		permissions.PermManageProjects,   // Admins can create transactions
+		permissions.PermInvestInProjects,    // Investors can create transactions
+		permissions.PermManageInvestments,   // Admins can manage investments
 	))
 }

@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -8,22 +9,24 @@ import (
 	"strings"
 	"testing"
 
-	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/v1/v1_common"
+	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/server"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Test struct with validation tags
 type testRequest struct {
-	Name          string      `json:"name" validate:"required"`
-	Email         string      `json:"email" validate:"required,email"`
-	Role          db.UserRole `json:"role" validate:"valid_user_role"`
-	WalletAddress string      `json:"wallet_address" validate:"wallet_address"`
-	LinkedInURL   string      `json:"linkedin_url" validate:"linkedin_url"`
+	Name          string `json:"name" validate:"required"`
+	Email         string `json:"email" validate:"required,email"`
+	Permissions   uint32 `json:"permissions" validate:"valid_permissions"`
+	WalletAddress string `json:"wallet_address" validate:"wallet_address"`
+	LinkedInURL   string `json:"linkedin_url" validate:"linkedin_url"`
 }
 
 func TestSuccess(t *testing.T) {
@@ -166,7 +169,7 @@ func TestBindAndValidate(t *testing.T) {
 			body: `{
                 "name": "test",
                 "email": "test@example.com",
-                "role": "startup_owner",
+                "permissions": 32,
                 "wallet_address": "0x1234567890123456789012345678901234567890123456789012345678901234",
                 "linkedin_url": "https://linkedin.com/in/test"
             }`,
@@ -197,7 +200,7 @@ func TestBindAndValidate(t *testing.T) {
 			body: `{
                 "name": "test",
                 "email": "invalid-email",
-                "role": "startup_owner"
+                "permissions": 32
             }`,
 			expectError: true,
 			checkError: func(t *testing.T, err error) {
@@ -207,17 +210,17 @@ func TestBindAndValidate(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid role",
+			name: "invalid permissions",
 			body: `{
                 "name": "test",
                 "email": "test@example.com",
-                "role": "invalid_role"
+                "permissions": 0
             }`,
 			expectError: true,
 			checkError: func(t *testing.T, err error) {
 				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "Role")
-				assert.Contains(t, err.Error(), "valid user role")
+				assert.Contains(t, err.Error(), "Permissions")
+				assert.Contains(t, err.Error(), "invalid permissions")
 			},
 		},
 	}
@@ -274,26 +277,6 @@ func TestUserContext(t *testing.T) {
 			},
 			expectError: true,
 		},
-		{
-			name: "get valid user role",
-			setupContext: func(c echo.Context) {
-				c.Set("user_role", db.UserRoleAdmin)
-			},
-			testFunc: func(c echo.Context) error {
-				_, err := v1_common.GetUserRole(c)
-				return err
-			},
-			expectError: false,
-		},
-		{
-			name:         "get invalid user role",
-			setupContext: func(c echo.Context) {},
-			testFunc: func(c echo.Context) error {
-				_, err := v1_common.GetUserRole(c)
-				return err
-			},
-			expectError: true,
-		},
 	}
 
 	for _, tt := range tests {
@@ -316,54 +299,118 @@ func TestUserContext(t *testing.T) {
 }
 
 func TestAdminChecks(t *testing.T) {
-	tests := []struct {
-		name         string
-		setupContext func(echo.Context)
-		expectAdmin  bool
-		expectError  bool
-	}{
-		{
-			name: "is admin",
-			setupContext: func(c echo.Context) {
-				c.Set("user_role", db.UserRoleAdmin)
-			},
-			expectAdmin: true,
-			expectError: false,
-		},
-		{
-			name: "not admin",
-			setupContext: func(c echo.Context) {
-				c.Set("user_role", db.UserRoleStartupOwner)
-			},
-			expectAdmin: false,
-			expectError: true,
-		},
-		{
-			name:         "no role",
-			setupContext: func(c echo.Context) {},
-			expectAdmin:  false,
-			expectError:  true,
-		},
+	setupEnv()
+	s := setupTestServer(t)
+
+	t.Run("is_admin", func(t *testing.T) {
+		ctx := context.Background()
+		userID, email, _, err := createTestUser(ctx, s, permissions.PermAdmin)
+		require.NoError(t, err)
+		defer removeTestUser(ctx, email, s)
+
+		// Get actual user permissions from database
+		var userPerms int32
+		err = s.GetDB().QueryRow(ctx, "SELECT permissions FROM users WHERE id = $1", userID).Scan(&userPerms)
+		require.NoError(t, err)
+
+		// Test admin check with actual permissions
+		isAdmin := permissions.HasAllPermissions(uint32(userPerms), 
+			permissions.PermViewAllProjects,
+			permissions.PermReviewProjects,
+			permissions.PermManageUsers,
+			permissions.PermManagePermissions,
+			permissions.PermCommentOnProjects,
+		)
+		assert.True(t, isAdmin)
+	})
+
+	t.Run("not_admin", func(t *testing.T) {
+		ctx := context.Background()
+		userID, email, _, err := createTestUser(ctx, s, permissions.PermStartupOwner)
+		require.NoError(t, err)
+		defer removeTestUser(ctx, email, s)
+
+		// Get actual user permissions from database
+		var userPerms int32
+		err = s.GetDB().QueryRow(ctx, "SELECT permissions FROM users WHERE id = $1", userID).Scan(&userPerms)
+		require.NoError(t, err)
+
+		// Test admin check with actual permissions
+		isAdmin := permissions.HasAllPermissions(uint32(userPerms), 
+			permissions.PermViewAllProjects,
+			permissions.PermReviewProjects,
+			permissions.PermManageUsers,
+			permissions.PermManagePermissions,
+			permissions.PermCommentOnProjects,
+		)
+		assert.False(t, isAdmin)
+	})
+}
+
+func TestCreateTestUser(t *testing.T) {
+	setupEnv()
+	s := setupTestServer(t)
+
+	ctx := context.Background()
+	userID, email, _, err := createTestUser(ctx, s, permissions.PermStartupOwner)
+	require.NoError(t, err)
+	defer removeTestUser(ctx, email, s)
+
+	// Verify user exists in database
+	var dbUser struct {
+		ID            string
+		Email         string
+		EmailVerified bool
+		Permissions   int32
 	}
+	err = s.GetDB().QueryRow(ctx, `
+		SELECT id, email, email_verified, permissions
+		FROM users WHERE id = $1
+	`, userID).Scan(&dbUser.ID, &dbUser.Email, &dbUser.EmailVerified, &dbUser.Permissions)
+	require.NoError(t, err)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			e := echo.New()
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			rec := httptest.NewRecorder()
-			c := e.NewContext(req, rec)
+	assert.Equal(t, userID, dbUser.ID)
+	assert.Equal(t, email, dbUser.Email)
+	assert.True(t, dbUser.EmailVerified)
+	assert.Equal(t, int32(permissions.PermStartupOwner), dbUser.Permissions)
+}
 
-			tt.setupContext(c)
+func TestCreateTestAdmin(t *testing.T) {
+	setupEnv()
+	s, err := server.New()
+	require.NoError(t, err)
+	
+	ctx := context.Background()
+	adminID, email, password, err := createTestAdmin(ctx, s)
+	require.NoError(t, err)
+	require.NotEmpty(t, adminID)
+	require.NotEmpty(t, email)
+	require.NotEmpty(t, password)
 
-			isAdmin := v1_common.IsAdmin(c)
-			assert.Equal(t, tt.expectAdmin, isAdmin)
+	// Verify admin permissions
+	var adminPerms int32
+	err = s.GetDB().QueryRow(ctx, "SELECT permissions FROM users WHERE id = $1", adminID).Scan(&adminPerms)
+	require.NoError(t, err)
+	
+	// Compare with all expected admin permissions
+	expectedPerms := int32(permissions.PermAdmin | permissions.PermManageUsers | permissions.PermViewAllProjects | 
+		permissions.PermManageTeam | permissions.PermCommentOnProjects | permissions.PermSubmitProject)
+	require.Equal(t, expectedPerms, adminPerms)
+}
 
-			err := v1_common.RequireAdmin(c)
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
+func TestLoginAndGetToken(t *testing.T) {
+	setupEnv()
+	s, err := server.New()
+	require.NoError(t, err)
+	
+	ctx := context.Background()
+	userID, email, password, err := createTestUser(ctx, s, permissions.PermStartupOwner)
+	require.NoError(t, err)
+
+	token := loginAndGetToken(t, s, email, password)
+	require.NotEmpty(t, token)
+
+	// Clean up
+	_, err = s.GetDB().Exec(ctx, "DELETE FROM users WHERE id = $1", userID)
+	require.NoError(t, err)
 }

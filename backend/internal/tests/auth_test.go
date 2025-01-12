@@ -1,13 +1,6 @@
 package tests
 
 import (
-	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/jwt"
-	"KonferCA/SPUR/internal/middleware"
-	"KonferCA/SPUR/internal/permissions"
-	"KonferCA/SPUR/internal/server"
-	"KonferCA/SPUR/internal/v1/v1_auth"
-	"KonferCA/SPUR/internal/v1/v1_common"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -21,6 +14,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
+	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/jwt"
+	"KonferCA/SPUR/internal/middleware"
+	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/server"
+	"KonferCA/SPUR/internal/v1/v1_auth"
+	"KonferCA/SPUR/internal/v1/v1_common"
 )
 
 func TestAuthEndpoints(t *testing.T) {
@@ -39,14 +39,14 @@ func TestAuthEndpoints(t *testing.T) {
 	// Set up validator
 	s.GetEcho().Validator = middleware.NewRequestValidator()
 
-	// Create test user
+	// Create test user with permissions
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("testpassword123"), bcrypt.DefaultCost)
 	userID := uuid.New()
 	testUser := db.User{
 		ID:            userID.String(),
 		Email:         "test@example.com",
 		Password:      string(hashedPassword),
-		Permissions:   permissions.PermStartupOwner,
+		Permissions:   int32(permissions.PermSubmitProject | permissions.PermManageTeam),
 		EmailVerified: true,
 		CreatedAt:     time.Now().Unix(),
 		UpdatedAt:     time.Now().Unix(),
@@ -148,7 +148,7 @@ func TestAuthEndpoints(t *testing.T) {
 					assert.NotEmpty(t, response.AccessToken)
 					assert.Equal(t, tc.payload.Email, response.User.Email)
 					assert.True(t, response.User.EmailVerified)
-					assert.Equal(t, permissions.PermStartupOwner, response.User.Permissions)
+					assert.Equal(t, permissions.PermSubmitProject|permissions.PermManageTeam, response.User.Permissions)
 
 					// Verify cookie
 					cookies := rec.Result().Cookies()
@@ -179,8 +179,8 @@ func TestAuthEndpoints(t *testing.T) {
 		user, err := db.New(s.GetDB()).GetUserByID(context.Background(), testUser.ID)
 		assert.NoError(t, err)
 
-		// Generate valid token for test user
-		accessToken, _, err := jwt.GenerateWithSalt(user.ID, user.Permissions, user.TokenSalt)
+		// Generate valid token for test user with permissions
+		accessToken, _, err := jwt.GenerateWithSalt(user.ID, uint32(user.Permissions), user.TokenSalt)
 		assert.NoError(t, err)
 
 		tests := []struct {

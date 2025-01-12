@@ -1,50 +1,40 @@
 package tests
 
 import (
-	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/server"
 	"context"
-	"time"
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
+	"KonferCA/SPUR/internal/jwt"
+	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/server"
 )
 
 /*
-Creates a simple test user in the database. Remember to remove the test user with removeTestUser().
+Creates a simple test user in the database with specified permissions. Remember to remove the test user with removeTestUser().
 
 The function returns userID, email, password, error
 */
-func createTestUser(ctx context.Context, s *server.Server) (string, string, string, error) {
+func createTestUser(ctx context.Context, s *server.Server, perms uint32) (string, string, string, error) {
 	userID := uuid.New().String()
-	email := fmt.Sprintf("test-%s@mail.com", uuid.New().String())
-	password := "password"
-	
-	// Hash the password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", "", "", err
-	}
+	email := fmt.Sprintf("test-%s@example.com", uuid.New().String())
+	password := "testpassword123"
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
-	_, err = s.DBPool.Exec(ctx, `
-        INSERT INTO users (
-            id,
-            email, 
-            password, 
-            role, 
-            email_verified, 
-            token_salt
-        )
-        VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))`,
-		userID, email, string(hashedPassword), db.UserRoleStartupOwner, false)
-	
+	_, err := s.GetDB().Exec(ctx, `
+		INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
+		VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
+	`, userID, email, string(hashedPassword), int32(perms), true)
+
 	return userID, email, password, err
 }
 
@@ -122,31 +112,30 @@ func removeTestCompany(ctx context.Context, companyID string, s *server.Server) 
 	return err
 }
 
-func createTestAdminUser(ctx context.Context, s *server.Server) (string, string, string, error) {
-	userID := uuid.New().String()
-	email := fmt.Sprintf("admin_%s@test.com", uuid.New().String())
-	password := "Test1234!"
+func createTestAdmin(ctx context.Context, s *server.Server) (string, string, string, error) {
+	// Create admin user with all permissions
+	perms := permissions.PermAdmin | permissions.PermManageUsers | permissions.PermViewAllProjects | 
+		permissions.PermManageTeam | permissions.PermCommentOnProjects | permissions.PermSubmitProject | permissions.PermIsAdmin
 
-	// Hash the password
+	// Generate random email and password
+	email := fmt.Sprintf("admin_%s@test.com", uuid.New().String())
+	password := "test_password"
+
+	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	// Create admin user directly in database
-	_, err = s.DBPool.Exec(ctx, `
-		INSERT INTO users (
-			id,
-			email,
-			password,
-			role,
-			email_verified,
-			token_salt
-		)
-		VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))`,
-		userID, email, string(hashedPassword), db.UserRoleAdmin, true)
+	// Create user
+	userID := uuid.New().String()
+	_, err = s.GetDB().Exec(ctx, `
+		INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
+		VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
+	`, userID, email, string(hashedPassword), 
+		int32(perms), true)
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", fmt.Errorf("failed to create admin user: %w", err)
 	}
 
 	return userID, email, password, nil
@@ -171,4 +160,10 @@ func loginAndGetToken(t *testing.T, s *server.Server, email, password string) st
 	assert.NotEmpty(t, accessToken, "Access token should not be empty")
 
 	return accessToken
+}
+
+func generateTestToken(t *testing.T, userID string, perms uint32, salt []byte) string {
+	token, _, err := jwt.GenerateWithSalt(userID, perms, salt)
+	require.NoError(t, err)
+	return token
 }

@@ -312,7 +312,7 @@ func (h *Handler) validateCompanyAccess(c echo.Context, companyID string, requir
 	}
 
 	// For non-owners, check if they have view permissions and owner access isn't required
-	if !requireOwner && permissions.HasAllPermissions(user.Permissions, permissions.PermViewAllProjects) {
+	if !requireOwner && permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermViewAllProjects) {
 		return nil // Allow users with view permissions
 	}
 

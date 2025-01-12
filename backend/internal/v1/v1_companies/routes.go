@@ -25,10 +25,10 @@ func SetupCompanyRoutes(e *echo.Group, s interfaces.CoreServer) {
 		middleware.Auth(s.GetDB(), permissions.PermSubmitProject),
 	)
 
-	// Setup all the routes for getting all companies
-	// Auth: Startup owners and admins
+	// Setup all the routes for getting own company
+	// Auth: Startup owners or admins
 	companies.GET("/company", h.handleGetCompany,
-		middleware.Auth(s.GetDB(), permissions.PermSubmitProject, permissions.PermViewAllProjects),
+		middleware.Auth(s.GetDB(), permissions.PermSubmitProject),
 	)
 
 	// Setup all the routes for getting a single company
@@ -38,8 +38,8 @@ func SetupCompanyRoutes(e *echo.Group, s interfaces.CoreServer) {
 	)
 
 	// Setup all the routes for updating a company
-	// Auth: Startup owners and admins
+	// Auth: Startup owners only (owner can only update their own company)
 	companies.PUT("/company", h.handleUpdateCompany,
-		middleware.Auth(s.GetDB(), permissions.PermSubmitProject, permissions.PermManageUsers),
+		middleware.Auth(s.GetDB(), permissions.PermSubmitProject),
 	)
 }

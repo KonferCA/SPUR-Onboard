@@ -8,10 +8,58 @@ import (
 	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
+	"github.com/google/uuid"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 )
+
+// CompanyAccess creates a middleware that validates company ownership
+func CompanyAccess(dbPool *pgxpool.Pool) echo.MiddlewareFunc {
+	queries := db.New(dbPool)
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			// Validate UUID format first
+			companyID := c.Param("company_id")
+			if _, err := uuid.Parse(companyID); err != nil {
+				return v1_common.Fail(c, http.StatusBadRequest, "Invalid company ID format", err)
+			}
+
+			// Get user from context (set by Auth middleware)
+			user, ok := c.Get("user").(*db.GetUserByIDRow)
+			if !ok {
+				// This is a true auth error - user not authenticated
+				return v1_common.Fail(c, http.StatusUnauthorized, "Authentication required", nil)
+			}
+
+			// Check if user has PermViewAllProjects - if so, they can access any company
+			if permissions.HasPermission(uint32(user.Permissions), permissions.PermViewAllProjects) {
+				// For GET requests, allow access
+				if c.Request().Method == http.MethodGet {
+					return next(c)
+				}
+				// For other methods, check company ownership
+			}
+
+			// Check if user is company owner
+			company, err := queries.GetCompanyByID(c.Request().Context(), companyID)
+			if err != nil {
+				if err.Error() == "no rows in result set" {
+					return v1_common.Fail(c, http.StatusNotFound, "Company not found", err)
+				}
+				return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get company", err)
+			}
+
+			// If user is not company owner, return 403 Forbidden
+			if company.OwnerID != user.ID {
+				// This is a permission error - user is authenticated but lacks company access
+				return v1_common.Fail(c, http.StatusForbidden, "Not authorized to access this company", nil)
+			}
+
+			return next(c)
+		}
+	}
+}
 
 // Auth creates a middleware that validates JWT access tokens with required permissions
 func Auth(dbPool *pgxpool.Pool, requiredPerms ...uint32) echo.MiddlewareFunc {
@@ -19,11 +67,6 @@ func Auth(dbPool *pgxpool.Pool, requiredPerms ...uint32) echo.MiddlewareFunc {
 		AcceptTokenType: jwt.ACCESS_TOKEN_TYPE,
 		RequiredPermissions: requiredPerms,
 	}, dbPool)
-}
-
-type AuthConfig struct {
-	AcceptTokenType      string
-	RequiredPermissions  []uint32
 }
 
 // AuthWithConfig creates a middleware with custom configuration for JWT validation
@@ -63,14 +106,14 @@ func AuthWithConfig(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc
 
 			// Verify token type
 			if claims.TokenType != config.AcceptTokenType {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token type")
+				return v1_common.Fail(c, http.StatusUnauthorized, "invalid token type", nil)
 			}
 
 			// Verify user permissions if required
 			if len(config.RequiredPermissions) > 0 {
-				// Check if user has ALL required permissions
-				if !permissions.HasAllPermissions(user.Permissions, config.RequiredPermissions...) {
-					return echo.NewHTTPError(http.StatusForbidden, "insufficient permissions")
+				// Convert int32 to uint32 for permissions check
+				if !permissions.HasAnyPermission(uint32(user.Permissions), config.RequiredPermissions...) {
+					return v1_common.Fail(c, http.StatusForbidden, "Insufficient permissions", nil)
 				}
 			}
 

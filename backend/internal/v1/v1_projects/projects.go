@@ -42,7 +42,7 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
-	if !permissions.HasAllPermissions(user.Permissions, permissions.PermSubmitProject) {
+	if !permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermSubmitProject) {
 		return v1_common.NewForbiddenError("not authorized to create projects")
 	}
 
@@ -143,8 +143,8 @@ func (h *Handler) handleGetProject(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
-	isAdmin := permissions.HasAllPermissions(user.Permissions, permissions.PermViewAllProjects)
-	isOwner := permissions.HasAllPermissions(user.Permissions, permissions.PermSubmitProject)
+	isAdmin := permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermViewAllProjects)
+	isOwner := permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermSubmitProject)
 	if !isAdmin && !isOwner {
 		return v1_common.NewForbiddenError("not authorized to view this project")
 	}
@@ -629,7 +629,7 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
-	if !permissions.HasAllPermissions(user.Permissions, permissions.PermSubmitProject) {
+	if !permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermSubmitProject) {
 		return v1_common.NewForbiddenError("not authorized to submit projects")
 	}
 

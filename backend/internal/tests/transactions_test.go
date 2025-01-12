@@ -14,9 +14,11 @@ import (
 
     "github.com/labstack/echo/v4"
     "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
     "KonferCA/SPUR/internal/server"
     "KonferCA/SPUR/internal/v1/v1_transactions"
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/permissions"
 )
 
 func TestTransactionEndpoints(t *testing.T) {
@@ -29,26 +31,13 @@ func TestTransactionEndpoints(t *testing.T) {
 
     // Create test user
     userID := uuid.New().String()
-    email := fmt.Sprintf("test-%s@mail.com", uuid.New().String())
-    password := "password"
-    
-    // Hash the password
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-    assert.NoError(t, err)
-
-    // Create investor user directly
-    _, err = s.DBPool.Exec(ctx, `
-        INSERT INTO users (
-            id,
-            email, 
-            password, 
-            role, 
-            email_verified, 
-            token_salt
-        )
-        VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))`,
-        userID, email, string(hashedPassword), db.UserRoleInvestor, true)
-    assert.NoError(t, err)
+    email := fmt.Sprintf("test-%s@example.com", uuid.New().String())
+    hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("testpass123"), bcrypt.DefaultCost)
+    _, err = s.GetDB().Exec(ctx, `
+        INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
+        VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
+    `, userID, email, string(hashedPassword), int32(permissions.PermInvestor|permissions.PermViewAllProjects), true)
+    require.NoError(t, err)
 
     // Create test company
     companyID, err := createTestCompany(ctx, s, userID)
@@ -73,7 +62,7 @@ func TestTransactionEndpoints(t *testing.T) {
     assert.NoError(t, err)
 
     // Get access token
-    accessToken := loginAndGetToken(t, s, email, password)
+    accessToken := loginAndGetToken(t, s, email, "testpass123")
 
     t.Run("Create Transaction", func(t *testing.T) {
         testCases := []struct {
@@ -116,7 +105,15 @@ func TestTransactionEndpoints(t *testing.T) {
 
         for _, tc := range testCases {
             t.Run(tc.name, func(t *testing.T) {
-                jsonBody, err := json.Marshal(tc.req)
+                // Create request body with correct JSON field names
+                reqBody := map[string]string{
+                    "project_id":    tc.req.ProjectID,
+                    "tx_hash":       tc.req.TxHash,
+                    "from_address":  tc.req.FromAddress,
+                    "to_address":    tc.req.ToAddress,
+                    "value_amount":  tc.req.ValueAmount,
+                }
+                jsonBody, err := json.Marshal(reqBody)
                 assert.NoError(t, err)
 
                 req := httptest.NewRequest(http.MethodPost, "/api/v1/transactions", bytes.NewBuffer(jsonBody))

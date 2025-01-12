@@ -1,10 +1,6 @@
 package tests
 
 import (
-	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/jwt"
-	"KonferCA/SPUR/internal/server"
-	v1 "KonferCA/SPUR/internal/v1"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -16,6 +12,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
+	"KonferCA/SPUR/internal/jwt"
+	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/server"
+	"KonferCA/SPUR/internal/v1"
 )
 
 type CompanyState struct {
@@ -26,6 +26,14 @@ type CompanyState struct {
 	LinkedinUrl   string
 	CreatedAt     int64
 	UpdatedAt     int64
+}
+
+type testUser struct {
+	id          uuid.UUID
+	email       string
+	permissions uint32
+	salt        []byte
+	token       string
 }
 
 func TestCompanyEndpoints(t *testing.T) {
@@ -42,33 +50,27 @@ func TestCompanyEndpoints(t *testing.T) {
 	investorID := uuid.New()
 	adminID := uuid.New()
 
-	testUsers := []struct {
-		id    uuid.UUID
-		email string
-		role  db.UserRole
-		salt  []byte
-		token string
-	}{
-		{ownerID, "owner@test.com", db.UserRoleStartupOwner, nil, ""},
-		{otherOwnerID, "other@test.com", db.UserRoleStartupOwner, nil, ""},
-		{investorID, "investor@test.com", db.UserRoleInvestor, nil, ""},
-		{adminID, "admin@test.com", db.UserRoleAdmin, nil, ""},
+	testUsers := []testUser{
+		{ownerID, "owner@test.com", permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
+		{otherOwnerID, "other@test.com", permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
+		{investorID, "investor@test.com", permissions.PermInvestor, nil, ""},
+		{adminID, "admin@test.com", permissions.PermAdmin | permissions.PermManageUsers | permissions.PermViewAllProjects | permissions.PermManageTeam, nil, ""},
 	}
 
 	for i := range testUsers {
 		var salt []byte
 		err := s.GetDB().QueryRow(ctx, `
 			WITH inserted AS (
-				INSERT INTO users (id, email, password, role, email_verified, token_salt)
+				INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
 				VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
 				RETURNING token_salt
 			)
 			SELECT token_salt FROM inserted
-		`, testUsers[i].id, testUsers[i].email, "hashedpass", testUsers[i].role, true).Scan(&salt)
+		`, testUsers[i].id, testUsers[i].email, "hashedpass", int32(testUsers[i].permissions), true).Scan(&salt)
 		require.NoError(t, err)
 
 		testUsers[i].salt = salt
-		token, _, err := jwt.GenerateWithSalt(testUsers[i].id.String(), testUsers[i].role, salt)
+		token, _, err := jwt.GenerateWithSalt(testUsers[i].id.String(), testUsers[i].permissions, salt)
 		require.NoError(t, err)
 		testUsers[i].token = token
 	}

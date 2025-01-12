@@ -11,12 +11,15 @@ const (
     PermCommentOnProjects  uint32 = 1 << 6  // Investor: comment on projects
     PermInvestInProjects   uint32 = 1 << 7  // Investor: invest in projects
     PermManageDocuments    uint32 = 1 << 8  // Startup: manage project documents
+    PermManageInvestments  uint32 = 1 << 9  // Admin: manage investments
+    PermManageTeam        uint32 = 1 << 10  // Startup: manage team members
+    PermIsAdmin           uint32 = 1 << 11  // Special bit to identify admins
     
     // Role-based permission sets
-    PermAdmin = PermViewAllProjects | PermReviewProjects | 
+    PermAdmin = PermIsAdmin | PermViewAllProjects | PermReviewProjects | 
                 PermManageUsers | PermManagePermissions | PermCommentOnProjects
 
-    PermStartupOwner = PermSubmitProject | PermCommentOnProjects | PermManageDocuments
+    PermStartupOwner = PermSubmitProject | PermCommentOnProjects | PermManageDocuments | PermManageTeam
 
     PermInvestor = PermViewAllProjects | PermCommentOnProjects | PermInvestInProjects
 )

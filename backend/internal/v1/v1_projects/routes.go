@@ -53,15 +53,23 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	docs.GET("", h.handleGetProjectDocuments)
 	docs.DELETE("/:document_id", h.handleDeleteProjectDocument)
 	
-	// Project comments - require admin permissions
+	// Project comments - require comment permissions
 	comments := projects.Group("/:id/comments", middleware.Auth(s.GetDB(), 
-		permissions.PermManageProjects,
+		permissions.PermViewAllProjects,
+		permissions.PermCommentOnProjects,
 	))
 
 	comments.GET("", h.handleGetProjectComments)
 	comments.GET("/:comment_id", h.handleGetProjectComment)
 	comments.POST("", h.handleCreateProjectComment)
 	comments.PUT("/:comment_id", h.handleUpdateProjectComment)
-	comments.POST("/:comment_id/resolve", h.handleResolveComment)
-	comments.POST("/:comment_id/unresolve", h.handleUnresolveComment)
+
+	// Admin-only comment resolution endpoints - require both comment and admin permissions
+	adminComments := comments.Group("/:comment_id", middleware.Auth(s.GetDB(), 
+		permissions.PermViewAllProjects,
+		permissions.PermCommentOnProjects,
+		permissions.PermAdmin,
+	))
+	adminComments.POST("/resolve", h.handleResolveComment)
+	adminComments.POST("/unresolve", h.handleUnresolveComment)
 }
