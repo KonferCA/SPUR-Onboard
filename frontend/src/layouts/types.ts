@@ -43,3 +43,21 @@ export interface LayoutGridProps extends BaseLayoutProps, LayoutSpacingProps {
     autoFit?: boolean;
     minChildWidth?: string;
 }
+
+export type NavItem = {
+    label: string;
+    href: string;
+};
+  
+export type SidebarItem = {
+    label: string;
+    href: string;
+    icon?: React.ReactNode;
+};
+  
+export interface DashboardLayoutProps {
+    isAdmin?: boolean;
+    children: React.ReactNode;
+    isVerified?: boolean;
+    isAccepted?: boolean;
+}
