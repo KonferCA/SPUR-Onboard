@@ -32,16 +32,7 @@ func CompanyAccess(dbPool *pgxpool.Pool) echo.MiddlewareFunc {
 				return v1_common.Fail(c, http.StatusUnauthorized, "Authentication required", nil)
 			}
 
-			// Check if user has PermViewAllProjects - if so, they can access any company
-			if permissions.HasPermission(uint32(user.Permissions), permissions.PermViewAllProjects) {
-				// For GET requests, allow access
-				if c.Request().Method == http.MethodGet {
-					return next(c)
-				}
-				// For other methods, check company ownership
-			}
-
-			// Check if user is company owner
+			// Check if user is company owner first
 			company, err := queries.GetCompanyByID(c.Request().Context(), companyID)
 			if err != nil {
 				if err.Error() == "no rows in result set" {
@@ -50,13 +41,23 @@ func CompanyAccess(dbPool *pgxpool.Pool) echo.MiddlewareFunc {
 				return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get company", err)
 			}
 
-			// If user is not company owner, return 403 Forbidden
-			if company.OwnerID != user.ID {
-				// This is a permission error - user is authenticated but lacks company access
-				return v1_common.Fail(c, http.StatusForbidden, "Not authorized to access this company", nil)
+			// If user is company owner, allow all operations
+			if company.OwnerID == user.ID {
+				return next(c)
 			}
 
-			return next(c)
+			// For non-owners, check if they have view permissions
+			if permissions.HasPermission(uint32(user.Permissions), permissions.PermViewAllProjects) {
+				// For GET requests, allow access
+				if c.Request().Method == http.MethodGet {
+					return next(c)
+				}
+				// For other methods, return 403 since they can view but not modify
+				return v1_common.Fail(c, http.StatusForbidden, "Not authorized to modify this company", nil)
+			}
+
+			// User has no access at all, return 404 to hide resource existence
+			return v1_common.Fail(c, http.StatusNotFound, "Company not found", nil)
 		}
 	}
 }
