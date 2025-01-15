@@ -75,6 +75,7 @@ CREATE TABLE project_questions (
     section varchar NOT NULL DEFAULT 'overall',
     required boolean NOT NULL DEFAULT false,
     validations varchar,
+    sub_section_order int NOT NULL, -- defines in which order the question appears in the sub-section
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 ); 
