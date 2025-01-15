@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
 	"os"
@@ -80,8 +81,13 @@ func validatePermissions(fl validator.FieldLevel) bool {
 	field := fl.Field()
 
 	if field.Kind() == reflect.Uint32 {
-		perms := field.Uint()
-		return perms > 0 // Basic validation - could add more specific checks
+		perms := uint32(field.Uint())
+		
+		// Get all valid permission bits dynamically
+		validPermissionsMask := permissions.GetAllPermissionBits()
+
+		// Check if permissions only contain valid bits and are non-zero
+		return perms != 0 && (perms & ^validPermissionsMask) == 0
 	}
 
 	return false

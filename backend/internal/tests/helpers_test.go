@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -169,7 +170,7 @@ func TestBindAndValidate(t *testing.T) {
 			body: `{
                 "name": "test",
                 "email": "test@example.com",
-                "permissions": 32,
+                "permissions": ` + fmt.Sprint(permissions.PermStartupOwner) + `,
                 "wallet_address": "0x1234567890123456789012345678901234567890123456789012345678901234",
                 "linkedin_url": "https://linkedin.com/in/test"
             }`,
