@@ -3,19 +3,24 @@ package permissions
 // Permission flags using bitwise operations
 const (
     // Project Permissions
-    PermViewAllProjects    uint32 = 1 << 0  // Admin: view all projects (and companies?)
-    PermReviewProjects     uint32 = 1 << 1  // Admin: review/approve/decline projects
-    PermManageUsers        uint32 = 1 << 3  // Admin: manage user accounts
-    PermManagePermissions  uint32 = 1 << 4  // Admin: modify user permissions
-    PermSubmitProject      uint32 = 1 << 5  // Startup: submit projects for review
-    PermCommentOnProjects  uint32 = 1 << 6  // Investor: comment on projects
-    PermInvestInProjects   uint32 = 1 << 7  // Investor: invest in projects
-    PermManageDocuments    uint32 = 1 << 8  // Startup: manage project documents
-    PermManageInvestments  uint32 = 1 << 9  // Admin: manage investments
-    PermManageTeam        uint32 = 1 << 10  // Startup: manage team members
-    PermIsAdmin           uint32 = 1 << 11  // Special bit to identify admins
+    PermViewAllProjects    uint32 = 1 << iota  // Admin: view all projects (and companies?)
+    PermReviewProjects                         // Admin: review/approve/decline projects
+    PermManageUsers                            // Admin: manage user accounts
+    PermManagePermissions                      // Admin: modify user permissions
+    PermSubmitProject                          // Startup: submit projects for review
+    PermCommentOnProjects                      // Investor: comment on projects
+    PermInvestInProjects                       // Investor: invest in projects
+    PermManageDocuments                        // Startup: manage project documents
+    PermManageInvestments                      // Admin: manage investments
+    PermManageTeam                             // Startup: manage team members
+    PermIsAdmin                                // Special bit to identify admins
     
-    // Role-based permission sets
+    // This will be 2^(number of permissions) - 1, making a mask of all valid bits (POG)
+    validPermissionBits = (1 << (iota)) - 1
+)
+
+// Role-based permission sets
+const (
     PermAdmin = PermIsAdmin | PermViewAllProjects | PermReviewProjects | 
                 PermManageUsers | PermManagePermissions | PermCommentOnProjects
 
@@ -23,6 +28,12 @@ const (
 
     PermInvestor = PermViewAllProjects | PermCommentOnProjects | PermInvestInProjects
 )
+
+// GetAllPermissionBits returns a mask containing all valid permission bits.
+// This is used for validation to ensure no invalid bits are set.
+func GetAllPermissionBits() uint32 {
+    return validPermissionBits
+}
 
 // Helper functions for permission checking
 func HasPermission(userPerms, requiredPerm uint32) bool {
