@@ -20,13 +20,13 @@ RETURNING id, company_id, first_name, last_name, title, bio, linkedin_url, is_ac
 `
 
 type CreateTeamMemberParams struct {
-	CompanyID      string
-	FirstName      string
-	LastName       string
-	Title          string
-	Bio            string
-	LinkedinUrl    string
-	IsAccountOwner bool
+	CompanyID      string `json:"company_id"`
+	FirstName      string `json:"first_name"`
+	LastName       string `json:"last_name"`
+	Title          string `json:"title"`
+	Bio            string `json:"bio"`
+	LinkedinUrl    string `json:"linkedin_url"`
+	IsAccountOwner bool   `json:"is_account_owner"`
 }
 
 func (q *Queries) CreateTeamMember(ctx context.Context, arg CreateTeamMemberParams) (TeamMember, error) {
@@ -61,8 +61,8 @@ WHERE id = $1 AND company_id = $2
 `
 
 type DeleteTeamMemberParams struct {
-	ID        string
-	CompanyID string
+	ID        string `json:"id"`
+	CompanyID string `json:"company_id"`
 }
 
 func (q *Queries) DeleteTeamMember(ctx context.Context, arg DeleteTeamMemberParams) error {
@@ -77,8 +77,8 @@ LIMIT 1
 `
 
 type GetTeamMemberParams struct {
-	ID        string
-	CompanyID string
+	ID        string `json:"id"`
+	CompanyID string `json:"company_id"`
 }
 
 func (q *Queries) GetTeamMember(ctx context.Context, arg GetTeamMemberParams) (TeamMember, error) {
@@ -150,13 +150,13 @@ RETURNING id, company_id, first_name, last_name, title, bio, linkedin_url, is_ac
 `
 
 type UpdateTeamMemberParams struct {
-	FirstName   string
-	LastName    string
-	Title       string
-	Bio         string
-	LinkedinUrl string
-	ID          string
-	CompanyID   string
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Title       string `json:"title"`
+	Bio         string `json:"bio"`
+	LinkedinUrl string `json:"linkedin_url"`
+	ID          string `json:"id"`
+	CompanyID   string `json:"company_id"`
 }
 
 func (q *Queries) UpdateTeamMember(ctx context.Context, arg UpdateTeamMemberParams) (TeamMember, error) {
