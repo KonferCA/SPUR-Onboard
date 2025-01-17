@@ -1,6 +1,9 @@
 package tests
 
 import (
+	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/server"
+	"KonferCA/SPUR/internal/permissions"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -11,13 +14,9 @@ import (
 	"strings"
 	"testing"
 	"time"
-	
-	"github.com/labstack/echo/v4"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/server"
-	"KonferCA/SPUR/internal/permissions"
 )
 
 /*
@@ -35,18 +34,45 @@ import (
 func TestProjectEndpoints(t *testing.T) {
 	// Setup test environment
 	setupEnv()
-	
+
 	s, err := server.New()
 	assert.NoError(t, err)
 
+	// removing all existing questions that are inserted via migrations
+	// the questions inserted by migrations can change over time so
+	// they are not a reliable way to run tests.
+	_, err = s.DBPool.Exec(context.Background(), "DELETE FROM project_questions;")
+	require.NoError(t, err)
+
+	// seeding database with sample questions
+	rows, err := s.DBPool.Query(
+		context.Background(),
+		`
+            INSERT INTO project_questions
+            (sub_section_order, question, section, sub_section, required, validations, input_type) VALUES
+            (0, 'Company website', 'Test', 'Sub-Test', true, 'url', 'textinput'),
+            (0, 'What is the unique value proposition?', 'Test', 'Sub-Test', true, 'min=50', 'textinput'),
+            (0, 'What is the core product or service, and what problem does it solve?', 'Test', 'Sub-Test', true, 'min=100', 'textinput')
+            RETURNING id;
+            `,
+	)
+	require.NoError(t, err)
+	testQuestionIds := make([]string, 3)
+	for i := 0; rows.Next(); i++ {
+		var id string
+		err = rows.Scan(&id)
+		require.NoError(t, err)
+		testQuestionIds[i] = id
+	}
+	require.Equal(t, 3, len(testQuestionIds))
+
 	// Create test user and get auth token
 	ctx := context.Background()
-	userID, email, password, err := createTestUser(ctx, s, permissions.PermSubmitProject | permissions.PermViewAllProjects)
+	userID, email, password, err := createTestUser(ctx, s, uint32(permissions.PermSubmitProject | permissions.PermViewAllProjects | permissions.PermManageTeam))
 	assert.NoError(t, err)
 	t.Logf("Created test user - ID: %s, Email: %s, Password: %s", userID, email, password)
 	defer removeTestUser(ctx, email, s)
 
-	
 	// Verify the user exists and check their status
 	user, err := s.GetQueries().GetUserByEmail(ctx, email)
 	assert.NoError(t, err, "Should find user in database")
@@ -71,12 +97,12 @@ func TestProjectEndpoints(t *testing.T) {
 	// Login
 	loginBody := fmt.Sprintf(`{"email":"%s","password":"%s"}`, email, password)
 	t.Logf("Attempting login with body: %s", loginBody)
-	
+
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(loginBody))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	s.GetEcho().ServeHTTP(rec, req)
-	
+
 	if !assert.Equal(t, http.StatusOK, rec.Code, "Login should succeed") {
 		t.Logf("Login response body: %s", rec.Body.String())
 		t.FailNow()
@@ -86,7 +112,7 @@ func TestProjectEndpoints(t *testing.T) {
 	var loginResp map[string]interface{}
 	err = json.NewDecoder(rec.Body).Decode(&loginResp)
 	assert.NoError(t, err, "Should decode login response")
-	
+
 	accessToken, ok := loginResp["access_token"].(string)
 	assert.True(t, ok, "Response should contain access_token")
 	assert.NotEmpty(t, accessToken, "Access token should not be empty")
@@ -108,15 +134,15 @@ func TestProjectEndpoints(t *testing.T) {
 		 * - Project is associated with correct company
 		 */
 		projectBody := fmt.Sprintf(`{
-			"company_id": "%s",
-			"title": "Test Project",
-			"description": "A test project",
-			"name": "Test Project"
-		}`, companyID)
+            "company_id": "%s",
+            "title": "Test Project",
+            "description": "A test project",
+            "name": "Test Project"
+        }`, companyID)
 
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/project/new", strings.NewReader(projectBody))
 		req.Header.Set("Authorization", "Bearer "+accessToken)
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		s.GetEcho().ServeHTTP(rec, req)
 
@@ -128,7 +154,7 @@ func TestProjectEndpoints(t *testing.T) {
 		var resp map[string]interface{}
 		err := json.NewDecoder(rec.Body).Decode(&resp)
 		assert.NoError(t, err)
-		
+
 		var ok bool
 		projectID, ok = resp["id"].(string)
 		assert.True(t, ok, "Response should contain project ID")
@@ -157,7 +183,7 @@ func TestProjectEndpoints(t *testing.T) {
 		 */
 		path := fmt.Sprintf("/api/v1/project/%s", projectID)
 		t.Logf("Getting project at path: %s", path)
-		
+
 		req := httptest.NewRequest(http.MethodGet, path, nil)
 		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec := httptest.NewRecorder()
@@ -195,7 +221,7 @@ func TestProjectEndpoints(t *testing.T) {
 				Section  string `json:"section"`
 			} `json:"questions"`
 		}
-		err := json.NewDecoder(rec.Body).Decode(&questionsResp)
+		err = json.NewDecoder(rec.Body).Decode(&questionsResp)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, questionsResp.Questions, "Should have questions available")
 
@@ -223,12 +249,12 @@ func TestProjectEndpoints(t *testing.T) {
 			assert.NoError(t, err)
 
 			createReq := httptest.NewRequest(
-				http.MethodPost, 
+				http.MethodPost,
 				fmt.Sprintf("/api/v1/project/%s/answers", projectID),
 				bytes.NewReader(createJSON),
 			)
 			createReq.Header.Set("Authorization", "Bearer "+accessToken)
-			createReq.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			createReq.Header.Set("Content-Type", "application/json")
 			createRec := httptest.NewRecorder()
 			s.GetEcho().ServeHTTP(createRec, createReq)
 
@@ -266,7 +292,7 @@ func TestProjectEndpoints(t *testing.T) {
 	 * - Unauthorized access returns 401
 	 * - Short answers fail validation
 	 * - Invalid URL format fails validation
-	 * 
+	 *
 	 * Uses real question/answer IDs from the project to ensure
 	 * accurate validation testing.
 	 */
@@ -305,7 +331,7 @@ func TestProjectEndpoints(t *testing.T) {
 		assert.NotEmpty(t, websiteQuestionAnswerID, "Should find website question")
 
 		tests := []struct {
-			name           string
+			name          string
 			method        string
 			path          string
 			body          string
@@ -385,11 +411,11 @@ func TestProjectEndpoints(t *testing.T) {
 				if tc.body != "" {
 					body = strings.NewReader(tc.body)
 				}
-				
+
 				req := httptest.NewRequest(tc.method, tc.path, body)
 				tc.setupAuth(req)
 				if tc.body != "" {
-					req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+					req.Header.Set("Content-Type", "application/json")
 				}
 				rec := httptest.NewRecorder()
 
@@ -398,7 +424,7 @@ func TestProjectEndpoints(t *testing.T) {
 				assert.Equal(t, tc.expectedCode, rec.Code)
 
 				var errResp struct {
-					Message string `json:"message"`
+					Message          string `json:"message"`
 					ValidationErrors []struct {
 						Question string `json:"question"`
 						Message  string `json:"message"`
@@ -416,65 +442,76 @@ func TestProjectEndpoints(t *testing.T) {
 		}
 	})
 
-	t.Run("Comment_Resolution", func(t *testing.T) {
+	t.Run("Comment Resolution", func(t *testing.T) {
+		// Create an admin user for testing
 		adminID, adminEmail, adminPassword, err := createTestAdmin(ctx, s)
-		require.NoError(t, err)
-		t.Logf("Created admin user - ID: %s, Email: %s", adminID, adminEmail)
+		assert.NoError(t, err)
+		defer removeTestUser(ctx, adminEmail, s)
 
 		// Create admin's company
 		adminCompanyID, err := createTestCompany(ctx, s, adminID)
-		require.NoError(t, err)
-		t.Logf("Created admin company - ID: %s", adminCompanyID)
+		assert.NoError(t, err)
+		defer removeTestCompany(ctx, adminCompanyID, s)
 
-		// Get admin token
+		// Login as admin
 		adminToken := loginAndGetToken(t, s, adminEmail, adminPassword)
 		require.NotEmpty(t, adminToken)
 
-		// Create comment
+		// Create a test comment first
 		commentBody := fmt.Sprintf(`{
-			"comment": "Test comment",
-			"target_id": "%s"
-		}`, projectID)
-		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/project/%s/comments", projectID), strings.NewReader(commentBody))
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", adminToken))
+            "comment": "Test comment",
+            "target_id": "%s"
+        }`, projectID)
+
+		req := httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/project/%s/comments", projectID),
+			strings.NewReader(commentBody))
+		req.Header.Set("Authorization", "Bearer "+adminToken)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		s.GetEcho().ServeHTTP(rec, req)
 
-		assert.Equal(t, http.StatusCreated, rec.Code)
+		if !assert.Equal(t, http.StatusCreated, rec.Code) {
+			t.Logf("Create comment response: %s", rec.Body.String())
+			t.FailNow()
+		}
 
 		var commentResp map[string]interface{}
 		err = json.NewDecoder(rec.Body).Decode(&commentResp)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		commentID, ok := commentResp["id"].(string)
-		require.NotNil(t, commentID, "Comment ID should not be nil")
-		require.True(t, ok, "Comment ID should be a string")
-		require.NotEmpty(t, commentID, "Comment ID should not be empty")
+		assert.True(t, ok, "Response should contain comment ID")
+		assert.NotEmpty(t, commentID, "Comment ID should not be empty")
 
-		// Resolve comment
-		req = httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectID, commentID), nil)
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", adminToken))
+		// Test resolving the comment
+		req = httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectID, commentID),
+			nil)
+		req.Header.Set("Authorization", "Bearer "+adminToken)
 		rec = httptest.NewRecorder()
 		s.GetEcho().ServeHTTP(rec, req)
+
 		assert.Equal(t, http.StatusOK, rec.Code)
 
-		// Unresolve comment
-		req = httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/project/%s/comments/%s/unresolve", projectID, commentID), nil)
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", adminToken))
+		// Test unresolving the comment
+		req = httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/project/%s/comments/%s/unresolve", projectID, commentID),
+			nil)
+		req.Header.Set("Authorization", "Bearer "+adminToken)
 		rec = httptest.NewRecorder()
 		s.GetEcho().ServeHTTP(rec, req)
+
 		assert.Equal(t, http.StatusOK, rec.Code)
 
-		// Try to resolve comment again (should fail with 403)
-		req = httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectID, commentID), nil)
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+		// Test non-admin cannot resolve/unresolve
+		req = httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectID, commentID),
+			nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 		rec = httptest.NewRecorder()
 		s.GetEcho().ServeHTTP(rec, req)
+
 		assert.Equal(t, http.StatusForbidden, rec.Code)
-
-		// Cleanup admin's company
-		err = removeTestCompany(ctx, adminCompanyID, s)
-		require.NoError(t, err)
 	})
 }
