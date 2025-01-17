@@ -1,8 +1,9 @@
 import { FC } from 'react';
-import { LayoutProps } from './types';
 import { AnchorLinkItem, AnchorLinks } from '@/components';
+import { ReactNode } from '@tanstack/react-router';
 
-export interface SectionedLayoutProps extends LayoutProps {
+export interface SectionedLayoutProps {
+    children?: ReactNode;
     /*
      * asideTitle is the bolded title that goes before the links on the side
      */
@@ -17,7 +18,7 @@ export interface SectionedLayoutProps extends LayoutProps {
  * SectionedLayout is composed of a aside sticky links and a centered main content section.
  * The links are displayed using a
  */
-const SectionedLayout: FC<SectionedLayoutProps> = ({
+export const SectionedLayout: FC<SectionedLayoutProps> = ({
     children,
     links,
     asideTitle,
@@ -37,5 +38,3 @@ const SectionedLayout: FC<SectionedLayoutProps> = ({
         </div>
     );
 };
-
-export { SectionedLayout };

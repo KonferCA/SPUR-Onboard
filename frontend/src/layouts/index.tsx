@@ -6,4 +6,3 @@ export { PageLayout } from './PageLayout';
 export { Footer } from './Footer';
 export { Header } from './Header';
 export { FormContainer } from './FormContainer';
-export { SectionedLayout } from './SectionedLayout';

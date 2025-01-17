@@ -6,7 +6,8 @@ import {
     Dropdown,
     AnchorLinkItem,
 } from '@components';
-import { SectionedLayout, Section } from '@layouts';
+import { Section } from '@layouts';
+import { SectionedLayout as SectionedTemplate } from '@/templates';
 import { createFileRoute } from '@tanstack/react-router';
 
 // sample industries data
@@ -36,7 +37,7 @@ const Landing: React.FC = () => {
     >(null);
 
     return (
-        <SectionedLayout asideTitle="Landing Page" links={links}>
+        <SectionedTemplate asideTitle="Landing Page" links={links}>
             <Section width="narrow" padding="normal">
                 <h1 className="text-3xl font-bold mb-8">Landing</h1>
 
@@ -68,7 +69,7 @@ const Landing: React.FC = () => {
                     </div>
                 </div>
             </Section>
-        </SectionedLayout>
+        </SectionedTemplate>
     );
 };
 
