@@ -11,5 +11,9 @@ Sets up all the healthcheck routes for V1.
 */
 func SetupHealthcheckRoutes(e *echo.Group, s interfaces.CoreServer) {
 	h := Handler{server: s}
+
 	e.GET("/health", h.handleHealthCheck)
+	e.GET("/health/live", h.handleLiveCheck)
+	e.GET("/health/ready", h.handleReadyCheck)
+	e.GET("/health/metrics", h.handleMetrics)
 }

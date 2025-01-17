@@ -1,0 +1,44 @@
+services:
+  app:
+    container_name: ${APP_NAME:-spur}-${APP_ENV:-dev}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "${PORT:-6969}:6969"
+    environment:
+      - PORT=6969
+      - DB_HOST=localhost
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_NAME=${DB_NAME:-postgres}
+    networks:
+      - app-network
+    depends_on:
+      - uptime-kuma
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:6969/api/v1/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: ${APP_NAME:-spur}-${APP_ENV:-dev}-kuma
+    volumes:
+      - ./docker/uptime-kuma/data:/app/data
+    ports:
+      - "3001:3001"
+    restart: always
+    networks:
+      - app-network
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  app-network:
+    name: ${APP_NAME:-spur}-${APP_ENV:-dev}-network
+    driver: bridge

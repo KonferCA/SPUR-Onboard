@@ -33,11 +33,44 @@ type SystemInfo struct {
 }
 
 /*
-HealthReport represents a bundle of different reports for healthcheck.g
+ServiceStatus represents a basic report of an external service healthcheck.
+*/
+type ServiceStatus struct {
+	Name     string    `json:"name"`
+	Status   string    `json:"status"`
+	LastPing time.Time `json:"last_ping"`
+	Latency  float64   `json:"latency_ms"`
+	Message  string    `json:"message,omitempty"`
+}
+
+/*
+HealthReport represents the full healthcheck report.
 */
 type HealthReport struct {
-	Status    string       `json:"status"`
-	Timestamp time.Time    `json:"timestamp"`
-	Database  DatabaseInfo `json:"database"`
-	System    SystemInfo   `json:"system"`
+	Status    string          `json:"status"`
+	Timestamp time.Time       `json:"timestamp"`
+	Database  DatabaseInfo    `json:"database"`
+	System    SystemInfo      `json:"system"`
+	Services  []ServiceStatus `json:"services"`
+}
+
+/*
+MetricsResponnse represents the response for all the metrics of the backend.
+*/
+type MetricsResponse struct {
+	CPU struct {
+		Usage float64 `json:"usage"`
+	} `json:"cpu"`
+	Memory struct {
+		Total     uint64  `json:"total"`
+		Used      uint64  `json:"used"`
+		Free      uint64  `json:"free"`
+		UsagePerc float64 `json:"usage_percentage"`
+	} `json:"memory"`
+	Goroutines int     `json:"goroutines"`
+	Uptime     float64 `json:"uptime_hours"`
+	Database   struct {
+		ConnectionCount int     `json:"connection_count"`
+		AvgLatencyMs    float64 `json:"avg_latency_ms"`
+	} `json:"database"`
 }
