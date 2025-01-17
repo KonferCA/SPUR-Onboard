@@ -23,12 +23,12 @@ INSERT INTO projects (
 `
 
 type CreateProjectParams struct {
-	CompanyID   string
-	Title       string
-	Description *string
-	Status      ProjectStatus
-	CreatedAt   int64
-	UpdatedAt   int64
+	CompanyID   string        `json:"company_id"`
+	Title       string        `json:"title"`
+	Description *string       `json:"description"`
+	Status      ProjectStatus `json:"status"`
+	CreatedAt   int64         `json:"created_at"`
+	UpdatedAt   int64         `json:"updated_at"`
 }
 
 func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (Project, error) {
@@ -66,9 +66,9 @@ INSERT INTO project_answers (
 `
 
 type CreateProjectAnswerParams struct {
-	ProjectID  string
-	QuestionID string
-	Answer     string
+	ProjectID  string `json:"project_id"`
+	QuestionID string `json:"question_id"`
+	Answer     string `json:"answer"`
 }
 
 func (q *Queries) CreateProjectAnswer(ctx context.Context, arg CreateProjectAnswerParams) (ProjectAnswer, error) {
@@ -138,10 +138,10 @@ INSERT INTO project_comments (
 `
 
 type CreateProjectCommentParams struct {
-	ProjectID   string
-	TargetID    string
-	Comment     string
-	CommenterID string
+	ProjectID   string `json:"project_id"`
+	TargetID    string `json:"target_id"`
+	Comment     string `json:"comment"`
+	CommenterID string `json:"commenter_id"`
 }
 
 func (q *Queries) CreateProjectComment(ctx context.Context, arg CreateProjectCommentParams) (ProjectComment, error) {
@@ -186,10 +186,10 @@ INSERT INTO project_documents (
 `
 
 type CreateProjectDocumentParams struct {
-	ProjectID string
-	Name      string
-	Url       string
-	Section   string
+	ProjectID string `json:"project_id"`
+	Name      string `json:"name"`
+	Url       string `json:"url"`
+	Section   string `json:"section"`
 }
 
 func (q *Queries) CreateProjectDocument(ctx context.Context, arg CreateProjectDocumentParams) (ProjectDocument, error) {
@@ -235,9 +235,9 @@ RETURNING id
 `
 
 type DeleteProjectDocumentParams struct {
-	ID        string
-	ProjectID string
-	CompanyID string
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
+	CompanyID string `json:"company_id"`
 }
 
 func (q *Queries) DeleteProjectDocument(ctx context.Context, arg DeleteProjectDocumentParams) (string, error) {
@@ -282,11 +282,11 @@ ORDER BY pq.section, pq.id
 `
 
 type GetProjectAnswersRow struct {
-	AnswerID   string
-	Answer     string
-	QuestionID string
-	Question   string
-	Section    string
+	AnswerID   string `json:"answer_id"`
+	Answer     string `json:"answer"`
+	QuestionID string `json:"question_id"`
+	Question   string `json:"question"`
+	Section    string `json:"section"`
 }
 
 func (q *Queries) GetProjectAnswers(ctx context.Context, projectID string) ([]GetProjectAnswersRow, error) {
@@ -322,8 +322,8 @@ LIMIT 1
 `
 
 type GetProjectByIDParams struct {
-	ID        string
-	CompanyID string
+	ID        string `json:"id"`
+	CompanyID string `json:"company_id"`
 }
 
 func (q *Queries) GetProjectByID(ctx context.Context, arg GetProjectByIDParams) (Project, error) {
@@ -369,8 +369,8 @@ LIMIT 1
 `
 
 type GetProjectCommentParams struct {
-	ID        string
-	ProjectID string
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
 }
 
 func (q *Queries) GetProjectComment(ctx context.Context, arg GetProjectCommentParams) (ProjectComment, error) {
@@ -433,9 +433,9 @@ AND projects.company_id = $3
 `
 
 type GetProjectDocumentParams struct {
-	ID        string
-	ProjectID string
-	CompanyID string
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
+	CompanyID string `json:"company_id"`
 }
 
 func (q *Queries) GetProjectDocument(ctx context.Context, arg GetProjectDocumentParams) (ProjectDocument, error) {
@@ -488,7 +488,7 @@ func (q *Queries) GetProjectDocuments(ctx context.Context, projectID string) ([]
 }
 
 const getProjectQuestion = `-- name: GetProjectQuestion :one
-SELECT id, question, section, required, validations, created_at, updated_at FROM project_questions 
+SELECT id, question, section, required, validations, sub_section_order, created_at, updated_at, sub_section, input_type, options FROM project_questions 
 WHERE id = $1 
 LIMIT 1
 `
@@ -502,8 +502,12 @@ func (q *Queries) GetProjectQuestion(ctx context.Context, id string) (ProjectQue
 		&i.Section,
 		&i.Required,
 		&i.Validations,
+		&i.SubSectionOrder,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SubSection,
+		&i.InputType,
+		&i.Options,
 	)
 	return i, err
 }
@@ -513,11 +517,11 @@ SELECT id, question, section, required, validations FROM project_questions
 `
 
 type GetProjectQuestionsRow struct {
-	ID          string
-	Question    string
-	Section     string
-	Required    bool
-	Validations *string
+	ID          string  `json:"id"`
+	Question    string  `json:"question"`
+	Section     string  `json:"section"`
+	Required    bool    `json:"required"`
+	Validations *string `json:"validations"`
 }
 
 func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestionsRow, error) {
@@ -581,7 +585,7 @@ func (q *Queries) GetProjectsByCompanyID(ctx context.Context, companyID string) 
 }
 
 const getQuestionByAnswerID = `-- name: GetQuestionByAnswerID :one
-SELECT q.id, q.question, q.section, q.required, q.validations, q.created_at, q.updated_at FROM project_questions q
+SELECT q.id, q.question, q.section, q.required, q.validations, q.sub_section_order, q.created_at, q.updated_at, q.sub_section, q.input_type, q.options FROM project_questions q
 JOIN project_answers a ON a.question_id = q.id
 WHERE a.id = $1
 `
@@ -595,8 +599,12 @@ func (q *Queries) GetQuestionByAnswerID(ctx context.Context, id string) (Project
 		&i.Section,
 		&i.Required,
 		&i.Validations,
+		&i.SubSectionOrder,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SubSection,
+		&i.InputType,
+		&i.Options,
 	)
 	return i, err
 }
@@ -645,8 +653,8 @@ RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at
 `
 
 type ResolveProjectCommentParams struct {
-	ID        string
-	ProjectID string
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
 }
 
 func (q *Queries) ResolveProjectComment(ctx context.Context, arg ResolveProjectCommentParams) (ProjectComment, error) {
@@ -675,8 +683,8 @@ RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at
 `
 
 type UnresolveProjectCommentParams struct {
-	ID        string
-	ProjectID string
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
 }
 
 func (q *Queries) UnresolveProjectComment(ctx context.Context, arg UnresolveProjectCommentParams) (ProjectComment, error) {
@@ -707,9 +715,9 @@ RETURNING id, project_id, question_id, answer, created_at, updated_at
 `
 
 type UpdateProjectAnswerParams struct {
-	Answer    string
-	ID        string
-	ProjectID string
+	Answer    string `json:"answer"`
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
 }
 
 func (q *Queries) UpdateProjectAnswer(ctx context.Context, arg UpdateProjectAnswerParams) (ProjectAnswer, error) {
@@ -735,8 +743,8 @@ RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at
 `
 
 type UpdateProjectCommentParams struct {
-	ID      string
-	Comment string
+	ID      string `json:"id"`
+	Comment string `json:"comment"`
 }
 
 func (q *Queries) UpdateProjectComment(ctx context.Context, arg UpdateProjectCommentParams) (ProjectComment, error) {
@@ -764,8 +772,8 @@ WHERE id = $2
 `
 
 type UpdateProjectStatusParams struct {
-	Status ProjectStatus
-	ID     string
+	Status ProjectStatus `json:"status"`
+	ID     string        `json:"id"`
 }
 
 func (q *Queries) UpdateProjectStatus(ctx context.Context, arg UpdateProjectStatusParams) error {

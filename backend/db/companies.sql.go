@@ -22,10 +22,10 @@ RETURNING id, owner_id, name, wallet_address, linkedin_url, created_at, updated_
 `
 
 type CreateCompanyParams struct {
-	OwnerID       string
-	Name          string
-	WalletAddress *string
-	LinkedinUrl   string
+	OwnerID       string  `json:"owner_id"`
+	Name          string  `json:"name"`
+	WalletAddress *string `json:"wallet_address"`
+	LinkedinUrl   string  `json:"linkedin_url"`
 }
 
 func (q *Queries) CreateCompany(ctx context.Context, arg CreateCompanyParams) (Company, error) {
@@ -104,9 +104,9 @@ WHERE (owner_id = $1 OR $2 = 'admin') AND id = $3
 `
 
 type GetCompanyWithAuthParams struct {
-	OwnerID string
-	Column2 interface{}
-	ID      string
+	OwnerID string      `json:"owner_id"`
+	Column2 interface{} `json:"column_2"`
+	ID      string      `json:"id"`
 }
 
 func (q *Queries) GetCompanyWithAuth(ctx context.Context, arg GetCompanyWithAuthParams) (Company, error) {
@@ -170,10 +170,10 @@ RETURNING id, owner_id, name, wallet_address, linkedin_url, created_at, updated_
 `
 
 type UpdateCompanyParams struct {
-	ID            string
-	Name          string
-	WalletAddress *string
-	LinkedinUrl   string
+	ID            string  `json:"id"`
+	Name          string  `json:"name"`
+	WalletAddress *string `json:"wallet_address"`
+	LinkedinUrl   string  `json:"linkedin_url"`
 }
 
 func (q *Queries) UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (Company, error) {

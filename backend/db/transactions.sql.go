@@ -26,13 +26,13 @@ INSERT INTO transactions (
 `
 
 type AddTransactionParams struct {
-	ID          string
-	ProjectID   string
-	CompanyID   string
-	TxHash      string
-	FromAddress string
-	ToAddress   string
-	ValueAmount pgtype.Numeric
+	ID          string         `json:"id"`
+	ProjectID   string         `json:"project_id"`
+	CompanyID   string         `json:"company_id"`
+	TxHash      string         `json:"tx_hash"`
+	FromAddress string         `json:"from_address"`
+	ToAddress   string         `json:"to_address"`
+	ValueAmount pgtype.Numeric `json:"value_amount"`
 }
 
 func (q *Queries) AddTransaction(ctx context.Context, arg AddTransactionParams) (Transaction, error) {
