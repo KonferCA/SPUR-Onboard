@@ -84,9 +84,8 @@ func TestJWTMiddleware(t *testing.T) {
 		t.Fatalf("failed to get user salt: %v", err)
 	}
 
-	// generate valid tokens using permissions instead of role
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(userID.String(), 
-		uint32(permissions.PermSubmitProject|permissions.PermManageTeam), salt)
+	// generate valid tokens
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(userID.String(), salt)
 	assert.Nil(t, err)
 
 	tests := []struct {

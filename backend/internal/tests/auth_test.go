@@ -179,8 +179,8 @@ func TestAuthEndpoints(t *testing.T) {
 		user, err := db.New(s.GetDB()).GetUserByID(context.Background(), testUser.ID)
 		assert.NoError(t, err)
 
-		// Generate valid token for test user with permissions
-		accessToken, _, err := jwt.GenerateWithSalt(user.ID, uint32(user.Permissions), user.TokenSalt)
+		// Generate tokens for test
+		accessToken, _, err := jwt.GenerateWithSalt(user.ID, user.TokenSalt)
 		assert.NoError(t, err)
 
 		tests := []struct {

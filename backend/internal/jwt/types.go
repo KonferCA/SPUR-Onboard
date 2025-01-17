@@ -6,7 +6,6 @@ import (
 
 type JWTClaims struct {
 	UserID      string `json:"user_id"`
-	Permissions uint32 `json:"permissions"`
 	TokenType   string `json:"token_type"`
 	golangJWT.RegisteredClaims
 }

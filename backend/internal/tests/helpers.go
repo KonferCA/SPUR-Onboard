@@ -163,7 +163,7 @@ func loginAndGetToken(t *testing.T, s *server.Server, email, password string) st
 }
 
 func generateTestToken(t *testing.T, userID string, perms uint32, salt []byte) string {
-	token, _, err := jwt.GenerateWithSalt(userID, perms, salt)
+	token, _, err := jwt.GenerateWithSalt(userID, salt)
 	require.NoError(t, err)
 	return token
 }

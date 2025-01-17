@@ -143,7 +143,7 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	go sendEmailVerification(newUser.ID, newUser.Email, h.server.GetQueries())
 
 	// generate new access and refresh tokens
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(newUser.ID, uint32(newUser.Permissions), newUser.TokenSalt)
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(newUser.ID, newUser.TokenSalt)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusCreated, "Registration complete but failed to sign in. Please sign in manually.", err)
 	}
@@ -191,7 +191,7 @@ func (h *Handler) handleLogin(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Invalid email or password", nil)
 	}
 
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, uint32(user.Permissions), user.TokenSalt)
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.TokenSalt)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to generate tokens", err)
 	}
@@ -342,7 +342,7 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Cookie is not valid.", err)
 	}
 
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, uint32(user.Permissions), user.TokenSalt)
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.TokenSalt)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Oops, something went wrong.", err)
 	}

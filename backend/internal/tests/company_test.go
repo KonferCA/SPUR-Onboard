@@ -70,9 +70,9 @@ func TestCompanyEndpoints(t *testing.T) {
 		require.NoError(t, err)
 
 		testUsers[i].salt = salt
-		token, _, err := jwt.GenerateWithSalt(testUsers[i].id.String(), testUsers[i].permissions, salt)
+		accessToken, _, err := jwt.GenerateWithSalt(testUsers[i].id.String(), salt)
 		require.NoError(t, err)
-		testUsers[i].token = token
+		testUsers[i].token = accessToken
 	}
 
 	e := s.GetEcho()

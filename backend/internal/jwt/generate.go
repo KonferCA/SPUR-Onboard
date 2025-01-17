@@ -14,13 +14,13 @@ const (
 )
 
 // Generates JWT tokens for the given user. Returns the access token, refresh token and error (nil if no error)
-func GenerateWithSalt(userID string, permissions uint32, salt []byte) (string, string, error) {
-	accessToken, err := generateTokenWithSalt(userID, permissions, ACCESS_TOKEN_TYPE, time.Now().Add(10*time.Minute), salt)
+func GenerateWithSalt(userID string, salt []byte) (string, string, error) {
+	accessToken, err := generateTokenWithSalt(userID, ACCESS_TOKEN_TYPE, time.Now().Add(10*time.Minute), salt)
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := generateTokenWithSalt(userID, permissions, REFRESH_TOKEN_TYPE, time.Now().Add(24*7*time.Hour), salt)
+	refreshToken, err := generateTokenWithSalt(userID, REFRESH_TOKEN_TYPE, time.Now().Add(24*7*time.Hour), salt)
 	if err != nil {
 		return "", "", err
 	}
@@ -49,11 +49,10 @@ func GenerateVerifyEmailToken(email string, id string, exp time.Time) (string, e
 }
 
 // Private helper method to generate a token with user's salt
-func generateTokenWithSalt(userID string, permissions uint32, tokenType string, exp time.Time, salt []byte) (string, error) {
+func generateTokenWithSalt(userID string, tokenType string, exp time.Time, salt []byte) (string, error) {
 	claims := JWTClaims{
-		UserID:      userID,
-		Permissions: permissions,
-		TokenType:   tokenType,
+		UserID:    userID,
+		TokenType: tokenType,
 		RegisteredClaims: golangJWT.RegisteredClaims{
 			ExpiresAt: golangJWT.NewNumericDate(exp),
 			IssuedAt:  golangJWT.NewNumericDate(time.Now()),

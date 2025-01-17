@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"KonferCA/SPUR/internal/jwt"
-	"KonferCA/SPUR/internal/permissions"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -17,7 +16,6 @@ func TestJWT(t *testing.T) {
 	os.Setenv("JWT_SECRET_VERIFY_EMAIL", "test-secret")
 
 	userID := "some-user-id"
-	perms := uint32(permissions.PermSubmitProject | permissions.PermManageTeam)
 	salt := []byte("test-salt")
 
 	t.Run("token salt invalidation", func(t *testing.T) {
@@ -25,7 +23,7 @@ func TestJWT(t *testing.T) {
 		initialSalt := []byte("initial-salt")
 
 		// Generate tokens with initial salt
-		accessToken, refreshToken, err := jwt.GenerateWithSalt(userID, perms, initialSalt)
+		accessToken, refreshToken, err := jwt.GenerateWithSalt(userID, initialSalt)
 		assert.Nil(t, err)
 		assert.NotEmpty(t, accessToken)
 		assert.NotEmpty(t, refreshToken)
@@ -34,7 +32,6 @@ func TestJWT(t *testing.T) {
 		claims, err := jwt.VerifyTokenWithSalt(accessToken, initialSalt)
 		assert.Nil(t, err)
 		assert.Equal(t, claims.UserID, userID)
-		assert.Equal(t, claims.Permissions, perms)
 		assert.Equal(t, claims.TokenType, jwt.ACCESS_TOKEN_TYPE)
 
 		// Change salt (simulating token invalidation)
@@ -45,7 +42,7 @@ func TestJWT(t *testing.T) {
 		assert.NotNil(t, err, "Token should be invalid with new salt")
 
 		// Generate new tokens with new salt
-		newAccessToken, newRefreshToken, err := jwt.GenerateWithSalt(userID, perms, newSalt)
+		newAccessToken, newRefreshToken, err := jwt.GenerateWithSalt(userID, newSalt)
 		assert.Nil(t, err)
 		assert.NotEmpty(t, newAccessToken)
 		assert.NotEmpty(t, newRefreshToken)
@@ -60,7 +57,7 @@ func TestJWT(t *testing.T) {
 		salt := []byte("test-salt")
 
 		// Generate a token
-		accessToken, _, err := jwt.GenerateWithSalt(userID, perms, salt)
+		accessToken, _, err := jwt.GenerateWithSalt(userID, salt)
 		assert.Nil(t, err)
 
 		// Step 1: Parse claims without verification
@@ -80,24 +77,22 @@ func TestJWT(t *testing.T) {
 	})
 
 	t.Run("generate access token", func(t *testing.T) {
-		accessToken, _, err := jwt.GenerateWithSalt(userID, perms, salt)
+		accessToken, _, err := jwt.GenerateWithSalt(userID, salt)
 		assert.Nil(t, err)
 		assert.NotEmpty(t, accessToken)
 		claims, err := jwt.VerifyTokenWithSalt(accessToken, salt)
 		assert.Nil(t, err)
 		assert.Equal(t, claims.UserID, userID)
-		assert.Equal(t, claims.Permissions, perms)
 		assert.Equal(t, claims.TokenType, jwt.ACCESS_TOKEN_TYPE)
 	})
 
 	t.Run("generate refresh token", func(t *testing.T) {
-		_, refreshToken, err := jwt.GenerateWithSalt(userID, perms, salt)
+		_, refreshToken, err := jwt.GenerateWithSalt(userID, salt)
 		assert.Nil(t, err)
 		assert.NotEmpty(t, refreshToken)
 		claims, err := jwt.VerifyTokenWithSalt(refreshToken, salt)
 		assert.Nil(t, err)
 		assert.Equal(t, claims.UserID, userID)
-		assert.Equal(t, claims.Permissions, perms)
 		assert.Equal(t, claims.TokenType, jwt.REFRESH_TOKEN_TYPE)
 	})
 

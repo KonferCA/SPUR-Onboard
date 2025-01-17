@@ -76,10 +76,10 @@ func TestServer(t *testing.T) {
 			hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("testpass123"), bcrypt.DefaultCost)
 			userID := uuid.New()
 			_, err = s.DBPool.Exec(ctx, `
-                INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
-                VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
-            `, userID, email, string(hashedPassword), 
-                int32(permissions.PermSubmitProject|permissions.PermManageTeam), true)
+				INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
+				VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
+			`, userID, email, string(hashedPassword), 
+				int32(permissions.PermSubmitProject|permissions.PermManageTeam), true)
 			assert.NoError(t, err)
 
 			var user db.GetUserByIDRow
@@ -93,7 +93,7 @@ func TestServer(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, int32(permissions.PermSubmitProject|permissions.PermManageTeam), user.Permissions)
 
-			token, _, err := jwt.GenerateWithSalt(user.ID, uint32(user.Permissions), user.TokenSalt)
+			token, _, err := jwt.GenerateWithSalt(user.ID, user.TokenSalt)
 			assert.NoError(t, err)
 
 			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/ami-verified", nil)
@@ -320,7 +320,6 @@ func TestServer(t *testing.T) {
 			exp := time.Now().UTC().Add(2 * 24 * time.Hour)
 			claims := jwt.JWTClaims{
 				UserID:    user.ID,
-				Permissions: uint32(user.Permissions),
 				TokenType: jwt.REFRESH_TOKEN_TYPE,
 				RegisteredClaims: golangJWT.RegisteredClaims{
 					ExpiresAt: golangJWT.NewNumericDate(exp),
@@ -387,7 +386,7 @@ func TestServer(t *testing.T) {
 			defer removeTestUser(ctx, email, s)
 
 			// the refresh token will be invalid since the salt is different
-			_, refreshToken, err := jwt.GenerateWithSalt(userID, uint32(permissions.PermStartupOwner), []byte{0, 1, 2})
+			_, refreshToken, err := jwt.GenerateWithSalt(userID, []byte{0, 1, 2})
 			assert.NoError(t, err)
 
 			cookie := http.Cookie{
@@ -594,7 +593,7 @@ func TestServer(t *testing.T) {
 	t.Run("Test JWT Refresh Token", func(t *testing.T) {
 		// Create test user
 		userID := uuid.New().String()
-		_, refreshToken, err := jwt.GenerateWithSalt(userID, uint32(permissions.PermStartupOwner), []byte{0, 1, 2})
+		_, refreshToken, err := jwt.GenerateWithSalt(userID, []byte{0, 1, 2})
 		assert.NoError(t, err)
 
 		// Set cookie with refresh token

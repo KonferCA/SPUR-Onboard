@@ -62,7 +62,7 @@ func CompanyAccess(dbPool *pgxpool.Pool) echo.MiddlewareFunc {
 	}
 }
 
-// Auth creates a middleware that validates JWT access tokens with required permissions
+// Auth creates a middleware that validates JWT access tokens with specified user roles
 func Auth(dbPool *pgxpool.Pool, requiredPerms ...uint32) echo.MiddlewareFunc {
 	return AuthWithConfig(AuthConfig{
 		AcceptTokenType: jwt.ACCESS_TOKEN_TYPE,
