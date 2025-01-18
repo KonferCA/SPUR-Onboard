@@ -469,7 +469,7 @@ func (q *Queries) GetProjectDocuments(ctx context.Context, projectID string) ([]
 }
 
 const getProjectQuestion = `-- name: GetProjectQuestion :one
-SELECT id, question, section, required, validations, sub_section_order, created_at, updated_at, sub_section, input_type, options FROM project_questions 
+SELECT id, question, section, input_type, options, sub_section, section_order, sub_section_order, question_order, required, validations, created_at, updated_at FROM project_questions 
 WHERE id = $1 
 LIMIT 1
 `
@@ -481,28 +481,46 @@ func (q *Queries) GetProjectQuestion(ctx context.Context, id string) (ProjectQue
 		&i.ID,
 		&i.Question,
 		&i.Section,
-		&i.Required,
-		&i.Validations,
-		&i.SubSectionOrder,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.SubSection,
 		&i.InputType,
 		&i.Options,
+		&i.SubSection,
+		&i.SectionOrder,
+		&i.SubSectionOrder,
+		&i.QuestionOrder,
+		&i.Required,
+		&i.Validations,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getProjectQuestions = `-- name: GetProjectQuestions :many
-SELECT id, question, section, required, validations FROM project_questions
+SELECT 
+    id,
+    question,
+    section,
+    sub_section,
+    section_order,
+    sub_section_order,
+    question_order,
+    options,
+    required,
+    validations
+FROM project_questions
 `
 
 type GetProjectQuestionsRow struct {
-	ID          string  `json:"id"`
-	Question    string  `json:"question"`
-	Section     string  `json:"section"`
-	Required    bool    `json:"required"`
-	Validations *string `json:"validations"`
+	ID              string   `json:"id"`
+	Question        string   `json:"question"`
+	Section         string   `json:"section"`
+	SubSection      string   `json:"sub_section"`
+	SectionOrder    int32    `json:"section_order"`
+	SubSectionOrder int32    `json:"sub_section_order"`
+	QuestionOrder   int32    `json:"question_order"`
+	Options         []string `json:"options"`
+	Required        bool     `json:"required"`
+	Validations     *string  `json:"validations"`
 }
 
 func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestionsRow, error) {
@@ -518,6 +536,11 @@ func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestion
 			&i.ID,
 			&i.Question,
 			&i.Section,
+			&i.SubSection,
+			&i.SectionOrder,
+			&i.SubSectionOrder,
+			&i.QuestionOrder,
+			&i.Options,
 			&i.Required,
 			&i.Validations,
 		); err != nil {
@@ -566,7 +589,7 @@ func (q *Queries) GetProjectsByCompanyID(ctx context.Context, companyID string) 
 }
 
 const getQuestionByAnswerID = `-- name: GetQuestionByAnswerID :one
-SELECT q.id, q.question, q.section, q.required, q.validations, q.sub_section_order, q.created_at, q.updated_at, q.sub_section, q.input_type, q.options FROM project_questions q
+SELECT q.id, q.question, q.section, q.input_type, q.options, q.sub_section, q.section_order, q.sub_section_order, q.question_order, q.required, q.validations, q.created_at, q.updated_at FROM project_questions q
 JOIN project_answers a ON a.question_id = q.id
 WHERE a.id = $1
 `
@@ -578,14 +601,16 @@ func (q *Queries) GetQuestionByAnswerID(ctx context.Context, id string) (Project
 		&i.ID,
 		&i.Question,
 		&i.Section,
-		&i.Required,
-		&i.Validations,
-		&i.SubSectionOrder,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.SubSection,
 		&i.InputType,
 		&i.Options,
+		&i.SubSection,
+		&i.SectionOrder,
+		&i.SubSectionOrder,
+		&i.QuestionOrder,
+		&i.Required,
+		&i.Validations,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

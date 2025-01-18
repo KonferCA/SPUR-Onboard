@@ -106,7 +106,22 @@ WHERE company_id = $1
 ORDER BY created_at DESC; 
 
 -- name: GetProjectQuestions :many
-SELECT id, question, section, required, validations FROM project_questions;
+SELECT 
+    id,
+    question,
+    section,
+    sub_section,
+    section_order,
+    sub_section_order,
+    question_order,
+    options,
+    required,
+    validations
+FROM project_questions
+ORDER BY
+    section_order,
+    sub_section_order,
+    question_order;
 
 -- name: UpdateProjectStatus :exec
 UPDATE projects 

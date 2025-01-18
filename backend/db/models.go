@@ -132,14 +132,16 @@ type ProjectQuestion struct {
 	ID              string   `json:"id"`
 	Question        string   `json:"question"`
 	Section         string   `json:"section"`
-	Required        bool     `json:"required"`
-	Validations     *string  `json:"validations"`
-	SubSectionOrder int32    `json:"sub_section_order"`
-	CreatedAt       int64    `json:"created_at"`
-	UpdatedAt       int64    `json:"updated_at"`
-	SubSection      string   `json:"sub_section"`
 	InputType       string   `json:"input_type"`
 	Options         []string `json:"options"`
+	SubSection      string   `json:"sub_section"`
+	SectionOrder    int32    `json:"section_order"`
+	SubSectionOrder int32    `json:"sub_section_order"`
+	QuestionOrder   int32    `json:"question_order"`
+	Required        bool     `json:"required"`
+	Validations     *string  `json:"validations"`
+	CreatedAt       int64    `json:"created_at"`
+	UpdatedAt       int64    `json:"updated_at"`
 }
 
 type TeamMember struct {

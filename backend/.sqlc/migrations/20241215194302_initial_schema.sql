@@ -67,9 +67,14 @@ CREATE TABLE project_questions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     question varchar NOT NULL,
     section varchar NOT NULL DEFAULT 'overall',
+    input_type varchar(255) NOT NULL, -- the type of input the question is for frontend use.
+    options varchar(255)[], -- optional options for inpyt types: checkbox, select, radio
+    sub_section varchar NOT NULL,
+    section_order int NOT NULL, -- defines the section order, aka step in the frontend
+    sub_section_order int NOT NULL, -- defines in which order the sub-section is within the section
+    question_order int NOT NULL, -- defines in which order the question appears in the sub-section
     required boolean NOT NULL DEFAULT false,
     validations varchar,
-    sub_section_order int NOT NULL, -- defines in which order the question appears in the sub-section
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 ); 
