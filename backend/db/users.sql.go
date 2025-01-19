@@ -36,11 +36,11 @@ WHERE id = $1
 `
 
 type GetUserByIDRow struct {
-	ID            string
-	Email         string
-	Permissions   int32
-	EmailVerified bool
-	TokenSalt     []byte
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	Permissions   int32  `json:"permissions"`
+	EmailVerified bool   `json:"email_verified"`
+	TokenSalt     []byte `json:"token_salt"`
 }
 
 func (q *Queries) GetUserByID(ctx context.Context, id string) (GetUserByIDRow, error) {
@@ -75,17 +75,17 @@ VALUES
 `
 
 type NewUserParams struct {
-	Email       string
-	Password    string
-	Permissions int32
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	Permissions int32  `json:"permissions"`
 }
 
 type NewUserRow struct {
-	ID            string
-	Email         string
-	EmailVerified bool
-	Permissions   int32
-	TokenSalt     []byte
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	Permissions   int32  `json:"permissions"`
+	TokenSalt     []byte `json:"token_salt"`
 }
 
 func (q *Queries) NewUser(ctx context.Context, arg NewUserParams) (NewUserRow, error) {
@@ -106,8 +106,8 @@ UPDATE users SET email_verified = $1 WHERE id = $2
 `
 
 type UpdateUserEmailVerifiedStatusParams struct {
-	EmailVerified bool
-	ID            string
+	EmailVerified bool   `json:"email_verified"`
+	ID            string `json:"id"`
 }
 
 func (q *Queries) UpdateUserEmailVerifiedStatus(ctx context.Context, arg UpdateUserEmailVerifiedStatusParams) error {

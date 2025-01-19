@@ -1,4 +1,8 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
+
+export interface LayoutProps {
+    children?: ReactNode;
+}
 
 export type Spacing = 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 export type Width =
