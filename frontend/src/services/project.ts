@@ -27,6 +27,7 @@ interface ProjectResponse {
 export interface ProjectQuestion {
     id: string;
     question: string;
+    inputType: string;
     options?: string[];
     section: string;
     subSection: string;

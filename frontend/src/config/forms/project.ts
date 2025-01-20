@@ -1,4 +1,5 @@
 import { ProjectQuestion } from '@/services/project';
+import { FormField } from '@/types';
 import { createZodSchema } from '@/utils/form-validation';
 import { ZodString } from 'zod';
 
@@ -23,6 +24,7 @@ export interface SubSection {
     required: boolean;
     validations: ZodString[];
     options?: string[];
+    inputType: FormField[];
 }
 
 /*
@@ -64,6 +66,9 @@ export function groupProjectQuestions(
                 required: question.required,
                 validations: createZodSchema(question.validations),
                 options: question.options,
+                inputType: question.inputType.split(
+                    '|'
+                ) as unknown as FormField[],
             };
 
             if (group) {
