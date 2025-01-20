@@ -19,6 +19,7 @@
     "@suiet/wallet-kit": "^0.3.3",
     "@tanstack/react-router": "^1.97.1",
     "@tanstack/react-table": "^8.20.6",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^11.18.1",
