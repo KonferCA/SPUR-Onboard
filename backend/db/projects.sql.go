@@ -504,10 +504,15 @@ SELECT
     section_order,
     sub_section_order,
     question_order,
+    input_type,
     options,
     required,
     validations
 FROM project_questions
+ORDER BY
+    section_order,
+    sub_section_order,
+    question_order
 `
 
 type GetProjectQuestionsRow struct {
@@ -518,6 +523,7 @@ type GetProjectQuestionsRow struct {
 	SectionOrder    int32    `json:"section_order"`
 	SubSectionOrder int32    `json:"sub_section_order"`
 	QuestionOrder   int32    `json:"question_order"`
+	InputType       string   `json:"input_type"`
 	Options         []string `json:"options"`
 	Required        bool     `json:"required"`
 	Validations     *string  `json:"validations"`
@@ -540,6 +546,7 @@ func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestion
 			&i.SectionOrder,
 			&i.SubSectionOrder,
 			&i.QuestionOrder,
+			&i.InputType,
 			&i.Options,
 			&i.Required,
 			&i.Validations,

@@ -114,6 +114,7 @@ SELECT
     section_order,
     sub_section_order,
     question_order,
+    input_type,
     options,
     required,
     validations
