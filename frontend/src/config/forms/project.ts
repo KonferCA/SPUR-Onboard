@@ -12,6 +12,7 @@ export interface GroupedProjectQuestions {
     // section basically serves as the id of the group
     section: string;
     subSections: SubSection[];
+    subSectionNames: string[];
 }
 
 export interface SubSection {
@@ -48,7 +49,7 @@ export function groupProjectQuestions(
         return a.questionOrder - b.questionOrder;
     });
 
-    // Group questions by section
+    // Group questions by section and maintain ordered subsection names
     const groupedBySection = sortedQuestions.reduce<GroupedProjectQuestions[]>(
         (acc, question) => {
             // Find existing group for this section
@@ -68,14 +69,20 @@ export function groupProjectQuestions(
             if (group) {
                 // Add to existing group
                 group.subSections.push(subSection);
+                // Add subSection name if it's not already in the array
+                // Everything has been sorted beforehand so the sub sections
+                // are also in the right order.
+                if (!group.subSectionNames.includes(question.subSection)) {
+                    group.subSectionNames.push(question.subSection);
+                }
             } else {
                 // Create new group
                 acc.push({
                     section: question.section,
                     subSections: [subSection],
+                    subSectionNames: [question.subSection],
                 });
             }
-
             return acc;
         },
         []
