@@ -13,6 +13,7 @@ import { getProjectFormQuestions } from '@/services/project';
 import { groupProjectQuestions, GroupedProjectQuestions } from '@/config/forms';
 import { SectionedLayout } from '@/templates';
 import { cva } from 'class-variance-authority';
+import { sanitizeHtmlId } from '@/utils/html';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -53,10 +54,9 @@ const SubmitProjectPage = () => {
             const links: AnchorLinkItem[] = group.subSectionNames.map(
                 (name) => ({
                     label: name,
-                    target: `#${group.section}_${name}`,
+                    target: `#${sanitizeHtmlId(group.section + '-' + name)}`,
                 })
             );
-            console.log(links);
             return links;
         },
         // re-compute the aside links when the current step is changed
@@ -133,7 +133,6 @@ const SubmitProjectPage = () => {
             try {
                 const data = await getProjectFormQuestions();
                 const grouped = groupProjectQuestions(data);
-                console.log(grouped);
                 setSections(grouped);
             } catch (error) {
                 console.error(error);
@@ -174,7 +173,9 @@ const SubmitProjectPage = () => {
                     {groupedQuestions[currentStep].subSections.map(
                         (section) => (
                             <div
-                                id={`${groupedQuestions[currentStep].section}_${section.name}`}
+                                id={sanitizeHtmlId(
+                                    `${groupedQuestions[currentStep].section}-${section.name}`
+                                )}
                                 key={`${groupedQuestions[currentStep].section}_${section.name}`}
                                 className={questionGroupContainerStyles()}
                             >
