@@ -21,11 +21,11 @@ import { Route as UserAuthImport } from './pages/user/_auth'
 import { Route as UserAppshellImport } from './pages/user/_appshell'
 import { Route as AdminAuthImport } from './pages/admin/_auth'
 import { Route as AdminAppshellImport } from './pages/admin/_appshell'
+import { Route as UserAuthProjectSubmitImport } from './pages/user/_auth.project.submit'
 import { Route as UserAuthAppshellProjectsImport } from './pages/user/_auth._appshell.projects'
 import { Route as UserAuthAppshellDashboardImport } from './pages/user/_auth._appshell.dashboard'
 import { Route as AdminAuthAppshellDashboardImport } from './pages/admin/_auth._appshell.dashboard'
 import { Route as AdminAuthAppshellProjectsIndexImport } from './pages/admin/_auth/_appshell/projects/index'
-import { Route as UserAuthAppshellProjectSubmitImport } from './pages/user/_auth._appshell.project.submit'
 import { Route as UserAuthAppshellCompanyNewImport } from './pages/user/_auth._appshell.company.new'
 import { Route as AdminAuthAppshellProjectsProjectIdSubmissionImport } from './pages/admin/_auth/_appshell/projects/$projectId.submission'
 import { Route as AdminAuthAppshellProjectsProjectIdDetailsImport } from './pages/admin/_auth/_appshell/projects/$projectId.details'
@@ -93,6 +93,12 @@ const AdminAppshellRoute = AdminAppshellImport.update({
   getParentRoute: () => AdminRoute,
 } as any)
 
+const UserAuthProjectSubmitRoute = UserAuthProjectSubmitImport.update({
+  id: '/project/submit',
+  path: '/project/submit',
+  getParentRoute: () => UserAuthRoute,
+} as any)
+
 const UserAuthAppshellProjectsRoute = UserAuthAppshellProjectsImport.update({
   id: '/_appshell/projects',
   path: '/projects',
@@ -118,13 +124,6 @@ const AdminAuthAppshellProjectsIndexRoute =
     id: '/_appshell/projects/',
     path: '/projects/',
     getParentRoute: () => AdminAuthRoute,
-  } as any)
-
-const UserAuthAppshellProjectSubmitRoute =
-  UserAuthAppshellProjectSubmitImport.update({
-    id: '/_appshell/project/submit',
-    path: '/project/submit',
-    getParentRoute: () => UserAuthRoute,
   } as any)
 
 const UserAuthAppshellCompanyNewRoute = UserAuthAppshellCompanyNewImport.update(
@@ -244,18 +243,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UserAuthAppshellProjectsImport
       parentRoute: typeof UserAuthImport
     }
+    '/user/_auth/project/submit': {
+      id: '/user/_auth/project/submit'
+      path: '/project/submit'
+      fullPath: '/user/project/submit'
+      preLoaderRoute: typeof UserAuthProjectSubmitImport
+      parentRoute: typeof UserAuthImport
+    }
     '/user/_auth/_appshell/company/new': {
       id: '/user/_auth/_appshell/company/new'
       path: '/company/new'
       fullPath: '/user/company/new'
       preLoaderRoute: typeof UserAuthAppshellCompanyNewImport
-      parentRoute: typeof UserAuthImport
-    }
-    '/user/_auth/_appshell/project/submit': {
-      id: '/user/_auth/_appshell/project/submit'
-      path: '/project/submit'
-      fullPath: '/user/project/submit'
-      preLoaderRoute: typeof UserAuthAppshellProjectSubmitImport
       parentRoute: typeof UserAuthImport
     }
     '/admin/_auth/_appshell/projects/': {
@@ -321,15 +320,15 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 interface UserAuthRouteChildren {
   UserAuthAppshellDashboardRoute: typeof UserAuthAppshellDashboardRoute
   UserAuthAppshellProjectsRoute: typeof UserAuthAppshellProjectsRoute
+  UserAuthProjectSubmitRoute: typeof UserAuthProjectSubmitRoute
   UserAuthAppshellCompanyNewRoute: typeof UserAuthAppshellCompanyNewRoute
-  UserAuthAppshellProjectSubmitRoute: typeof UserAuthAppshellProjectSubmitRoute
 }
 
 const UserAuthRouteChildren: UserAuthRouteChildren = {
   UserAuthAppshellDashboardRoute: UserAuthAppshellDashboardRoute,
   UserAuthAppshellProjectsRoute: UserAuthAppshellProjectsRoute,
+  UserAuthProjectSubmitRoute: UserAuthProjectSubmitRoute,
   UserAuthAppshellCompanyNewRoute: UserAuthAppshellCompanyNewRoute,
-  UserAuthAppshellProjectSubmitRoute: UserAuthAppshellProjectSubmitRoute,
 }
 
 const UserAuthRouteWithChildren = UserAuthRoute._addFileChildren(
@@ -360,8 +359,8 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute
   '/user/dashboard': typeof UserAuthAppshellDashboardRoute
   '/user/projects': typeof UserAuthAppshellProjectsRoute
+  '/user/project/submit': typeof UserAuthProjectSubmitRoute
   '/user/company/new': typeof UserAuthAppshellCompanyNewRoute
-  '/user/project/submit': typeof UserAuthAppshellProjectSubmitRoute
   '/admin/projects': typeof AdminAuthAppshellProjectsIndexRoute
   '/admin/projects/$projectId/details': typeof AdminAuthAppshellProjectsProjectIdDetailsRoute
   '/admin/projects/$projectId/submission': typeof AdminAuthAppshellProjectsProjectIdSubmissionRoute
@@ -375,8 +374,8 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute
   '/user/dashboard': typeof UserAuthAppshellDashboardRoute
   '/user/projects': typeof UserAuthAppshellProjectsRoute
+  '/user/project/submit': typeof UserAuthProjectSubmitRoute
   '/user/company/new': typeof UserAuthAppshellCompanyNewRoute
-  '/user/project/submit': typeof UserAuthAppshellProjectSubmitRoute
   '/admin/projects': typeof AdminAuthAppshellProjectsIndexRoute
   '/admin/projects/$projectId/details': typeof AdminAuthAppshellProjectsProjectIdDetailsRoute
   '/admin/projects/$projectId/submission': typeof AdminAuthAppshellProjectsProjectIdSubmissionRoute
@@ -397,8 +396,8 @@ export interface FileRoutesById {
   '/admin/_auth/_appshell/dashboard': typeof AdminAuthAppshellDashboardRoute
   '/user/_auth/_appshell/dashboard': typeof UserAuthAppshellDashboardRoute
   '/user/_auth/_appshell/projects': typeof UserAuthAppshellProjectsRoute
+  '/user/_auth/project/submit': typeof UserAuthProjectSubmitRoute
   '/user/_auth/_appshell/company/new': typeof UserAuthAppshellCompanyNewRoute
-  '/user/_auth/_appshell/project/submit': typeof UserAuthAppshellProjectSubmitRoute
   '/admin/_auth/_appshell/projects/': typeof AdminAuthAppshellProjectsIndexRoute
   '/admin/_auth/_appshell/projects/$projectId/details': typeof AdminAuthAppshellProjectsProjectIdDetailsRoute
   '/admin/_auth/_appshell/projects/$projectId/submission': typeof AdminAuthAppshellProjectsProjectIdSubmissionRoute
@@ -416,8 +415,8 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/user/dashboard'
     | '/user/projects'
-    | '/user/company/new'
     | '/user/project/submit'
+    | '/user/company/new'
     | '/admin/projects'
     | '/admin/projects/$projectId/details'
     | '/admin/projects/$projectId/submission'
@@ -430,8 +429,8 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/user/dashboard'
     | '/user/projects'
-    | '/user/company/new'
     | '/user/project/submit'
+    | '/user/company/new'
     | '/admin/projects'
     | '/admin/projects/$projectId/details'
     | '/admin/projects/$projectId/submission'
@@ -450,8 +449,8 @@ export interface FileRouteTypes {
     | '/admin/_auth/_appshell/dashboard'
     | '/user/_auth/_appshell/dashboard'
     | '/user/_auth/_appshell/projects'
+    | '/user/_auth/project/submit'
     | '/user/_auth/_appshell/company/new'
-    | '/user/_auth/_appshell/project/submit'
     | '/admin/_auth/_appshell/projects/'
     | '/admin/_auth/_appshell/projects/$projectId/details'
     | '/admin/_auth/_appshell/projects/$projectId/submission'
@@ -534,8 +533,8 @@ export const routeTree = rootRoute
       "children": [
         "/user/_auth/_appshell/dashboard",
         "/user/_auth/_appshell/projects",
-        "/user/_auth/_appshell/company/new",
-        "/user/_auth/_appshell/project/submit"
+        "/user/_auth/project/submit",
+        "/user/_auth/_appshell/company/new"
       ]
     },
     "/admin/": {
@@ -558,12 +557,12 @@ export const routeTree = rootRoute
       "filePath": "user/_auth._appshell.projects.tsx",
       "parent": "/user/_auth"
     },
-    "/user/_auth/_appshell/company/new": {
-      "filePath": "user/_auth._appshell.company.new.tsx",
+    "/user/_auth/project/submit": {
+      "filePath": "user/_auth.project.submit.tsx",
       "parent": "/user/_auth"
     },
-    "/user/_auth/_appshell/project/submit": {
-      "filePath": "user/_auth._appshell.project.submit.tsx",
+    "/user/_auth/_appshell/company/new": {
+      "filePath": "user/_auth._appshell.company.new.tsx",
       "parent": "/user/_auth"
     },
     "/admin/_auth/_appshell/projects/": {

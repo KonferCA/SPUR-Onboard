@@ -1,13 +1,13 @@
+export type FormFieldType =
+    | 'textinput'
+    | 'date'
+    | 'dropdown'
+    | 'textarea'
+    | 'file'
+    | 'team';
 export interface FormField {
     id: string;
-    type:
-        | 'text'
-        | 'date'
-        | 'dropdown'
-        | 'textarea'
-        | 'file'
-        | 'team'
-        | 'social-links';
+    type: FormFieldType;
     label: string;
     required?: boolean;
     placeholder?: string;
