@@ -1,7 +1,7 @@
 export type FormFieldType =
     | 'textinput'
     | 'date'
-    | 'dropdown'
+    | 'select'
     | 'textarea'
     | 'file'
     | 'team';
