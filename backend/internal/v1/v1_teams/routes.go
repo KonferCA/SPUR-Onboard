@@ -1,23 +1,34 @@
 package v1_teams
 
 import (
-	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/interfaces"
 	"KonferCA/SPUR/internal/middleware"
+	"KonferCA/SPUR/internal/permissions"
 	"github.com/labstack/echo/v4"
 )
 
 func SetupRoutes(e *echo.Group, s interfaces.CoreServer) {
 	h := &Handler{server: s}
 
+	// Create middleware instances
+	authBoth := middleware.Auth(s.GetDB(), 
+		permissions.PermStartupOwner,  // Startup owners
+		permissions.PermViewAllProjects, // Investors
+	)
+	authOwner := middleware.Auth(s.GetDB(), permissions.PermStartupOwner)
+	companyAccess := middleware.CompanyAccess(s.GetDB())
+
+	// Create base group for team routes
 	team := e.Group("/companies/:company_id/team")
+
+	// GET routes - require either startup owner or investor permission
+	teamGet := team.Group("", authBoth, companyAccess)
+	teamGet.GET("", h.handleGetTeamMembers)
+	teamGet.GET("/:member_id", h.handleGetTeamMember)
 	
-	// For GET routes, we need to allow both owners and investors
-	team.GET("", h.handleGetTeamMembers, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner, db.UserRoleInvestor))
-	team.GET("/:member_id", h.handleGetTeamMember, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner, db.UserRoleInvestor))
-	
-	// For modification routes, only allow owners
-	team.POST("", h.handleAddTeamMember, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner))
-	team.PUT("/:member_id", h.handleUpdateTeamMember, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner))
-	team.DELETE("/:member_id", h.handleDeleteTeamMember, middleware.Auth(s.GetDB(), db.UserRoleStartupOwner))
+	// Modification routes - require startup owner permission
+	teamModify := team.Group("", authOwner, companyAccess)
+	teamModify.POST("", h.handleAddTeamMember)
+	teamModify.PUT("/:member_id", h.handleUpdateTeamMember)
+	teamModify.DELETE("/:member_id", h.handleDeleteTeamMember)
 }

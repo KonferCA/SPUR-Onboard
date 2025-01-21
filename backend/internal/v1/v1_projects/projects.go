@@ -13,6 +13,7 @@ import (
 	"strings"
 	"os"
 	"net/http"
+	"KonferCA/SPUR/internal/permissions"
 )
 
 /*
@@ -39,6 +40,10 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 	user, err := getUserFromContext(c)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	if !permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermSubmitProject) {
+		return v1_common.NewForbiddenError("not authorized to create projects")
 	}
 
 	// Get company owned by user
@@ -136,6 +141,12 @@ func (h *Handler) handleGetProject(c echo.Context) error {
 	user, err := getUserFromContext(c)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	isAdmin := permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermViewAllProjects)
+	isOwner := permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermSubmitProject)
+	if !isAdmin && !isOwner {
+		return v1_common.NewForbiddenError("not authorized to view this project")
 	}
 
 	// Get company owned by user
@@ -618,6 +629,10 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
+	if !permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermSubmitProject) {
+		return v1_common.NewForbiddenError("not authorized to submit projects")
+	}
+
 	// Get company owned by user
 	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
 	if err != nil {
@@ -776,9 +791,9 @@ func (h *Handler) handleCreateAnswer(c echo.Context) error {
 
 	// Create the answer
 	answer, err := h.server.GetQueries().CreateProjectAnswer(c.Request().Context(), db.CreateProjectAnswerParams{
-		ProjectID:  projectID,
-		QuestionID: req.QuestionID,
-		Answer:     req.Content,
+			ProjectID:  projectID,
+			QuestionID: req.QuestionID,
+			Answer:     req.Content,
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create answer", err)

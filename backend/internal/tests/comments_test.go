@@ -14,7 +14,20 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"KonferCA/SPUR/internal/permissions"
 )
+
+// CommentResponse represents the response format for comment operations
+type CommentResponse struct {
+	ID          string `json:"id"`
+	ProjectID   string `json:"project_id"`
+	TargetID    string `json:"target_id"`
+	Comment     string `json:"comment"`
+	CommenterID string `json:"commenter_id"`
+	Resolved    bool   `json:"resolved"`
+	CreatedAt   int64  `json:"created_at"`
+	UpdatedAt   int64  `json:"updated_at"`
+}
 
 func TestCommentEndpoints(t *testing.T) {
 	// Setup test environment
@@ -24,17 +37,27 @@ func TestCommentEndpoints(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Create test user and get auth token
-	userID, email, password, err := createTestUser(ctx, s)
-	require.NoError(t, err)
+	// Create test user with project owner permissions
+	userID, email, password, err := createTestUser(ctx, s, permissions.PermSubmitProject | permissions.PermCommentOnProjects)
+	assert.NoError(t, err)
+	defer removeTestUser(ctx, email, s)
 
-	// Update user role to admin and verify email
+	// Create admin user with comment management permissions
+	_, adminEmail, adminPassword, err := createTestAdmin(ctx, s)
+	assert.NoError(t, err)
+	defer removeTestUser(ctx, adminEmail, s)
+
+	// Get admin token
+	adminToken := loginAndGetToken(t, s, adminEmail, adminPassword)
+	assert.NotEmpty(t, adminToken)
+
+	// Update user permissions and verify email
 	_, err = s.GetDB().Exec(ctx, `
 		UPDATE users 
-		SET role = 'admin',
-			email_verified = true
-		WHERE id = $1
-	`, userID)
+			SET permissions = $1,
+					email_verified = true
+		WHERE id = $2
+	`, int32(permissions.PermAdmin | permissions.PermSubmitProject | permissions.PermCommentOnProjects), userID)
 	require.NoError(t, err)
 
 	// Create test company with the user as owner
@@ -59,12 +82,13 @@ func TestCommentEndpoints(t *testing.T) {
 			id, 
 			company_id,
 			title,
+			description,
 			status, 
 			created_at, 
 			updated_at
 		)
-		VALUES ($1, $2, $3, $4, extract(epoch from now()), extract(epoch from now()))
-	`, projectID, companyID, "Test Project", "draft")
+		VALUES ($1, $2, $3, $4, $5, extract(epoch from now()), extract(epoch from now()))
+	`, projectID, companyID, "Test Project", "Test Description", "draft")
 	require.NoError(t, err)
 
 	// Login to get access token
@@ -85,6 +109,7 @@ func TestCommentEndpoints(t *testing.T) {
 	err = json.Unmarshal(rec.Body.Bytes(), &loginResp)
 	require.NoError(t, err)
 	accessToken := loginResp["access_token"].(string)
+	require.NotEmpty(t, accessToken)
 
 	// Create test comment
 	commentID := uuid.New()
@@ -118,6 +143,7 @@ func TestCommentEndpoints(t *testing.T) {
 					"comment":    "This is a test comment",
 					"target_id": targetID.String(),
 				},
+				projectID:    projectID.String(),
 				expectedCode: http.StatusCreated,
 				expectError:  false,
 			},
@@ -127,6 +153,7 @@ func TestCommentEndpoints(t *testing.T) {
 					"comment":    "",
 					"target_id": targetID.String(),
 				},
+				projectID:    projectID.String(),
 				expectedCode: http.StatusBadRequest,
 				expectError:  true,
 				errorMessage: "Invalid request data",
@@ -149,16 +176,11 @@ func TestCommentEndpoints(t *testing.T) {
 				jsonBody, err := json.Marshal(tc.body)
 				require.NoError(t, err)
 
-				testProjectID := projectID.String()
-				if tc.projectID != "" {
-					testProjectID = tc.projectID
-				}
-
 				req := httptest.NewRequest(http.MethodPost,
-					fmt.Sprintf("/api/v1/project/%s/comments", testProjectID),
+					fmt.Sprintf("/api/v1/project/%s/comments", tc.projectID),
 					bytes.NewReader(jsonBody))
 				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-				req.Header.Set(echo.HeaderAuthorization, "Bearer "+accessToken)
+				req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", accessToken))
 
 				rec := httptest.NewRecorder()
 				s.GetEcho().ServeHTTP(rec, req)
@@ -204,8 +226,8 @@ func TestCommentEndpoints(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodGet,
 			fmt.Sprintf("/api/v1/project/%s/comments", projectID),
-				nil)
-		req.Header.Set(echo.HeaderAuthorization, "Bearer "+accessToken)
+			nil)
+		req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", accessToken))
 		rec := httptest.NewRecorder()
 
 		s.GetEcho().ServeHTTP(rec, req)
@@ -227,7 +249,7 @@ func TestCommentEndpoints(t *testing.T) {
 	t.Run("Update Comment", func(t *testing.T) {
 		// Create a test comment
 		commentID := uuid.New()
-		targetID := uuid.New() // Add target_id
+		targetID := uuid.New()
 		_, err := s.GetDB().Exec(ctx, `
 			INSERT INTO project_comments (
 				id, 
@@ -242,27 +264,27 @@ func TestCommentEndpoints(t *testing.T) {
 		`, commentID, projectID, targetID, "Original comment", userID)
 		require.NoError(t, err)
 
-		tests := []struct {
+		testCases := []struct {
 			name         string
 			commentID    string
-			payload      map[string]interface{}
+			body         map[string]interface{}
 			expectedCode int
 			expectError  bool
 			errorMessage string
 		}{
 			{
-				name:      "valid_update",
+				name:      "valid update",
 				commentID: commentID.String(),
-				payload: map[string]interface{}{
+				body: map[string]interface{}{
 					"comment": "Updated comment",
 				},
 				expectedCode: http.StatusOK,
 				expectError:  false,
 			},
 			{
-				name:      "empty_comment",
+				name:      "empty comment",
 				commentID: commentID.String(),
-				payload: map[string]interface{}{
+				body: map[string]interface{}{
 					"comment": "",
 				},
 				expectedCode: http.StatusBadRequest,
@@ -270,10 +292,10 @@ func TestCommentEndpoints(t *testing.T) {
 				errorMessage: "Invalid request",
 			},
 			{
-				name:      "non-existent_comment",
+				name:      "non-existent comment",
 				commentID: uuid.New().String(),
-				payload: map[string]interface{}{
-					"comment": "Updated comment",
+				body: map[string]interface{}{
+					"comment": "This comment shouldn't work",
 				},
 				expectedCode: http.StatusInternalServerError,
 				expectError:  true,
@@ -281,18 +303,18 @@ func TestCommentEndpoints(t *testing.T) {
 			},
 		}
 
-		for _, tc := range tests {
+		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				jsonBody, _ := json.Marshal(tc.payload)
-				req := httptest.NewRequest(
-					http.MethodPut,
-					fmt.Sprintf("/api/v1/project/%s/comments/%s", projectID, tc.commentID),
-					bytes.NewBuffer(jsonBody),
-				)
-				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-				req.Header.Set(echo.HeaderAuthorization, "Bearer "+accessToken)
-				rec := httptest.NewRecorder()
+				jsonBody, err := json.Marshal(tc.body)
+				require.NoError(t, err)
 
+				req := httptest.NewRequest(http.MethodPut,
+					fmt.Sprintf("/api/v1/project/%s/comments/%s", projectID, tc.commentID),
+					bytes.NewReader(jsonBody))
+				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+				req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", accessToken))
+
+				rec := httptest.NewRecorder()
 				s.GetEcho().ServeHTTP(rec, req)
 				assert.Equal(t, tc.expectedCode, rec.Code)
 
@@ -309,6 +331,58 @@ func TestCommentEndpoints(t *testing.T) {
 				}
 			})
 		}
+	})
+
+	t.Run("Resolve Comment", func(t *testing.T) {
+		// Create a new comment for resolve/unresolve tests
+		resolveCommentID := uuid.New()
+		_, err := s.GetDB().Exec(ctx, `
+			INSERT INTO project_comments (
+				id,
+				project_id,
+				target_id,
+				comment,
+				commenter_id,
+				created_at,
+				updated_at,
+				resolved
+			)
+			VALUES ($1, $2, $3, $4, $5, extract(epoch from now()), extract(epoch from now()), false)
+		`, resolveCommentID, projectID, targetID, "Test comment for resolve", userID)
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectID, resolveCommentID),
+			nil)
+		req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", accessToken))
+		rec := httptest.NewRecorder()
+
+		s.GetEcho().ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var response CommentResponse
+		err = json.Unmarshal(rec.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, resolveCommentID.String(), response.ID)
+		assert.True(t, response.Resolved)
+
+		// Use the same comment for unresolve test
+		t.Run("Unresolve Comment", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost,
+				fmt.Sprintf("/api/v1/project/%s/comments/%s/unresolve", projectID, resolveCommentID),
+				nil)
+			req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", accessToken))
+			rec := httptest.NewRecorder()
+
+			s.GetEcho().ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			var response CommentResponse
+			err := json.Unmarshal(rec.Body.Bytes(), &response)
+			assert.NoError(t, err)
+			assert.Equal(t, resolveCommentID.String(), response.ID)
+			assert.False(t, response.Resolved)
+		})
 	})
 
 	// Cleanup

@@ -1,11 +1,6 @@
 package tests
 
 import (
-	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/jwt"
-	"KonferCA/SPUR/internal/server"
-	"KonferCA/SPUR/internal/v1/v1_auth"
-
 	"bytes"
 	"context"
 	"encoding/json"
@@ -17,11 +12,19 @@ import (
 	"testing"
 	"time"
 
+	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/jwt"
+	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/server"
+	"KonferCA/SPUR/internal/v1/v1_auth"
+
+	"github.com/PuerkitoBio/goquery"
 	golangJWT "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
-	"github.com/PuerkitoBio/goquery"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/bcrypt"
 )
 
 /*
@@ -70,30 +73,31 @@ func TestServer(t *testing.T) {
 			defer cancel()
 
 			// create testuser
+			hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("testpass123"), bcrypt.DefaultCost)
 			userID := uuid.New()
 			_, err = s.DBPool.Exec(ctx, `
-                INSERT INTO users (
-                    id,
-                    email, 
-                    password, 
-                    role, 
-                    email_verified, 
-                    token_salt
-                )
-                VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))`,
-				userID, email, "hashedpassword", db.UserRoleStartupOwner, true)
-			if err != nil {
-				t.Fatalf("failed to create test user: %v", err)
-			}
+				INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
+				VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
+			`, userID, email, string(hashedPassword), 
+				int32(permissions.PermSubmitProject|permissions.PermManageTeam), true)
+			assert.NoError(t, err)
 
-			user, err := db.New(s.DBPool).GetUserByID(ctx, userID.String())
-			assert.Nil(t, err)
+			var user db.GetUserByIDRow
+			err = s.DBPool.QueryRow(ctx, "SELECT id, email, permissions, email_verified, token_salt FROM users WHERE id = $1", userID).Scan(
+				&user.ID,
+				&user.Email,
+				&user.Permissions,
+				&user.EmailVerified,
+				&user.TokenSalt,
+			)
+			assert.NoError(t, err)
+			assert.Equal(t, int32(permissions.PermSubmitProject|permissions.PermManageTeam), user.Permissions)
 
-			accessToken, _, err := jwt.GenerateWithSalt(userID.String(), user.Role, user.TokenSalt)
-			assert.Nil(t, err)
+			token, _, err := jwt.GenerateWithSalt(user.ID, user.TokenSalt)
+			assert.NoError(t, err)
 
 			req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/ami-verified", nil)
-			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 			rec := httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)
@@ -309,14 +313,13 @@ func TestServer(t *testing.T) {
 
 			// Get user from database
 			var user db.User
-			err = s.DBPool.QueryRow(ctx, "SELECT id, role, token_salt FROM users WHERE email = $1", email).Scan(&user.ID, &user.Role, &user.TokenSalt)
+			err = s.DBPool.QueryRow(ctx, "SELECT id, permissions, token_salt FROM users WHERE email = $1", email).Scan(&user.ID, &user.Permissions, &user.TokenSalt)
 			assert.NoError(t, err)
 
 			// Create about-to-expire refresh token
 			exp := time.Now().UTC().Add(2 * 24 * time.Hour)
 			claims := jwt.JWTClaims{
 				UserID:    user.ID,
-				Role:      user.Role,
 				TokenType: jwt.REFRESH_TOKEN_TYPE,
 				RegisteredClaims: golangJWT.RegisteredClaims{
 					ExpiresAt: golangJWT.NewNumericDate(exp),
@@ -378,11 +381,12 @@ func TestServer(t *testing.T) {
 			defer cancel()
 
 			// create new user to generate jwt
-			userID, email, _, err := createTestUser(ctx, s)
+			userID, email, _, err := createTestUser(ctx, s, permissions.PermStartupOwner)
+			require.NoError(t, err)
 			defer removeTestUser(ctx, email, s)
 
 			// the refresh token will be invalid since the salt is different
-			_, refreshToken, err := jwt.GenerateWithSalt(userID, db.UserRoleStartupOwner, []byte{0, 1, 2})
+			_, refreshToken, err := jwt.GenerateWithSalt(userID, []byte{0, 1, 2})
 			assert.NoError(t, err)
 
 			cookie := http.Cookie{
@@ -490,8 +494,9 @@ func TestServer(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 			defer cancel()
 
-			userID, email, _, err := createTestUser(ctx, s)
-			assert.NoError(t, err)
+			userID, email, _, err := createTestUser(ctx, s, permissions.PermStartupOwner)
+			require.NoError(t, err)
+			defer removeTestUser(ctx, email, s)
 
 			// Generate expired email token using helper
 			exp := time.Now().Add(-(time.Minute * 30)).UTC()
@@ -583,5 +588,30 @@ func TestServer(t *testing.T) {
 			assert.True(t, time.Now().After(tokenCookie.Expires))
 			assert.Equal(t, -1, tokenCookie.MaxAge)
 		})
+	})
+
+	t.Run("Test JWT Refresh Token", func(t *testing.T) {
+		// Create test user
+		userID := uuid.New().String()
+		_, refreshToken, err := jwt.GenerateWithSalt(userID, []byte{0, 1, 2})
+		assert.NoError(t, err)
+
+		// Set cookie with refresh token
+		cookie := &http.Cookie{
+			Name:     v1_auth.COOKIE_REFRESH_TOKEN,
+			Value:    refreshToken,
+			Path:     "/api/v1/auth/verify",
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+		}
+
+		// Create request with cookie
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/verify", nil)
+		req.AddCookie(cookie)
+		rec := httptest.NewRecorder()
+
+		s.GetEcho().ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 	})
 }

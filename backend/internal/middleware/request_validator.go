@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
 	"os"
@@ -35,8 +36,7 @@ type CustomValidator struct {
 
 /*
 NewRequestValidator creates and initializes a new CustomValidator with registered custom validation rules. The following custom validations are registered:
-  - valid_user_role: Validates user role assignments
-  - non_admin_role: Ensures role is valid but not admin
+  - valid_permissions: Validates user permissions
   - s3_url: Validates S3 bucket URLs
   - wallet_address: Validates cryptocurrency wallet addresses
   - linkedin_url: Validates LinkedIn profile URLs
@@ -47,8 +47,7 @@ Returns a configured CustomValidator
 func NewRequestValidator() *CustomValidator {
 	v := validator.New()
 
-	v.RegisterValidation("valid_user_role", validateUserRole)
-	v.RegisterValidation("non_admin_role", validateNonAdminRole)
+	v.RegisterValidation("valid_permissions", validatePermissions)
 	v.RegisterValidation("s3_url", validateS3URL)
 	v.RegisterValidation("wallet_address", validateWalletAddress)
 	v.RegisterValidation("linkedin_url", validateLinkedInURL)
@@ -73,55 +72,22 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 }
 
 /*
-validateUserRole checks if a field contains a valid user role.
-Supports validation of string fields, UserRole types, and UserRole pointers.
+validatePermissions checks if a field contains valid user permissions.
+Supports validation of uint32 fields.
 
-Returns true if the field contains a valid user role, false otherwise.
+Returns true if the field contains valid permissions, false otherwise.
 */
-func validateUserRole(fl validator.FieldLevel) bool {
+func validatePermissions(fl validator.FieldLevel) bool {
 	field := fl.Field()
 
-	if field.Kind() == reflect.String {
-		str := field.String()
-		ur := db.UserRole(str)
+	if field.Kind() == reflect.Uint32 {
+		perms := uint32(field.Uint())
+		
+		// Get all valid permission bits dynamically
+		validPermissionsMask := permissions.GetAllPermissionBits()
 
-		return ur.Valid()
-	}
-
-	if field.Type() == reflect.TypeOf(db.UserRole("")) {
-		ur := field.Interface().(db.UserRole)
-
-		return ur.Valid()
-	}
-
-	if field.Type() == reflect.TypeOf((*db.UserRole)(nil)) && !field.IsNil() {
-		ur := field.Interface().(*db.UserRole)
-
-		return ur.Valid()
-	}
-
-	return false
-}
-
-/*
-validateNonAdminRole ensures a field contains a valid non-admin user role.
-Supports validation of both string fields and UserRole types.
-
-Returns true if the field contains a valid non-admin role, false otherwise.
-*/
-func validateNonAdminRole(fl validator.FieldLevel) bool {
-	field := fl.Field()
-
-	if field.Kind() == reflect.String {
-		ur := db.UserRole(field.String())
-
-		return ur == db.UserRoleStartupOwner || ur == db.UserRoleInvestor
-	}
-
-	if field.Type() == reflect.TypeOf(db.UserRole("")) {
-		ur := field.Interface().(db.UserRole)
-
-		return ur == db.UserRoleStartupOwner || ur == db.UserRoleInvestor
+		// Check if permissions only contain valid bits and are non-zero
+		return perms != 0 && (perms & ^validPermissionsMask) == 0
 	}
 
 	return false
@@ -239,10 +205,8 @@ Returns a formatted error message string.
 */
 func formatErrorMessage(field, tag, param string) string {
 	switch tag {
-	case "valid_user_role":
-		return fmt.Sprintf("%s must be a valid user role", field)
-	case "non_admin_role":
-		return fmt.Sprintf("%s cannot be an admin role", field)
+	case "valid_permissions":
+		return fmt.Sprintf("%s contains invalid permissions", field)
 	case "s3_url":
 		return fmt.Sprintf("%s must be a valid S3 URL", field)
 	case "wallet_address":

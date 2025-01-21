@@ -8,15 +8,14 @@ import (
 	"os"
 	"testing"
 
-	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/jwt"
-	"KonferCA/SPUR/internal/middleware"
-	"KonferCA/SPUR/internal/server"
-
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
+	"KonferCA/SPUR/internal/jwt"
+	"KonferCA/SPUR/internal/middleware"
+	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/server"
 )
 
 func TestJWTMiddleware(t *testing.T) {
@@ -47,19 +46,20 @@ func TestJWTMiddleware(t *testing.T) {
 		t.Fatalf("failed to clean up test user: %v", err)
 	}
 
-	// Create a test user directly in the database
+	// Create a test user with permissions
 	userID := uuid.New()
 	_, err = dbPool.Exec(ctx, `
 		INSERT INTO users (
 			id, 
 			email, 
 			password, 
-			role, 
+			permissions, 
 			email_verified, 
 			token_salt
 		)
 		VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
-	`, userID, "test@example.com", "hashedpassword", db.UserRoleStartupOwner, true)
+	`, userID, "test@example.com", "hashedpassword", 
+		int32(permissions.PermSubmitProject|permissions.PermManageTeam), true)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestJWTMiddleware(t *testing.T) {
 	assert.NoError(t, err)
 	middlewareConfig := middleware.AuthConfig{
 		AcceptTokenType: jwt.ACCESS_TOKEN_TYPE,
-		AcceptUserRoles: []db.UserRole{db.UserRoleStartupOwner},
+		RequiredPermissions: []uint32{permissions.PermSubmitProject},
 	}
 	s.Echo.Use(middleware.AuthWithConfig(middlewareConfig, dbPool))
 
@@ -84,8 +84,8 @@ func TestJWTMiddleware(t *testing.T) {
 		t.Fatalf("failed to get user salt: %v", err)
 	}
 
-	// generate valid tokens using the actual salt
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(userID.String(), db.UserRoleStartupOwner, salt)
+	// generate valid tokens
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(userID.String(), salt)
 	assert.Nil(t, err)
 
 	tests := []struct {

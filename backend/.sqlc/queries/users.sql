@@ -1,5 +1,5 @@
 -- name: GetUserByID :one
-SELECT id, email, role, email_verified, token_salt
+SELECT id, email, permissions, email_verified, token_salt
 FROM users 
 WHERE id = $1;
 
@@ -11,9 +11,9 @@ SELECT EXISTS(SELECT 1 FROM users WHERE email = $1);
 
 -- name: NewUser :one
 INSERT INTO users
-(email, password, role)
+(email, password, permissions)
 VALUES
-($1, $2, $3) RETURNING id, email, email_verified, role, token_salt;
+($1, $2, $3) RETURNING id, email, email_verified, permissions, token_salt;
 
 -- name: GetUserByEmail :one
 SELECT * FROM users WHERE email = $1 LIMIT 1; 

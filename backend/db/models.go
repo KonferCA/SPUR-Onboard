@@ -78,67 +78,6 @@ func AllProjectStatusValues() []ProjectStatus {
 	}
 }
 
-type UserRole string
-
-const (
-	UserRoleAdmin        UserRole = "admin"
-	UserRoleStartupOwner UserRole = "startup_owner"
-	UserRoleInvestor     UserRole = "investor"
-)
-
-func (e *UserRole) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = UserRole(s)
-	case string:
-		*e = UserRole(s)
-	default:
-		return fmt.Errorf("unsupported scan type for UserRole: %T", src)
-	}
-	return nil
-}
-
-type NullUserRole struct {
-	UserRole UserRole `json:"user_role"`
-	Valid    bool     `json:"valid"` // Valid is true if UserRole is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullUserRole) Scan(value interface{}) error {
-	if value == nil {
-		ns.UserRole, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.UserRole.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullUserRole) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.UserRole), nil
-}
-
-func (e UserRole) Valid() bool {
-	switch e {
-	case UserRoleAdmin,
-		UserRoleStartupOwner,
-		UserRoleInvestor:
-		return true
-	}
-	return false
-}
-
-func AllUserRoleValues() []UserRole {
-	return []UserRole{
-		UserRoleAdmin,
-		UserRoleStartupOwner,
-		UserRoleInvestor,
-	}
-}
-
 type Company struct {
 	ID            string  `json:"id"`
 	OwnerID       string  `json:"owner_id"`
@@ -224,17 +163,20 @@ type Transaction struct {
 	FromAddress string         `json:"from_address"`
 	ToAddress   string         `json:"to_address"`
 	ValueAmount pgtype.Numeric `json:"value_amount"`
+	CreatedBy   string         `json:"created_by"`
+	CreatedAt   int64          `json:"created_at"`
+	UpdatedAt   int64          `json:"updated_at"`
 }
 
 type User struct {
-	ID            string   `json:"id"`
-	Email         string   `json:"email"`
-	Password      string   `json:"password"`
-	Role          UserRole `json:"role"`
-	EmailVerified bool     `json:"email_verified"`
-	CreatedAt     int64    `json:"created_at"`
-	UpdatedAt     int64    `json:"updated_at"`
-	TokenSalt     []byte   `json:"token_salt"`
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	Password      string `json:"password"`
+	Permissions   int32  `json:"permissions"`
+	EmailVerified bool   `json:"email_verified"`
+	CreatedAt     int64  `json:"created_at"`
+	UpdatedAt     int64  `json:"updated_at"`
+	TokenSalt     []byte `json:"token_salt"`
 }
 
 type VerifyEmailToken struct {

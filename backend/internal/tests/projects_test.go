@@ -3,6 +3,7 @@ package tests
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/server"
+	"KonferCA/SPUR/internal/permissions"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -67,7 +68,7 @@ func TestProjectEndpoints(t *testing.T) {
 
 	// Create test user and get auth token
 	ctx := context.Background()
-	userID, email, password, err := createTestUser(ctx, s)
+	userID, email, password, err := createTestUser(ctx, s, uint32(permissions.PermSubmitProject | permissions.PermViewAllProjects | permissions.PermManageTeam))
 	assert.NoError(t, err)
 	t.Logf("Created test user - ID: %s, Email: %s, Password: %s", userID, email, password)
 	defer removeTestUser(ctx, email, s)
@@ -443,12 +444,18 @@ func TestProjectEndpoints(t *testing.T) {
 
 	t.Run("Comment Resolution", func(t *testing.T) {
 		// Create an admin user for testing
-		_, adminEmail, adminPassword, err := createTestAdminUser(ctx, s)
+		adminID, adminEmail, adminPassword, err := createTestAdmin(ctx, s)
 		assert.NoError(t, err)
 		defer removeTestUser(ctx, adminEmail, s)
 
+		// Create admin's company
+		adminCompanyID, err := createTestCompany(ctx, s, adminID)
+		assert.NoError(t, err)
+		defer removeTestCompany(ctx, adminCompanyID, s)
+
 		// Login as admin
 		adminToken := loginAndGetToken(t, s, adminEmail, adminPassword)
+		require.NotEmpty(t, adminToken)
 
 		// Create a test comment first
 		commentBody := fmt.Sprintf(`{
@@ -464,13 +471,18 @@ func TestProjectEndpoints(t *testing.T) {
 		rec := httptest.NewRecorder()
 		s.GetEcho().ServeHTTP(rec, req)
 
-		assert.Equal(t, http.StatusCreated, rec.Code)
+		if !assert.Equal(t, http.StatusCreated, rec.Code) {
+			t.Logf("Create comment response: %s", rec.Body.String())
+			t.FailNow()
+		}
 
 		var commentResp map[string]interface{}
 		err = json.NewDecoder(rec.Body).Decode(&commentResp)
 		assert.NoError(t, err)
 
-		commentID := commentResp["id"].(string)
+		commentID, ok := commentResp["id"].(string)
+		assert.True(t, ok, "Response should contain comment ID")
+		assert.NotEmpty(t, commentID, "Comment ID should not be empty")
 
 		// Test resolving the comment
 		req = httptest.NewRequest(http.MethodPost,
@@ -503,4 +515,3 @@ func TestProjectEndpoints(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, rec.Code)
 	})
 }
-

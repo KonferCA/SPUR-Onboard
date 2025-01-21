@@ -19,10 +19,15 @@ INSERT INTO transactions (
     tx_hash,
     from_address,
     to_address,
-    value_amount
+    value_amount,
+    created_by,
+    created_at,
+    updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
-) RETURNING id, project_id, company_id, tx_hash, from_address, to_address, value_amount
+    $1, $2, $3, $4, $5, $6, $7, $8,
+    extract(epoch from now()),
+    extract(epoch from now())
+) RETURNING id, project_id, company_id, tx_hash, from_address, to_address, value_amount, created_by, created_at, updated_at
 `
 
 type AddTransactionParams struct {
@@ -33,6 +38,7 @@ type AddTransactionParams struct {
 	FromAddress string         `json:"from_address"`
 	ToAddress   string         `json:"to_address"`
 	ValueAmount pgtype.Numeric `json:"value_amount"`
+	CreatedBy   string         `json:"created_by"`
 }
 
 func (q *Queries) AddTransaction(ctx context.Context, arg AddTransactionParams) (Transaction, error) {
@@ -44,6 +50,7 @@ func (q *Queries) AddTransaction(ctx context.Context, arg AddTransactionParams) 
 		arg.FromAddress,
 		arg.ToAddress,
 		arg.ValueAmount,
+		arg.CreatedBy,
 	)
 	var i Transaction
 	err := row.Scan(
@@ -54,6 +61,9 @@ func (q *Queries) AddTransaction(ctx context.Context, arg AddTransactionParams) 
 		&i.FromAddress,
 		&i.ToAddress,
 		&i.ValueAmount,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

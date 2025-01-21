@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"KonferCA/SPUR/internal/v1/v1_common"
+	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/db"
 )
 
@@ -15,8 +16,21 @@ func (h *Handler) handleCreateTransaction(c echo.Context) error {
 		return err
 	}
 
+	// Get user from context and verify permissions
+	user := c.Get("user").(*db.GetUserByIDRow)
+	if !permissions.HasAnyPermission(uint32(user.Permissions), 
+		permissions.PermInvestInProjects,
+		permissions.PermManageInvestments,
+	) {
+		return v1_common.NewForbiddenError("not authorized to create transactions")
+	}
+
 	// Get project to verify it exists and get company_id
-	project, err := h.server.GetQueries().GetProjectByIDAdmin(c.Request().Context(), req.ProjectID)
+	project, err := h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
+		ID:        req.ProjectID,
+		CompanyID: "00000000-0000-0000-0000-000000000000", // Zero UUID since we want to check permissions
+		Column3:   uint32(user.Permissions),
+	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusNotFound, "Project not found", err)
 	}
@@ -36,6 +50,7 @@ func (h *Handler) handleCreateTransaction(c echo.Context) error {
 		FromAddress: req.FromAddress,
 		ToAddress:   req.ToAddress,
 		ValueAmount: numericAmount,
+		CreatedBy:   user.ID, // Track who created the transaction
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create transaction", err)
@@ -50,5 +65,6 @@ func (h *Handler) handleCreateTransaction(c echo.Context) error {
 		FromAddress: tx.FromAddress,
 		ToAddress:   tx.ToAddress,
 		ValueAmount: req.ValueAmount,
+		CreatedBy:   tx.CreatedBy,
 	})
 }
