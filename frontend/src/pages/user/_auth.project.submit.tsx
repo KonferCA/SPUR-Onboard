@@ -1,6 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-import { AnchorLinkItem, FileUpload, TextArea, TextInput } from '@components';
+import {
+    AnchorLinkItem,
+    Dropdown,
+    FileUpload,
+    TeamMembers,
+    TextArea,
+    TextInput,
+} from '@components';
 import type { FormData, FormField } from '@/types';
 import { getProjectFormQuestions } from '@/services/project';
 import { groupProjectQuestions, GroupedProjectQuestions } from '@/config/forms';
@@ -91,7 +98,27 @@ const SubmitProjectPage = () => {
                 );
                 break;
             case 'file':
-                Component = <FileUpload key={field.id} />;
+                Component = <FileUpload key={field.id} label={field.label} />;
+                break;
+            case 'team':
+                Component = (
+                    <TeamMembers
+                        value={formData[field.id] ?? []}
+                        key={field.id}
+                        onChange={(members) => handleChange(field.id, members)}
+                    />
+                );
+                break;
+            case 'select':
+                Component = (
+                    <Dropdown
+                        key={field.id}
+                        label={field.label}
+                        options={field.options ?? []}
+                        value={formData[field.id] ?? null}
+                        onChange={(value) => handleChange(field.id, value)}
+                    />
+                );
                 break;
 
             default:
@@ -143,7 +170,7 @@ const SubmitProjectPage = () => {
                         </ul>
                     </nav>
                 </div>
-                <div className="space-y-12 max-w-xl mx-auto mt-12">
+                <div className="space-y-12 lg:max-w-3xl mx-auto mt-12">
                     {groupedQuestions[currentStep].subSections.map(
                         (section) => (
                             <div
