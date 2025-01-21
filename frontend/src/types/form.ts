@@ -32,20 +32,6 @@ export interface SocialLink {
     type?: string;
 }
 
-export interface FormSection {
-    id: string;
-    title: string;
-    description?: string;
-    fields: FormField[];
-}
-
-export interface FormStep {
-    id: 'A' | 'B';
-    title: string;
-    subtitle: string;
-    sections: FormSection[];
-}
-
 export type FormData = {
     [key: string]: any;
 };
