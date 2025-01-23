@@ -11,6 +11,82 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type InputTypeEnum string
+
+const (
+	InputTypeEnumUrl       InputTypeEnum = "url"
+	InputTypeEnumFile      InputTypeEnum = "file"
+	InputTypeEnumTextarea  InputTypeEnum = "textarea"
+	InputTypeEnumTextinput InputTypeEnum = "textinput"
+	InputTypeEnumSelect    InputTypeEnum = "select"
+	InputTypeEnumTeam      InputTypeEnum = "team"
+	InputTypeEnumCheckbox  InputTypeEnum = "checkbox"
+	InputTypeEnumRadio     InputTypeEnum = "radio"
+)
+
+func (e *InputTypeEnum) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = InputTypeEnum(s)
+	case string:
+		*e = InputTypeEnum(s)
+	default:
+		return fmt.Errorf("unsupported scan type for InputTypeEnum: %T", src)
+	}
+	return nil
+}
+
+type NullInputTypeEnum struct {
+	InputTypeEnum InputTypeEnum `json:"input_type_enum"`
+	Valid         bool          `json:"valid"` // Valid is true if InputTypeEnum is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullInputTypeEnum) Scan(value interface{}) error {
+	if value == nil {
+		ns.InputTypeEnum, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.InputTypeEnum.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullInputTypeEnum) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.InputTypeEnum), nil
+}
+
+func (e InputTypeEnum) Valid() bool {
+	switch e {
+	case InputTypeEnumUrl,
+		InputTypeEnumFile,
+		InputTypeEnumTextarea,
+		InputTypeEnumTextinput,
+		InputTypeEnumSelect,
+		InputTypeEnumTeam,
+		InputTypeEnumCheckbox,
+		InputTypeEnumRadio:
+		return true
+	}
+	return false
+}
+
+func AllInputTypeEnumValues() []InputTypeEnum {
+	return []InputTypeEnum{
+		InputTypeEnumUrl,
+		InputTypeEnumFile,
+		InputTypeEnumTextarea,
+		InputTypeEnumTextinput,
+		InputTypeEnumSelect,
+		InputTypeEnumTeam,
+		InputTypeEnumCheckbox,
+		InputTypeEnumRadio,
+	}
+}
+
 type ProjectStatus string
 
 const (
@@ -99,12 +175,13 @@ type Project struct {
 }
 
 type ProjectAnswer struct {
-	ID         string `json:"id"`
-	ProjectID  string `json:"project_id"`
-	QuestionID string `json:"question_id"`
-	Answer     string `json:"answer"`
-	CreatedAt  int64  `json:"created_at"`
-	UpdatedAt  int64  `json:"updated_at"`
+	ID          string `json:"id"`
+	ProjectID   string `json:"project_id"`
+	QuestionID  string `json:"question_id"`
+	InputTypeID string `json:"input_type_id"`
+	Answer      string `json:"answer"`
+	CreatedAt   int64  `json:"created_at"`
+	UpdatedAt   int64  `json:"updated_at"`
 }
 
 type ProjectComment struct {
@@ -119,29 +196,38 @@ type ProjectComment struct {
 }
 
 type ProjectDocument struct {
-	ID        string `json:"id"`
-	ProjectID string `json:"project_id"`
-	Name      string `json:"name"`
-	Url       string `json:"url"`
-	Section   string `json:"section"`
-	CreatedAt int64  `json:"created_at"`
-	UpdatedAt int64  `json:"updated_at"`
+	ID         string `json:"id"`
+	ProjectID  string `json:"project_id"`
+	QuestionID string `json:"question_id"`
+	Name       string `json:"name"`
+	Url        string `json:"url"`
+	Section    string `json:"section"`
+	SubSection string `json:"sub_section"`
+	CreatedAt  int64  `json:"created_at"`
+	UpdatedAt  int64  `json:"updated_at"`
 }
 
 type ProjectQuestion struct {
-	ID              string   `json:"id"`
-	Question        string   `json:"question"`
-	Section         string   `json:"section"`
-	InputType       string   `json:"input_type"`
-	Options         []string `json:"options"`
-	SubSection      string   `json:"sub_section"`
-	SectionOrder    int32    `json:"section_order"`
-	SubSectionOrder int32    `json:"sub_section_order"`
-	QuestionOrder   int32    `json:"question_order"`
-	Required        bool     `json:"required"`
-	Validations     *string  `json:"validations"`
-	CreatedAt       int64    `json:"created_at"`
-	UpdatedAt       int64    `json:"updated_at"`
+	ID              string `json:"id"`
+	Question        string `json:"question"`
+	Section         string `json:"section"`
+	SubSection      string `json:"sub_section"`
+	SectionOrder    int32  `json:"section_order"`
+	SubSectionOrder int32  `json:"sub_section_order"`
+	QuestionOrder   int32  `json:"question_order"`
+	Required        bool   `json:"required"`
+	CreatedAt       int64  `json:"created_at"`
+	UpdatedAt       int64  `json:"updated_at"`
+}
+
+type QuestionInputType struct {
+	ID          string        `json:"id"`
+	QuestionID  string        `json:"question_id"`
+	InputType   InputTypeEnum `json:"input_type"`
+	Options     []string      `json:"options"`
+	Validations []byte        `json:"validations"`
+	CreatedAt   int64         `json:"created_at"`
+	UpdatedAt   int64         `json:"updated_at"`
 }
 
 type TeamMember struct {

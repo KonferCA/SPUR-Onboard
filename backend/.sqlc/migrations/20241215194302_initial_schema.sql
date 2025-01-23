@@ -67,22 +67,43 @@ CREATE TABLE project_questions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     question varchar NOT NULL,
     section varchar NOT NULL,
-    input_type varchar(255) NOT NULL, -- the type of input the question is for frontend use.
-    options varchar(255)[], -- optional options for inpyt types: checkbox, select, radio
     sub_section varchar NOT NULL,
     section_order int NOT NULL, -- defines the section order, aka step in the frontend
     sub_section_order int NOT NULL, -- defines in which order the sub-section is within the section
     question_order int NOT NULL, -- defines in which order the question appears in the sub-section
     required boolean NOT NULL DEFAULT false,
-    validations varchar,
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 ); 
 
+
+CREATE TYPE input_type_enum AS ENUM (
+    'url',
+    'file',
+    'textarea',
+    'textinput',
+    'select',
+    'team',
+    'checkbox',
+    'radio'
+);
+
+-- New table to handle multiple input types per question
+CREATE TABLE question_input_types (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    question_id uuid NOT NULL REFERENCES project_questions(id) ON DELETE CASCADE,
+    input_type input_type_enum NOT NULL,
+    options varchar(255)[], -- For input types that need options
+    validations jsonb, -- Store validations as JSON for more flexibility
+    created_at bigint NOT NULL DEFAULT extract(epoch from now()),
+    updated_at bigint NOT NULL DEFAULT extract(epoch from now())
+);
+
 CREATE TABLE IF NOT EXISTS project_answers (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    question_id uuid NOT NULL REFERENCES project_questions(id),
+    question_id uuid NOT NULL REFERENCES project_questions(id) ON DELETE CASCADE,
+    input_type_id uuid NOT NULL REFERENCES question_input_types(id) ON DELETE CASCADE,
     answer varchar NOT NULL DEFAULT '',
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now()),
@@ -148,6 +169,7 @@ DROP TABLE IF EXISTS transactions;
 DROP TABLE IF EXISTS project_comments;
 DROP TABLE IF EXISTS project_documents;
 DROP TABLE IF EXISTS project_answers;
+DROP TABLE IF EXISTS question_input_types;
 DROP TABLE IF EXISTS project_questions;
 DROP TABLE IF EXISTS projects;
 DROP TABLE IF EXISTS team_members;
@@ -156,4 +178,6 @@ DROP TABLE IF EXISTS verify_email_tokens;
 DROP TABLE IF EXISTS users;
 
 DROP TYPE IF EXISTS project_status;
+DROP TYPE IF EXISTS user_role;
+DROP TYPE IF EXISTS input_type_enum;
 -- +goose StatementEnd

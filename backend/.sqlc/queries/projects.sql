@@ -48,31 +48,39 @@ JOIN project_questions pq ON pa.question_id = pq.id
 WHERE pa.project_id = $1
 ORDER BY pq.section, pq.id;
 
+
 -- name: CreateProjectAnswers :many
-INSERT INTO project_answers (id, project_id, question_id, answer)
+INSERT INTO project_answers (id, project_id, question_id, input_type_id, answer)
 SELECT 
     gen_random_uuid(),
     $1,  -- project_id
     pq.id,
+    qit.id, -- input_type_id
     ''   -- empty default answer
 FROM project_questions pq
-RETURNING *; 
+JOIN question_input_types qit ON qit.question_id = pq.id
+RETURNING *;
+
 
 -- name: CreateProjectDocument :one
 INSERT INTO project_documents (
     id,
     project_id,
+    question_id,
     name,
     url,
     section,
+    sub_section,
     created_at,
     updated_at
 ) VALUES (
     gen_random_uuid(),
     $1, -- project_id
-    $2, -- name
-    $3, -- url
-    $4, -- section
+    $2, -- question_id
+    $3, -- name
+    $4, -- url
+    $5, -- section
+    $6, -- sub_section
     extract(epoch from now()),
     extract(epoch from now())
 ) RETURNING *;
@@ -107,22 +115,23 @@ ORDER BY created_at DESC;
 
 -- name: GetProjectQuestions :many
 SELECT 
-    id,
-    question,
-    section,
-    sub_section,
-    section_order,
-    sub_section_order,
-    question_order,
-    input_type,
-    options,
-    required,
-    validations
-FROM project_questions
+    pq.id,
+    pq.question,
+    pq.section,
+    pq.sub_section,
+    pq.section_order,
+    pq.sub_section_order,
+    pq.question_order,
+    qit.input_type,
+    qit.options,
+    pq.required,
+    qit.validations
+FROM project_questions pq
+JOIN question_input_types qit ON qit.question_id = pq.id
 ORDER BY
-    section_order,
-    sub_section_order,
-    question_order;
+    pq.section_order,
+    pq.sub_section_order,
+    pq.question_order;
 
 -- name: UpdateProjectStatus :exec
 UPDATE projects 
@@ -145,12 +154,14 @@ LIMIT 1;
 INSERT INTO project_answers (
     project_id,
     question_id,
+    input_type_id,
     answer
 ) VALUES (
     $1, -- project_id
     $2, -- question_id
-    $3  -- answer
-) RETURNING *; 
+    $3, -- input_type_id
+    $4  -- answer
+) RETURNING *;
 
 -- name: GetProjectComments :many
 SELECT * FROM project_comments
