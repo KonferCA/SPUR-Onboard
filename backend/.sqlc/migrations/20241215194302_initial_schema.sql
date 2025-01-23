@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS project_documents (
     name varchar NOT NULL,
     url varchar NOT NULL,
     section varchar NOT NULL DEFAULT 'overall',
+    sub_section varchar NOT NULL,
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
