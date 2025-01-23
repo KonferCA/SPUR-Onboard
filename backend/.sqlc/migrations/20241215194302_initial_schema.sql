@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS projects (
 CREATE TABLE project_questions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     question varchar NOT NULL,
-    section varchar NOT NULL DEFAULT 'overall',
+    section varchar NOT NULL,
     input_type varchar(255) NOT NULL, -- the type of input the question is for frontend use.
     options varchar(255)[], -- optional options for inpyt types: checkbox, select, radio
     sub_section varchar NOT NULL,
