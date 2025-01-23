@@ -6,8 +6,8 @@
 -- SECTION: The Basics
 INSERT INTO project_questions (section_order, sub_section_order, question_order, question, section, sub_section, input_type, options, required, validations) VALUES 
     -- SUB-SECTION: Company Pitch
-    (0, 0, 0, 'Include a link to a 5-minute video of you or your company pitching itself.', 'The Basics', 'Company Pitch', 'textinput', NULL, false, 'url'),
-    (0, 0, 1, 'Please upload a pitch deck.', 'The Basics', 'Company Pitch', 'textinput|file', NULL, false, 'url'),
+    (0, 0, 0, 'Include a link to a 5-minute video of you or your company pitching itself.', 'The Basics', 'Company Pitch', 'textinput', NULL, false, 'textinput:"url"'),
+    (0, 0, 1, 'Please upload a pitch deck. (Upload file or URL)', 'The Basics', 'Company Pitch', 'textinput|file', NULL, false, 'textinput:"url"'),
 
     -- SUB-SECTION: Business Overview
     (0, 1, 0, 'What is the core product or service, and what problem does it solve?', 'The Basics', 'Business Overview', 'textarea', NULL, true, ''),
@@ -22,8 +22,8 @@ INSERT INTO project_questions (section_order, sub_section_order, question_order,
     (0, 2, 2, 'What is the total addressable market (TAM), and how much can the startup realistically capture?', 'The Basics', 'Market Analysis & Research', 'textarea', NULL, true, ''),
     (0, 2, 3, 'What are the main market trends and drivers?', 'The Basics', 'Market Analysis & Research', 'textarea', NULL, false, ''),
     (0, 2, 4, 'Are there any significant barriers to entry or competitive advantages?', 'The Basics', 'Market Analysis & Research', 'textarea', NULL, false, ''),
-    (0, 2, 5, 'Do you have any market research-related documents you''d like to inlcude?', 'The Basics', 'Market Analysis & Research', 'textinput|file', NULL, false, 'url'),
-    (0, 2, 6, 'Do you have any customer data-related documents you''d like to include?', 'The Basics', 'Market Analysis & Research', 'textinput|file', NULL, false, 'url'),
+    (0, 2, 5, 'Do you have any market research-related documents you''d like to inlcude? (Upload file or URL)', 'The Basics', 'Market Analysis & Research', 'textinput|file', NULL, false, 'textinput:"url"'),
+    (0, 2, 6, 'Do you have any customer data-related documents you''d like to include? (Upload file or URL)', 'The Basics', 'Market Analysis & Research', 'textinput|file', NULL, false, 'textinput:"url"'),
 
     -- SUB-SECTION: Product or Service
     (0, 3, 0, 'What stage of development is the product in (idea, prototype, MVP, production)?', 'The Basics', 'Product or Service', 'select', '{Idea,Prototype,MVP,Production}', true, ''),
@@ -62,7 +62,7 @@ INSERT INTO project_questions (section_order, sub_section_order, question_order,
     (0, 8, 1, 'Are the ownership and equity structures clear and documented?', 'The Basics', 'Legal and Compliance', 'textinput', NULL, true, ''),
     (0, 8, 2, 'Are there any outstanding legal disputes or liabilities?', 'The Basics', 'Legal and Compliance', 'textinput', NULL, true, ''),
     (0, 8, 3, 'Does the company comply with industry-specific regulations?', 'The Basics', 'Legal and Compliance', 'textinput', NULL, true, ''),
-    (0, 8, 4, 'Do you have any contracts, agreements, or letters of intent you''d like to include?', 'The Basics', 'Legal and Compliance', 'textinput|file', NULL, false, 'url');
+    (0, 8, 4, 'Do you have any contracts, agreements, or letters of intent you''d like to include? (Upload file or URL)', 'The Basics', 'Legal and Compliance', 'textinput|file', NULL, false, 'textinput:"url"');
 
 -- SECTION: The Team
 INSERT INTO project_questions (section_order, sub_section_order, question_order, question, section, sub_section, input_type, options, required, validations) VALUES 
