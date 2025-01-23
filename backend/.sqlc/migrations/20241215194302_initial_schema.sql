@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS project_answers (
 CREATE TABLE IF NOT EXISTS project_documents (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    question_id uuid NOT NULL REFERENCES project_questions(id) ON DELETE CASCADE,
     name varchar NOT NULL,
     url varchar NOT NULL,
     section varchar NOT NULL DEFAULT 'overall',
