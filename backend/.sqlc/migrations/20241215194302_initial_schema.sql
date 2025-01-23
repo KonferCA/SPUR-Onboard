@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS project_documents (
     question_id uuid NOT NULL REFERENCES project_questions(id) ON DELETE CASCADE,
     name varchar NOT NULL,
     url varchar NOT NULL,
-    section varchar NOT NULL DEFAULT 'overall',
+    section varchar NOT NULL,
     sub_section varchar NOT NULL,
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
