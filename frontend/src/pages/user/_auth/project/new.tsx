@@ -33,7 +33,7 @@ const questionGroupTitleSeparatorStyles = cva(
 );
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
-const SubmitProjectPage = () => {
+const NewProjectPage = () => {
     const [currentStep, setCurrentStep] = useState<number>(0);
     const [groupedQuestions, setSections] = useState<GroupedProjectQuestions[]>(
         []
@@ -63,70 +63,6 @@ const SubmitProjectPage = () => {
         // or new sections/questions are fetched
         [currentStep, groupedQuestions]
     );
-
-    const renderField = (field: FormField) => {
-        let Component = null;
-
-        switch (field.type) {
-            case 'textinput':
-                Component = (
-                    <TextInput
-                        key={field.id}
-                        name={field.label}
-                        label={field.label}
-                        required={field.required}
-                        value={formData[field.id] ?? ''}
-                        onChange={(e) => {
-                            handleChange(field.id, e.target.value);
-                        }}
-                    />
-                );
-                break;
-            case 'textarea':
-                Component = (
-                    <TextArea
-                        key={field.id}
-                        name={field.label}
-                        label={field.label}
-                        required={field.required}
-                        value={formData[field.id] ?? ''}
-                        rows={field.rows}
-                        onChange={(e) => {
-                            handleChange(field.id, e.target.value);
-                        }}
-                    />
-                );
-                break;
-            case 'file':
-                Component = <FileUpload key={field.id} label={field.label} />;
-                break;
-            case 'team':
-                Component = (
-                    <TeamMembers
-                        value={formData[field.id] ?? []}
-                        key={field.id}
-                        onChange={(members) => handleChange(field.id, members)}
-                    />
-                );
-                break;
-            case 'select':
-                Component = (
-                    <Dropdown
-                        key={field.id}
-                        label={field.label}
-                        options={field.options ?? []}
-                        value={formData[field.id] ?? null}
-                        onChange={(value) => handleChange(field.id, value)}
-                    />
-                );
-                break;
-
-            default:
-                break;
-        }
-
-        return Component;
-    };
 
     useEffect(() => {
         const f = async () => {
@@ -189,13 +125,7 @@ const SubmitProjectPage = () => {
                                 ></div>
                                 <div
                                     className={questionGroupQuestionsContainerStyles()}
-                                >
-                                    {section.questions.map((question) =>
-                                        question.inputFields.map((field) =>
-                                            renderField(field)
-                                        )
-                                    )}
-                                </div>
+                                ></div>
                             </div>
                         )
                     )}
@@ -205,6 +135,6 @@ const SubmitProjectPage = () => {
     );
 };
 
-export const Route = createFileRoute('/user/_auth/project/submit')({
-    component: SubmitProjectPage,
+export const Route = createFileRoute('/user/_auth/project/new')({
+    component: NewProjectPage,
 });
