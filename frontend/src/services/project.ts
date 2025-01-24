@@ -28,7 +28,8 @@ export interface ProjectQuestion {
     id: string;
     question: string;
     inputType: string;
-    options?: string[];
+    inputTypeId: string;
+    options: string[] | null;
     section: string;
     subSection: string;
     sectionOrder: number;
@@ -36,6 +37,7 @@ export interface ProjectQuestion {
     questionOrder: number;
     required: boolean;
     validations?: string;
+    answer: string;
 }
 
 // Frontend interfaces

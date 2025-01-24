@@ -14,6 +14,7 @@ import { groupProjectQuestions, GroupedProjectQuestions } from '@/config/forms';
 import { SectionedLayout } from '@/templates';
 import { cva } from 'class-variance-authority';
 import { sanitizeHtmlId } from '@/utils/html';
+import { QuestionInputs } from '@/components/ProjectForm/QuestionInputs';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -125,7 +126,17 @@ const NewProjectPage = () => {
                                 ></div>
                                 <div
                                     className={questionGroupQuestionsContainerStyles()}
-                                ></div>
+                                >
+                                    {section.questions.map((q) => (
+                                        <QuestionInputs
+                                            key={q.id}
+                                            question={q}
+                                            onChange={(k, v) => {
+                                                console.log(k, v);
+                                            }}
+                                        />
+                                    ))}
+                                </div>
                             </div>
                         )
                     )}

@@ -1,3 +1,5 @@
+import { ZodString } from 'zod';
+
 export type FormFieldType =
     | 'textinput'
     | 'date'
@@ -6,7 +8,7 @@ export type FormFieldType =
     | 'file'
     | 'team';
 export interface FormField {
-    id: string;
+    key: string;
     type: FormFieldType;
     label: string;
     required?: boolean;
@@ -17,6 +19,8 @@ export interface FormField {
         label: string;
         value: string;
     }>;
+    validations?: ZodString[];
+    value: any;
 }
 
 export interface TeamMember {
