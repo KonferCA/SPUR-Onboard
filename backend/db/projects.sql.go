@@ -607,86 +607,6 @@ func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestion
 	return items, nil
 }
 
-const getProjectQuestionsByProject = `-- name: GetProjectQuestionsByProject :many
-WITH all_questions AS (
-    SELECT 
-        pq.id,
-        pq.question,
-        pq.section,
-        pq.sub_section,
-        pq.section_order,
-        pq.sub_section_order,
-        pq.question_order,
-        qit.id AS input_type_id,
-        qit.input_type,
-        qit.options,
-        pq.required,
-        qit.validations,
-        COALESCE(pa.answer, '') AS answer
-    FROM project_questions pq
-    JOIN question_input_types qit ON qit.question_id = pq.id
-    LEFT JOIN project_answers pa ON pa.question_id = pq.id 
-        AND pa.input_type_id = qit.id 
-        AND pa.project_id = $1
-)
-SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, input_type_id, input_type, options, required, validations, answer
-FROM all_questions
-ORDER BY
-    section_order,
-    sub_section_order,
-    question_order
-`
-
-type GetProjectQuestionsByProjectRow struct {
-	ID              string        `json:"id"`
-	Question        string        `json:"question"`
-	Section         string        `json:"section"`
-	SubSection      string        `json:"sub_section"`
-	SectionOrder    int32         `json:"section_order"`
-	SubSectionOrder int32         `json:"sub_section_order"`
-	QuestionOrder   int32         `json:"question_order"`
-	InputTypeID     string        `json:"input_type_id"`
-	InputType       InputTypeEnum `json:"input_type"`
-	Options         []string      `json:"options"`
-	Required        bool          `json:"required"`
-	Validations     *string       `json:"validations"`
-	Answer          string        `json:"answer"`
-}
-
-func (q *Queries) GetProjectQuestionsByProject(ctx context.Context, projectID string) ([]GetProjectQuestionsByProjectRow, error) {
-	rows, err := q.db.Query(ctx, getProjectQuestionsByProject, projectID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetProjectQuestionsByProjectRow
-	for rows.Next() {
-		var i GetProjectQuestionsByProjectRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Question,
-			&i.Section,
-			&i.SubSection,
-			&i.SectionOrder,
-			&i.SubSectionOrder,
-			&i.QuestionOrder,
-			&i.InputTypeID,
-			&i.InputType,
-			&i.Options,
-			&i.Required,
-			&i.Validations,
-			&i.Answer,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getProjectsByCompanyID = `-- name: GetProjectsByCompanyID :many
 SELECT id, company_id, title, description, status, created_at, updated_at FROM projects 
 WHERE company_id = $1 
@@ -761,6 +681,98 @@ func (q *Queries) GetQuestionByAnswerID(ctx context.Context, id string) (GetQues
 		&i.InputType,
 	)
 	return i, err
+}
+
+const getQuestionsByProject = `-- name: GetQuestionsByProject :many
+WITH project_owner_check AS (
+   SELECT p.id 
+   FROM projects p
+   JOIN companies c ON p.company_id = c.id 
+   WHERE p.id = $1
+   AND c.owner_id = $2
+),
+all_questions AS (
+   SELECT 
+       pq.id,
+       pq.question,
+       pq.section,
+       pq.sub_section,
+       pq.section_order,
+       pq.sub_section_order,
+       pq.question_order,
+       qit.id AS input_type_id,
+       qit.input_type,
+       qit.options,
+       pq.required,
+       qit.validations,
+       COALESCE(pa.answer, '') AS answer
+   FROM project_questions pq
+   JOIN question_input_types qit ON qit.question_id = pq.id
+   LEFT JOIN project_answers pa ON pa.question_id = pq.id 
+       AND pa.input_type_id = qit.id 
+       AND pa.project_id = $1
+   WHERE EXISTS (SELECT 1 FROM project_owner_check)
+)
+SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, input_type_id, input_type, options, required, validations, answer FROM all_questions
+ORDER BY
+   section_order,
+   sub_section_order,
+   question_order
+`
+
+type GetQuestionsByProjectParams struct {
+	ID      string `json:"id"`
+	OwnerID string `json:"owner_id"`
+}
+
+type GetQuestionsByProjectRow struct {
+	ID              string        `json:"id"`
+	Question        string        `json:"question"`
+	Section         string        `json:"section"`
+	SubSection      string        `json:"sub_section"`
+	SectionOrder    int32         `json:"section_order"`
+	SubSectionOrder int32         `json:"sub_section_order"`
+	QuestionOrder   int32         `json:"question_order"`
+	InputTypeID     string        `json:"input_type_id"`
+	InputType       InputTypeEnum `json:"input_type"`
+	Options         []string      `json:"options"`
+	Required        bool          `json:"required"`
+	Validations     *string       `json:"validations"`
+	Answer          string        `json:"answer"`
+}
+
+func (q *Queries) GetQuestionsByProject(ctx context.Context, arg GetQuestionsByProjectParams) ([]GetQuestionsByProjectRow, error) {
+	rows, err := q.db.Query(ctx, getQuestionsByProject, arg.ID, arg.OwnerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetQuestionsByProjectRow
+	for rows.Next() {
+		var i GetQuestionsByProjectRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Question,
+			&i.Section,
+			&i.SubSection,
+			&i.SectionOrder,
+			&i.SubSectionOrder,
+			&i.QuestionOrder,
+			&i.InputTypeID,
+			&i.InputType,
+			&i.Options,
+			&i.Required,
+			&i.Validations,
+			&i.Answer,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listCompanyProjects = `-- name: ListCompanyProjects :many
