@@ -21,7 +21,7 @@ import { Route as UserAuthImport } from './pages/user/_auth'
 import { Route as UserAppshellImport } from './pages/user/_appshell'
 import { Route as AdminAuthImport } from './pages/admin/_auth'
 import { Route as AdminAppshellImport } from './pages/admin/_appshell'
-import { Route as UserAuthProjectSubmitImport } from './pages/user/_auth.project.submit'
+import { Route as UserAuthProjectNewImport } from './pages/user/_auth/project/new'
 import { Route as UserAuthAppshellProjectsImport } from './pages/user/_auth._appshell.projects'
 import { Route as UserAuthAppshellDashboardImport } from './pages/user/_auth._appshell.dashboard'
 import { Route as AdminAuthAppshellDashboardImport } from './pages/admin/_auth._appshell.dashboard'
@@ -93,9 +93,9 @@ const AdminAppshellRoute = AdminAppshellImport.update({
   getParentRoute: () => AdminRoute,
 } as any)
 
-const UserAuthProjectSubmitRoute = UserAuthProjectSubmitImport.update({
-  id: '/project/submit',
-  path: '/project/submit',
+const UserAuthProjectNewRoute = UserAuthProjectNewImport.update({
+  id: '/project/new',
+  path: '/project/new',
   getParentRoute: () => UserAuthRoute,
 } as any)
 
@@ -243,11 +243,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UserAuthAppshellProjectsImport
       parentRoute: typeof UserAuthImport
     }
-    '/user/_auth/project/submit': {
-      id: '/user/_auth/project/submit'
-      path: '/project/submit'
-      fullPath: '/user/project/submit'
-      preLoaderRoute: typeof UserAuthProjectSubmitImport
+    '/user/_auth/project/new': {
+      id: '/user/_auth/project/new'
+      path: '/project/new'
+      fullPath: '/user/project/new'
+      preLoaderRoute: typeof UserAuthProjectNewImport
       parentRoute: typeof UserAuthImport
     }
     '/user/_auth/_appshell/company/new': {
@@ -320,14 +320,14 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 interface UserAuthRouteChildren {
   UserAuthAppshellDashboardRoute: typeof UserAuthAppshellDashboardRoute
   UserAuthAppshellProjectsRoute: typeof UserAuthAppshellProjectsRoute
-  UserAuthProjectSubmitRoute: typeof UserAuthProjectSubmitRoute
+  UserAuthProjectNewRoute: typeof UserAuthProjectNewRoute
   UserAuthAppshellCompanyNewRoute: typeof UserAuthAppshellCompanyNewRoute
 }
 
 const UserAuthRouteChildren: UserAuthRouteChildren = {
   UserAuthAppshellDashboardRoute: UserAuthAppshellDashboardRoute,
   UserAuthAppshellProjectsRoute: UserAuthAppshellProjectsRoute,
-  UserAuthProjectSubmitRoute: UserAuthProjectSubmitRoute,
+  UserAuthProjectNewRoute: UserAuthProjectNewRoute,
   UserAuthAppshellCompanyNewRoute: UserAuthAppshellCompanyNewRoute,
 }
 
@@ -359,7 +359,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute
   '/user/dashboard': typeof UserAuthAppshellDashboardRoute
   '/user/projects': typeof UserAuthAppshellProjectsRoute
-  '/user/project/submit': typeof UserAuthProjectSubmitRoute
+  '/user/project/new': typeof UserAuthProjectNewRoute
   '/user/company/new': typeof UserAuthAppshellCompanyNewRoute
   '/admin/projects': typeof AdminAuthAppshellProjectsIndexRoute
   '/admin/projects/$projectId/details': typeof AdminAuthAppshellProjectsProjectIdDetailsRoute
@@ -374,7 +374,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute
   '/user/dashboard': typeof UserAuthAppshellDashboardRoute
   '/user/projects': typeof UserAuthAppshellProjectsRoute
-  '/user/project/submit': typeof UserAuthProjectSubmitRoute
+  '/user/project/new': typeof UserAuthProjectNewRoute
   '/user/company/new': typeof UserAuthAppshellCompanyNewRoute
   '/admin/projects': typeof AdminAuthAppshellProjectsIndexRoute
   '/admin/projects/$projectId/details': typeof AdminAuthAppshellProjectsProjectIdDetailsRoute
@@ -396,7 +396,7 @@ export interface FileRoutesById {
   '/admin/_auth/_appshell/dashboard': typeof AdminAuthAppshellDashboardRoute
   '/user/_auth/_appshell/dashboard': typeof UserAuthAppshellDashboardRoute
   '/user/_auth/_appshell/projects': typeof UserAuthAppshellProjectsRoute
-  '/user/_auth/project/submit': typeof UserAuthProjectSubmitRoute
+  '/user/_auth/project/new': typeof UserAuthProjectNewRoute
   '/user/_auth/_appshell/company/new': typeof UserAuthAppshellCompanyNewRoute
   '/admin/_auth/_appshell/projects/': typeof AdminAuthAppshellProjectsIndexRoute
   '/admin/_auth/_appshell/projects/$projectId/details': typeof AdminAuthAppshellProjectsProjectIdDetailsRoute
@@ -415,7 +415,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/user/dashboard'
     | '/user/projects'
-    | '/user/project/submit'
+    | '/user/project/new'
     | '/user/company/new'
     | '/admin/projects'
     | '/admin/projects/$projectId/details'
@@ -429,7 +429,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/user/dashboard'
     | '/user/projects'
-    | '/user/project/submit'
+    | '/user/project/new'
     | '/user/company/new'
     | '/admin/projects'
     | '/admin/projects/$projectId/details'
@@ -449,7 +449,7 @@ export interface FileRouteTypes {
     | '/admin/_auth/_appshell/dashboard'
     | '/user/_auth/_appshell/dashboard'
     | '/user/_auth/_appshell/projects'
-    | '/user/_auth/project/submit'
+    | '/user/_auth/project/new'
     | '/user/_auth/_appshell/company/new'
     | '/admin/_auth/_appshell/projects/'
     | '/admin/_auth/_appshell/projects/$projectId/details'
@@ -533,7 +533,7 @@ export const routeTree = rootRoute
       "children": [
         "/user/_auth/_appshell/dashboard",
         "/user/_auth/_appshell/projects",
-        "/user/_auth/project/submit",
+        "/user/_auth/project/new",
         "/user/_auth/_appshell/company/new"
       ]
     },
@@ -557,8 +557,8 @@ export const routeTree = rootRoute
       "filePath": "user/_auth._appshell.projects.tsx",
       "parent": "/user/_auth"
     },
-    "/user/_auth/project/submit": {
-      "filePath": "user/_auth.project.submit.tsx",
+    "/user/_auth/project/new": {
+      "filePath": "user/_auth/project/new.tsx",
       "parent": "/user/_auth"
     },
     "/user/_auth/_appshell/company/new": {
