@@ -225,7 +225,7 @@ type QuestionInputType struct {
 	QuestionID  string        `json:"question_id"`
 	InputType   InputTypeEnum `json:"input_type"`
 	Options     []string      `json:"options"`
-	Validations []byte        `json:"validations"`
+	Validations *string       `json:"validations"`
 	CreatedAt   int64         `json:"created_at"`
 	UpdatedAt   int64         `json:"updated_at"`
 }

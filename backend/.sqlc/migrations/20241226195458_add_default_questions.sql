@@ -14,13 +14,12 @@ CREATE OR REPLACE FUNCTION insert_question_with_input_types(
    p_required boolean,
    p_input_types text,
    p_options varchar[] DEFAULT NULL,
-   p_validations jsonb DEFAULT NULL
+   p_validations varchar DEFAULT ''
 ) RETURNS uuid AS $$
 DECLARE
    v_question_id uuid;
    v_input_type input_type_enum;
-   v_validation_json jsonb;
-   v_input_validations jsonb;
+   v_validation varchar;
 BEGIN
    INSERT INTO project_questions (
        question, section, sub_section, section_order, sub_section_order, 
@@ -30,70 +29,13 @@ BEGIN
        p_question_order, p_required
    ) RETURNING id INTO v_question_id;
 
-   FOR v_input_type IN 
-       SELECT unnest(string_to_array(p_input_types, '|')::input_type_enum[])
+   FOR v_input_type, v_validation IN
+       SELECT unnest(string_to_array(p_input_types, '|')::input_type_enum[]), unnest(string_to_array(p_validations, '|'))
    LOOP
-       IF p_validations IS NOT NULL AND p_validations ? v_input_type::text THEN
-           v_input_validations := p_validations->v_input_type::text;
-           v_validation_json := jsonb_build_object('required', p_required);
-           v_validation_json := v_validation_json || v_input_validations;
-       ELSE
-           CASE v_input_type
-               WHEN 'url' THEN
-                   v_validation_json := jsonb_build_object(
-                       'urlPattern', '^https?://.*',
-                       'required', p_required
-                   );
-               WHEN 'file' THEN
-                   v_validation_json := jsonb_build_object(
-                       'fileTypes', '["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]',
-                       'maxFileSize', 10485760,
-                       'required', p_required
-                   );
-               WHEN 'textarea' THEN
-                   v_validation_json := jsonb_build_object(
-                       'minLength', 1,
-                       'maxLength', 5000,
-                       'required', p_required
-                   );
-               WHEN 'textinput' THEN
-                   v_validation_json := jsonb_build_object(
-                       'minLength', 1,
-                       'maxLength', 1000,
-                       'required', p_required
-                   );
-               WHEN 'select' THEN
-                   v_validation_json := jsonb_build_object(
-                       'options', to_jsonb(p_options),
-                       'required', p_required
-                   );
-               WHEN 'checkbox' THEN
-                   v_validation_json := jsonb_build_object(
-                       'options', to_jsonb(p_options),
-                       'required', p_required,
-                       'multiple', true
-                   );
-               WHEN 'radio' THEN
-                   v_validation_json := jsonb_build_object(
-                       'options', to_jsonb(p_options),
-                       'required', p_required,
-                       'multiple', false
-                   );
-               WHEN 'team' THEN
-                   v_validation_json := jsonb_build_object(
-                       'required', p_required,
-                       'minMembers', 1,
-                       'maxMembers', 10
-                   );
-               ELSE
-                   v_validation_json := jsonb_build_object('required', p_required);
-           END CASE;
-       END IF;
-
        INSERT INTO question_input_types (
            question_id, input_type, options, validations
        ) VALUES (
-           v_question_id, v_input_type, p_options, v_validation_json
+           v_question_id, v_input_type, p_options, v_validation
        );
    END LOOP;
    RETURN v_question_id;
@@ -108,6 +50,8 @@ SELECT insert_question_with_input_types(
     'Company Pitch',
     0, 0, 0,
     false,
+    'textinput',
+    NULL,
     'url'
 );
 
@@ -117,7 +61,9 @@ SELECT insert_question_with_input_types(
     'Company Pitch',
     0, 0, 1,
     false,
-    'file|url'
+    'textinput|file',
+    NULL,
+    'url'
 );
 
 -- SUB-SECTION: Business Overview
@@ -150,10 +96,10 @@ SELECT insert_question_with_input_types(
 );
 
 SELECT insert_question_with_input_types(
-    'What is the company''s business plan?',
+    'What is the company''s business plan? (Upload file or URL)',
     'The Basics', 'Business Overview',
     0, 1, 4,
-    true, 'textinput|file'
+    true, 'textinput|file', NULL, 'url'
 );
 
 -- SUB-SECTION: Market Analysis & Research
@@ -196,14 +142,14 @@ SELECT insert_question_with_input_types(
     'Do you have any market research-related documents you''d like to inlcude? (Upload file or URL)',
     'The Basics', 'Market Analysis & Research',
     0, 2, 5,
-    false, 'file|url'
+    false, 'textinput|file', NULL, 'url'
 );
 
 SELECT insert_question_with_input_types(
     'Do you have any customer data-related documents you''d like to include? (Upload file or URL)',
     'The Basics', 'Market Analysis & Research',
     0, 2, 6,
-    false, 'file|url'
+    false, 'textinput|file', NULL, 'url'
 );
 
 -- SUB-SECTION: Product or Service
@@ -423,7 +369,9 @@ SELECT insert_question_with_input_types(
     'Legal and Compliance',
     0, 8, 4,
     false,
-    'textinput|file'
+    'textinput|file',
+    NULL,
+    'url'
 );
 
 -- SECTION: The Team

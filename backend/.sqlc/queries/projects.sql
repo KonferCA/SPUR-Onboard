@@ -141,13 +141,15 @@ SET
 WHERE id = $2; 
 
 -- name: GetQuestionByAnswerID :one
-SELECT q.* FROM project_questions q
+SELECT q.*, qit.validations, qit.input_type FROM project_questions q
 JOIN project_answers a ON a.question_id = q.id
+JOIN question_input_types qit ON qit.question_id = a.question_id
 WHERE a.id = $1; 
 
 -- name: GetProjectQuestion :one
-SELECT * FROM project_questions 
-WHERE id = $1 
+SELECT q.*, qit.validations FROM project_questions q
+JOIN question_input_types qit ON q.id = qit.question_id
+WHERE q.id = $1
 LIMIT 1;
 
 -- name: CreateProjectAnswer :one

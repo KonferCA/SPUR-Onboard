@@ -94,7 +94,7 @@ CREATE TABLE question_input_types (
     question_id uuid NOT NULL REFERENCES project_questions(id) ON DELETE CASCADE,
     input_type input_type_enum NOT NULL,
     options varchar(255)[], -- For input types that need options
-    validations jsonb, -- Store validations as JSON for more flexibility
+    validations varchar(255),
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
