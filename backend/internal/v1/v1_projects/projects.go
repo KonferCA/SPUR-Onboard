@@ -2,18 +2,18 @@ package v1_projects
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
-	"github.com/labstack/echo/v4"
-	"github.com/google/uuid"
-	"time"
 	"database/sql"
-	"io"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
+	"io"
+	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
-	"os"
-	"net/http"
-	"KonferCA/SPUR/internal/permissions"
+	"time"
 )
 
 /*
@@ -84,11 +84,11 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 
 /*
  * handleGetProjects retrieves all projects for a company.
- * 
+ *
  * Security:
  * - Requires authenticated user
  * - Only returns projects for user's company
- * 
+ *
  * Returns array of ProjectResponse with basic project details
  */
 func (h *Handler) handleGetProjects(c echo.Context) error {
@@ -116,7 +116,7 @@ func (h *Handler) handleGetProjects(c echo.Context) error {
 		if project.Description != nil {
 			description = *project.Description
 		}
-		
+
 		response[i] = ProjectResponse{
 			ID:          project.ID,
 			Title:       project.Title,
@@ -132,7 +132,7 @@ func (h *Handler) handleGetProjects(c echo.Context) error {
 
 /*
  * handleGetProject retrieves a single project by ID.
- * 
+ *
  * Security:
  * - Verifies project belongs to user's company
  * - Returns 404 if project not found or unauthorized
@@ -188,11 +188,11 @@ func (h *Handler) handleGetProject(c echo.Context) error {
 
 /*
  * handlePatchProjectAnswer updates an answer for a project question.
- * 
+ *
  * Validation:
  * - Validates answer content against question rules
  * - Returns validation errors if content invalid
- * 
+ *
  * Security:
  * - Verifies project belongs to user's company
  */
@@ -275,12 +275,12 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 
 /*
  * handleGetProjectAnswers retrieves all answers for a project.
- * 
+ *
  * Returns:
  * - Question ID and content
  * - Current answer text
  * - Question section
- * 
+ *
  * Security:
  * - Verifies project belongs to user's company
  */
@@ -336,14 +336,14 @@ func (h *Handler) handleGetProjectAnswers(c echo.Context) error {
 
 /*
  * handleUploadProjectDocument handles file uploads for a project.
- * 
+ *
  * Flow:
  * 1. Validates file presence
  * 2. Verifies project ownership
  * 3. Uploads file to S3
  * 4. Creates document record in database
  * 5. Returns document details
- * 
+ *
  * Cleanup:
  * - Deletes S3 file if database insert fails
  */
@@ -428,12 +428,12 @@ func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
 
 /*
  * handleGetProjectDocuments retrieves all documents for a project.
- * 
+ *
  * Returns:
  * - Document ID, name, URL
  * - Section assignment
  * - Creation/update timestamps
- * 
+ *
  * Security:
  * - Verifies project belongs to user's company
  */
@@ -490,12 +490,12 @@ func (h *Handler) handleGetProjectDocuments(c echo.Context) error {
 
 /*
  * handleDeleteProjectDocument removes a document from a project.
- * 
+ *
  * Flow:
  * 1. Verifies document ownership
  * 2. Deletes file from S3
  * 3. Removes database record
- * 
+ *
  * Security:
  * - Verifies document belongs to user's project
  */
@@ -550,7 +550,7 @@ func (h *Handler) handleDeleteProjectDocument(c echo.Context) error {
 		}
 		return v1_common.Fail(c, 500, "Failed to delete document", nil)
 	}
-	
+
 	if deletedID == "" {
 		return v1_common.Fail(c, 404, "Document not found or already deleted", nil)
 	}
@@ -563,7 +563,7 @@ func (h *Handler) handleDeleteProjectDocument(c echo.Context) error {
 /*
  * handleListCompanyProjects lists all projects for a company.
  * Similar to handleGetProjects but with different response format.
- * 
+ *
  * Returns:
  * - Array of projects under "projects" key
  * - Basic project details including status
@@ -593,7 +593,7 @@ func (h *Handler) handleListCompanyProjects(c echo.Context) error {
 		if project.Description != nil {
 			description = *project.Description
 		}
-		
+
 		response[i] = ProjectResponse{
 			ID:          project.ID,
 			Title:       project.Title,
@@ -611,12 +611,12 @@ func (h *Handler) handleListCompanyProjects(c echo.Context) error {
 
 /*
  * handleSubmitProject handles project submission for review.
- * 
+ *
  * Validation:
  * 1. Verifies all required questions answered
  * 2. Validates all answers against rules
  * 3. Returns validation errors if any fail
- * 
+ *
  * Flow:
  * 1. Collects all project answers
  * 2. Validates against question rules
@@ -681,7 +681,7 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 	// Validate each question
 	for _, question := range questions {
 		answer, exists := answerMap[question.ID]
-		
+
 		// Check if required question is answered
 		if question.Required && (!exists || answer == "") {
 			validationErrors = append(validationErrors, ValidationError{
@@ -710,7 +710,7 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 	// If there are any validation errors, return them
 	if len(validationErrors) > 0 {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"message": "Project validation failed",
+			"message":           "Project validation failed",
 			"validation_errors": validationErrors,
 		})
 	}
@@ -726,37 +726,13 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"message": "Project submitted successfully",
-		"status": "pending",
-	})
-}
-
-/*
- * handleGetQuestions returns all available project questions.
- * Used by the frontend to:
- * - Show all questions that need to be answered
- * - Display which questions are required
- * - Show validation rules for each question
- * 
- * Returns:
- * - Array of questions with their details
- * - Each question includes: ID, text, section, required flag, validation rules
- */
-func (h *Handler) handleGetQuestions(c echo.Context) error {
-	// Get all questions from database
-	questions, err := h.server.GetQueries().GetProjectQuestions(c.Request().Context())
-	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
-	}
-
-	// Return questions array
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"questions": questions,
+		"status":  "pending",
 	})
 }
 
 func (h *Handler) handleCreateAnswer(c echo.Context) error {
 	var req CreateAnswerRequest
-	
+
 	if err := v1_common.BindandValidate(c, &req); err != nil {
 		if strings.Contains(err.Error(), "required") {
 			return v1_common.Fail(c, http.StatusBadRequest, "Question ID is required", err)
@@ -791,9 +767,9 @@ func (h *Handler) handleCreateAnswer(c echo.Context) error {
 
 	// Create the answer
 	answer, err := h.server.GetQueries().CreateProjectAnswer(c.Request().Context(), db.CreateProjectAnswerParams{
-			ProjectID:  projectID,
-			QuestionID: req.QuestionID,
-			Answer:     req.Content,
+		ProjectID:  projectID,
+		QuestionID: req.QuestionID,
+		Answer:     req.Content,
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create answer", err)
