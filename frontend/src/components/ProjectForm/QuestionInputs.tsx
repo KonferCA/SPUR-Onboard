@@ -20,6 +20,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     onChange,
 }) => {
     const renderInput = (field: FormField) => {
+        const onChangeId = question.id + '_' + field.key;
         switch (field.type) {
             case 'textinput':
                 return (
@@ -27,7 +28,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         key={field.key}
                         placeholder={field.placeholder}
                         value={field.value || ''}
-                        onChange={(e) => onChange(field.key, e.target.value)}
+                        onChange={(e) => onChange(onChangeId, e.target.value)}
                         required={field.required}
                     />
                 );
@@ -38,7 +39,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         key={field.key}
                         placeholder={field.placeholder}
                         value={field.value || ''}
-                        onChange={(e) => onChange(field.key, e.target.value)}
+                        onChange={(e) => onChange(onChangeId, e.target.value)}
                         required={field.required}
                         rows={field.rows || 4}
                     />
@@ -46,7 +47,9 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
 
             case 'file':
                 return (
-                    <FileUpload onFilesChange={(v) => onChange(field.key, v)} />
+                    <FileUpload
+                        onFilesChange={(v) => onChange(onChangeId, v)}
+                    />
                 );
 
             case 'select':
@@ -59,7 +62,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                             label: field.value,
                             value: field.value,
                         }}
-                        onChange={(v) => onChange(field.key, v)}
+                        onChange={(v) => onChange(onChangeId, v)}
                     />
                 );
 
@@ -67,7 +70,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                 return (
                     <TeamMembers
                         value={[]}
-                        onChange={(v) => onChange(field.key, v)}
+                        onChange={(v) => onChange(onChangeId, v)}
                     />
                 );
 
@@ -77,11 +80,11 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     };
 
     return (
-        <div>
+        <fieldset>
             <div className="flex justify-between items-center mb-1">
-                <label className="block text-md font-normal">
+                <legend className="block text-md font-normal">
                     {question.question}
-                </label>
+                </legend>
                 {question.required && (
                     <span className="text-sm text-gray-500">Required</span>
                 )}
@@ -93,6 +96,6 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     </div>
                 ))}
             </div>
-        </div>
+        </fieldset>
     );
 };
