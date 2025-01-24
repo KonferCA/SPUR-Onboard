@@ -122,16 +122,47 @@ SELECT
     pq.section_order,
     pq.sub_section_order,
     pq.question_order,
+    qit.id AS input_type_id,
     qit.input_type,
     qit.options,
     pq.required,
-    qit.validations
+    qit.validations,
+    '' AS answer -- Default empty answer to match the same result set when querying questions for an existing project
 FROM project_questions pq
 JOIN question_input_types qit ON qit.question_id = pq.id
 ORDER BY
     pq.section_order,
     pq.sub_section_order,
     pq.question_order;
+
+-- name: GetProjectQuestionsByProject :many
+WITH all_questions AS (
+    SELECT 
+        pq.id,
+        pq.question,
+        pq.section,
+        pq.sub_section,
+        pq.section_order,
+        pq.sub_section_order,
+        pq.question_order,
+        qit.id AS input_type_id,
+        qit.input_type,
+        qit.options,
+        pq.required,
+        qit.validations,
+        COALESCE(pa.answer, '') AS answer
+    FROM project_questions pq
+    JOIN question_input_types qit ON qit.question_id = pq.id
+    LEFT JOIN project_answers pa ON pa.question_id = pq.id 
+        AND pa.input_type_id = qit.id 
+        AND pa.project_id = $1
+)
+SELECT *
+FROM all_questions
+ORDER BY
+    section_order,
+    sub_section_order,
+    question_order;
 
 -- name: UpdateProjectStatus :exec
 UPDATE projects 

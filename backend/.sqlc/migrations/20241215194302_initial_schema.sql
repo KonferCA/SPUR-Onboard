@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS project_answers (
     project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     question_id uuid NOT NULL REFERENCES project_questions(id) ON DELETE CASCADE,
     input_type_id uuid NOT NULL REFERENCES question_input_types(id) ON DELETE CASCADE,
-    answer varchar NOT NULL DEFAULT '',
+    answer text NOT NULL DEFAULT '',
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now()),
     UNIQUE(project_id, question_id)

@@ -497,7 +497,7 @@ func (q *Queries) GetProjectDocuments(ctx context.Context, projectID string) ([]
 const getProjectQuestion = `-- name: GetProjectQuestion :one
 SELECT q.id, q.question, q.section, q.sub_section, q.section_order, q.sub_section_order, q.question_order, q.required, q.created_at, q.updated_at, qit.validations FROM project_questions q
 JOIN question_input_types qit ON q.id = qit.question_id
-WHERE q.id = $1 
+WHERE q.id = $1
 LIMIT 1
 `
 
@@ -543,10 +543,12 @@ SELECT
     pq.section_order,
     pq.sub_section_order,
     pq.question_order,
+    qit.id AS input_type_id,
     qit.input_type,
     qit.options,
     pq.required,
-    qit.validations
+    qit.validations,
+    '' AS answer -- Default empty answer to match the same result set when querying questions for an existing project
 FROM project_questions pq
 JOIN question_input_types qit ON qit.question_id = pq.id
 ORDER BY
@@ -563,10 +565,12 @@ type GetProjectQuestionsRow struct {
 	SectionOrder    int32         `json:"section_order"`
 	SubSectionOrder int32         `json:"sub_section_order"`
 	QuestionOrder   int32         `json:"question_order"`
+	InputTypeID     string        `json:"input_type_id"`
 	InputType       InputTypeEnum `json:"input_type"`
 	Options         []string      `json:"options"`
 	Required        bool          `json:"required"`
 	Validations     *string       `json:"validations"`
+	Answer          string        `json:"answer"`
 }
 
 func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestionsRow, error) {
@@ -586,10 +590,92 @@ func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestion
 			&i.SectionOrder,
 			&i.SubSectionOrder,
 			&i.QuestionOrder,
+			&i.InputTypeID,
 			&i.InputType,
 			&i.Options,
 			&i.Required,
 			&i.Validations,
+			&i.Answer,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getProjectQuestionsByProject = `-- name: GetProjectQuestionsByProject :many
+WITH all_questions AS (
+    SELECT 
+        pq.id,
+        pq.question,
+        pq.section,
+        pq.sub_section,
+        pq.section_order,
+        pq.sub_section_order,
+        pq.question_order,
+        qit.id AS input_type_id,
+        qit.input_type,
+        qit.options,
+        pq.required,
+        qit.validations,
+        COALESCE(pa.answer, '') AS answer
+    FROM project_questions pq
+    JOIN question_input_types qit ON qit.question_id = pq.id
+    LEFT JOIN project_answers pa ON pa.question_id = pq.id 
+        AND pa.input_type_id = qit.id 
+        AND pa.project_id = $1
+)
+SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, input_type_id, input_type, options, required, validations, answer
+FROM all_questions
+ORDER BY
+    section_order,
+    sub_section_order,
+    question_order
+`
+
+type GetProjectQuestionsByProjectRow struct {
+	ID              string        `json:"id"`
+	Question        string        `json:"question"`
+	Section         string        `json:"section"`
+	SubSection      string        `json:"sub_section"`
+	SectionOrder    int32         `json:"section_order"`
+	SubSectionOrder int32         `json:"sub_section_order"`
+	QuestionOrder   int32         `json:"question_order"`
+	InputTypeID     string        `json:"input_type_id"`
+	InputType       InputTypeEnum `json:"input_type"`
+	Options         []string      `json:"options"`
+	Required        bool          `json:"required"`
+	Validations     *string       `json:"validations"`
+	Answer          string        `json:"answer"`
+}
+
+func (q *Queries) GetProjectQuestionsByProject(ctx context.Context, projectID string) ([]GetProjectQuestionsByProjectRow, error) {
+	rows, err := q.db.Query(ctx, getProjectQuestionsByProject, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetProjectQuestionsByProjectRow
+	for rows.Next() {
+		var i GetProjectQuestionsByProjectRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Question,
+			&i.Section,
+			&i.SubSection,
+			&i.SectionOrder,
+			&i.SubSectionOrder,
+			&i.QuestionOrder,
+			&i.InputTypeID,
+			&i.InputType,
+			&i.Options,
+			&i.Required,
+			&i.Validations,
+			&i.Answer,
 		); err != nil {
 			return nil, err
 		}
