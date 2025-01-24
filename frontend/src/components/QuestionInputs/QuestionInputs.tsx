@@ -11,24 +11,27 @@ import { FC } from 'react';
 
 interface QuestionInputsProps {
     question: Question;
-    onChange: (id: string, value: any) => void;
+    values: Record<string, any>;
+    onChange: (questionID: string, inputTypeID: string, value: any) => void;
     className?: string;
 }
 
 export const QuestionInputs: FC<QuestionInputsProps> = ({
     question,
+    values,
     onChange,
 }) => {
     const renderInput = (field: FormField) => {
-        const onChangeId = question.id + '_' + field.key;
         switch (field.type) {
             case 'textinput':
                 return (
                     <TextInput
                         key={field.key}
                         placeholder={field.placeholder}
-                        value={field.value || ''}
-                        onChange={(e) => onChange(onChangeId, e.target.value)}
+                        value={values[field.key] || ''}
+                        onChange={(e) =>
+                            onChange(question.id, field.key, e.target.value)
+                        }
                         required={field.required}
                     />
                 );
@@ -38,8 +41,10 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     <TextArea
                         key={field.key}
                         placeholder={field.placeholder}
-                        value={field.value || ''}
-                        onChange={(e) => onChange(onChangeId, e.target.value)}
+                        value={values[field.key] || ''}
+                        onChange={(e) =>
+                            onChange(question.id, field.key, e.target.value)
+                        }
                         required={field.required}
                         rows={field.rows || 4}
                     />
@@ -48,7 +53,9 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
             case 'file':
                 return (
                     <FileUpload
-                        onFilesChange={(v) => onChange(onChangeId, v)}
+                        onFilesChange={(v) =>
+                            onChange(question.id, field.key, v)
+                        }
                     />
                 );
 
@@ -59,18 +66,18 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         options={field.options ?? []}
                         value={{
                             id: field.key,
-                            label: field.value,
-                            value: field.value,
+                            label: values[field.key] || '',
+                            value: values[field.key] || '',
                         }}
-                        onChange={(v) => onChange(onChangeId, v)}
+                        onChange={(v) => onChange(question.id, field.key, v)}
                     />
                 );
 
             case 'team':
                 return (
                     <TeamMembers
-                        value={[]}
-                        onChange={(v) => onChange(onChangeId, v)}
+                        value={values[field.key] || []}
+                        onChange={(v) => onChange(question.id, field.key, v)}
                     />
                 );
 

@@ -1,20 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
-import {
-    AnchorLinkItem,
-    Dropdown,
-    FileUpload,
-    TeamMembers,
-    TextArea,
-    TextInput,
-} from '@components';
-import type { FormData, FormField } from '@/types';
+import { AnchorLinkItem, Button } from '@components';
 import { getProjectFormQuestions } from '@/services/project';
-import { groupProjectQuestions, GroupedProjectQuestions } from '@/config/forms';
+import { GroupedProjectQuestions, groupProjectQuestions } from '@/config/forms';
 import { SectionedLayout } from '@/templates';
 import { cva } from 'class-variance-authority';
 import { sanitizeHtmlId } from '@/utils/html';
-import { QuestionInputs } from '@/components/ProjectForm/QuestionInputs';
+import { QuestionInputs } from '@/components/QuestionInputs/QuestionInputs';
+import { useQuery } from '@tanstack/react-query';
+import { scrollToTop } from '@/utils';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -35,18 +29,65 @@ const questionGroupTitleSeparatorStyles = cva(
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
 const NewProjectPage = () => {
-    const [currentStep, setCurrentStep] = useState<number>(0);
-    const [groupedQuestions, setSections] = useState<GroupedProjectQuestions[]>(
-        []
-    );
-    const [formData, setFormData] = useState<FormData>({});
+    const { data: questions } = useQuery({
+        queryKey: ['projectFormQuestions'],
+        queryFn: getProjectFormQuestions,
+    });
+    const [groupedQuestions, setGroupedQuestions] = useState<
+        GroupedProjectQuestions[]
+    >([]);
 
-    const handleChange = (fieldId: string, value: any) => {
-        setFormData((prev) => ({
-            ...prev,
-            [fieldId]: value,
-        }));
+    const [currentStep, setCurrentStep] = useState<number>(0);
+    const [formData, setFormData] = useState<
+        Record<string, Record<string, any>>
+    >({});
+
+    const handleChange = (
+        questionID: string,
+        inputTypeID: string,
+        value: any
+    ) => {
+        // find the question and then the input
+        if (formData[questionID]) {
+            formData[questionID][inputTypeID] = value;
+        } else {
+            formData[questionID] = {
+                [inputTypeID]: value,
+            };
+        }
+        setFormData({ ...formData });
     };
+
+    const handleSubmit = () => {
+        console.log(groupedQuestions);
+        console.log(formData);
+    };
+
+    const handleNextStep = () => {
+        setCurrentStep((curr) => {
+            if (curr < groupedQuestions.length - 1) return curr + 1;
+            return curr;
+        });
+        setTimeout(() => {
+            scrollToTop();
+        }, 120);
+    };
+
+    const handleBackStep = () => {
+        setCurrentStep((curr) => {
+            if (curr > 0) return curr - 1;
+            return curr;
+        });
+        setTimeout(() => {
+            scrollToTop();
+        }, 120);
+    };
+
+    useEffect(() => {
+        if (questions) {
+            setGroupedQuestions(groupProjectQuestions(questions));
+        }
+    }, [questions]);
 
     const asideLinks = useMemo<AnchorLinkItem[]>(
         () => {
@@ -64,19 +105,6 @@ const NewProjectPage = () => {
         // or new sections/questions are fetched
         [currentStep, groupedQuestions]
     );
-
-    useEffect(() => {
-        const f = async () => {
-            try {
-                const data = await getProjectFormQuestions();
-                const grouped = groupProjectQuestions(data);
-                setSections(grouped);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-        f();
-    }, []);
 
     if (groupedQuestions.length < 1) return null;
 
@@ -106,19 +134,19 @@ const NewProjectPage = () => {
                         </ul>
                     </nav>
                 </div>
-                <div className="space-y-12 lg:max-w-3xl mx-auto mt-12">
+                <form className="space-y-12 lg:max-w-3xl mx-auto mt-12">
                     {groupedQuestions[currentStep].subSections.map(
-                        (section) => (
+                        (subSection) => (
                             <div
                                 id={sanitizeHtmlId(
-                                    `${groupedQuestions[currentStep].section}-${section.name}`
+                                    `${groupedQuestions[currentStep].section}-${subSection.name}`
                                 )}
-                                key={`${groupedQuestions[currentStep].section}_${section.name}`}
+                                key={`${groupedQuestions[currentStep].section}_${subSection.name}`}
                                 className={questionGroupContainerStyles()}
                             >
                                 <div>
                                     <h1 className={questionGroupTitleStyles()}>
-                                        {section.name}
+                                        {subSection.name}
                                     </h1>
                                 </div>
                                 <div
@@ -127,20 +155,43 @@ const NewProjectPage = () => {
                                 <div
                                     className={questionGroupQuestionsContainerStyles()}
                                 >
-                                    {section.questions.map((q) => (
+                                    {subSection.questions.map((q) => (
                                         <QuestionInputs
                                             key={q.id}
                                             question={q}
-                                            onChange={(k, v) => {
-                                                console.log(k, v);
-                                            }}
+                                            values={formData[q.id] ?? {}}
+                                            onChange={handleChange}
                                         />
                                     ))}
                                 </div>
                             </div>
                         )
                     )}
-                </div>
+                    <div className="pb-32 flex gap-8">
+                        <Button
+                            variant="outline"
+                            liquid
+                            type="button"
+                            disabled={currentStep === 0}
+                            onClick={handleBackStep}
+                        >
+                            Back
+                        </Button>
+                        <Button
+                            liquid
+                            type="button"
+                            onClick={
+                                currentStep < groupedQuestions.length - 1
+                                    ? handleNextStep
+                                    : handleSubmit
+                            }
+                        >
+                            {currentStep < groupedQuestions.length - 1
+                                ? 'Continue'
+                                : 'Submit'}
+                        </Button>
+                    </div>
+                </form>
             </div>
         </SectionedLayout>
     );
