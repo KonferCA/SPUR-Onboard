@@ -29,7 +29,7 @@ const questionGroupTitleSeparatorStyles = cva(
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
 const NewProjectPage = () => {
-    const { data: questions } = useQuery({
+    const { data: questions, isLoading } = useQuery({
         queryKey: ['projectFormQuestions'],
         queryFn: getProjectFormQuestions,
     });
@@ -106,7 +106,8 @@ const NewProjectPage = () => {
         [currentStep, groupedQuestions]
     );
 
-    if (groupedQuestions.length < 1) return null;
+    // TODO: make a better loading screen
+    if (groupedQuestions.length < 1 || isLoading) return <div>Loading...</div>;
 
     return (
         <SectionedLayout asideTitle="Submit a project" links={asideLinks}>

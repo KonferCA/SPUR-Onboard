@@ -22,6 +22,13 @@ export interface FormField {
     validations?: ZodString[];
 }
 
+export interface FormSection {
+    id: string;
+    title: string;
+    description?: string;
+    fields: FormField[];
+}
+
 export interface TeamMember {
     id: string;
     name: string;
