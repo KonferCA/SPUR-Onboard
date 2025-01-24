@@ -495,7 +495,7 @@ func (q *Queries) GetProjectDocuments(ctx context.Context, projectID string) ([]
 }
 
 const getProjectQuestion = `-- name: GetProjectQuestion :one
-SELECT q.id, q.question, q.section, q.sub_section, q.section_order, q.sub_section_order, q.question_order, q.required, q.created_at, q.updated_at, qit.validations FROM project_questions q
+SELECT q.id, q.question, q.section, q.sub_section, q.section_order, q.sub_section_order, q.question_order, q.required, q.created_at, q.updated_at, qit.validations, qit.id as input_type_id FROM project_questions q
 JOIN question_input_types qit ON q.id = qit.question_id
 WHERE q.id = $1
 LIMIT 1
@@ -513,6 +513,7 @@ type GetProjectQuestionRow struct {
 	CreatedAt       int64   `json:"created_at"`
 	UpdatedAt       int64   `json:"updated_at"`
 	Validations     *string `json:"validations"`
+	InputTypeID     string  `json:"input_type_id"`
 }
 
 func (q *Queries) GetProjectQuestion(ctx context.Context, id string) (GetProjectQuestionRow, error) {
@@ -530,6 +531,7 @@ func (q *Queries) GetProjectQuestion(ctx context.Context, id string) (GetProject
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Validations,
+		&i.InputTypeID,
 	)
 	return i, err
 }

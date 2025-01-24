@@ -185,7 +185,7 @@ JOIN question_input_types qit ON qit.question_id = a.question_id
 WHERE a.id = $1; 
 
 -- name: GetProjectQuestion :one
-SELECT q.*, qit.validations FROM project_questions q
+SELECT q.*, qit.validations, qit.id as input_type_id FROM project_questions q
 JOIN question_input_types qit ON q.id = qit.question_id
 WHERE q.id = $1
 LIMIT 1;
