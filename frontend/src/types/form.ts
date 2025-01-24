@@ -20,7 +20,6 @@ export interface FormField {
         value: string;
     }>;
     validations?: ZodString[];
-    value: any;
 }
 
 export interface TeamMember {

@@ -74,7 +74,6 @@ export function groupProjectQuestions(
                 validations: projectQuestion.validations
                     ? createZodSchema(projectQuestion.validations)
                     : undefined,
-                value: projectQuestion.answer,
             };
 
             let question = subSection.questions.find(
