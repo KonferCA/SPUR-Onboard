@@ -767,9 +767,10 @@ func (h *Handler) handleCreateAnswer(c echo.Context) error {
 
 	// Create the answer
 	answer, err := h.server.GetQueries().CreateProjectAnswer(c.Request().Context(), db.CreateProjectAnswerParams{
-		ProjectID:  projectID,
-		QuestionID: req.QuestionID,
-		Answer:     req.Content,
+		ProjectID:   projectID,
+		QuestionID:  req.QuestionID,
+		InputTypeID: question.InputTypeID,
+		Answer:      req.Content,
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create answer", err)
