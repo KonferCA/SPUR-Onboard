@@ -217,7 +217,7 @@ func (h *Handler) handleVerifyEmail(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
 	defer cancel()
 
-	viewUrl := fmt.Sprintf("%s/dashboard", os.Getenv("BACKEND_URL"))
+	viewUrl := fmt.Sprintf("%s/dashboard", os.Getenv("FRONTEND_URL"))
 
 	tokenStr := c.QueryParam("token")
 	if tokenStr == "" {
