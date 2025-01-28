@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { FiUpload, FiX } from 'react-icons/fi';
 
 export interface FileUploadProps {
+    label?: string;
     onFilesChange?: (files: File[]) => void;
     children?: React.ReactNode;
     className?: string;
@@ -9,6 +10,7 @@ export interface FileUploadProps {
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
+    label,
     onFilesChange,
     children,
     className = '',
@@ -101,6 +103,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
     return (
         <div className={`w-full ${className}`}>
+            {label !== '' && (
+                <div className="mb-1">
+                    <label>{label}</label>
+                </div>
+            )}
             <div
                 className={`border-2 border-dashed rounded-lg p-6 ${
                     isDragging
@@ -170,4 +177,3 @@ const FileUpload: React.FC<FileUploadProps> = ({
 };
 
 export { FileUpload };
-

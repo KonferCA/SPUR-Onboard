@@ -15,9 +15,64 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func seedTestProjectQuestions(pool *pgxpool.Pool) (ids []string, err error) {
+	var id string
+	ctx := context.Background()
+	sqls := []string{
+		`
+SELECT insert_question_with_input_types(
+    'Company website',
+    'Test',
+    'Sub-Test',
+    0, 0, 0,
+    true,
+    'textinput',
+    NULL,
+    'url'
+) as id;
+        `,
+		`
+SELECT insert_question_with_input_types(
+    'What is the unique value proposition?',
+    'Test',
+    'Sub-Test',
+    0, 0, 1,
+    true,
+    'textinput',
+    NULL,
+    'min=50'
+) as id;
+        `,
+		`
+SELECT insert_question_with_input_types(
+    'What is the core product or service, and what problem does it solve?',
+    'Test',
+    'Sub-Test',
+    0, 0, 2,
+    true,
+    'textinput',
+    NULL,
+    'min=100'
+);
+        `,
+	}
+
+	for _, sql := range sqls {
+		row := pool.QueryRow(ctx, sql)
+		err = row.Scan(&id)
+		if err != nil {
+			return
+		}
+		ids = append(ids, id)
+	}
+
+	return
+}
 
 /*
  * TestProjectEndpoints tests the complete project lifecycle and error cases
@@ -45,25 +100,8 @@ func TestProjectEndpoints(t *testing.T) {
 	require.NoError(t, err)
 
 	// seeding database with sample questions
-	rows, err := s.DBPool.Query(
-		context.Background(),
-		`
-            INSERT INTO project_questions
-            (sub_section_order, question, section, sub_section, required, validations, input_type) VALUES
-            (0, 'Company website', 'Test', 'Sub-Test', true, 'url', 'textinput'),
-            (0, 'What is the unique value proposition?', 'Test', 'Sub-Test', true, 'min=50', 'textinput'),
-            (0, 'What is the core product or service, and what problem does it solve?', 'Test', 'Sub-Test', true, 'min=100', 'textinput')
-            RETURNING id;
-            `,
-	)
+	testQuestionIds, err := seedTestProjectQuestions(s.DBPool)
 	require.NoError(t, err)
-	testQuestionIds := make([]string, 3)
-	for i := 0; rows.Next(); i++ {
-		var id string
-		err = rows.Scan(&id)
-		require.NoError(t, err)
-		testQuestionIds[i] = id
-	}
 	require.Equal(t, 3, len(testQuestionIds))
 
 	// Create test user and get auth token
