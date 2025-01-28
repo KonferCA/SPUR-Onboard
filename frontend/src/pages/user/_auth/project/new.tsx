@@ -125,7 +125,6 @@ const NewProjectPage = () => {
                                         setCurrentStep(idx);
                                     }}
                                 >
-                                    <span className="mr-2">{idx + 1}</span>
                                     <span>{group.section}</span>
                                     {currentStep === idx ? (
                                         <div className="absolute bottom-0 h-[2px] bg-gray-700 w-full"></div>
