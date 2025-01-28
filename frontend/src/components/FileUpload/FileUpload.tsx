@@ -1,12 +1,34 @@
 import { useState, useRef } from 'react';
 import { FiUpload, FiX } from 'react-icons/fi';
 
+/**
+ * UploadableFile is to be able to differentiate between newly added files and already uploaded files.
+ * When documents are fetched from the database, the 'uploaded' field will be set to true, otherwise
+ * it will be undefined.
+ *
+ * This type extends File to make it compatible with the browser file picker and handling of it.
+ */
+export interface UploadableFile extends File {
+    uploaded?: boolean;
+}
+
+/**
+ * createUploadableFile is a helper function that extends a given File to be UploadableFile.
+ */
+export function createUploadableFile(
+    file: File,
+    initialUploaded = false
+): UploadableFile {
+    return Object.assign(file, { uploaded: initialUploaded });
+}
+
 export interface FileUploadProps {
     label?: string;
-    onFilesChange?: (files: File[]) => void;
+    onFilesChange?: (files: UploadableFile[]) => void;
     children?: React.ReactNode;
     className?: string;
     maxSizeMB?: number;
+    initialFiles?: UploadableFile[];
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
@@ -15,9 +37,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
     children,
     className = '',
     maxSizeMB = 50,
+    initialFiles = [],
 }) => {
     const [isDragging, setIsDragging] = useState(false);
-    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+    const [uploadedFiles, setUploadedFiles] = useState<File[]>(initialFiles);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // handle drag events
