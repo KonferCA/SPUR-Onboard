@@ -118,6 +118,7 @@ CREATE TABLE IF NOT EXISTS project_documents (
     url varchar NOT NULL,
     section varchar NOT NULL,
     sub_section varchar NOT NULL,
+    mime_type varchar NOT NULL,
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );

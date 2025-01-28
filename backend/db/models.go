@@ -203,6 +203,7 @@ type ProjectDocument struct {
 	Url        string `json:"url"`
 	Section    string `json:"section"`
 	SubSection string `json:"sub_section"`
+	MimeType   string `json:"mime_type"`
 	CreatedAt  int64  `json:"created_at"`
 	UpdatedAt  int64  `json:"updated_at"`
 }

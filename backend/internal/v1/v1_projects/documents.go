@@ -44,6 +44,8 @@ func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusBadRequest, "No file provided", nil)
 	}
 
+	mimeType := req.File.Header.Get("Content-Type")
+
 	// Get project ID from URL
 	projectID := c.Param("id")
 	if projectID == "" {
@@ -96,6 +98,7 @@ func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
 		Name:       req.Name,
 		Section:    req.Section,
 		SubSection: req.SubSection,
+		MimeType:   mimeType,
 	})
 	if err != nil {
 		// Try to cleanup the uploaded file if database insert fails
