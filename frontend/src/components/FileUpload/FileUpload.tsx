@@ -1,3 +1,4 @@
+import { ProjectDocument } from '@/services/project';
 import { useState, useRef } from 'react';
 import { FiUpload, FiX } from 'react-icons/fi';
 
@@ -10,6 +11,7 @@ import { FiUpload, FiX } from 'react-icons/fi';
  */
 export interface UploadableFile extends File {
     uploaded?: boolean;
+    metadata?: ProjectDocument;
 }
 
 /**
@@ -17,9 +19,10 @@ export interface UploadableFile extends File {
  */
 export function createUploadableFile(
     file: File,
+    metadata: ProjectDocument,
     initialUploaded = false
 ): UploadableFile {
-    return Object.assign(file, { uploaded: initialUploaded });
+    return Object.assign(file, { uploaded: initialUploaded, metadata });
 }
 
 export interface FileUploadProps {

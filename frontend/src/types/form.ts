@@ -1,3 +1,4 @@
+import type { UploadableFile } from '@/components';
 import { ZodString } from 'zod';
 
 export type FormFieldType =
@@ -20,6 +21,7 @@ export interface FormField {
         value: string;
     }>;
     validations?: ZodString[];
+    files?: UploadableFile[];
 }
 
 export interface FormSection {

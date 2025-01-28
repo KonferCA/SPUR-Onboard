@@ -41,11 +41,22 @@ export interface ProjectQuestion {
 }
 
 // Frontend interfaces
+export interface ProjectQuestionsData {
+    questions: ProjectQuestion[];
+    documents?: ProjectDocument[];
+}
+
 export interface ProjectDocument {
     id: string;
+    projectId: string;
+    questionId: string;
+    section: string;
+    subSection: string;
     name: string;
-    type: string;
     url: string;
+    mimeType: string;
+    createdAt: number;
+    updatedAt: number;
 }
 
 export interface ProjectSection {
@@ -75,8 +86,14 @@ export interface Project {
 /*
  * Get project questions for the project submission form
  */
-export async function getProjectFormQuestions(): Promise<ProjectQuestion[]> {
-    const url = getApiUrl('/project/questions');
+export async function getProjectFormQuestions(
+    projectId?: string
+): Promise<ProjectQuestionsData> {
+    let url = getApiUrl('/project/questions');
+
+    if (projectId) {
+        url += `?project_id=${projectId}`;
+    }
 
     const response = await fetchWithAuth(url, { method: 'GET' });
     if (!response.ok) {
@@ -88,7 +105,7 @@ export async function getProjectFormQuestions(): Promise<ProjectQuestion[]> {
         );
     }
     const data = await response.json();
-    return snakeToCamel(data.questions);
+    return snakeToCamel(data);
 }
 
 // Transform backend response to frontend format

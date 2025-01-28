@@ -29,7 +29,7 @@ const questionGroupTitleSeparatorStyles = cva(
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
 const NewProjectPage = () => {
-    const { data: questions, isLoading } = useQuery({
+    const { data, isLoading } = useQuery({
         queryKey: ['projectFormQuestions'],
         queryFn: getProjectFormQuestions,
     });
@@ -84,10 +84,10 @@ const NewProjectPage = () => {
     };
 
     useEffect(() => {
-        if (questions) {
-            setGroupedQuestions(groupProjectQuestions(questions));
+        if (data) {
+            setGroupedQuestions(groupProjectQuestions(data));
         }
-    }, [questions]);
+    }, [data]);
 
     const asideLinks = useMemo<AnchorLinkItem[]>(
         () => {

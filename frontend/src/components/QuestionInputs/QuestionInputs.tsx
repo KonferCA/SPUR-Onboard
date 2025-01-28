@@ -56,6 +56,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         onFilesChange={(v) =>
                             onChange(question.id, field.key, v)
                         }
+                        initialFiles={field.files || []}
                     />
                 );
 

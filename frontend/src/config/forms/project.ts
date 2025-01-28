@@ -1,4 +1,5 @@
-import { ProjectQuestion } from '@/services/project';
+import { createUploadableFile } from '@/components';
+import { ProjectQuestionsData } from '@/services/project';
 import { FormField, FormFieldType } from '@/types';
 import { createZodSchema } from '@/utils/form-validation';
 
@@ -27,8 +28,9 @@ export interface Question {
  * sub section order.
  */
 export function groupProjectQuestions(
-    questions: ProjectQuestion[]
+    data: ProjectQuestionsData
 ): GroupedProjectQuestions[] {
+    const { questions, documents } = data;
     const sortedQuestions = [...questions].sort((a, b) => {
         if (a.sectionOrder !== b.sectionOrder)
             return a.sectionOrder - b.sectionOrder;
@@ -75,6 +77,19 @@ export function groupProjectQuestions(
                     ? createZodSchema(projectQuestion.validations)
                     : undefined,
             };
+
+            if (inputField.type === 'file' && documents) {
+                // try to find if there are any already uploaded documents
+                const files = documents
+                    .filter((doc) => doc.questionId === projectQuestion.id)
+                    .map((doc) => {
+                        const f = new File([], doc.name, {
+                            type: doc.mimeType,
+                        });
+                        return createUploadableFile(f, doc, true);
+                    });
+                inputField.files = files;
+            }
 
             let question = subSection.questions.find(
                 (q) => q.id === projectQuestion.id
