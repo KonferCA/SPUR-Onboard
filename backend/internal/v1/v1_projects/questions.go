@@ -3,6 +3,7 @@ package v1_projects
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/v1/v1_common"
+	"database/sql"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -25,6 +26,7 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 
 	var (
 		questions any
+		documents []db.ProjectDocument
 		err       error
 	)
 	if projectID != "" {
@@ -46,6 +48,14 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 			ID:      projectID,
 			OwnerID: user.ID,
 		})
+		if err != nil {
+			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
+		}
+
+		documents, err = h.server.GetQueries().GetProjectDocuments(c.Request().Context(), projectID)
+		if err != nil && err != sql.ErrNoRows {
+			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to questions", err)
+		}
 	} else {
 		// Get all questions from database
 		questions, err = h.server.GetQueries().GetProjectQuestions(c.Request().Context())
@@ -58,5 +68,6 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 	// Return questions array
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"questions": questions,
+		"documents": documents,
 	})
 }
