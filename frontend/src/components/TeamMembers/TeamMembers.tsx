@@ -24,6 +24,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                 title: newMember.title,
                 bio: newMember.bio || '',
                 linkedin: newMember.linkedin || '',
+                isAccountOwner: false,
             };
             onChange([...value, member]);
             setNewMember({});

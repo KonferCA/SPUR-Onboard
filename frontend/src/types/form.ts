@@ -22,6 +22,7 @@ export interface FormField {
     }>;
     validations?: ZodString[];
     files?: UploadableFile[];
+    teamMembers?: TeamMember[];
 }
 
 export interface FormSection {
@@ -38,6 +39,7 @@ export interface TeamMember {
     title: string;
     bio: string;
     linkedin: string;
+    isAccountOwner: boolean;
 }
 
 export interface SocialLink {

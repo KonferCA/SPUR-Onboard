@@ -30,7 +30,7 @@ export interface Question {
 export function groupProjectQuestions(
     data: ProjectQuestionsData
 ): GroupedProjectQuestions[] {
-    const { questions, documents } = data;
+    const { questions, documents, teamMembers } = data;
     const sortedQuestions = [...questions].sort((a, b) => {
         if (a.sectionOrder !== b.sectionOrder)
             return a.sectionOrder - b.sectionOrder;
@@ -94,6 +94,10 @@ export function groupProjectQuestions(
                         return createUploadableFile(f, doc, true);
                     });
                 inputField.files = files;
+            }
+
+            if (inputField.type === 'team') {
+                inputField.teamMembers = teamMembers;
             }
 
             let question = subSection.questions.find(

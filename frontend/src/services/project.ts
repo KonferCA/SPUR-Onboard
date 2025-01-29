@@ -2,6 +2,7 @@ import { getApiUrl } from '@utils';
 import { ApiError } from './errors';
 import { fetchWithAuth } from './auth';
 import { snakeToCamel } from '@/utils/object';
+import { TeamMember } from '@/types';
 
 interface CompanyResponse {
     ID: string;
@@ -44,6 +45,7 @@ export interface ProjectQuestion {
 export interface ProjectQuestionsData {
     questions: ProjectQuestion[];
     documents?: ProjectDocument[];
+    teamMembers?: TeamMember[];
 }
 
 export interface ProjectDocument {

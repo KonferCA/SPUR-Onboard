@@ -25,10 +25,14 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 	projectID := c.QueryParam("project_id")
 
 	var (
-		questions any
-		documents []db.ProjectDocument
-		err       error
+		questions   any
+		documents   []db.ProjectDocument
+		teamMembers []db.TeamMember
+		err         error
 	)
+
+	q := h.server.GetQueries()
+
 	if projectID != "" {
 		_, err := uuid.Parse(projectID)
 		if err != nil {
@@ -44,7 +48,7 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 		}
 
 		// Get all questions from database for the given project
-		questions, err = h.server.GetQueries().GetQuestionsByProject(c.Request().Context(), db.GetQuestionsByProjectParams{
+		questions, err = q.GetQuestionsByProject(c.Request().Context(), db.GetQuestionsByProjectParams{
 			ID:      projectID,
 			OwnerID: user.ID,
 		})
@@ -52,22 +56,40 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
 		}
 
-		documents, err = h.server.GetQueries().GetProjectDocuments(c.Request().Context(), projectID)
+		documents, err = q.GetProjectDocuments(c.Request().Context(), projectID)
 		if err != nil && err != sql.ErrNoRows {
-			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to questions", err)
+			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
 		}
 	} else {
 		// Get all questions from database
-		questions, err = h.server.GetQueries().GetProjectQuestions(c.Request().Context())
+		questions, err = q.GetProjectQuestions(c.Request().Context())
+		if err != nil {
+			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
+		}
 	}
 
+	user, err := getUserFromContext(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
+	}
+
+	company, err := q.GetCompanyByOwnerID(c.Request().Context(), user.ID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return v1_common.Fail(c, http.StatusBadRequest, "Missing company to get project questions", err)
+		}
+		return v1_common.Fail(c, http.StatusBadRequest, "Failed to get questions", err)
+	}
+
+	teamMembers, err = q.ListTeamMembers(c.Request().Context(), company.ID)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
 	}
 
 	// Return questions array
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"questions": questions,
-		"documents": documents,
+		"questions":    questions,
+		"documents":    documents,
+		"team_members": teamMembers,
 	})
 }
