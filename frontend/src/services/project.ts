@@ -91,7 +91,7 @@ export async function getProjectFormQuestions(
 ): Promise<ProjectQuestionsData> {
     let url = getApiUrl('/project/questions');
 
-    if (projectId) {
+    if (typeof projectId === 'string') {
         url += `?project_id=${projectId}`;
     }
 
