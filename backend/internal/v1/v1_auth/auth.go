@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -218,11 +219,11 @@ func (h *Handler) handleVerifyEmail(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
 	defer cancel()
 
-	viewUrl := fmt.Sprintf("%s/dashboard", os.Getenv("BACKEND_URL"))
+	viewUrl := fmt.Sprintf("%s/auth", os.Getenv("FRONTEND_URL"))
 
 	tokenStr := c.QueryParam("token")
 	if tokenStr == "" {
-		view := views.VerifyEmailPage(views.FailVerifyEmailPage, viewUrl, "Missing validation token. Please get a new link from the dashboard.")
+		view := views.VerifyEmailPage(views.FailVerifyEmailPage, viewUrl, "Missing validation token.")
 		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
 			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
 		}
@@ -232,77 +233,101 @@ func (h *Handler) handleVerifyEmail(c echo.Context) error {
 	claims, err := jwt.VerifyEmailToken(tokenStr)
 	if err != nil {
 		logger.Error(err, "Failed to verify email token")
-		view := views.VerifyEmailPage(views.FailVerifyEmailPage, viewUrl, "The verification link is invalid or expired. You can get a new link in the dashboard.")
+		view := views.VerifyEmailPage(views.FailVerifyEmailPage, viewUrl, "The verification link is invalid or expired.")
 		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
 			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
 		}
 		return nil
 	}
 
-	token, err := db.New(h.server.GetDB()).GetVerifyEmailTokenByID(ctx, claims.ID)
+	token, err := h.server.GetQueries().GetVerifyEmailTokenByID(ctx, claims.ID)
 	if err != nil {
 		logger.Error(err, "Failed to get email token from the database.")
 		view := views.VerifyEmailPage(views.InternalErrorEmailPage, viewUrl, "")
 		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
-			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+			return v1_common.Fail(c, http.StatusBadRequest, "Failed to verify email", err)
 		}
 		return nil
 	}
 
-	// start transaction to make sure that both user email verified status and the email token are deleted
 	tx, err := h.server.GetDB().Begin(ctx)
 	if err != nil {
-		logger.Error(err, "Failed to start transaction to update user and remove email token from database.")
+		logger.Error(err, "Failed to start transaction")
 		view := views.VerifyEmailPage(views.InternalErrorEmailPage, viewUrl, "")
 		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
-			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify email", err)
 		}
 		return nil
 	}
-	q := db.New(h.server.GetDB()).WithTx(tx)
-	err = q.UpdateUserEmailVerifiedStatus(ctx, db.UpdateUserEmailVerifiedStatusParams{EmailVerified: true, ID: token.UserID})
+	defer tx.Rollback(ctx)
+
+	q := h.server.GetQueries().WithTx(tx)
+
+	err = q.UpdateUserEmailVerifiedStatus(ctx, db.UpdateUserEmailVerifiedStatusParams{
+		EmailVerified: true,
+		ID:            token.UserID,
+	})
 	if err != nil {
-		logger.Error(err, "Failed to update user in database.")
-		if err := tx.Rollback(ctx); err != nil {
-			logger.Error(err, "Failed to rollback")
-		}
+		logger.Error(err, "Failed to update user verification status")
 		view := views.VerifyEmailPage(views.InternalErrorEmailPage, viewUrl, "")
 		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
-			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify email", err)
+		}
+		return nil
+	}
+
+	user, err := q.GetUserByID(ctx, token.UserID)
+	if err != nil {
+		logger.Error(err, "Failed to get user data")
+		view := views.VerifyEmailPage(views.InternalErrorEmailPage, viewUrl, "")
+		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
+			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify email", err)
 		}
 		return nil
 	}
 
 	err = q.RemoveVerifyEmailTokenByID(ctx, token.ID)
 	if err != nil {
-		logger.Error(err, "Failed to remove email token from database.")
-		if err := tx.Rollback(ctx); err != nil {
-			logger.Error(err, "Failed to rollback")
-		}
+		logger.Error(err, "Failed to remove verification token")
 		view := views.VerifyEmailPage(views.InternalErrorEmailPage, viewUrl, "")
 		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
-			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify email", err)
 		}
 		return nil
 	}
 
-	err = tx.Commit(ctx)
+	if err = tx.Commit(ctx); err != nil {
+		logger.Error(err, "Failed to commit transaction")
+		view := views.VerifyEmailPage(views.InternalErrorEmailPage, viewUrl, "")
+		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
+			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify email", err)
+		}
+		return nil
+	}
+
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, user.TokenSalt)
 	if err != nil {
-		logger.Error(err, "Failed to commit changes.")
-		if err := tx.Rollback(ctx); err != nil {
-			logger.Error(err, "Failed to rollback")
-		}
+		logger.Error(err, "Failed to generate tokens")
 		view := views.VerifyEmailPage(views.InternalErrorEmailPage, viewUrl, "")
 		if err := view.Render(c.Request().Context(), c.Response()); err != nil {
-			return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify email", err)
 		}
 		return nil
 	}
 
-	view := views.VerifyEmailPage(views.SuccessVerifyEmailPage, viewUrl, "")
+	setRefreshTokenCookie(c, refreshToken)
+
+	redirectUrl := fmt.Sprintf("%s/auth?token=%s&email=%s&verified=true",
+		os.Getenv("FRONTEND_URL"),
+		url.QueryEscape(accessToken),
+		url.QueryEscape(user.Email),
+	)
+
+	view := views.VerifyEmailPage(views.SuccessVerifyEmailPage, redirectUrl, "")
 	if err := view.Render(c.Request().Context(), c.Response()); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Failed to render verify email page", err)
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to verify email", err)
 	}
+
 	return nil
 }
 
@@ -353,12 +378,12 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 		setRefreshTokenCookie(c, refreshToken)
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
-		"access_token": accessToken,
-		"user": map[string]any{
-			"email":          user.Email,
-			"email_verified": user.EmailVerified,
-			"permissions":    uint32(user.Permissions),
+	return c.JSON(http.StatusOK, AuthResponse{
+		AccessToken: accessToken,
+		User: UserResponse{
+			Email:         user.Email,
+			EmailVerified: user.EmailVerified,
+			Role:          user.Role,
 		},
 	})
 }
