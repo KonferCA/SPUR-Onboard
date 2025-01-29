@@ -2,6 +2,7 @@ import { getApiUrl } from '@utils';
 import { ApiError } from './errors';
 import { fetchWithAuth } from './auth';
 import { snakeToCamel } from '@/utils/object';
+import { TeamMember } from '@/types';
 
 interface CompanyResponse {
     ID: string;
@@ -41,11 +42,24 @@ export interface ProjectQuestion {
 }
 
 // Frontend interfaces
+export interface ProjectQuestionsData {
+    questions: ProjectQuestion[];
+    documents?: ProjectDocument[];
+    teamMembers?: TeamMember[];
+}
+
 export interface ProjectDocument {
     id: string;
+    projectId: string;
+    questionId: string;
+    section: string;
+    subSection: string;
     name: string;
-    type: string;
     url: string;
+    mimeType: string;
+    size: number;
+    createdAt: number;
+    updatedAt: number;
 }
 
 export interface ProjectSection {
@@ -75,8 +89,14 @@ export interface Project {
 /*
  * Get project questions for the project submission form
  */
-export async function getProjectFormQuestions(): Promise<ProjectQuestion[]> {
-    const url = getApiUrl('/project/questions');
+export async function getProjectFormQuestions(
+    projectId?: string
+): Promise<ProjectQuestionsData> {
+    let url = getApiUrl('/project/questions');
+
+    if (typeof projectId === 'string') {
+        url += `?project_id=${projectId}`;
+    }
 
     const response = await fetchWithAuth(url, { method: 'GET' });
     if (!response.ok) {
@@ -88,7 +108,7 @@ export async function getProjectFormQuestions(): Promise<ProjectQuestion[]> {
         );
     }
     const data = await response.json();
-    return snakeToCamel(data.questions);
+    return snakeToCamel(data);
 }
 
 // Transform backend response to frontend format

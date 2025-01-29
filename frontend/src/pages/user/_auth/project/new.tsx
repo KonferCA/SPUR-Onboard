@@ -29,7 +29,8 @@ const questionGroupTitleSeparatorStyles = cva(
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
 const NewProjectPage = () => {
-    const { data: questions, isLoading } = useQuery({
+    const { data, isLoading } = useQuery({
+        //@ts-ignore generic type inference error here (tanstack problem)
         queryKey: ['projectFormQuestions'],
         queryFn: getProjectFormQuestions,
     });
@@ -84,10 +85,10 @@ const NewProjectPage = () => {
     };
 
     useEffect(() => {
-        if (questions) {
-            setGroupedQuestions(groupProjectQuestions(questions));
+        if (data) {
+            setGroupedQuestions(groupProjectQuestions(data));
         }
-    }, [questions]);
+    }, [data]);
 
     const asideLinks = useMemo<AnchorLinkItem[]>(
         () => {

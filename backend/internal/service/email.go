@@ -38,6 +38,10 @@ func SendEmail(ctx context.Context, subject string, from string, to []string, ht
 		return nil
 	}
 
+	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
+		to = []string{"delivered@resend.dev"}
+	}
+
 	apiKey := os.Getenv("RESEND_API_KEY")
 	client := resend.NewClient(apiKey)
 	params := &resend.SendEmailRequest{

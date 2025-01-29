@@ -71,6 +71,8 @@ INSERT INTO project_documents (
     url,
     section,
     sub_section,
+    mime_type,
+    size,
     created_at,
     updated_at
 ) VALUES (
@@ -81,6 +83,8 @@ INSERT INTO project_documents (
     $4, -- url
     $5, -- section
     $6, -- sub_section
+    $7, -- mime_type
+    $8, -- size in bytes
     extract(epoch from now()),
     extract(epoch from now())
 ) RETURNING *;

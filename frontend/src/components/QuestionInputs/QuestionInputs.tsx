@@ -56,6 +56,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         onFilesChange={(v) =>
                             onChange(question.id, field.key, v)
                         }
+                        initialFiles={field.files || []}
                     />
                 );
 
@@ -76,7 +77,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
             case 'team':
                 return (
                     <TeamMembers
-                        value={values[field.key] || []}
+                        value={field.teamMembers || []}
                         onChange={(v) => onChange(question.id, field.key, v)}
                     />
                 );
