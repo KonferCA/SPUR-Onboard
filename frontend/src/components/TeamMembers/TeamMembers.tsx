@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FiX, FiPlus } from 'react-icons/fi';
-import { Button } from '@components';
+import { Button, TextInput } from '@components';
 import type { TeamMember } from '@/types';
 
 export interface TeamMembersProps {
@@ -16,11 +16,14 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
     const [newMember, setNewMember] = useState<Partial<TeamMember>>({});
 
     const handleAdd = () => {
-        if (newMember.name && newMember.role) {
+        if (newMember.firstName && newMember.lastName && newMember.title) {
             const member: TeamMember = {
                 id: Math.random().toString(36).substring(2, 9),
-                name: newMember.name,
-                role: newMember.role,
+                firstName: newMember.firstName,
+                lastName: newMember.lastName,
+                title: newMember.title,
+                bio: newMember.bio || '',
+                linkedin: newMember.linkedin || '',
             };
             onChange([...value, member]);
             setNewMember({});
@@ -51,16 +54,18 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                     >
                         {/* Avatar */}
                         <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium flex-shrink-0">
-                            {getInitials(member.name)}
+                            {getInitials(
+                                [member.firstName, member.lastName].join(' ')
+                            )}
                         </div>
 
                         {/* Info */}
                         <div className="flex-grow min-w-0">
                             <div className="font-medium truncate">
-                                {member.name}
+                                {[member.firstName, member.lastName].join(' ')}
                             </div>
                             <div className="text-sm text-gray-500 truncate">
-                                {member.role}
+                                {member.title}
                             </div>
                         </div>
 
@@ -79,31 +84,64 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
 
             {/* Add Member Form */}
             {isAdding ? (
-                <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4 space-y-4 border-2">
                     <div className="space-y-2">
-                        <input
-                            type="text"
-                            placeholder="Name"
-                            value={newMember.name || ''}
+                        <div className="flex items-center justify-center gap-2">
+                            <TextInput
+                                label="First Name"
+                                value={newMember.firstName || ''}
+                                onChange={(e) =>
+                                    setNewMember((prev) => ({
+                                        ...prev,
+                                        firstName: e.target.value,
+                                    }))
+                                }
+                                required
+                            />
+                            <TextInput
+                                label="Last Name"
+                                value={newMember.lastName || ''}
+                                onChange={(e) =>
+                                    setNewMember((prev) => ({
+                                        ...prev,
+                                        lastName: e.target.value,
+                                    }))
+                                }
+                                required
+                            />
+                        </div>
+                        <TextInput
+                            label="Position/Title"
+                            value={newMember.title || ''}
                             onChange={(e) =>
                                 setNewMember((prev) => ({
                                     ...prev,
-                                    name: e.target.value,
+                                    title: e.target.value,
                                 }))
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
                         />
-                        <input
-                            type="text"
-                            placeholder="Role"
-                            value={newMember.role || ''}
+                        <TextInput
+                            label="Brief Bio & Expertise"
+                            value={newMember.bio || ''}
                             onChange={(e) =>
                                 setNewMember((prev) => ({
                                     ...prev,
-                                    role: e.target.value,
+                                    bio: e.target.value,
                                 }))
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                        />
+                        <TextInput
+                            label="LinkedIn Profile"
+                            value={newMember.linkedin || ''}
+                            onChange={(e) =>
+                                setNewMember((prev) => ({
+                                    ...prev,
+                                    linkedin: e.target.value,
+                                }))
+                            }
+                            required
                         />
                     </div>
                     <div className="flex justify-end gap-2">

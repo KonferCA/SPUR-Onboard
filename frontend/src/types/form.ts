@@ -33,9 +33,11 @@ export interface FormSection {
 
 export interface TeamMember {
     id: string;
-    name: string;
-    role: string;
-    avatar?: string;
+    firstName: string;
+    lastName: string;
+    title: string;
+    bio: string;
+    linkedin: string;
 }
 
 export interface SocialLink {
