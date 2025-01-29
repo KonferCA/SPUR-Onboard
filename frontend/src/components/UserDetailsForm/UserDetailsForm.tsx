@@ -1,4 +1,3 @@
-// src/components/UserDetailsForm/UserDetailsForm.tsx
 import { useState, useEffect } from 'react';
 import { Button, TextInput, TextArea } from '@/components';
 import type { UserDetailsFormProps, UserDetailsData } from '@/types/auth';
