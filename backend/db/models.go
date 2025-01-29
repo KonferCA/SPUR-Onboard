@@ -204,6 +204,7 @@ type ProjectDocument struct {
 	Section    string `json:"section"`
 	SubSection string `json:"sub_section"`
 	MimeType   string `json:"mime_type"`
+	Size       int64  `json:"size"`
 	CreatedAt  int64  `json:"created_at"`
 	UpdatedAt  int64  `json:"updated_at"`
 }

@@ -99,6 +99,7 @@ func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
 		Section:    req.Section,
 		SubSection: req.SubSection,
 		MimeType:   mimeType,
+		Size:       int64(len(fileContent)),
 	})
 	if err != nil {
 		// Try to cleanup the uploaded file if database insert fails

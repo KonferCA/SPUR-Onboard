@@ -187,6 +187,7 @@ INSERT INTO project_documents (
     section,
     sub_section,
     mime_type,
+    size,
     created_at,
     updated_at
 ) VALUES (
@@ -197,10 +198,11 @@ INSERT INTO project_documents (
     $4, -- url
     $5, -- section
     $6, -- sub_section
-    $7,
+    $7, -- mime_type
+    $8, -- size in bytes
     extract(epoch from now()),
     extract(epoch from now())
-) RETURNING id, project_id, question_id, name, url, section, sub_section, mime_type, created_at, updated_at
+) RETURNING id, project_id, question_id, name, url, section, sub_section, mime_type, size, created_at, updated_at
 `
 
 type CreateProjectDocumentParams struct {
@@ -211,6 +213,7 @@ type CreateProjectDocumentParams struct {
 	Section    string `json:"section"`
 	SubSection string `json:"sub_section"`
 	MimeType   string `json:"mime_type"`
+	Size       int64  `json:"size"`
 }
 
 func (q *Queries) CreateProjectDocument(ctx context.Context, arg CreateProjectDocumentParams) (ProjectDocument, error) {
@@ -222,6 +225,7 @@ func (q *Queries) CreateProjectDocument(ctx context.Context, arg CreateProjectDo
 		arg.Section,
 		arg.SubSection,
 		arg.MimeType,
+		arg.Size,
 	)
 	var i ProjectDocument
 	err := row.Scan(
@@ -233,6 +237,7 @@ func (q *Queries) CreateProjectDocument(ctx context.Context, arg CreateProjectDo
 		&i.Section,
 		&i.SubSection,
 		&i.MimeType,
+		&i.Size,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -433,7 +438,7 @@ func (q *Queries) GetProjectComments(ctx context.Context, projectID string) ([]P
 }
 
 const getProjectDocument = `-- name: GetProjectDocument :one
-SELECT project_documents.id, project_documents.project_id, project_documents.question_id, project_documents.name, project_documents.url, project_documents.section, project_documents.sub_section, project_documents.mime_type, project_documents.created_at, project_documents.updated_at FROM project_documents
+SELECT project_documents.id, project_documents.project_id, project_documents.question_id, project_documents.name, project_documents.url, project_documents.section, project_documents.sub_section, project_documents.mime_type, project_documents.size, project_documents.created_at, project_documents.updated_at FROM project_documents
 JOIN projects ON project_documents.project_id = projects.id
 WHERE project_documents.id = $1 
 AND project_documents.project_id = $2
@@ -458,6 +463,7 @@ func (q *Queries) GetProjectDocument(ctx context.Context, arg GetProjectDocument
 		&i.Section,
 		&i.SubSection,
 		&i.MimeType,
+		&i.Size,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -465,7 +471,7 @@ func (q *Queries) GetProjectDocument(ctx context.Context, arg GetProjectDocument
 }
 
 const getProjectDocuments = `-- name: GetProjectDocuments :many
-SELECT id, project_id, question_id, name, url, section, sub_section, mime_type, created_at, updated_at FROM project_documents
+SELECT id, project_id, question_id, name, url, section, sub_section, mime_type, size, created_at, updated_at FROM project_documents
 WHERE project_id = $1
 ORDER BY created_at DESC
 `
@@ -488,6 +494,7 @@ func (q *Queries) GetProjectDocuments(ctx context.Context, projectID string) ([]
 			&i.Section,
 			&i.SubSection,
 			&i.MimeType,
+			&i.Size,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
