@@ -18,6 +18,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
+	"KonferCA/SPUR/internal/permissions"
 )
 
 const (
@@ -129,9 +130,9 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	}
 
 	newUser, err := q.NewUser(ctx, db.NewUserParams{
-		Email:    reqBody.Email,
-		Password: string(passwordHash),
-		Role:     db.UserRoleStartupOwner,
+		Email:       reqBody.Email,
+		Password:    string(passwordHash),
+		Permissions: int32(permissions.PermStartupOwner),
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", err)
@@ -143,7 +144,7 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	go sendEmailVerification(newUser.ID, newUser.Email, h.server.GetQueries())
 
 	// generate new access and refresh tokens
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(newUser.ID, newUser.Role, newUser.TokenSalt)
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(newUser.ID, newUser.TokenSalt)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusCreated, "Registration complete but failed to sign in. Please sign in manually.", err)
 	}
@@ -158,7 +159,7 @@ func (h *Handler) handleRegister(c echo.Context) error {
 		User: UserResponse{
 			Email:         newUser.Email,
 			EmailVerified: newUser.EmailVerified,
-			Role:          newUser.Role,
+			Permissions:   uint32(newUser.Permissions),
 		},
 	})
 }
@@ -191,7 +192,7 @@ func (h *Handler) handleLogin(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Invalid email or password", nil)
 	}
 
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, user.TokenSalt)
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.TokenSalt)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to generate tokens", err)
 	}
@@ -203,7 +204,7 @@ func (h *Handler) handleLogin(c echo.Context) error {
 		User: UserResponse{
 			Email:         user.Email,
 			EmailVerified: user.EmailVerified,
-			Role:          user.Role,
+			Permissions:   uint32(user.Permissions),
 		},
 	})
 }
@@ -366,7 +367,7 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Cookie is not valid.", err)
 	}
 
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, user.TokenSalt)
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.TokenSalt)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Oops, something went wrong.", err)
 	}

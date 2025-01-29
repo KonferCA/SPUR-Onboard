@@ -47,6 +47,5 @@ export function isAtEndOfPage(): boolean {
     const totalHeight = document.documentElement.offsetHeight;
     // Must round scrollY because it gives an small inaccurate decimal answer.
     const scrollPostition = window.innerHeight + Math.round(window.scrollY);
-    console.log(totalHeight, scrollPostition);
     return scrollPostition >= totalHeight;
 }

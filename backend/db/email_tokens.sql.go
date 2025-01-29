@@ -44,8 +44,8 @@ VALUES ($1, $2) RETURNING id
 `
 
 type NewVerifyEmailTokenParams struct {
-	UserID    string
-	ExpiresAt int64
+	UserID    string `json:"user_id"`
+	ExpiresAt int64  `json:"expires_at"`
 }
 
 func (q *Queries) NewVerifyEmailToken(ctx context.Context, arg NewVerifyEmailTokenParams) (string, error) {

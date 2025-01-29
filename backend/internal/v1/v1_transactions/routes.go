@@ -4,7 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"KonferCA/SPUR/internal/interfaces"
 	"KonferCA/SPUR/internal/middleware"
-	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/permissions"
 )
 
 func SetupTransactionRoutes(g *echo.Group, s interfaces.CoreServer) {
@@ -12,5 +12,8 @@ func SetupTransactionRoutes(g *echo.Group, s interfaces.CoreServer) {
 	
 	// POST /api/v1/transactions
 	transactions := g.Group("/transactions")
-	transactions.POST("", h.handleCreateTransaction, middleware.Auth(s.GetDB(), db.UserRoleInvestor, db.UserRoleAdmin))
+	transactions.POST("", h.handleCreateTransaction, middleware.Auth(s.GetDB(), 
+		permissions.PermInvestInProjects,    // Investors can create transactions
+		permissions.PermManageInvestments,   // Admins can manage investments
+	))
 }

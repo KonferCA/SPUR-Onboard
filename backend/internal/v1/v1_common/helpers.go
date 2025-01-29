@@ -1,7 +1,7 @@
 package v1_common
 
 import (
-	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/permissions"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -130,41 +130,111 @@ func GetUserID(c echo.Context) (uuid.UUID, error) {
 }
 
 /*
-Helper that gets the user role from the context.
+Helper that gets the user permissions from the context.
 
-Returns an error if the user role is not found in the context.
+Returns an error if the user permissions are not found in the context.
 */
-func GetUserRole(c echo.Context) (db.UserRole, error) {
-	userRole, ok := c.Get("user_role").(db.UserRole)
+func GetUserPermissions(c echo.Context) (uint32, error) {
+	userPerms, ok := c.Get("user_permissions").(uint32)
 	if !ok {
-		return "", NewAuthError("user role not found in context")
+		return 0, NewAuthError("user permissions not found in context")
 	}
 
-	return userRole, nil
+	return userPerms, nil
 }
 
 /*
-Helper that checks if the user is an admin.
+Helper that checks if the user has admin permissions.
 
-Returns true if the user is an admin, false otherwise.
+Returns true if the user has admin permissions, false otherwise.
 */
 func IsAdmin(c echo.Context) bool {
-	role, err := GetUserRole(c)
+	perms, err := GetUserPermissions(c)
 	if err != nil {
 		return false
 	}
-
-	return role == db.UserRoleAdmin
+	// Check if user has all admin permissions
+	return permissions.HasAllPermissions(perms,
+		permissions.PermViewAllProjects,
+		permissions.PermReviewProjects,
+		permissions.PermManageUsers,
+		permissions.PermManagePermissions,
+	)
 }
 
 /*
-Helper that checks if the route requires admin access.
+Helper that checks if the user has startup owner permissions.
 
-Returns an error if the user is not an admin.
+Returns true if the user has startup owner permissions, false otherwise.
+*/
+func IsStartupOwner(c echo.Context) bool {
+	perms, err := GetUserPermissions(c)
+	if err != nil {
+		return false
+	}
+	return permissions.HasAllPermissions(perms,
+		permissions.PermSubmitProject,
+		permissions.PermManageDocuments,
+	)
+}
+
+/*
+Helper that checks if the user has investor permissions.
+
+Returns true if the user has investor permissions, false otherwise.
+*/
+func IsInvestor(c echo.Context) bool {
+	perms, err := GetUserPermissions(c)
+	if err != nil {
+		return false
+	}
+	return permissions.HasAllPermissions(perms,
+		permissions.PermViewAllProjects,
+		permissions.PermCommentOnProjects,
+		permissions.PermInvestInProjects,
+	)
+}
+
+/*
+Helper that checks if the route requires admin permissions.
+
+Returns an error if the user doesn't have admin permissions.
 */
 func RequireAdmin(c echo.Context) error {
 	if !IsAdmin(c) {
 		return NewForbiddenError("Admin access required")
+	}
+	return nil
+}
+
+/*
+Helper that checks if the user has all the required permissions.
+
+Returns an error if the user doesn't have all the required permissions.
+*/
+func RequirePermissions(c echo.Context, requiredPerms ...uint32) error {
+	userPerms, err := GetUserPermissions(c)
+	if err != nil {
+		return err
+	}
+	if !permissions.HasAllPermissions(userPerms, requiredPerms...) {
+		return NewForbiddenError("Insufficient permissions")
+	}
+	return nil
+}
+
+/*
+Helper that checks if the user has any of the required permissions.
+
+Returns an error if the user doesn't have any of the required permissions.
+*/
+func RequireAnyPermission(c echo.Context, requiredPerms ...uint32) error {
+	userPerms, err := GetUserPermissions(c)
+	if err != nil {
+		return err
+	}
+	if !permissions.HasAnyPermission(userPerms, requiredPerms...) {
+		return NewForbiddenError("Insufficient permissions")
 	}
 	return nil
 }

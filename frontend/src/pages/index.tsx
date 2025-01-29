@@ -4,9 +4,10 @@ import {
     FileUpload,
     Button,
     Dropdown,
-    AnchorLinks,
+    AnchorLinkItem,
 } from '@components';
-import { PageLayout, Section } from '@layouts';
+import { Section } from '@layouts';
+import { SectionedLayout as SectionedTemplate } from '@/templates';
 import { createFileRoute } from '@tanstack/react-router';
 
 // sample industries data
@@ -19,13 +20,24 @@ const industries = [
     { id: 6, label: 'Retail', value: 'retail' },
 ];
 
+const links: AnchorLinkItem[] = [
+    {
+        label: 'dropdown',
+        target: '#dropdown',
+    },
+    {
+        label: 'buttons',
+        target: '#buttons',
+    },
+];
+
 const Landing: React.FC = () => {
     const [selectedIndustry, setSelectedIndustry] = useState<
         (typeof industries)[0] | null
     >(null);
 
     return (
-        <PageLayout>
+        <SectionedTemplate asideTitle="Landing Page" links={links}>
             <Section width="narrow" padding="normal">
                 <h1 className="text-3xl font-bold mb-8">Landing</h1>
 
@@ -56,39 +68,8 @@ const Landing: React.FC = () => {
                         <Button liquid>Liquid</Button>
                     </div>
                 </div>
-
-                <div className="fixed top-2 left-10">
-                    <AnchorLinks
-                        onClick={(l, e) => {
-                            console.log(l, e);
-                        }}
-                        links={[
-                            {
-                                label: 'dropdown',
-                                target: '#dropdown',
-                            },
-                            {
-                                label: 'buttons',
-                                target: '#buttons',
-                            },
-                        ]}
-                    >
-                        {(link) => (
-                            <span
-                                className={
-                                    'transition hover:text-gray-800 ' +
-                                    (link.active
-                                        ? 'text-black'
-                                        : 'text-gray-400')
-                                }
-                            >
-                                {link.label}
-                            </span>
-                        )}
-                    </AnchorLinks>
-                </div>
             </Section>
-        </PageLayout>
+        </SectionedTemplate>
     );
 };
 

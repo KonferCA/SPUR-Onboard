@@ -23,12 +23,12 @@ INSERT INTO projects (
 `
 
 type CreateProjectParams struct {
-	CompanyID   string
-	Title       string
-	Description *string
-	Status      ProjectStatus
-	CreatedAt   int64
-	UpdatedAt   int64
+	CompanyID   string        `json:"company_id"`
+	Title       string        `json:"title"`
+	Description *string       `json:"description"`
+	Status      ProjectStatus `json:"status"`
+	CreatedAt   int64         `json:"created_at"`
+	UpdatedAt   int64         `json:"updated_at"`
 }
 
 func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (Project, error) {
@@ -57,27 +57,36 @@ const createProjectAnswer = `-- name: CreateProjectAnswer :one
 INSERT INTO project_answers (
     project_id,
     question_id,
+    input_type_id,
     answer
 ) VALUES (
     $1, -- project_id
     $2, -- question_id
-    $3  -- answer
-) RETURNING id, project_id, question_id, answer, created_at, updated_at
+    $3, -- input_type_id
+    $4  -- answer
+) RETURNING id, project_id, question_id, input_type_id, answer, created_at, updated_at
 `
 
 type CreateProjectAnswerParams struct {
-	ProjectID  string
-	QuestionID string
-	Answer     string
+	ProjectID   string `json:"project_id"`
+	QuestionID  string `json:"question_id"`
+	InputTypeID string `json:"input_type_id"`
+	Answer      string `json:"answer"`
 }
 
 func (q *Queries) CreateProjectAnswer(ctx context.Context, arg CreateProjectAnswerParams) (ProjectAnswer, error) {
-	row := q.db.QueryRow(ctx, createProjectAnswer, arg.ProjectID, arg.QuestionID, arg.Answer)
+	row := q.db.QueryRow(ctx, createProjectAnswer,
+		arg.ProjectID,
+		arg.QuestionID,
+		arg.InputTypeID,
+		arg.Answer,
+	)
 	var i ProjectAnswer
 	err := row.Scan(
 		&i.ID,
 		&i.ProjectID,
 		&i.QuestionID,
+		&i.InputTypeID,
 		&i.Answer,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -86,14 +95,16 @@ func (q *Queries) CreateProjectAnswer(ctx context.Context, arg CreateProjectAnsw
 }
 
 const createProjectAnswers = `-- name: CreateProjectAnswers :many
-INSERT INTO project_answers (id, project_id, question_id, answer)
+INSERT INTO project_answers (id, project_id, question_id, input_type_id, answer)
 SELECT 
     gen_random_uuid(),
     $1,  -- project_id
     pq.id,
+    qit.id, -- input_type_id
     ''   -- empty default answer
 FROM project_questions pq
-RETURNING id, project_id, question_id, answer, created_at, updated_at
+JOIN question_input_types qit ON qit.question_id = pq.id
+RETURNING id, project_id, question_id, input_type_id, answer, created_at, updated_at
 `
 
 func (q *Queries) CreateProjectAnswers(ctx context.Context, projectID string) ([]ProjectAnswer, error) {
@@ -109,6 +120,7 @@ func (q *Queries) CreateProjectAnswers(ctx context.Context, projectID string) ([
 			&i.ID,
 			&i.ProjectID,
 			&i.QuestionID,
+			&i.InputTypeID,
 			&i.Answer,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -138,10 +150,10 @@ INSERT INTO project_comments (
 `
 
 type CreateProjectCommentParams struct {
-	ProjectID   string
-	TargetID    string
-	Comment     string
-	CommenterID string
+	ProjectID   string `json:"project_id"`
+	TargetID    string `json:"target_id"`
+	Comment     string `json:"comment"`
+	CommenterID string `json:"commenter_id"`
 }
 
 func (q *Queries) CreateProjectComment(ctx context.Context, arg CreateProjectCommentParams) (ProjectComment, error) {
@@ -169,43 +181,53 @@ const createProjectDocument = `-- name: CreateProjectDocument :one
 INSERT INTO project_documents (
     id,
     project_id,
+    question_id,
     name,
     url,
     section,
+    sub_section,
     created_at,
     updated_at
 ) VALUES (
     gen_random_uuid(),
     $1, -- project_id
-    $2, -- name
-    $3, -- url
-    $4, -- section
+    $2, -- question_id
+    $3, -- name
+    $4, -- url
+    $5, -- section
+    $6, -- sub_section
     extract(epoch from now()),
     extract(epoch from now())
-) RETURNING id, project_id, name, url, section, created_at, updated_at
+) RETURNING id, project_id, question_id, name, url, section, sub_section, created_at, updated_at
 `
 
 type CreateProjectDocumentParams struct {
-	ProjectID string
-	Name      string
-	Url       string
-	Section   string
+	ProjectID  string `json:"project_id"`
+	QuestionID string `json:"question_id"`
+	Name       string `json:"name"`
+	Url        string `json:"url"`
+	Section    string `json:"section"`
+	SubSection string `json:"sub_section"`
 }
 
 func (q *Queries) CreateProjectDocument(ctx context.Context, arg CreateProjectDocumentParams) (ProjectDocument, error) {
 	row := q.db.QueryRow(ctx, createProjectDocument,
 		arg.ProjectID,
+		arg.QuestionID,
 		arg.Name,
 		arg.Url,
 		arg.Section,
+		arg.SubSection,
 	)
 	var i ProjectDocument
 	err := row.Scan(
 		&i.ID,
 		&i.ProjectID,
+		&i.QuestionID,
 		&i.Name,
 		&i.Url,
 		&i.Section,
+		&i.SubSection,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -235,9 +257,9 @@ RETURNING id
 `
 
 type DeleteProjectDocumentParams struct {
-	ID        string
-	ProjectID string
-	CompanyID string
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
+	CompanyID string `json:"company_id"`
 }
 
 func (q *Queries) DeleteProjectDocument(ctx context.Context, arg DeleteProjectDocumentParams) (string, error) {
@@ -282,11 +304,11 @@ ORDER BY pq.section, pq.id
 `
 
 type GetProjectAnswersRow struct {
-	AnswerID   string
-	Answer     string
-	QuestionID string
-	Question   string
-	Section    string
+	AnswerID   string `json:"answer_id"`
+	Answer     string `json:"answer"`
+	QuestionID string `json:"question_id"`
+	Question   string `json:"question"`
+	Section    string `json:"section"`
 }
 
 func (q *Queries) GetProjectAnswers(ctx context.Context, projectID string) ([]GetProjectAnswersRow, error) {
@@ -317,38 +339,19 @@ func (q *Queries) GetProjectAnswers(ctx context.Context, projectID string) ([]Ge
 
 const getProjectByID = `-- name: GetProjectByID :one
 SELECT id, company_id, title, description, status, created_at, updated_at FROM projects 
-WHERE id = $1 AND company_id = $2 
+WHERE id = $1 
+  AND (company_id = $2 OR $3 & 1 = 1) -- Check for PermViewAllProjects (1 << 0)
 LIMIT 1
 `
 
 type GetProjectByIDParams struct {
-	ID        string
-	CompanyID string
+	ID        string      `json:"id"`
+	CompanyID string      `json:"company_id"`
+	Column3   interface{} `json:"column_3"`
 }
 
 func (q *Queries) GetProjectByID(ctx context.Context, arg GetProjectByIDParams) (Project, error) {
-	row := q.db.QueryRow(ctx, getProjectByID, arg.ID, arg.CompanyID)
-	var i Project
-	err := row.Scan(
-		&i.ID,
-		&i.CompanyID,
-		&i.Title,
-		&i.Description,
-		&i.Status,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getProjectByIDAdmin = `-- name: GetProjectByIDAdmin :one
-SELECT id, company_id, title, description, status, created_at, updated_at FROM projects 
-WHERE id = $1 
-LIMIT 1
-`
-
-func (q *Queries) GetProjectByIDAdmin(ctx context.Context, id string) (Project, error) {
-	row := q.db.QueryRow(ctx, getProjectByIDAdmin, id)
+	row := q.db.QueryRow(ctx, getProjectByID, arg.ID, arg.CompanyID, arg.Column3)
 	var i Project
 	err := row.Scan(
 		&i.ID,
@@ -369,8 +372,8 @@ LIMIT 1
 `
 
 type GetProjectCommentParams struct {
-	ID        string
-	ProjectID string
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
 }
 
 func (q *Queries) GetProjectComment(ctx context.Context, arg GetProjectCommentParams) (ProjectComment, error) {
@@ -425,7 +428,7 @@ func (q *Queries) GetProjectComments(ctx context.Context, projectID string) ([]P
 }
 
 const getProjectDocument = `-- name: GetProjectDocument :one
-SELECT project_documents.id, project_documents.project_id, project_documents.name, project_documents.url, project_documents.section, project_documents.created_at, project_documents.updated_at FROM project_documents
+SELECT project_documents.id, project_documents.project_id, project_documents.question_id, project_documents.name, project_documents.url, project_documents.section, project_documents.sub_section, project_documents.created_at, project_documents.updated_at FROM project_documents
 JOIN projects ON project_documents.project_id = projects.id
 WHERE project_documents.id = $1 
 AND project_documents.project_id = $2
@@ -433,9 +436,9 @@ AND projects.company_id = $3
 `
 
 type GetProjectDocumentParams struct {
-	ID        string
-	ProjectID string
-	CompanyID string
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
+	CompanyID string `json:"company_id"`
 }
 
 func (q *Queries) GetProjectDocument(ctx context.Context, arg GetProjectDocumentParams) (ProjectDocument, error) {
@@ -444,9 +447,11 @@ func (q *Queries) GetProjectDocument(ctx context.Context, arg GetProjectDocument
 	err := row.Scan(
 		&i.ID,
 		&i.ProjectID,
+		&i.QuestionID,
 		&i.Name,
 		&i.Url,
 		&i.Section,
+		&i.SubSection,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -454,7 +459,7 @@ func (q *Queries) GetProjectDocument(ctx context.Context, arg GetProjectDocument
 }
 
 const getProjectDocuments = `-- name: GetProjectDocuments :many
-SELECT id, project_id, name, url, section, created_at, updated_at FROM project_documents
+SELECT id, project_id, question_id, name, url, section, sub_section, created_at, updated_at FROM project_documents
 WHERE project_id = $1
 ORDER BY created_at DESC
 `
@@ -471,9 +476,11 @@ func (q *Queries) GetProjectDocuments(ctx context.Context, projectID string) ([]
 		if err := rows.Scan(
 			&i.ID,
 			&i.ProjectID,
+			&i.QuestionID,
 			&i.Name,
 			&i.Url,
 			&i.Section,
+			&i.SubSection,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -488,36 +495,84 @@ func (q *Queries) GetProjectDocuments(ctx context.Context, projectID string) ([]
 }
 
 const getProjectQuestion = `-- name: GetProjectQuestion :one
-SELECT id, question, section, required, validations, created_at, updated_at FROM project_questions 
-WHERE id = $1 
+SELECT q.id, q.question, q.section, q.sub_section, q.section_order, q.sub_section_order, q.question_order, q.required, q.created_at, q.updated_at, qit.validations, qit.id as input_type_id FROM project_questions q
+JOIN question_input_types qit ON q.id = qit.question_id
+WHERE q.id = $1
 LIMIT 1
 `
 
-func (q *Queries) GetProjectQuestion(ctx context.Context, id string) (ProjectQuestion, error) {
+type GetProjectQuestionRow struct {
+	ID              string  `json:"id"`
+	Question        string  `json:"question"`
+	Section         string  `json:"section"`
+	SubSection      string  `json:"sub_section"`
+	SectionOrder    int32   `json:"section_order"`
+	SubSectionOrder int32   `json:"sub_section_order"`
+	QuestionOrder   int32   `json:"question_order"`
+	Required        bool    `json:"required"`
+	CreatedAt       int64   `json:"created_at"`
+	UpdatedAt       int64   `json:"updated_at"`
+	Validations     *string `json:"validations"`
+	InputTypeID     string  `json:"input_type_id"`
+}
+
+func (q *Queries) GetProjectQuestion(ctx context.Context, id string) (GetProjectQuestionRow, error) {
 	row := q.db.QueryRow(ctx, getProjectQuestion, id)
-	var i ProjectQuestion
+	var i GetProjectQuestionRow
 	err := row.Scan(
 		&i.ID,
 		&i.Question,
 		&i.Section,
+		&i.SubSection,
+		&i.SectionOrder,
+		&i.SubSectionOrder,
+		&i.QuestionOrder,
 		&i.Required,
-		&i.Validations,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Validations,
+		&i.InputTypeID,
 	)
 	return i, err
 }
 
 const getProjectQuestions = `-- name: GetProjectQuestions :many
-SELECT id, question, section, required, validations FROM project_questions
+SELECT 
+    pq.id,
+    pq.question,
+    pq.section,
+    pq.sub_section,
+    pq.section_order,
+    pq.sub_section_order,
+    pq.question_order,
+    qit.id AS input_type_id,
+    qit.input_type,
+    qit.options,
+    pq.required,
+    qit.validations,
+    '' AS answer -- Default empty answer to match the same result set when querying questions for an existing project
+FROM project_questions pq
+JOIN question_input_types qit ON qit.question_id = pq.id
+ORDER BY
+    pq.section_order,
+    pq.sub_section_order,
+    pq.question_order
 `
 
 type GetProjectQuestionsRow struct {
-	ID          string
-	Question    string
-	Section     string
-	Required    bool
-	Validations *string
+	ID              string        `json:"id"`
+	Question        string        `json:"question"`
+	Section         string        `json:"section"`
+	SubSection      string        `json:"sub_section"`
+	SectionOrder    int32         `json:"section_order"`
+	SubSectionOrder int32         `json:"sub_section_order"`
+	QuestionOrder   int32         `json:"question_order"`
+	InputTypeID     string        `json:"input_type_id"`
+	InputType       InputTypeEnum `json:"input_type"`
+	Options         []string      `json:"options"`
+	Required        bool          `json:"required"`
+	Validations     *string       `json:"validations"`
+	Answer          string        `json:"answer"`
 }
 
 func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestionsRow, error) {
@@ -533,8 +588,16 @@ func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestion
 			&i.ID,
 			&i.Question,
 			&i.Section,
+			&i.SubSection,
+			&i.SectionOrder,
+			&i.SubSectionOrder,
+			&i.QuestionOrder,
+			&i.InputTypeID,
+			&i.InputType,
+			&i.Options,
 			&i.Required,
 			&i.Validations,
+			&i.Answer,
 		); err != nil {
 			return nil, err
 		}
@@ -581,24 +644,137 @@ func (q *Queries) GetProjectsByCompanyID(ctx context.Context, companyID string) 
 }
 
 const getQuestionByAnswerID = `-- name: GetQuestionByAnswerID :one
-SELECT q.id, q.question, q.section, q.required, q.validations, q.created_at, q.updated_at FROM project_questions q
+SELECT q.id, q.question, q.section, q.sub_section, q.section_order, q.sub_section_order, q.question_order, q.required, q.created_at, q.updated_at, qit.validations, qit.input_type FROM project_questions q
 JOIN project_answers a ON a.question_id = q.id
+JOIN question_input_types qit ON qit.question_id = a.question_id
 WHERE a.id = $1
 `
 
-func (q *Queries) GetQuestionByAnswerID(ctx context.Context, id string) (ProjectQuestion, error) {
+type GetQuestionByAnswerIDRow struct {
+	ID              string        `json:"id"`
+	Question        string        `json:"question"`
+	Section         string        `json:"section"`
+	SubSection      string        `json:"sub_section"`
+	SectionOrder    int32         `json:"section_order"`
+	SubSectionOrder int32         `json:"sub_section_order"`
+	QuestionOrder   int32         `json:"question_order"`
+	Required        bool          `json:"required"`
+	CreatedAt       int64         `json:"created_at"`
+	UpdatedAt       int64         `json:"updated_at"`
+	Validations     *string       `json:"validations"`
+	InputType       InputTypeEnum `json:"input_type"`
+}
+
+func (q *Queries) GetQuestionByAnswerID(ctx context.Context, id string) (GetQuestionByAnswerIDRow, error) {
 	row := q.db.QueryRow(ctx, getQuestionByAnswerID, id)
-	var i ProjectQuestion
+	var i GetQuestionByAnswerIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Question,
 		&i.Section,
+		&i.SubSection,
+		&i.SectionOrder,
+		&i.SubSectionOrder,
+		&i.QuestionOrder,
 		&i.Required,
-		&i.Validations,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Validations,
+		&i.InputType,
 	)
 	return i, err
+}
+
+const getQuestionsByProject = `-- name: GetQuestionsByProject :many
+WITH project_owner_check AS (
+   SELECT p.id 
+   FROM projects p
+   JOIN companies c ON p.company_id = c.id 
+   WHERE p.id = $1
+   AND c.owner_id = $2
+),
+all_questions AS (
+   SELECT 
+       pq.id,
+       pq.question,
+       pq.section,
+       pq.sub_section,
+       pq.section_order,
+       pq.sub_section_order,
+       pq.question_order,
+       qit.id AS input_type_id,
+       qit.input_type,
+       qit.options,
+       pq.required,
+       qit.validations,
+       COALESCE(pa.answer, '') AS answer
+   FROM project_questions pq
+   JOIN question_input_types qit ON qit.question_id = pq.id
+   LEFT JOIN project_answers pa ON pa.question_id = pq.id 
+       AND pa.input_type_id = qit.id 
+       AND pa.project_id = $1
+   WHERE EXISTS (SELECT 1 FROM project_owner_check)
+)
+SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, input_type_id, input_type, options, required, validations, answer FROM all_questions
+ORDER BY
+   section_order,
+   sub_section_order,
+   question_order
+`
+
+type GetQuestionsByProjectParams struct {
+	ID      string `json:"id"`
+	OwnerID string `json:"owner_id"`
+}
+
+type GetQuestionsByProjectRow struct {
+	ID              string        `json:"id"`
+	Question        string        `json:"question"`
+	Section         string        `json:"section"`
+	SubSection      string        `json:"sub_section"`
+	SectionOrder    int32         `json:"section_order"`
+	SubSectionOrder int32         `json:"sub_section_order"`
+	QuestionOrder   int32         `json:"question_order"`
+	InputTypeID     string        `json:"input_type_id"`
+	InputType       InputTypeEnum `json:"input_type"`
+	Options         []string      `json:"options"`
+	Required        bool          `json:"required"`
+	Validations     *string       `json:"validations"`
+	Answer          string        `json:"answer"`
+}
+
+func (q *Queries) GetQuestionsByProject(ctx context.Context, arg GetQuestionsByProjectParams) ([]GetQuestionsByProjectRow, error) {
+	rows, err := q.db.Query(ctx, getQuestionsByProject, arg.ID, arg.OwnerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetQuestionsByProjectRow
+	for rows.Next() {
+		var i GetQuestionsByProjectRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Question,
+			&i.Section,
+			&i.SubSection,
+			&i.SectionOrder,
+			&i.SubSectionOrder,
+			&i.QuestionOrder,
+			&i.InputTypeID,
+			&i.InputType,
+			&i.Options,
+			&i.Required,
+			&i.Validations,
+			&i.Answer,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listCompanyProjects = `-- name: ListCompanyProjects :many
@@ -645,8 +821,8 @@ RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at
 `
 
 type ResolveProjectCommentParams struct {
-	ID        string
-	ProjectID string
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
 }
 
 func (q *Queries) ResolveProjectComment(ctx context.Context, arg ResolveProjectCommentParams) (ProjectComment, error) {
@@ -675,8 +851,8 @@ RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at
 `
 
 type UnresolveProjectCommentParams struct {
-	ID        string
-	ProjectID string
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
 }
 
 func (q *Queries) UnresolveProjectComment(ctx context.Context, arg UnresolveProjectCommentParams) (ProjectComment, error) {
@@ -703,13 +879,13 @@ SET
 WHERE 
     project_answers.id = $2 
     AND project_id = $3
-RETURNING id, project_id, question_id, answer, created_at, updated_at
+RETURNING id, project_id, question_id, input_type_id, answer, created_at, updated_at
 `
 
 type UpdateProjectAnswerParams struct {
-	Answer    string
-	ID        string
-	ProjectID string
+	Answer    string `json:"answer"`
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
 }
 
 func (q *Queries) UpdateProjectAnswer(ctx context.Context, arg UpdateProjectAnswerParams) (ProjectAnswer, error) {
@@ -719,6 +895,7 @@ func (q *Queries) UpdateProjectAnswer(ctx context.Context, arg UpdateProjectAnsw
 		&i.ID,
 		&i.ProjectID,
 		&i.QuestionID,
+		&i.InputTypeID,
 		&i.Answer,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -735,8 +912,8 @@ RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at
 `
 
 type UpdateProjectCommentParams struct {
-	ID      string
-	Comment string
+	ID      string `json:"id"`
+	Comment string `json:"comment"`
 }
 
 func (q *Queries) UpdateProjectComment(ctx context.Context, arg UpdateProjectCommentParams) (ProjectComment, error) {
@@ -764,8 +941,8 @@ WHERE id = $2
 `
 
 type UpdateProjectStatusParams struct {
-	Status ProjectStatus
-	ID     string
+	Status ProjectStatus `json:"status"`
+	ID     string        `json:"id"`
 }
 
 func (q *Queries) UpdateProjectStatus(ctx context.Context, arg UpdateProjectStatusParams) error {

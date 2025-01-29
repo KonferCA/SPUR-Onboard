@@ -2,9 +2,9 @@ package v1_auth
 
 import (
 	"KonferCA/SPUR/common"
-	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/interfaces"
 	"KonferCA/SPUR/internal/middleware"
+	"KonferCA/SPUR/internal/permissions"
 	"os"
 	"time"
 
@@ -35,7 +35,7 @@ func SetupAuthRoutes(e *echo.Group, s interfaces.CoreServer) {
 	e.GET(
 		"/auth/ami-verified",
 		h.handleEmailVerificationStatus,
-		middleware.Auth(s.GetDB(), db.UserRoleStartupOwner, db.UserRoleAdmin),
+		middleware.Auth(s.GetDB(), permissions.PermSubmitProject),
 	)
 	e.GET("/auth/verify", h.handleVerifyCookie)
 	e.GET("/auth/verify-email", h.handleVerifyEmail, authLimiter.RateLimit())

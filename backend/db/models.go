@@ -11,6 +11,82 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type InputTypeEnum string
+
+const (
+	InputTypeEnumUrl       InputTypeEnum = "url"
+	InputTypeEnumFile      InputTypeEnum = "file"
+	InputTypeEnumTextarea  InputTypeEnum = "textarea"
+	InputTypeEnumTextinput InputTypeEnum = "textinput"
+	InputTypeEnumSelect    InputTypeEnum = "select"
+	InputTypeEnumTeam      InputTypeEnum = "team"
+	InputTypeEnumCheckbox  InputTypeEnum = "checkbox"
+	InputTypeEnumRadio     InputTypeEnum = "radio"
+)
+
+func (e *InputTypeEnum) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = InputTypeEnum(s)
+	case string:
+		*e = InputTypeEnum(s)
+	default:
+		return fmt.Errorf("unsupported scan type for InputTypeEnum: %T", src)
+	}
+	return nil
+}
+
+type NullInputTypeEnum struct {
+	InputTypeEnum InputTypeEnum `json:"input_type_enum"`
+	Valid         bool          `json:"valid"` // Valid is true if InputTypeEnum is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullInputTypeEnum) Scan(value interface{}) error {
+	if value == nil {
+		ns.InputTypeEnum, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.InputTypeEnum.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullInputTypeEnum) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.InputTypeEnum), nil
+}
+
+func (e InputTypeEnum) Valid() bool {
+	switch e {
+	case InputTypeEnumUrl,
+		InputTypeEnumFile,
+		InputTypeEnumTextarea,
+		InputTypeEnumTextinput,
+		InputTypeEnumSelect,
+		InputTypeEnumTeam,
+		InputTypeEnumCheckbox,
+		InputTypeEnumRadio:
+		return true
+	}
+	return false
+}
+
+func AllInputTypeEnumValues() []InputTypeEnum {
+	return []InputTypeEnum{
+		InputTypeEnumUrl,
+		InputTypeEnumFile,
+		InputTypeEnumTextarea,
+		InputTypeEnumTextinput,
+		InputTypeEnumSelect,
+		InputTypeEnumTeam,
+		InputTypeEnumCheckbox,
+		InputTypeEnumRadio,
+	}
+}
+
 type ProjectStatus string
 
 const (
@@ -34,8 +110,8 @@ func (e *ProjectStatus) Scan(src interface{}) error {
 }
 
 type NullProjectStatus struct {
-	ProjectStatus ProjectStatus
-	Valid         bool // Valid is true if ProjectStatus is not NULL
+	ProjectStatus ProjectStatus `json:"project_status"`
+	Valid         bool          `json:"valid"` // Valid is true if ProjectStatus is not NULL
 }
 
 // Scan implements the Scanner interface.
@@ -78,164 +154,122 @@ func AllProjectStatusValues() []ProjectStatus {
 	}
 }
 
-type UserRole string
-
-const (
-	UserRoleAdmin        UserRole = "admin"
-	UserRoleStartupOwner UserRole = "startup_owner"
-	UserRoleInvestor     UserRole = "investor"
-)
-
-func (e *UserRole) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = UserRole(s)
-	case string:
-		*e = UserRole(s)
-	default:
-		return fmt.Errorf("unsupported scan type for UserRole: %T", src)
-	}
-	return nil
-}
-
-type NullUserRole struct {
-	UserRole UserRole
-	Valid    bool // Valid is true if UserRole is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullUserRole) Scan(value interface{}) error {
-	if value == nil {
-		ns.UserRole, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.UserRole.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullUserRole) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.UserRole), nil
-}
-
-func (e UserRole) Valid() bool {
-	switch e {
-	case UserRoleAdmin,
-		UserRoleStartupOwner,
-		UserRoleInvestor:
-		return true
-	}
-	return false
-}
-
-func AllUserRoleValues() []UserRole {
-	return []UserRole{
-		UserRoleAdmin,
-		UserRoleStartupOwner,
-		UserRoleInvestor,
-	}
-}
-
 type Company struct {
-	ID            string
-	OwnerID       string
-	Name          string
-	WalletAddress *string
-	LinkedinUrl   string
-	CreatedAt     int64
-	UpdatedAt     int64
+	ID            string  `json:"id"`
+	OwnerID       string  `json:"owner_id"`
+	Name          string  `json:"name"`
+	WalletAddress *string `json:"wallet_address"`
+	LinkedinUrl   string  `json:"linkedin_url"`
+	CreatedAt     int64   `json:"created_at"`
+	UpdatedAt     int64   `json:"updated_at"`
 }
 
 type Project struct {
-	ID          string
-	CompanyID   string
-	Title       string
-	Description *string
-	Status      ProjectStatus
-	CreatedAt   int64
-	UpdatedAt   int64
+	ID          string        `json:"id"`
+	CompanyID   string        `json:"company_id"`
+	Title       string        `json:"title"`
+	Description *string       `json:"description"`
+	Status      ProjectStatus `json:"status"`
+	CreatedAt   int64         `json:"created_at"`
+	UpdatedAt   int64         `json:"updated_at"`
 }
 
 type ProjectAnswer struct {
-	ID         string
-	ProjectID  string
-	QuestionID string
-	Answer     string
-	CreatedAt  int64
-	UpdatedAt  int64
+	ID          string `json:"id"`
+	ProjectID   string `json:"project_id"`
+	QuestionID  string `json:"question_id"`
+	InputTypeID string `json:"input_type_id"`
+	Answer      string `json:"answer"`
+	CreatedAt   int64  `json:"created_at"`
+	UpdatedAt   int64  `json:"updated_at"`
 }
 
 type ProjectComment struct {
-	ID          string
-	ProjectID   string
-	TargetID    string
-	Comment     string
-	CommenterID string
-	Resolved    bool
-	CreatedAt   int64
-	UpdatedAt   int64
+	ID          string `json:"id"`
+	ProjectID   string `json:"project_id"`
+	TargetID    string `json:"target_id"`
+	Comment     string `json:"comment"`
+	CommenterID string `json:"commenter_id"`
+	Resolved    bool   `json:"resolved"`
+	CreatedAt   int64  `json:"created_at"`
+	UpdatedAt   int64  `json:"updated_at"`
 }
 
 type ProjectDocument struct {
-	ID        string
-	ProjectID string
-	Name      string
-	Url       string
-	Section   string
-	CreatedAt int64
-	UpdatedAt int64
+	ID         string `json:"id"`
+	ProjectID  string `json:"project_id"`
+	QuestionID string `json:"question_id"`
+	Name       string `json:"name"`
+	Url        string `json:"url"`
+	Section    string `json:"section"`
+	SubSection string `json:"sub_section"`
+	CreatedAt  int64  `json:"created_at"`
+	UpdatedAt  int64  `json:"updated_at"`
 }
 
 type ProjectQuestion struct {
-	ID          string
-	Question    string
-	Section     string
-	Required    bool
-	Validations *string
-	CreatedAt   int64
-	UpdatedAt   int64
+	ID              string `json:"id"`
+	Question        string `json:"question"`
+	Section         string `json:"section"`
+	SubSection      string `json:"sub_section"`
+	SectionOrder    int32  `json:"section_order"`
+	SubSectionOrder int32  `json:"sub_section_order"`
+	QuestionOrder   int32  `json:"question_order"`
+	Required        bool   `json:"required"`
+	CreatedAt       int64  `json:"created_at"`
+	UpdatedAt       int64  `json:"updated_at"`
+}
+
+type QuestionInputType struct {
+	ID          string        `json:"id"`
+	QuestionID  string        `json:"question_id"`
+	InputType   InputTypeEnum `json:"input_type"`
+	Options     []string      `json:"options"`
+	Validations *string       `json:"validations"`
+	CreatedAt   int64         `json:"created_at"`
+	UpdatedAt   int64         `json:"updated_at"`
 }
 
 type TeamMember struct {
-	ID             string
-	CompanyID      string
-	FirstName      string
-	LastName       string
-	Title          string
-	Bio            string
-	LinkedinUrl    string
-	IsAccountOwner bool
-	CreatedAt      int64
-	UpdatedAt      int64
+	ID             string `json:"id"`
+	CompanyID      string `json:"company_id"`
+	FirstName      string `json:"first_name"`
+	LastName       string `json:"last_name"`
+	Title          string `json:"title"`
+	Bio            string `json:"bio"`
+	LinkedinUrl    string `json:"linkedin_url"`
+	IsAccountOwner bool   `json:"is_account_owner"`
+	CreatedAt      int64  `json:"created_at"`
+	UpdatedAt      int64  `json:"updated_at"`
 }
 
 type Transaction struct {
-	ID          string
-	ProjectID   string
-	CompanyID   string
-	TxHash      string
-	FromAddress string
-	ToAddress   string
-	ValueAmount pgtype.Numeric
+	ID          string         `json:"id"`
+	ProjectID   string         `json:"project_id"`
+	CompanyID   string         `json:"company_id"`
+	TxHash      string         `json:"tx_hash"`
+	FromAddress string         `json:"from_address"`
+	ToAddress   string         `json:"to_address"`
+	ValueAmount pgtype.Numeric `json:"value_amount"`
+	CreatedBy   string         `json:"created_by"`
+	CreatedAt   int64          `json:"created_at"`
+	UpdatedAt   int64          `json:"updated_at"`
 }
 
 type User struct {
-	ID            string
-	Email         string
-	Password      string
-	Role          UserRole
-	EmailVerified bool
-	CreatedAt     int64
-	UpdatedAt     int64
-	TokenSalt     []byte
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	Password      string `json:"password"`
+	Permissions   int32  `json:"permissions"`
+	EmailVerified bool   `json:"email_verified"`
+	CreatedAt     int64  `json:"created_at"`
+	UpdatedAt     int64  `json:"updated_at"`
+	TokenSalt     []byte `json:"token_salt"`
 }
 
 type VerifyEmailToken struct {
-	ID        string
-	UserID    string
-	CreatedAt int64
-	ExpiresAt int64
+	ID        string `json:"id"`
+	UserID    string `json:"user_id"`
+	CreatedAt int64  `json:"created_at"`
+	ExpiresAt int64  `json:"expires_at"`
 }
