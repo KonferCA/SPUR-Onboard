@@ -1,15 +1,6 @@
-// src/components/AuthForm/AuthForm.tsx
 import { useState } from 'react';
 import { Button, TextInput } from '@/components';
 import type { AuthFormProps, AuthFormData } from '@/types/auth';
-
-const PASSWORD_REQUIREMENTS = [
-    { regex: /.{8,}/, text: "At least 8 characters long" },
-    { regex: /[0-9]/, text: "Contains a number" },
-    { regex: /[a-z]/, text: "Contains a lowercase letter" },
-    { regex: /[A-Z]/, text: "Contains an uppercase letter" },
-    { regex: /[^A-Za-z0-9]/, text: "Contains a special character" }
-];
 
 export function AuthForm({ 
     onSubmit, 
@@ -22,30 +13,36 @@ export function AuthForm({
         email: '',
         password: '',
     });
-    const [passwordStrength, setPasswordStrength] = useState<string[]>([]);
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [confirmError, setConfirmError] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (mode === 'register' && formData.password !== confirmPassword) {
+            setConfirmError('Passwords do not match');
+            return;
+        }
         await onSubmit(formData);
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value,
-        }));
-
-        if (name === 'password' && mode === 'register') {
-            const meetingRequirements = PASSWORD_REQUIREMENTS.filter(
-                req => req.regex.test(value)
-            ).map(req => req.text);
-            setPasswordStrength(meetingRequirements);
+        if (name === 'confirmPassword') {
+            setConfirmPassword(value);
+            setConfirmError(value !== formData.password ? 'Passwords do not match' : '');
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value,
+            }));
+            if (name === 'password' && mode === 'register') {
+                setConfirmError(value !== confirmPassword ? 'Passwords do not match' : '');
+            }
         }
     };
 
-    const isValidPassword = mode === 'login' || 
-        passwordStrength.length === PASSWORD_REQUIREMENTS.length;
+    const isValidForm = mode === 'login' || 
+        (formData.password && formData.password === confirmPassword);
 
     return (
         <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
@@ -65,38 +62,29 @@ export function AuthForm({
                     placeholder="Enter your email"
                 />
 
-                <div className="space-y-2">
+                <TextInput
+                    label="Password"
+                    required
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    error={errors.password}
+                    placeholder={mode === 'login' ? 'Enter your password' : 'Create a password'}
+                />
+                
+                {mode === 'register' && (
                     <TextInput
-                        label="Password"
+                        label="Confirm Password"
                         required
                         type="password"
-                        name="password"
-                        value={formData.password}
+                        name="confirmPassword"
+                        value={confirmPassword}
                         onChange={handleChange}
-                        error={errors.password}
-                        placeholder={mode === 'login' ? 'Enter your password' : 'Create a strong password'}
+                        error={confirmError}
+                        placeholder="Confirm your password"
                     />
-                    
-                    {mode === 'register' && (
-                        <div className="text-sm space-y-1">
-                            {PASSWORD_REQUIREMENTS.map(req => (
-                                <div 
-                                    key={req.text}
-                                    className={`flex items-center space-x-2 ${
-                                        passwordStrength.includes(req.text) 
-                                            ? 'text-green-600' 
-                                            : 'text-gray-500'
-                                    }`}
-                                >
-                                    <span className="text-xs">
-                                        {passwordStrength.includes(req.text) ? '✓' : '○'}
-                                    </span>
-                                    <span>{req.text}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                )}
 
                 <div className="pt-2">
                     <Button
@@ -104,7 +92,7 @@ export function AuthForm({
                         liquid
                         size="lg"
                         variant="primary"
-                        disabled={isLoading || !isValidPassword}
+                        disabled={isLoading || !isValidForm}
                     >
                         {isLoading 
                             ? (mode === 'login' ? 'Signing in...' : 'Creating account...') 
