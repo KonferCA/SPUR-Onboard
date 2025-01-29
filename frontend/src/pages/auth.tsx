@@ -1,4 +1,3 @@
-// src/pages/auth.tsx
 import { useState, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { AuthForm } from '@/components/AuthForm';
@@ -33,7 +32,6 @@ function AuthPage() {
     const [isResendingVerification, setIsResendingVerification] = useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
 
-    // Handle auth redirection
     useEffect(() => {
         if (user && currentStep === 'login-register') {
             if (!user.email_verified) {
@@ -98,8 +96,14 @@ function AuthPage() {
         try {
             if (!user) throw new Error('No user found');
 
-            // Update user profile here
-            // Add your API call to update user details
+            // TODO: Add user details update API call 
+            // await updateUserDetails(user.id, {
+            //     first_name: formData.firstName,
+            //     last_name: formData.lastName,
+            //     position: formData.position,
+            //     bio: formData.bio,
+            //     linkedin: formData.linkedIn,
+            // });
 
             user.first_name = formData.firstName;
             user.last_name = formData.lastName;
@@ -124,7 +128,8 @@ function AuthPage() {
         
         setIsResendingVerification(true);
         try {
-            // Add your API call to resend verification email
+            // TODO: Add resend verification email API call here
+            // Need to implement in backend (route does not exist)
             // await resendVerificationEmail(user.email);
         } catch (error) {
             console.error('Failed to resend verification:', error);
