@@ -55,6 +55,7 @@ export interface ProjectDocument {
     name: string;
     url: string;
     mimeType: string;
+    size: number;
     createdAt: number;
     updatedAt: number;
 }

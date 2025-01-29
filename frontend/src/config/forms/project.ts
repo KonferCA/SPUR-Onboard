@@ -83,9 +83,14 @@ export function groupProjectQuestions(
                 const files = documents
                     .filter((doc) => doc.questionId === projectQuestion.id)
                     .map((doc) => {
-                        const f = new File([], doc.name, {
-                            type: doc.mimeType,
-                        });
+                        // the new array buffer is to provide size information when rendering the uploaded documents
+                        const f = new File(
+                            [new ArrayBuffer(doc.size)],
+                            doc.name,
+                            {
+                                type: doc.mimeType,
+                            }
+                        );
                         return createUploadableFile(f, doc, true);
                     });
                 inputField.files = files;
