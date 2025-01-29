@@ -15,10 +15,10 @@ import (
 	"os"
 	"time"
 
+	"KonferCA/SPUR/internal/permissions"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
-	"KonferCA/SPUR/internal/permissions"
 )
 
 const (
@@ -305,7 +305,7 @@ func (h *Handler) handleVerifyEmail(c echo.Context) error {
 		return nil
 	}
 
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.Role, user.TokenSalt)
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(user.ID, user.TokenSalt)
 	if err != nil {
 		logger.Error(err, "Failed to generate tokens")
 		view := views.VerifyEmailPage(views.InternalErrorEmailPage, viewUrl, "")
@@ -383,7 +383,7 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 		User: UserResponse{
 			Email:         user.Email,
 			EmailVerified: user.EmailVerified,
-			Role:          user.Role,
+			Permissions:   uint32(user.Permissions),
 		},
 	})
 }
