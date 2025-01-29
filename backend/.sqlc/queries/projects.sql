@@ -82,7 +82,7 @@ INSERT INTO project_documents (
     $4, -- url
     $5, -- section
     $6, -- sub_section
-    $7,
+    $7, -- mime_type
     extract(epoch from now()),
     extract(epoch from now())
 ) RETURNING *;
