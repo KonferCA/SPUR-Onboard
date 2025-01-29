@@ -30,6 +30,7 @@ const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
 const NewProjectPage = () => {
     const { data, isLoading } = useQuery({
+        //@ts-ignore generic type inference error here (tanstack problem)
         queryKey: ['projectFormQuestions'],
         queryFn: getProjectFormQuestions,
     });
