@@ -2,12 +2,17 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
-import { TextInput, TextArea, Button, NotificationBanner } from '@/components'
+import { TextInput, TextArea, Button } from '@/components'
+import { SettingsPage } from '@/templates/SettingsPage/SettingsPage'
 import { getUserProfile, updateUserProfile } from '@/services'
 import { profileValidationSchema } from '@/types/user'
 import type { UpdateProfileRequest } from '@/types/user'
 
-const ProfileSettings = () => {
+export const Route = createFileRoute('/user/_auth/_appshell/settings/profile')({
+  component: ProfileSettings,
+})
+
+function ProfileSettings() {
   const queryClient = useQueryClient()
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'basics' | 'socials'>('basics')
@@ -46,7 +51,7 @@ const ProfileSettings = () => {
       last_name: formData.get('last_name') as string,
       title: formData.get('title') as string,
       bio: formData.get('bio') as string,
-      linkedin_url: formData.get('linkedin_url') as string || undefined,
+      linkedin_url: (formData.get('linkedin_url') as string) || undefined,
     }
 
     try {
@@ -60,30 +65,12 @@ const ProfileSettings = () => {
     }
   }
 
-  const handleSaveLink = () => {
-    // TODO: Implement saving new platform URL
-    console.log('Saving link:', newPlatformUrl)
-    setNewPlatformUrl('')
-  }
-
-  const handleRemoveLink = (url: string) => {
-    // TODO: Implement removing platform URL
-    console.log('Removing link:', url)
-  }
-
   if (isLoading) {
-    return <div>Loading...</div>
+    return <SettingsPage title="Personal Profile">Loading...</SettingsPage>
   }
-
-  // Get initials for avatar
-  const initials = profile ? 
-    `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`.toUpperCase() 
-    : 'N'
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-8">Personal Profile</h1>
-
+    <SettingsPage title="Personal Profile" error={error}>
       {/* Tabs */}
       <div className="flex gap-2 mb-8">
         <Button
@@ -100,25 +87,8 @@ const ProfileSettings = () => {
         </Button>
       </div>
 
-      {error && (
-        <div className="mb-6">
-          <NotificationBanner message={error} variant="error" />
-        </div>
-      )}
-
       {activeTab === 'basics' ? (
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Profile Image */}
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-16 h-16 rounded-full bg-gray-600 text-white flex items-center justify-center text-xl font-medium">
-              {initials}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="secondary">Upload Image</Button>
-              <Button variant="secondary">Remove</Button>
-            </div>
-          </div>
-
           <div className="space-y-4">
             <TextInput
               name="first_name"
@@ -153,12 +123,7 @@ const ProfileSettings = () => {
             />
           </div>
 
-          <Button 
-            type="submit" 
-            variant="primary" 
-            liquid 
-            isLoading={isUpdating}
-          >
+          <Button type="submit" variant="primary" liquid isLoading={isUpdating}>
             Save
           </Button>
         </form>
@@ -167,7 +132,9 @@ const ProfileSettings = () => {
           {/* Add new platform section */}
           <div>
             <h2 className="text-lg font-medium mb-2">Add a new platform</h2>
-            <p className="text-gray-600 text-sm mb-4">Connect social media or related websites</p>
+            <p className="text-gray-600 text-sm mb-4">
+              Connect social media or related websites
+            </p>
             <div className="space-y-4">
               <div className="flex gap-2">
                 <TextInput
@@ -180,7 +147,10 @@ const ProfileSettings = () => {
                 />
                 <Button
                   variant="secondary"
-                  onClick={handleSaveLink}
+                  onClick={() => {
+                    console.log('Saving link:', newPlatformUrl)
+                    setNewPlatformUrl('')
+                  }}
                   className="self-end"
                 >
                   Save
@@ -200,31 +170,17 @@ const ProfileSettings = () => {
                   </div>
                   <Button
                     variant="outline"
-                    onClick={() => handleRemoveLink(profile.linkedin_url)}
+                    onClick={() => console.log('Remove:', profile.linkedin_url)}
                     className="text-red-500 hover:text-red-600 !p-1"
                   >
+                    Remove
                   </Button>
                 </div>
               )}
-              <div className="flex items-center justify-between py-2 px-4 bg-gray-50 rounded-md">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">konfer.ca</span>
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => handleRemoveLink('konfer.ca')}
-                  className="text-red-500 hover:text-red-600 !p-1"
-                >
-                </Button>
-              </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </SettingsPage>
   )
 }
-
-export const Route = createFileRoute('/user/_auth/settings/profile')({
-  component: ProfileSettings,
-})

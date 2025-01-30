@@ -15,7 +15,19 @@ export interface AuthResponse {
 export interface RegisterReponse extends AuthResponse {}
 export interface SigninResponse extends AuthResponse {}
 
-let currentAccessToken: string | null = null;
+const AUTH_TOKEN_KEY = 'auth_token';
+
+function setAccessToken(token: string | null) {
+    if (token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, token);
+    } else {
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+}
+
+function getAccessToken(): string | null {
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+}
 
 /**
  * Registers a user if the given email is not already registered.
@@ -46,6 +58,8 @@ export async function register(
         throw new RegisterError('Failed to register', res.status, json);
     }
 
+    // Store the access token
+    setAccessToken(json.access_token);
     return json as RegisterReponse;
 }
 
@@ -78,7 +92,7 @@ export async function signin(
     }
 
     // Store the access token
-    currentAccessToken = json.access_token;
+    setAccessToken(json.access_token);
     return json as SigninResponse;
 }
 
@@ -94,12 +108,8 @@ export async function refreshAccessToken(): Promise<string> {
     }
 
     const json = await res.json();
-    currentAccessToken = json.access_token;
+    setAccessToken(json.access_token);
     return json.access_token;
-}
-
-export function getAccessToken(): string | null {
-    return currentAccessToken;
 }
 
 // Add this utility function to handle API requests with auto-refresh
@@ -132,6 +142,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
             response = await fetch(url, options);
         } catch (error) {
             // If refresh fails, throw error to trigger logout
+            setAccessToken(null);
             throw new ApiError('Authentication failed', 401, {});
         }
     }
@@ -150,5 +161,5 @@ export async function signout(): Promise<void> {
         method: 'POST',
         credentials: 'include' 
     });
-    currentAccessToken = null;
+    setAccessToken(null);
 }

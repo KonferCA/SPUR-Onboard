@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
+import { WalletProvider } from '@suiet/wallet-kit';
+import '@suiet/wallet-kit/style.css';
 
 import { AuthProvider, useAuth } from '@/contexts';
 
@@ -9,27 +11,21 @@ import { routeTree } from './routeTree.gen';
 import './index.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const router = createRouter({
-    routeTree,
-    context: {
-        // starts as undefined but gets passed down afterwards
-        auth: undefined,
-    },
-});
-
-// Register the router instance for type safety
-declare module '@tanstack/react-router' {
-    interface Register {
-        router: typeof router;
-    }
-}
-
-function InnerApp() {
-    const auth = useAuth();
-    return <RouterProvider router={router} context={{ auth }} />;
-}
-
 const queryClient = new QueryClient();
+
+// Create router after auth is ready
+function Router() {
+    const auth = useAuth();
+
+    const router = createRouter({
+        routeTree,
+        context: {
+            auth,
+        },
+    });
+
+    return <RouterProvider router={router} />;
+}
 
 // Render the app
 const rootElement = document.getElementById('root')!;
@@ -38,9 +34,11 @@ if (!rootElement.innerHTML) {
     root.render(
         <StrictMode>
             <QueryClientProvider client={queryClient}>
-                <AuthProvider>
-                    <InnerApp />
-                </AuthProvider>
+                <WalletProvider>
+                    <AuthProvider>
+                        <Router />
+                    </AuthProvider>
+                </WalletProvider>
             </QueryClientProvider>
         </StrictMode>
     );
