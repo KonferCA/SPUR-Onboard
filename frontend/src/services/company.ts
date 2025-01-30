@@ -45,9 +45,7 @@ export async function createCompany(
 }
 
 export async function getCompany(): Promise<Company> {
-    const response = await fetch(`${API_URL}/company`, {
-        credentials: 'include',
-    })
+    const response = await fetchWithAuth(`${API_URL}/company`)
 
     if (!response.ok) {
         throw new Error('Failed to fetch company')
@@ -57,9 +55,8 @@ export async function getCompany(): Promise<Company> {
 }
 
 export async function updateCompany(data: UpdateCompanyRequest): Promise<Company> {
-    const response = await fetch(`${API_URL}/company`, {
+    const response = await fetchWithAuth(`${API_URL}/company`, {
         method: 'PUT',
-        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
         },
