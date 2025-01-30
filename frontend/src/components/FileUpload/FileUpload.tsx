@@ -155,6 +155,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                         </div>
                         <p className="text-sm text-gray-500 mt-2">or</p>
                         <button
+                            type="button"
                             onClick={() => fileInputRef.current?.click()}
                             className="mt-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
                         >
@@ -189,6 +190,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                                 </span>
                             </div>
                             <button
+                                type="button"
                                 onClick={() => removeFile(file)}
                                 className="text-gray-400 hover:text-gray-600"
                             >
