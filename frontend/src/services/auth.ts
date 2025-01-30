@@ -26,26 +26,21 @@ export async function register(
     role: UserRole = 'startup_owner'
 ): Promise<RegisterReponse> {
     const url = getApiUrl('/auth/register');
-    const body = {
-        email,
-        password,
-        role,
-    };
-
     const res = await fetch(url, {
         method: 'POST',
-        body: JSON.stringify(body),
+        credentials: 'include',
         headers: {
-            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         },
+        body: JSON.stringify({ email, password, role })
     });
-    // the backend should always return json for the api calls
-    const json = await res.json();
 
-    if (res.status !== HttpStatusCode.CREATED) {
-        throw new RegisterError('Failed to register', res.status, json);
+    if (!res.ok) {
+        throw new ApiError('Failed to register', res.status, await res.json().catch(() => ({})));
     }
 
+    const json = await res.json();
     return json as RegisterReponse;
 }
 
@@ -57,36 +52,34 @@ export async function signin(
     password: string
 ): Promise<SigninResponse> {
     const url = getApiUrl('/auth/login');
-    const body = {
-        email,
-        password,
-    };
 
     const res = await fetch(url, {
         method: 'POST',
-        body: JSON.stringify(body),
+        credentials: 'include',
         headers: {
-            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         },
-        credentials: 'include'
+        body: JSON.stringify({ email, password })
     });
 
-    const json = await res.json();
-
-    if (res.status !== HttpStatusCode.OK) {
-        throw new ApiError('Failed to sign in', res.status, json);
+    if (!res.ok) {
+        throw new ApiError('Failed to sign in', res.status, await res.json().catch(() => ({})));
     }
 
-    // Store the access token
-    currentAccessToken = json.access_token;
+    const json = await res.json();
     return json as SigninResponse;
 }
 
-export async function refreshAccessToken(): Promise<string> {
+export async function refreshAccessToken(): Promise<AuthResponse> {
     const url = getApiUrl('/auth/verify');
     const res = await fetch(url, {
         method: 'GET',
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        }
     });
 
     if (!res.ok) {
@@ -94,49 +87,8 @@ export async function refreshAccessToken(): Promise<string> {
     }
 
     const json = await res.json();
-    currentAccessToken = json.access_token;
-    return json.access_token;
-}
 
-export function getAccessToken(): string | null {
-    return currentAccessToken;
-}
-
-// Add this utility function to handle API requests with auto-refresh
-export async function fetchWithAuth(url: string, options: RequestInit = {}) {
-    // Ensure credentials are included
-    options.credentials = 'include';
-    
-    // Add access token if available
-    const accessToken = getAccessToken();
-    if (accessToken) {
-        options.headers = {
-            ...options.headers,
-            'Authorization': `Bearer ${accessToken}`
-        };
-    }
-    
-    let response = await fetch(url, options);
-    
-    if (response.status === 401) {
-        // Try to refresh the token
-        try {
-            const newAccessToken = await refreshAccessToken();
-            
-            // Add the new access token to headers
-            const headers = new Headers(options.headers);
-            headers.set('Authorization', `Bearer ${newAccessToken}`);
-            options.headers = headers;
-            
-            // Retry the original request
-            response = await fetch(url, options);
-        } catch (error) {
-            // If refresh fails, throw error to trigger logout
-            throw new ApiError('Authentication failed', 401, {});
-        }
-    }
-    
-    return response;
+    return json as AuthResponse;
 }
 
 /**
@@ -150,5 +102,4 @@ export async function signout(): Promise<void> {
         method: 'POST',
         credentials: 'include' 
     });
-    currentAccessToken = null;
 }
