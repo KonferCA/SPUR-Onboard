@@ -118,3 +118,14 @@ type CreateCommentRequest struct {
 type UpdateCommentRequest struct {
 	Comment string `json:"comment" validate:"required"`
 }
+
+type ProjectDraftContent struct {
+	QuestionID  string `json:"question_id" validate:"required,uuid"`
+	InputTypeID string `json:"input_type_id" validate:"required,uuid"`
+	// Answer is not validated since its a draft content and it can be wrong
+	Answer string `json:"answer"`
+}
+
+type SaveProjectDraftRequest struct {
+	Draft []ProjectDraftContent `json:"draft" validate:"required,dive"`
+}

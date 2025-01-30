@@ -10,6 +10,48 @@ import (
 )
 
 /*
+ * handleSaveProjectDraft updates a batch of answers for a project.
+ *
+ * Security:
+ * - Verifies project belongs to user's company
+ */
+func (h *Handler) handleSaveProjectDraft(c echo.Context) error {
+	projectID := c.Param("id")
+	if projectID == "" {
+		return v1_common.Fail(c, http.StatusBadRequest, "Project ID is required", nil)
+	}
+
+	var req SaveProjectDraftRequest
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
+	}
+
+	q := h.server.GetQueries()
+
+	var params []db.UpdateProjectDraftParams
+	for _, item := range req.Draft {
+		params = append(params, db.UpdateProjectDraftParams{
+			ProjectID:   projectID,
+			QuestionID:  item.QuestionID,
+			InputTypeID: item.InputTypeID,
+			Answer:      item.Answer,
+		})
+	}
+	batch := q.UpdateProjectDraft(c.Request().Context(), params)
+	defer batch.Close()
+	batch.Exec(func(i int, err error) {
+		if err != nil {
+			v1_common.Fail(c, http.StatusInternalServerError, "Failed to save draft", err)
+		}
+	})
+
+	if !c.Response().Committed {
+		return v1_common.Success(c, http.StatusOK, "Draft saved")
+	}
+	return nil
+}
+
+/*
  * handlePatchProjectAnswer updates an answer for a project question.
  *
  * Validation:

@@ -4,7 +4,6 @@ import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
-	"database/sql"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"net/http"

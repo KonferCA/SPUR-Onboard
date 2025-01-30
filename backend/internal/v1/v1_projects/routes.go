@@ -11,8 +11,8 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	h := &Handler{server: s}
 
 	// Base project routes with auth
-	projects := g.Group("/project", middleware.Auth(s.GetDB(), 
-		permissions.PermSubmitProject, 
+	projects := g.Group("/project", middleware.Auth(s.GetDB(),
+		permissions.PermSubmitProject,
 		permissions.PermViewAllProjects,
 	))
 
@@ -20,6 +20,7 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	projectSubmitGroup := projects.Group("", middleware.Auth(s.GetDB(), permissions.PermSubmitProject))
 	projectSubmitGroup.POST("/new", h.handleCreateProject)
 	projectSubmitGroup.GET("", h.handleListCompanyProjects)
+	projectSubmitGroup.POST("/:id/draft", h.handleSaveProjectDraft)
 
 	// Questions route - viewable by anyone with project access
 	projects.GET("/questions", h.handleGetQuestions)
@@ -37,8 +38,8 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	// Project documents - require project submission permission
 	docs := projectSubmitGroup.Group("/:id/documents")
 	docs.POST("", h.handleUploadProjectDocument, middleware.FileCheck(middleware.FileConfig{
-		MinSize: 1024,                    // 1KB minimum
-		MaxSize: 10 * 1024 * 1024,        // 10MB maximum
+		MinSize: 1024,             // 1KB minimum
+		MaxSize: 10 * 1024 * 1024, // 10MB maximum
 		AllowedTypes: []string{
 			"application/pdf",
 			"application/msword",
@@ -52,9 +53,9 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	}))
 	docs.GET("", h.handleGetProjectDocuments)
 	docs.DELETE("/:document_id", h.handleDeleteProjectDocument)
-	
+
 	// Project comments - require comment permissions
-	comments := projects.Group("/:id/comments", middleware.Auth(s.GetDB(), 
+	comments := projects.Group("/:id/comments", middleware.Auth(s.GetDB(),
 		permissions.PermViewAllProjects,
 		permissions.PermCommentOnProjects,
 	))
@@ -65,7 +66,7 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	comments.PUT("/:comment_id", h.handleUpdateProjectComment)
 
 	// Admin-only comment resolution endpoints - require both comment and admin permissions
-	adminComments := comments.Group("/:comment_id", middleware.Auth(s.GetDB(), 
+	adminComments := comments.Group("/:comment_id", middleware.Auth(s.GetDB(),
 		permissions.PermViewAllProjects,
 		permissions.PermCommentOnProjects,
 		permissions.PermAdmin,

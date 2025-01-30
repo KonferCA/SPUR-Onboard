@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS project_answers (
     answer text NOT NULL DEFAULT '',
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now()),
-    UNIQUE(project_id, question_id)
+    UNIQUE(project_id, question_id, input_type_id)
 );
 
 CREATE TABLE IF NOT EXISTS project_documents (

@@ -39,6 +39,14 @@ WHERE
     AND project_id = $3
 RETURNING *; 
 
+-- name: UpdateProjectDraft :batchexec
+INSERT INTO project_answers (project_id, question_id, input_type_id, answer, updated_at)
+    VALUES ($1, $2, $3, $4, extract(epoch from now()))
+    ON CONFLICT (project_id, question_id, input_type_id)
+    DO UPDATE
+    SET answer = EXCLUDED.answer,
+    updated_at = EXCLUDED.updated_at;
+
 -- name: GetProjectAnswers :many
 SELECT 
     pa.id as answer_id,
