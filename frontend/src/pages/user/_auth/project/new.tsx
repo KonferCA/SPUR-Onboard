@@ -78,10 +78,12 @@ const NewProjectPage = () => {
             } catch (e) {
                 console.error(e);
             } finally {
-                setIsSaving(false);
+                setTimeout(() => {
+                    setIsSaving(false);
+                }, 2000);
             }
         },
-        2000,
+        300,
         [currentProjectId]
     );
 
@@ -190,89 +192,103 @@ const NewProjectPage = () => {
     if (groupedQuestions.length < 1 || loadingQuestions) return null;
 
     return (
-        <SectionedLayout asideTitle="Submit a project" links={asideLinks}>
-            <div>
-                <div>
-                    <nav>
-                        <ul className="flex gap-4 items-center justify-center">
-                            {groupedQuestions.map((group, idx) => (
-                                <li
-                                    key={`step_${group.section}`}
-                                    className={stepItemStyles({
-                                        active: currentStep === idx,
-                                    })}
-                                    onClick={() => {
-                                        setCurrentStep(idx);
-                                    }}
-                                >
-                                    <span>{group.section}</span>
-                                    {currentStep === idx ? (
-                                        <div className="absolute bottom-0 h-[2px] bg-gray-700 w-full"></div>
-                                    ) : null}
-                                </li>
-                            ))}
-                        </ul>
-                    </nav>
+        <div>
+            <nav className="h-24 bg-gray-800"></nav>
+            {isSaving && (
+                <div className="fixed left-0 right-0 top-0 z-10">
+                    <p className="text-center py-2 bg-gray-200">
+                        Saving application...
+                    </p>
                 </div>
-                <form className="space-y-12 lg:max-w-3xl mx-auto mt-12">
-                    {groupedQuestions[currentStep].subSections.map(
-                        (subSection) => (
-                            <div
-                                id={sanitizeHtmlId(
-                                    `${groupedQuestions[currentStep].section}-${subSection.name}`
-                                )}
-                                key={`${groupedQuestions[currentStep].section}_${subSection.name}`}
-                                className={questionGroupContainerStyles()}
-                            >
-                                <div>
-                                    <h1 className={questionGroupTitleStyles()}>
-                                        {subSection.name}
-                                    </h1>
-                                </div>
-                                <div
-                                    className={questionGroupTitleSeparatorStyles()}
-                                ></div>
-                                <div
-                                    className={questionGroupQuestionsContainerStyles()}
-                                >
-                                    {subSection.questions.map((q) => (
-                                        <QuestionInputs
-                                            key={q.id}
-                                            question={q}
-                                            onChange={handleChange}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )
-                    )}
-                    <div className="pb-32 flex gap-8">
-                        <Button
-                            variant="outline"
-                            liquid
-                            type="button"
-                            disabled={currentStep === 0}
-                            onClick={handleBackStep}
-                        >
-                            Back
-                        </Button>
-                        <Button
-                            liquid
-                            type="button"
-                            onClick={
-                                currentStep < groupedQuestions.length - 1
-                                    ? handleNextStep
-                                    : handleSubmit
-                            }
-                        >
-                            {currentStep < groupedQuestions.length - 1
-                                ? 'Continue'
-                                : 'Submit'}
-                        </Button>
+            )}
+            <SectionedLayout
+                asideTitle="Submit a project"
+                linkContainerClassnames="top-36"
+                links={asideLinks}
+            >
+                <div>
+                    <div>
+                        <nav>
+                            <ul className="flex gap-4 items-center justify-center">
+                                {groupedQuestions.map((group, idx) => (
+                                    <li
+                                        key={`step_${group.section}`}
+                                        className={stepItemStyles({
+                                            active: currentStep === idx,
+                                        })}
+                                        onClick={() => {
+                                            setCurrentStep(idx);
+                                        }}
+                                    >
+                                        <span>{group.section}</span>
+                                        {currentStep === idx ? (
+                                            <div className="absolute bottom-0 h-[2px] bg-gray-700 w-full"></div>
+                                        ) : null}
+                                    </li>
+                                ))}
+                            </ul>
+                        </nav>
                     </div>
-                </form>
-            </div>
-        </SectionedLayout>
+                    <form className="space-y-12 lg:max-w-3xl mx-auto mt-12">
+                        {groupedQuestions[currentStep].subSections.map(
+                            (subSection) => (
+                                <div
+                                    id={sanitizeHtmlId(subSection.name)}
+                                    key={subSection.name}
+                                    className={questionGroupContainerStyles()}
+                                >
+                                    <div>
+                                        <h1
+                                            className={questionGroupTitleStyles()}
+                                        >
+                                            {subSection.name}
+                                        </h1>
+                                    </div>
+                                    <div
+                                        className={questionGroupTitleSeparatorStyles()}
+                                    ></div>
+                                    <div
+                                        className={questionGroupQuestionsContainerStyles()}
+                                    >
+                                        {subSection.questions.map((q) => (
+                                            <QuestionInputs
+                                                key={q.id}
+                                                question={q}
+                                                onChange={handleChange}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )
+                        )}
+                        <div className="pb-32 flex gap-8">
+                            <Button
+                                variant="outline"
+                                liquid
+                                type="button"
+                                disabled={currentStep === 0}
+                                onClick={handleBackStep}
+                            >
+                                Back
+                            </Button>
+                            <Button
+                                liquid
+                                type="button"
+                                onClick={
+                                    currentStep < groupedQuestions.length - 1
+                                        ? handleNextStep
+                                        : handleSubmit
+                                }
+                            >
+                                {currentStep < groupedQuestions.length - 1
+                                    ? 'Continue'
+                                    : 'Submit'}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            </SectionedLayout>
+        </div>
     );
 };
 
