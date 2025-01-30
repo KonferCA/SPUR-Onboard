@@ -1,7 +1,6 @@
 import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
 import { fetchWithAuth } from './auth';
-import { API_URL } from '@/config'
 import type { Company, UpdateCompanyRequest } from '@/types/company'
 
 interface CreateCompanyResponse {
@@ -45,7 +44,7 @@ export async function createCompany(
 }
 
 export async function getCompany(): Promise<Company> {
-    const response = await fetchWithAuth(`${API_URL}/company`)
+    const response = await fetchWithAuth(getApiUrl('/company'))
 
     if (!response.ok) {
         throw new Error('Failed to fetch company')
@@ -55,7 +54,7 @@ export async function getCompany(): Promise<Company> {
 }
 
 export async function updateCompany(data: UpdateCompanyRequest): Promise<Company> {
-    const response = await fetchWithAuth(`${API_URL}/company`, {
+    const response = await fetchWithAuth(getApiUrl('/company'), {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
