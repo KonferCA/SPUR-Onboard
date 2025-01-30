@@ -35,9 +35,7 @@ const questionGroupTitleSeparatorStyles = cva(
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
 const NewProjectPage = () => {
-    const [currentProjectId, setCurrentProjectId] = useState(
-        'd9b03b86-a8a1-4861-b299-4a6f8de001aa'
-    );
+    const [currentProjectId, setCurrentProjectId] = useState('');
     const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
         queryKey: ['projectFormQuestions', currentProjectId],
