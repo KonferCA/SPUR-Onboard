@@ -43,7 +43,7 @@ export const SectionedLayout: FC<SectionedLayoutProps> = ({
             >
                 <h1 className="text-lg font-bold">{asideTitle}</h1>
                 {asideDetails}
-                <div className="h-2"></div>
+                <div className="h-4"></div>
                 <AnchorLinks links={links} />
             </nav>
             <div data-testid="sectione-layout-main" className="pt-12 px-64">
