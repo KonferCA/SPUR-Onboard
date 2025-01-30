@@ -144,9 +144,9 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
     }, []);
 
     return (
-        <div className="flex flex-col gap-4">
-            <ul>
-                {controlledLinks.map((link) => (
+        <div>
+            <ul className="flex flex-col gap-2">
+                {controlledLinks.map((link, idx) => (
                     <li
                         key={link.label}
                         onClick={async (e) =>
@@ -167,7 +167,8 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
                                         !link.active && 'text-gray-400'
                                     )}
                                 >
-                                    {link.label}
+                                    <span className="mr-2">{idx + 1}.</span>
+                                    <span>{link.label}</span>
                                 </span>
                             )}
                         </ScrollLink>
