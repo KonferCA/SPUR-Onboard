@@ -179,3 +179,27 @@ export async function getProjectDetails(id: string): Promise<Project> {
     const data = await response.json();
     return transformProject(data);
 }
+
+export interface ProjectDraft {
+    question_id: string;
+    input_type_id: string;
+    answer: string;
+}
+
+export async function saveProjectDraft(
+    projectId: string,
+    draft: ProjectDraft[]
+) {
+    const url = getApiUrl(`project/${projectId}/draft`);
+    const response = await fetchWithAuth(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ draft }),
+    });
+    if (response.status !== 200) {
+        return false;
+    }
+    return true;
+}

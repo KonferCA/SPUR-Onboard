@@ -1,10 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnchorLinkItem, Button } from '@components';
 import {
     createProject,
     getProjectFormQuestions,
+    ProjectDraft,
     ProjectResponse,
+    saveProjectDraft,
 } from '@/services/project';
 import { GroupedProjectQuestions, groupProjectQuestions } from '@/config/forms';
 import { SectionedLayout } from '@/templates';
@@ -13,6 +15,7 @@ import { sanitizeHtmlId } from '@/utils/html';
 import { QuestionInputs } from '@/components/QuestionInputs/QuestionInputs';
 import { useQuery } from '@tanstack/react-query';
 import { scrollToTop } from '@/utils';
+import { useDebounceFn } from '@/hooks';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -38,20 +41,79 @@ const NewProjectPage = () => {
         queryKey: ['projectFormQuestions'],
         queryFn: async () => {
             const data = await getProjectFormQuestions();
-            // '07c99aae-4fcb-4c27-891f-78614dbf94cb'
             return data;
         },
     });
     const [groupedQuestions, setGroupedQuestions] = useState<
         GroupedProjectQuestions[]
     >([]);
-    const [creatingProject, setCreatingProject] = useState(true);
     const [project, setProject] = useState<ProjectResponse | null>(null);
 
     const [currentStep, setCurrentStep] = useState<number>(0);
     const [formData, setFormData] = useState<
         Record<string, Record<string, any>>
     >({});
+    const formDataChangeHistoryRef = useRef<Record<string, Set<string>>>({});
+
+    const autosave = useDebounceFn(
+        async () => {
+            // make a clone of the formdata so that it doesn't interfere
+            // with the user typing when autosave is in progress
+            const currentFormData = Object.assign({}, formData);
+            const currentChangeHistory = formDataChangeHistoryRef.current;
+            // clear out the history
+            formDataChangeHistoryRef.current = {};
+
+            console.log(currentFormData);
+            console.log(currentChangeHistory);
+
+            let innerProject = project;
+            let hasChanged = false;
+            if (!innerProject) {
+                try {
+                    innerProject = await createProject();
+                    hasChanged = true;
+                    console.log(innerProject);
+                } catch (e) {
+                    console.error(e);
+                    // can't proceed if project was not successfully created
+                    return;
+                }
+            }
+
+            // gather all questions that are string only
+            const params: ProjectDraft[] = [];
+            Object.entries(currentChangeHistory).forEach(
+                ([questionId, set]) => {
+                    set.forEach((inputTypeId) => {
+                        const answer = currentFormData[questionId][inputTypeId];
+                        if (typeof answer === 'string') {
+                            params.push({
+                                question_id: questionId,
+                                input_type_id: inputTypeId,
+                                answer,
+                            });
+                        }
+                    });
+                }
+            );
+
+            try {
+                await saveProjectDraft(
+                    '6b7d0ce7-bf9f-4a39-a7e2-8b57f4d53d0c',
+                    params
+                );
+            } catch (e) {
+                console.error(e);
+            }
+
+            if (hasChanged) {
+                setProject(innerProject);
+            }
+        },
+        1000,
+        [formData, project]
+    );
 
     const handleChange = (
         questionID: string,
@@ -67,6 +129,14 @@ const NewProjectPage = () => {
             };
         }
         setFormData({ ...formData });
+        if (formDataChangeHistoryRef.current[questionID]) {
+            formDataChangeHistoryRef.current[questionID].add(inputTypeID);
+        } else {
+            formDataChangeHistoryRef.current[questionID] = new Set([
+                inputTypeID,
+            ]);
+        }
+        autosave();
     };
 
     const handleSubmit = () => {
@@ -100,22 +170,6 @@ const NewProjectPage = () => {
         }
     }, [questionData]);
 
-    useEffect(() => {
-        if (!project) {
-            const action = async () => {
-                try {
-                    const project = await createProject();
-                    setProject(project);
-                } catch (e) {
-                    console.error(e);
-                } finally {
-                    setCreatingProject(false);
-                }
-            };
-            action();
-        }
-    }, []);
-
     const asideLinks = useMemo<AnchorLinkItem[]>(
         () => {
             if (groupedQuestions.length < 1) return [];
@@ -134,7 +188,7 @@ const NewProjectPage = () => {
     );
 
     // TODO: make a better loading screen
-    if (groupedQuestions.length < 1 || creatingProject || loadingQuestions)
+    if (groupedQuestions.length < 1 || loadingQuestions)
         return <div>Loading...</div>;
 
     return (

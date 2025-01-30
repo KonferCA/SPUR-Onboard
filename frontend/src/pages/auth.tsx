@@ -6,16 +6,21 @@ import { VerifyEmail } from '@/components/VerifyEmail';
 import { register, signin, getCompany } from '@/services';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from '@tanstack/react-router';
-import type { AuthFormData, UserDetailsData, FormErrors, RegistrationStep } from '@/types/auth';
+import type {
+    AuthFormData,
+    UserDetailsData,
+    FormErrors,
+    RegistrationStep,
+} from '@/types/auth';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
     const location = useLocation();
     const { user, accessToken, companyId, setAuth, clearAuth } = useAuth();
-    
+
     const [currentStep, setCurrentStep] = useState<RegistrationStep>(() => {
         const state = location.state as { step?: RegistrationStep } | null;
-        
+
         if (state?.step) {
             return state.step;
         }
@@ -29,7 +34,8 @@ function AuthPage() {
 
     const [mode, setMode] = useState<'login' | 'register'>('login');
     const [isLoading, setIsLoading] = useState(false);
-    const [isResendingVerification, setIsResendingVerification] = useState(false);
+    const [isResendingVerification, setIsResendingVerification] =
+        useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
 
     useEffect(() => {
@@ -44,16 +50,17 @@ function AuthPage() {
 
     const handleRedirect = () => {
         if (!user) return;
-        
-        switch (user.role) {
-            case 'admin':
-                navigate({ to: '/admin/dashboard', replace: true });
-                break;
-            case 'startup_owner':
-            case 'investor':
-                navigate({ to: '/user/dashboard', replace: true });
-                break;
-        }
+
+        // switch (user.role) {
+        //     case 'admin':
+        //         navigate({ to: '/admin/dashboard', replace: true });
+        //         break;
+        //     case 'startup_owner':
+        //     case 'investor':
+        //         navigate({ to: '/user/dashboard', replace: true });
+        //         break;
+        // }
+        navigate({ to: '/user/project/new', replace: true });
     };
 
     const handleAuthSubmit = async (formData: AuthFormData) => {
@@ -62,11 +69,17 @@ function AuthPage() {
 
         try {
             if (mode === 'register') {
-                const regResp = await register(formData.email, formData.password);
+                const regResp = await register(
+                    formData.email,
+                    formData.password
+                );
                 setAuth(regResp.user, regResp.access_token);
                 setCurrentStep('verify-email');
             } else {
-                const signinResp = await signin(formData.email, formData.password);
+                const signinResp = await signin(
+                    formData.email,
+                    formData.password
+                );
                 const company = await getCompany(signinResp.access_token);
                 setAuth(
                     signinResp.user,
@@ -96,7 +109,7 @@ function AuthPage() {
         try {
             if (!user) throw new Error('No user found');
 
-            // TODO: Add user details update API call 
+            // TODO: Add user details update API call
             // await updateUserDetails(user.id, {
             //     first_name: formData.firstName,
             //     last_name: formData.lastName,
@@ -109,7 +122,7 @@ function AuthPage() {
             user.last_name = formData.lastName;
             setAuth(user, accessToken, companyId);
             setCurrentStep('registration-complete');
-            
+
             setTimeout(() => {
                 handleRedirect();
             }, 1500);
@@ -125,7 +138,7 @@ function AuthPage() {
 
     const handleResendVerification = async () => {
         if (!user?.email) return;
-        
+
         setIsResendingVerification(true);
         try {
             // TODO: Add resend verification email API call here
@@ -147,10 +160,12 @@ function AuthPage() {
                         isLoading={isLoading}
                         errors={errors}
                         mode={mode}
-                        onToggleMode={() => setMode(mode === 'login' ? 'register' : 'login')}
+                        onToggleMode={() =>
+                            setMode(mode === 'login' ? 'register' : 'login')
+                        }
                     />
                 );
-                
+
             case 'verify-email':
                 return user ? (
                     <VerifyEmail
@@ -159,24 +174,30 @@ function AuthPage() {
                         isResending={isResendingVerification}
                     />
                 ) : null;
-                
+
             case 'form-details':
                 return (
                     <UserDetailsForm
                         onSubmit={handleUserDetailsSubmit}
                         isLoading={isLoading}
                         errors={errors}
-                        initialData={user ? {
-                            firstName: user.first_name,
-                            lastName: user.last_name,
-                        } : undefined}
+                        initialData={
+                            user
+                                ? {
+                                      firstName: user.first_name,
+                                      lastName: user.last_name,
+                                  }
+                                : undefined
+                        }
                     />
                 );
-                
+
             case 'registration-complete':
                 return (
                     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md text-center">
-                        <h2 className="text-2xl font-semibold mb-4">Registration Complete!</h2>
+                        <h2 className="text-2xl font-semibold mb-4">
+                            Registration Complete!
+                        </h2>
                         <p className="text-gray-600">
                             Redirecting you to the dashboard...
                         </p>
@@ -185,7 +206,7 @@ function AuthPage() {
                         </div>
                     </div>
                 );
-                
+
             case 'signing-in':
                 return (
                     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md text-center">
@@ -208,3 +229,4 @@ function AuthPage() {
 export const Route = createFileRoute('/auth')({
     component: AuthPage,
 });
+
