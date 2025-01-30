@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"KonferCA/SPUR/internal/permissions"
+
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
