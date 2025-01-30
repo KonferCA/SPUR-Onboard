@@ -25,7 +25,7 @@ export async function register(
     password: string,
     role: UserRole = 'startup_owner'
 ): Promise<RegisterReponse> {
-    const url = getApiUrl('/auth/signup');
+    const url = getApiUrl('/auth/register');
     const body = {
         email,
         password,
@@ -56,7 +56,7 @@ export async function signin(
     email: string,
     password: string
 ): Promise<SigninResponse> {
-    const url = getApiUrl('/auth/signin');
+    const url = getApiUrl('/auth/login');
     const body = {
         email,
         password,
@@ -83,9 +83,9 @@ export async function signin(
 }
 
 export async function refreshAccessToken(): Promise<string> {
-    const url = getApiUrl('/auth/refresh');
+    const url = getApiUrl('/auth/verify');
     const res = await fetch(url, {
-        method: 'POST',
+        method: 'GET',
         credentials: 'include'
     });
 
@@ -145,7 +145,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
  * 2. Clearing the auth context
  */
 export async function signout(): Promise<void> {
-    const url = getApiUrl('/auth/signout');
+    const url = getApiUrl('/auth/logout');
     await fetch(url, { 
         method: 'POST',
         credentials: 'include' 

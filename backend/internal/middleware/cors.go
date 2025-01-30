@@ -28,12 +28,16 @@ func CORS() echo.MiddlewareFunc {
 
 func getCORSConfigByEnv() em.CORSConfig {
 	appEnv := os.Getenv("APP_ENV")
-	url := os.Getenv("BACKEND_URL")
+	fe_url := os.Getenv("FRONTEND_URL")
 
 	switch appEnv {
 	case common.DEVELOPMENT_ENV, common.TEST_ENV:
 		return em.CORSConfig{
-			AllowOrigins: []string{"*"},
+			AllowOrigins: []string{
+				"http://localhost:5173",
+				"http://127.0.0.1:5173",
+				fe_url,
+			},
 			AllowMethods: []string{
 				http.MethodGet,
 				http.MethodPost,
@@ -43,13 +47,23 @@ func getCORSConfigByEnv() em.CORSConfig {
 				http.MethodDelete,
 				http.MethodOptions,
 			},
-			AllowHeaders:                             []string{"*"},
-			AllowCredentials:                         true,
-			UnsafeWildcardOriginWithAllowCredentials: true,
+			AllowHeaders: []string{
+				"Accept",
+				"Authorization",
+				"Content-Type",
+				"X-CSRF-Token",
+				"X-Requested-With",
+			},
+			AllowCredentials: true,
+			MaxAge:           300,
 		}
 	case common.STAGING_ENV:
 		return em.CORSConfig{
-			AllowOrigins: []string{url},
+			AllowOrigins: []string{
+				"http://localhost:5173",
+				"http://127.0.0.1:5173",
+				fe_url,
+			},
 			AllowMethods: []string{
 				http.MethodGet,
 				http.MethodPost,
@@ -59,12 +73,23 @@ func getCORSConfigByEnv() em.CORSConfig {
 				http.MethodDelete,
 				http.MethodOptions,
 			},
-			AllowHeaders:     []string{"*"},
+			AllowHeaders: []string{
+				"Accept",
+				"Authorization",
+				"Content-Type",
+				"X-CSRF-Token",
+				"X-Requested-With",
+			},
 			AllowCredentials: true,
+			MaxAge:           300,
 		}
 	case common.PREVIEW_ENV:
 		return em.CORSConfig{
-			AllowOrigins: []string{url},
+			AllowOrigins: []string{
+				"http://localhost:5173",
+				"http://127.0.0.1:5173",
+				fe_url,
+			},
 			AllowMethods: []string{
 				http.MethodGet,
 				http.MethodPost,
@@ -74,8 +99,15 @@ func getCORSConfigByEnv() em.CORSConfig {
 				http.MethodDelete,
 				http.MethodOptions,
 			},
-			AllowHeaders:     []string{"*"},
+			AllowHeaders: []string{
+				"Accept",
+				"Authorization",
+				"Content-Type",
+				"X-CSRF-Token",
+				"X-Requested-With",
+			},
 			AllowCredentials: true,
+			MaxAge:           300,
 		}
 	}
 	// production configuration is last to prevent situations
@@ -84,7 +116,7 @@ func getCORSConfigByEnv() em.CORSConfig {
 	return em.CORSConfig{
 		// TODO: We need to decide on a name and what will be the domain name
 		// for the production deployment
-		AllowOrigins: []string{url},
+		AllowOrigins: []string{fe_url},
 		AllowMethods: []string{
 			http.MethodGet,
 			http.MethodPost,
