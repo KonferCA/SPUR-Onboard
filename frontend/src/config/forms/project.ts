@@ -1,4 +1,4 @@
-import { createUploadableFile } from '@/components';
+import { createUploadableFile, UploadableFile } from '@/components';
 import { ProjectQuestionsData } from '@/services/project';
 import { FormField, FormFieldType } from '@/types';
 import { createZodSchema } from '@/utils/form-validation';
@@ -31,15 +31,23 @@ export function groupProjectQuestions(
     data: ProjectQuestionsData
 ): GroupedProjectQuestions[] {
     const { questions, documents, teamMembers } = data;
-    const sortedQuestions = [...questions].sort((a, b) => {
-        if (a.sectionOrder !== b.sectionOrder)
-            return a.sectionOrder - b.sectionOrder;
-        if (a.subSectionOrder !== b.subSectionOrder)
-            return a.subSectionOrder - b.subSectionOrder;
-        return a.questionOrder - b.questionOrder;
-    });
+    // Pre-process documents for faster lookup
+    const documentsByQuestion =
+        documents?.reduce(
+            (acc, doc) => {
+                if (!acc[doc.questionId]) {
+                    acc[doc.questionId] = [];
+                }
+                const file = new File([new ArrayBuffer(doc.size)], doc.name, {
+                    type: doc.mimeType,
+                });
+                acc[doc.questionId].push(createUploadableFile(file, doc, true));
+                return acc;
+            },
+            {} as Record<string, UploadableFile[]>
+        ) ?? {};
 
-    return sortedQuestions.reduce<GroupedProjectQuestions[]>(
+    return questions.reduce<GroupedProjectQuestions[]>(
         (acc, projectQuestion) => {
             let group = acc.find((g) => g.section === projectQuestion.section);
             if (!group) {
@@ -76,28 +84,20 @@ export function groupProjectQuestions(
                 validations: projectQuestion.validations
                     ? createZodSchema(projectQuestion.validations)
                     : undefined,
+                value: {},
             };
 
-            if (inputField.type === 'file' && documents) {
-                // try to find if there are any already uploaded documents
-                const files = documents
-                    .filter((doc) => doc.questionId === projectQuestion.id)
-                    .map((doc) => {
-                        // the new array buffer is to provide size information when rendering the uploaded documents
-                        const f = new File(
-                            [new ArrayBuffer(doc.size)],
-                            doc.name,
-                            {
-                                type: doc.mimeType,
-                            }
-                        );
-                        return createUploadableFile(f, doc, true);
-                    });
-                inputField.files = files;
-            }
-
-            if (inputField.type === 'team') {
-                inputField.teamMembers = teamMembers;
+            switch (inputField.type) {
+                case 'file':
+                    inputField.value.files =
+                        documentsByQuestion[projectQuestion.id] ?? [];
+                    break;
+                case 'team':
+                    inputField.value.teamMembers = teamMembers ?? [];
+                    break;
+                default:
+                    inputField.value.value = projectQuestion.answer;
+                    break;
             }
 
             let question = subSection.questions.find(

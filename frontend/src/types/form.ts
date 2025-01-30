@@ -8,6 +8,13 @@ export type FormFieldType =
     | 'textarea'
     | 'file'
     | 'team';
+
+export interface FormFieldValue {
+    files?: UploadableFile[];
+    teamMembers?: TeamMember[];
+    value?: any;
+}
+
 export interface FormField {
     key: string;
     type: FormFieldType;
@@ -21,8 +28,7 @@ export interface FormField {
         value: string;
     }>;
     validations?: ZodString[];
-    files?: UploadableFile[];
-    teamMembers?: TeamMember[];
+    value: FormFieldValue;
 }
 
 export interface FormSection {

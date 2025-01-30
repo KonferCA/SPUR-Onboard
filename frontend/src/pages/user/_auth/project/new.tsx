@@ -1,11 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { AnchorLinkItem, Button } from '@components';
+import { useEffect, useRef, useState } from 'react';
+import { Button } from '@components';
 import {
     createProject,
     getProjectFormQuestions,
     ProjectDraft,
-    ProjectResponse,
     saveProjectDraft,
 } from '@/services/project';
 import { GroupedProjectQuestions, groupProjectQuestions } from '@/config/forms';
@@ -36,112 +35,111 @@ const questionGroupTitleSeparatorStyles = cva(
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
 const NewProjectPage = () => {
+    const [currentProjectId, setCurrentProjectId] = useState(
+        'd9b03b86-a8a1-4861-b299-4a6f8de001aa'
+    );
     const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
-        queryKey: ['projectFormQuestions'],
+        queryKey: ['projectFormQuestions', currentProjectId],
         queryFn: async () => {
-            const data = await getProjectFormQuestions();
+            const data = await getProjectFormQuestions(currentProjectId);
             return data;
         },
+        enabled: !!currentProjectId,
     });
     const [groupedQuestions, setGroupedQuestions] = useState<
         GroupedProjectQuestions[]
     >([]);
-    const [project, setProject] = useState<ProjectResponse | null>(null);
 
+    const [isSaving, setIsSaving] = useState(false);
     const [currentStep, setCurrentStep] = useState<number>(0);
-    const [formData, setFormData] = useState<
-        Record<string, Record<string, any>>
-    >({});
-    const formDataChangeHistoryRef = useRef<Record<string, Set<string>>>({});
+    const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
 
     const autosave = useDebounceFn(
         async () => {
-            // make a clone of the formdata so that it doesn't interfere
-            // with the user typing when autosave is in progress
-            const currentFormData = Object.assign({}, formData);
-            const currentChangeHistory = formDataChangeHistoryRef.current;
-            // clear out the history
-            formDataChangeHistoryRef.current = {};
+            setIsSaving(true);
 
-            console.log(currentFormData);
-            console.log(currentChangeHistory);
+            if (!currentProjectId) return;
 
-            let innerProject = project;
-            let hasChanged = false;
-            if (!innerProject) {
-                try {
-                    innerProject = await createProject();
-                    hasChanged = true;
-                    console.log(innerProject);
-                } catch (e) {
-                    console.error(e);
-                    // can't proceed if project was not successfully created
-                    return;
-                }
-            }
-
-            // gather all questions that are string only
-            const params: ProjectDraft[] = [];
-            Object.entries(currentChangeHistory).forEach(
-                ([questionId, set]) => {
-                    set.forEach((inputTypeId) => {
-                        const answer = currentFormData[questionId][inputTypeId];
-                        if (typeof answer === 'string') {
-                            params.push({
-                                question_id: questionId,
-                                input_type_id: inputTypeId,
-                                answer,
-                            });
-                        }
-                    });
-                }
+            // Find all dirty inputs and create params while clearing dirty flags
+            const dirtyInputsSnapshot: ProjectDraft[] = Array.from(
+                dirtyInputRef.current.values()
             );
+            dirtyInputRef.current.clear();
 
             try {
-                await saveProjectDraft(
-                    '6b7d0ce7-bf9f-4a39-a7e2-8b57f4d53d0c',
-                    params
-                );
+                console.log(dirtyInputsSnapshot);
+                if (dirtyInputsSnapshot.length > 0) {
+                    await saveProjectDraft(
+                        currentProjectId,
+                        dirtyInputsSnapshot
+                    );
+                }
             } catch (e) {
                 console.error(e);
-            }
-
-            if (hasChanged) {
-                setProject(innerProject);
+            } finally {
+                setIsSaving(false);
             }
         },
-        1000,
-        [formData, project]
+        2000,
+        [currentProjectId]
     );
 
     const handleChange = (
-        questionID: string,
-        inputTypeID: string,
+        questionId: string,
+        inputTypeId: string,
         value: any
     ) => {
-        // find the question and then the input
-        if (formData[questionID]) {
-            formData[questionID][inputTypeID] = value;
-        } else {
-            formData[questionID] = {
-                [inputTypeID]: value,
+        const newGroups = groupedQuestions.map((group, idx) => {
+            if (currentStep !== idx) return group;
+            return {
+                ...group,
+                subSections: group.subSections.map((subsection) => {
+                    const questionIdx = subsection.questions.findIndex(
+                        (q) => q.id === questionId
+                    );
+                    if (questionIdx === -1) return subsection;
+                    return {
+                        ...subsection,
+                        questions: subsection.questions.map((question, i) => {
+                            if (i !== questionIdx) return question;
+                            return {
+                                ...question,
+                                inputFields: question.inputFields.map(
+                                    (field) => {
+                                        if (
+                                            field.key === inputTypeId &&
+                                            typeof field.value.value ===
+                                                'string'
+                                        ) {
+                                            const key = `${questionId}_${inputTypeId}`;
+                                            dirtyInputRef.current.set(key, {
+                                                question_id: questionId,
+                                                input_type_id: inputTypeId,
+                                                answer: value,
+                                            });
+                                        }
+                                        return {
+                                            ...field,
+                                            value: {
+                                                ...field.value,
+                                                value: value,
+                                            },
+                                        };
+                                    }
+                                ),
+                            };
+                        }),
+                    };
+                }),
             };
-        }
-        setFormData({ ...formData });
-        if (formDataChangeHistoryRef.current[questionID]) {
-            formDataChangeHistoryRef.current[questionID].add(inputTypeID);
-        } else {
-            formDataChangeHistoryRef.current[questionID] = new Set([
-                inputTypeID,
-            ]);
-        }
+        });
+        setGroupedQuestions(newGroups);
         autosave();
     };
 
     const handleSubmit = () => {
         console.log(groupedQuestions);
-        console.log(formData);
     };
 
     const handleNextStep = () => {
@@ -170,26 +168,26 @@ const NewProjectPage = () => {
         }
     }, [questionData]);
 
-    const asideLinks = useMemo<AnchorLinkItem[]>(
-        () => {
-            if (groupedQuestions.length < 1) return [];
-            const group = groupedQuestions[currentStep];
-            const links: AnchorLinkItem[] = group.subSectionNames.map(
-                (name) => ({
-                    label: name,
-                    target: `#${sanitizeHtmlId(group.section + '-' + name)}`,
-                })
-            );
-            return links;
-        },
-        // re-compute the aside links when the current step is changed
-        // or new sections/questions are fetched
-        [currentStep, groupedQuestions]
+    useEffect(() => {
+        // create project on mount
+        if (!currentProjectId) {
+            const newProject = async () => {
+                const project = await createProject();
+                setCurrentProjectId(project.id);
+            };
+            newProject();
+        }
+    }, []);
+
+    const asideLinks = groupedQuestions[currentStep]?.subSectionNames.map(
+        (name) => ({
+            target: `#${sanitizeHtmlId(name)}`,
+            label: name,
+        })
     );
 
     // TODO: make a better loading screen
-    if (groupedQuestions.length < 1 || loadingQuestions)
-        return <div>Loading...</div>;
+    if (groupedQuestions.length < 1 || loadingQuestions) return null;
 
     return (
         <SectionedLayout asideTitle="Submit a project" links={asideLinks}>
@@ -241,7 +239,6 @@ const NewProjectPage = () => {
                                         <QuestionInputs
                                             key={q.id}
                                             question={q}
-                                            values={formData[q.id] ?? {}}
                                             onChange={handleChange}
                                         />
                                     ))}
