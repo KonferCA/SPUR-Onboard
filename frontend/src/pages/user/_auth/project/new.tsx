@@ -1,7 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { AnchorLinkItem, Button } from '@components';
-import { getProjectFormQuestions } from '@/services/project';
+import {
+    createProject,
+    getProjectFormQuestions,
+    ProjectResponse,
+} from '@/services/project';
 import { GroupedProjectQuestions, groupProjectQuestions } from '@/config/forms';
 import { SectionedLayout } from '@/templates';
 import { cva } from 'class-variance-authority';
@@ -29,14 +33,20 @@ const questionGroupTitleSeparatorStyles = cva(
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
 const NewProjectPage = () => {
-    const { data, isLoading } = useQuery({
+    const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
         queryKey: ['projectFormQuestions'],
-        queryFn: getProjectFormQuestions,
+        queryFn: async () => {
+            const data = await getProjectFormQuestions();
+            // '07c99aae-4fcb-4c27-891f-78614dbf94cb'
+            return data;
+        },
     });
     const [groupedQuestions, setGroupedQuestions] = useState<
         GroupedProjectQuestions[]
     >([]);
+    const [creatingProject, setCreatingProject] = useState(true);
+    const [project, setProject] = useState<ProjectResponse | null>(null);
 
     const [currentStep, setCurrentStep] = useState<number>(0);
     const [formData, setFormData] = useState<
@@ -85,10 +95,26 @@ const NewProjectPage = () => {
     };
 
     useEffect(() => {
-        if (data) {
-            setGroupedQuestions(groupProjectQuestions(data));
+        if (questionData) {
+            setGroupedQuestions(groupProjectQuestions(questionData));
         }
-    }, [data]);
+    }, [questionData]);
+
+    useEffect(() => {
+        if (!project) {
+            const action = async () => {
+                try {
+                    const project = await createProject();
+                    setProject(project);
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    setCreatingProject(false);
+                }
+            };
+            action();
+        }
+    }, []);
 
     const asideLinks = useMemo<AnchorLinkItem[]>(
         () => {
@@ -108,7 +134,8 @@ const NewProjectPage = () => {
     );
 
     // TODO: make a better loading screen
-    if (groupedQuestions.length < 1 || isLoading) return <div>Loading...</div>;
+    if (groupedQuestions.length < 1 || creatingProject || loadingQuestions)
+        return <div>Loading...</div>;
 
     return (
         <SectionedLayout asideTitle="Submit a project" links={asideLinks}>

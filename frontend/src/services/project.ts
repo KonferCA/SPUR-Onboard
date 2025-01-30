@@ -4,25 +4,22 @@ import { fetchWithAuth } from './auth';
 import { snakeToCamel } from '@/utils/object';
 import { TeamMember } from '@/types';
 
-interface CompanyResponse {
-    ID: string;
-    Name: string;
-    Industry: string | null;
-    FoundedDate: string | null;
-    CompanyStage: string | null;
-}
+// interface CompanyResponse {
+//     ID: string;
+//     Name: string;
+//     Industry: string | null;
+//     FoundedDate: string | null;
+//     CompanyStage: string | null;
+// }
 
 // Backend response interface
-interface ProjectResponse {
-    ID: string;
-    CompanyID: string;
-    Title: string;
-    Description: string | null;
-    Status: string;
-    CreatedAt: string;
-    UpdatedAt: string;
-    Company?: CompanyResponse;
-    Sections?: ProjectSection[];
+export interface ProjectResponse {
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    createdAt: number;
+    updatedAt: number;
 }
 
 export interface ProjectQuestion {
@@ -129,30 +126,10 @@ const transformProject = (data: any): Project => {
     };
 };
 
-export async function createProject(
-    _companyId: string,
-    payload: {
-        company_id: string;
-        title: string;
-        description: string;
-        status: string;
-        files: any[];
-        links: { link_type: string; url: string }[];
-        sections: {
-            title: string;
-            questions: { question: string; answer: string }[];
-        }[];
-    }
-): Promise<ProjectResponse> {
-    const url = getApiUrl('/projects');
+export async function createProject(): Promise<ProjectResponse> {
+    const url = getApiUrl('/project/new');
 
-    const response = await fetchWithAuth(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-    });
+    const response = await fetchWithAuth(url, { method: 'POST' });
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -164,7 +141,9 @@ export async function createProject(
         );
     }
 
-    return response.json();
+    const json = await response.json();
+
+    return snakeToCamel(json);
 }
 
 export async function getProjects(): Promise<Project[]> {
