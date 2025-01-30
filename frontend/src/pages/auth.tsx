@@ -6,13 +6,15 @@ import { VerifyEmail } from '@/components/VerifyEmail';
 import { register, signin, getCompany } from '@/services';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from '@tanstack/react-router';
+import { handleEmailVerificationRedirect, isVerificationRedirect } from '@/services/verification';
 import type { AuthFormData, UserDetailsData, FormErrors, RegistrationStep } from '@/types/auth';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
     const location = useLocation();
     const { user, accessToken, companyId, setAuth, clearAuth } = useAuth();
-    
+    const searchParams = new URLSearchParams(window.location.search);
+
     const [currentStep, setCurrentStep] = useState<RegistrationStep>(() => {
         const state = location.state as { step?: RegistrationStep } | null;
         
@@ -31,6 +33,44 @@ function AuthPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isResendingVerification, setIsResendingVerification] = useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
+
+    useEffect(() => {
+        const handleVerificationRedirect = async () => {
+            if (!isVerificationRedirect(searchParams)) return;
+
+            try {
+                setIsLoading(true);
+                if (user) {
+                    const success = await handleEmailVerificationRedirect(
+                        searchParams,
+                        user,
+                        setAuth,
+                        companyId
+                    );
+                    if (success) {
+                        handleRedirect();
+                        return;
+                    }
+                }
+                
+                setErrors({
+                    email: 'Email verification failed. Please try signing in again.'
+                });
+                clearAuth();
+                setCurrentStep('login-register');
+            } catch (error) {
+                console.error('Verification redirect error:', error);
+                setErrors({
+                    email: 'Failed to complete verification. Please try signing in.'
+                });
+                clearAuth();
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        handleVerificationRedirect();
+    }, [searchParams, user]);
 
     useEffect(() => {
         if (user && currentStep === 'login-register') {
