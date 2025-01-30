@@ -3,6 +3,9 @@ SELECT * FROM companies
 WHERE owner_id = $1 
 LIMIT 1;
 
+-- name: GetProjectCountOwnedByCompany :one
+SELECT COUNT(id) FROM projects WHERE company_id = $1;
+
 -- name: CreateProject :one
 INSERT INTO projects (
     company_id,

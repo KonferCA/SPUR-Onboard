@@ -437,6 +437,17 @@ func (q *Queries) GetProjectComments(ctx context.Context, projectID string) ([]P
 	return items, nil
 }
 
+const getProjectCountOwnedByCompany = `-- name: GetProjectCountOwnedByCompany :one
+SELECT COUNT(id) FROM projects WHERE company_id = $1
+`
+
+func (q *Queries) GetProjectCountOwnedByCompany(ctx context.Context, companyID string) (int64, error) {
+	row := q.db.QueryRow(ctx, getProjectCountOwnedByCompany, companyID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getProjectDocument = `-- name: GetProjectDocument :one
 SELECT project_documents.id, project_documents.project_id, project_documents.question_id, project_documents.name, project_documents.url, project_documents.section, project_documents.sub_section, project_documents.mime_type, project_documents.size, project_documents.created_at, project_documents.updated_at FROM project_documents
 JOIN projects ON project_documents.project_id = projects.id

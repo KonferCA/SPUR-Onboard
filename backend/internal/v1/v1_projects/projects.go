@@ -48,17 +48,23 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
-	var req CreateProjectRequest
-	if err := v1_common.BindandValidate(c, &req); err != nil {
-		return v1_common.Fail(c, 400, "Invalid request", err)
-	}
+	// NOTE: this is commented out because the project title and description
+	// can't be edit in the frontend so it shouldn't be a requirement to create a new project.
+	// var req CreateProjectRequest
+	// if err := v1_common.BindandValidate(c, &req); err != nil {
+	// 	return v1_common.Fail(c, 400, "Invalid request", err)
+	// }
+
+	// get count of projects owned by the user
+	count, err := h.server.GetQueries().GetProjectCountOwnedByCompany(c.Request().Context(), company.ID)
 
 	// Create project
 	now := time.Now().Unix()
-	description := req.Description
+	// For now the project description is just empty
+	description := ""
 	project, err := h.server.GetQueries().CreateProject(c.Request().Context(), db.CreateProjectParams{
 		CompanyID:   company.ID,
-		Title:       req.Title,
+		Title:       fmt.Sprintf("Project %d", count), // For now the project title is not editable in the frontend
 		Description: &description,
 		Status:      db.ProjectStatusDraft,
 		CreatedAt:   now,
