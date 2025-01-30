@@ -18,8 +18,6 @@ export interface AuthState {
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
-const LOCAL_STORAGE_AUTH_KEY = 'auth_state';
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [companyId, setCompanyId] = useState<string | null>(null);
@@ -27,35 +25,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const savedAuth = localStorage.getItem(LOCAL_STORAGE_AUTH_KEY);
-        if (savedAuth) {
+        const verifyAuth = async () => {
             try {
-                const { user, accessToken, companyId } = JSON.parse(savedAuth);
-                setUser(user);
-                setAccessToken(accessToken);
-                setCompanyId(companyId); 
+                const response = await refreshAccessToken();
+                if (response) {
+                    setUser(response.user);
+                    setAccessToken(response.access_token);
+                }
             } catch (error) {
-                console.error('Failed to parse auth state from local storage: ', error);
-                localStorage.removeItem(LOCAL_STORAGE_AUTH_KEY);
+                console.error('Initial auth verification failed:', error);
+            } finally {
+                setIsLoading(false);
             }
-        }
+        };
 
-        setIsLoading(false);
+        verifyAuth();
     }, []);
 
     useEffect(() => {
         if (!accessToken) return;
 
-        const REFRESH_INTERVAL = 1000 * 60 * 5; // 5 minutes
+        const REFRESH_INTERVAL = 1000 * 60 * 4; // 4 minutes (just under the 5-minute backend token expiry)
         let refreshTimeout: NodeJS.Timeout | null = null;
 
         const refreshToken = async () => {
             try {
-                const newAccessToken = await refreshAccessToken();
-                setAccessToken(newAccessToken);
-                saveToLocalStorage({ user, accessToken: newAccessToken, companyId });
+                const response = await refreshAccessToken();
+                if (response) {
+                    setUser(response.user);
+                    setAccessToken(response.access_token);
+                }
             } catch (error) {
-                console.error('Failed to refresh token: ', error);
+                console.error('Failed to refresh token:', error);
                 clearAuth();
             }
         };
@@ -66,22 +67,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (refreshTimeout) {
                 clearInterval(refreshTimeout);
             }
-        }
-    }, [accessToken, user, companyId]);
-
-    const saveToLocalStorage = (authState: { user: User | null; accessToken: string | null; companyId: string | null }) => {
-        localStorage.setItem(LOCAL_STORAGE_AUTH_KEY, JSON.stringify(authState));
-    };
+        };
+    }, [accessToken]);
 
     const setAuth = (
-        user: User | null,
+        newUser: User | null,
         token: string | null,
-        companyId: string | null = null
+        newCompanyId: string | null = null
     ) => {
-        setUser(user);
+        setUser(newUser);
         setAccessToken(token);
-        setCompanyId(companyId);
-        saveToLocalStorage({ user, accessToken: token, companyId });
+        setCompanyId(newCompanyId);
     };
 
     const clearAuth = async () => {
@@ -93,7 +89,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(null);
             setAccessToken(null);
             setCompanyId(null);
-            localStorage.removeItem(LOCAL_STORAGE_AUTH_KEY);
         }
     };
 
