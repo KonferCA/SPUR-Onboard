@@ -97,37 +97,44 @@ const NewProjectPage = () => {
             return {
                 ...group,
                 subSections: group.subSections.map((subsection) => {
-                    const questionIdx = subsection.questions.findIndex(
-                        (q) => q.id === questionId
-                    );
-                    if (questionIdx === -1) return subsection;
                     return {
                         ...subsection,
-                        questions: subsection.questions.map((question, i) => {
-                            if (i !== questionIdx) return question;
+                        questions: subsection.questions.map((question) => {
+                            if (question.id !== questionId) return question;
                             return {
                                 ...question,
                                 inputFields: question.inputFields.map(
                                     (field) => {
-                                        if (
-                                            field.key === inputTypeId &&
-                                            typeof field.value.value ===
-                                                'string'
-                                        ) {
+                                        if (field.key === inputTypeId) {
                                             const key = `${questionId}_${inputTypeId}`;
-                                            dirtyInputRef.current.set(key, {
-                                                question_id: questionId,
-                                                input_type_id: inputTypeId,
-                                                answer: value,
-                                            });
+                                            switch (field.type) {
+                                                case 'file':
+                                                    break;
+                                                case 'team':
+                                                    break;
+
+                                                default:
+                                                    dirtyInputRef.current.set(
+                                                        key,
+                                                        {
+                                                            question_id:
+                                                                questionId,
+                                                            input_type_id:
+                                                                inputTypeId,
+                                                            answer: value,
+                                                        }
+                                                    );
+                                                    break;
+                                            }
+                                            return {
+                                                ...field,
+                                                value: {
+                                                    ...field.value,
+                                                    value: value,
+                                                },
+                                            };
                                         }
-                                        return {
-                                            ...field,
-                                            value: {
-                                                ...field.value,
-                                                value: value,
-                                            },
-                                        };
+                                        return field;
                                     }
                                 ),
                             };
