@@ -162,12 +162,12 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
                             ) : (
                                 <span
                                     className={clsx(
-                                        'transition hover:text-gray-800 hover:cursor-pointer',
+                                        'flex gap-2 transition hover:text-gray-800 hover:cursor-pointer',
                                         link.active && 'text-black',
                                         !link.active && 'text-gray-400'
                                     )}
                                 >
-                                    <span className="mr-2">{idx + 1}.</span>
+                                    <span>{idx + 1}.</span>
                                     <span>{link.label}</span>
                                 </span>
                             )}
