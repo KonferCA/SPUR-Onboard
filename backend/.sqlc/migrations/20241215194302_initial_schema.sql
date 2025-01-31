@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS companies (
     name varchar NOT NULL,
     wallet_address varchar,
     linkedin_url varchar NOT NULL,
+    company_stages text[] NOT NULL,
+    investement_stage text,
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
@@ -69,9 +71,9 @@ CREATE TYPE input_type_enum AS ENUM (
     'textarea',
     'textinput',
     'select',
+    'multiselect',
     'team',
-    'checkbox',
-    'radio'
+    'date'
 );
 
 CREATE TYPE condition_type_enum AS ENUM (
@@ -94,16 +96,21 @@ CREATE TABLE project_questions (
     question_order int NOT NULL, -- defines in which order the question appears in the sub-section
 
 
-    input_type input_type_enum NOT NULL,
-
+    -- conditional rendering
     condition_type condition_type_enum, -- 'empty', 'not_empty', 'equals', 'contains'
     condition_value text, -- Optional, only needed for specific condition types
     dependent_question uuid REFERENCES project_questions(id) ON DELETE SET NULL,
 
-    options varchar(255)[], -- For input types that need options
     validations varchar(255),
 
+    -- input properties
+    input_type input_type_enum NOT NULL,
+    options varchar(255)[], -- For input types that need options
     required boolean NOT NULL DEFAULT false,
+    placeholder text,
+    description text,
+    disabled boolean NOT NULL DEFAULT false,
+
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
