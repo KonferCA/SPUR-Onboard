@@ -203,6 +203,8 @@ func (h *Handler) handleLogin(c echo.Context) error {
 	return c.JSON(http.StatusOK, AuthResponse{
 		AccessToken: accessToken,
 		User: UserResponse{
+			FirstName:     user.FirstName,
+			LastName:      user.LastName,
 			Email:         user.Email,
 			EmailVerified: user.EmailVerified,
 			Permissions:   uint32(user.Permissions),
