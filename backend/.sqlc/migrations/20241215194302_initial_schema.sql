@@ -51,6 +51,16 @@ CREATE TABLE IF NOT EXISTS team_members (
     bio varchar NOT NULL,
     linkedin_url varchar NOT NULL,
     is_account_owner boolean NOT NULL DEFAULT false,
+    personal_website TEXT,
+    commitment_type TEXT NOT NULL,
+    introduction TEXT NOT NULL,
+    industy_experience TEXT NOT NULL,
+    detailed_biography TEXT NOT NULL,
+    previous_work TEXT,
+    resume_external_url TEXT,
+    resume_internal_url TEXT, -- s3 url
+    founders_agreement_external_url TEXT,
+    founders_agreement_internal_url TEXT, -- s3 url
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
@@ -99,9 +109,13 @@ CREATE TABLE project_questions (
     -- conditional rendering
     condition_type condition_type_enum, -- 'empty', 'not_empty', 'equals', 'contains'
     condition_value text, -- Optional, only needed for specific condition types
-    dependent_question uuid REFERENCES project_questions(id) ON DELETE SET NULL,
+    dependent_question_id uuid REFERENCES project_questions(id) ON DELETE SET NULL,
 
-    validations varchar(255),
+    validations text[],
+
+    -- grouping inputs for the same question together
+    -- it points to the first question, e.x: upload file or provide url then the provide url input has the uuid of upload file input
+    question_group_id uuid REFERENCES project_questions(id) ON DELETE SET NULL,
 
     -- input properties
     input_type input_type_enum NOT NULL,
