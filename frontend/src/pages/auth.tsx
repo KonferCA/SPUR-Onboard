@@ -13,6 +13,7 @@ import type {
     RegistrationStep,
 } from '@/types/auth';
 import { Permission } from '@/services/auth';
+import { updateUserDetails } from '@/services/user';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
@@ -36,9 +37,9 @@ function AuthPage() {
 
     useEffect(() => {
         if (user) {
-            if (!user.email_verified) {
+            if (!user.emailVerified) {
                 setCurrentStep('verify-email');
-            } else if (!user.first_name || !user.last_name) {
+            } else if (!user.firstName || !user.lastName) {
                 setCurrentStep('form-details');
             } else if (!companyId) {
                 setCurrentStep('company-creation');
@@ -85,7 +86,7 @@ function AuthPage() {
                     company ? company.ID : null
                 );
 
-                if (!signinResp.user.email_verified) {
+                if (!signinResp.user.emailVerified) {
                     setCurrentStep('verify-email');
                 } else {
                     handleRedirect();
@@ -106,20 +107,20 @@ function AuthPage() {
         setIsLoading(true);
         try {
             if (!user) throw new Error('No user found');
+            if (!accessToken) throw new Error('No access token');
 
-            // TODO: Add user details update API call
-            // await updateUserDetails(user.id, {
-            //     first_name: formData.firstName,
-            //     last_name: formData.lastName,
-            //     position: formData.position,
-            //     bio: formData.bio,
-            //     linkedin: formData.linkedIn,
-            // });
+            await updateUserDetails(user.id, accessToken, {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                title: formData.position,
+                bio: formData.bio,
+                linkedin: formData.linkedIn,
+            });
 
-            user.first_name = formData.firstName;
-            user.last_name = formData.lastName;
+            user.firstName = formData.firstName;
+            user.lastName = formData.lastName;
             setAuth(user, accessToken, companyId);
-            setCurrentStep('registration-complete');
+            setCurrentStep('company-creation');
 
             setTimeout(() => {
                 handleRedirect();
@@ -151,7 +152,7 @@ function AuthPage() {
 
     const handleOnVerified = () => {
         if (!user) return;
-        user.email_verified = true;
+        user.emailVerified = true;
         setAuth(user, accessToken, companyId);
         setCurrentStep('form-details');
     };
@@ -190,8 +191,8 @@ function AuthPage() {
                         initialData={
                             user
                                 ? {
-                                      firstName: user.first_name,
-                                      lastName: user.last_name,
+                                      firstName: user.firstName,
+                                      lastName: user.lastName,
                                   }
                                 : undefined
                         }

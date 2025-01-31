@@ -260,6 +260,9 @@ type User struct {
 	ID            string  `json:"id"`
 	FirstName     *string `json:"first_name"`
 	LastName      *string `json:"last_name"`
+	Bio           *string `json:"bio"`
+	Title         *string `json:"title"`
+	Linkedin      *string `json:"linkedin"`
 	Email         string  `json:"email"`
 	Password      string  `json:"password"`
 	Permissions   int32   `json:"permissions"`

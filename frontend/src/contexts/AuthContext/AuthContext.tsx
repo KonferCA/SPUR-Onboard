@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { refreshAccessToken, signout } from '@/services/auth';
 import type { User } from '@/types';
+import { snakeToCamel } from '@/utils/object';
 
 export interface AuthState {
     user: User | null;
@@ -31,7 +32,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try {
                 const response = await refreshAccessToken();
                 if (response) {
-                    setUser(response.user);
+                    console.log(response);
+                    setUser(snakeToCamel(response.user));
                     setAccessToken(response.access_token);
                 }
             } catch (error) {

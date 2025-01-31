@@ -158,6 +158,7 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	return c.JSON(http.StatusCreated, AuthResponse{
 		AccessToken: accessToken,
 		User: UserResponse{
+			ID:            newUser.ID,
 			Email:         newUser.Email,
 			EmailVerified: newUser.EmailVerified,
 			Permissions:   uint32(newUser.Permissions),
@@ -203,6 +204,7 @@ func (h *Handler) handleLogin(c echo.Context) error {
 	return c.JSON(http.StatusOK, AuthResponse{
 		AccessToken: accessToken,
 		User: UserResponse{
+			ID:            user.ID,
 			FirstName:     user.FirstName,
 			LastName:      user.LastName,
 			Email:         user.Email,
@@ -388,6 +390,8 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 		AccessToken: accessToken,
 		User: UserResponse{
 			ID:            user.ID,
+			FirstName:     user.FirstName,
+			LastName:      user.LastName,
 			Email:         user.Email,
 			EmailVerified: user.EmailVerified,
 			Permissions:   uint32(user.Permissions),

@@ -20,7 +20,7 @@ export function VerifyEmail({
     const { user, accessToken } = useAuth();
 
     useEffect(() => {
-        if (user && user.email_verified) return;
+        if (user && user.emailVerified) return;
 
         let id: number;
         if (accessToken) {
@@ -75,4 +75,3 @@ export function VerifyEmail({
 }
 
 export default VerifyEmail;
-

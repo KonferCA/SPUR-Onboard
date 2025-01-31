@@ -10,7 +10,7 @@ import (
 )
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, first_name, last_name, email, password, permissions, email_verified, created_at, updated_at, token_salt FROM users WHERE email = $1 LIMIT 1
+SELECT id, first_name, last_name, bio, title, linkedin, email, password, permissions, email_verified, created_at, updated_at, token_salt FROM users WHERE email = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -20,6 +20,9 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.ID,
 		&i.FirstName,
 		&i.LastName,
+		&i.Bio,
+		&i.Title,
+		&i.Linkedin,
 		&i.Email,
 		&i.Password,
 		&i.Permissions,
@@ -32,7 +35,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, first_name, last_name, email, password, permissions, email_verified, created_at, updated_at, token_salt
+SELECT id, first_name, last_name, bio, title, linkedin, email, password, permissions, email_verified, created_at, updated_at, token_salt
 FROM users 
 WHERE id = $1
 `
@@ -44,6 +47,9 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 		&i.ID,
 		&i.FirstName,
 		&i.LastName,
+		&i.Bio,
+		&i.Title,
+		&i.Linkedin,
 		&i.Email,
 		&i.Password,
 		&i.Permissions,
@@ -98,6 +104,33 @@ func (q *Queries) NewUser(ctx context.Context, arg NewUserParams) (NewUserRow, e
 		&i.TokenSalt,
 	)
 	return i, err
+}
+
+const updateUserDetails = `-- name: UpdateUserDetails :exec
+UPDATE users
+SET first_name = $1, last_name = $2, title = $3, bio = $4, linkedin = $5
+WHERE id = $6
+`
+
+type UpdateUserDetailsParams struct {
+	FirstName *string `json:"first_name"`
+	LastName  *string `json:"last_name"`
+	Title     *string `json:"title"`
+	Bio       *string `json:"bio"`
+	Linkedin  *string `json:"linkedin"`
+	ID        string  `json:"id"`
+}
+
+func (q *Queries) UpdateUserDetails(ctx context.Context, arg UpdateUserDetailsParams) error {
+	_, err := q.db.Exec(ctx, updateUserDetails,
+		arg.FirstName,
+		arg.LastName,
+		arg.Title,
+		arg.Bio,
+		arg.Linkedin,
+		arg.ID,
+	)
+	return err
 }
 
 const updateUserEmailVerifiedStatus = `-- name: UpdateUserEmailVerifiedStatus :exec
