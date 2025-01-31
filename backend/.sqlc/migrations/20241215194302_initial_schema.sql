@@ -95,10 +95,10 @@ CREATE TABLE project_questions (
 
 
     input_type input_type_enum NOT NULL,
-    parent_input_type_id uuid NOT NULL REFERENCES question_input_types(id) ON DELETE CASCADE,
 
     condition_type condition_type_enum, -- 'empty', 'not_empty', 'equals', 'contains'
     condition_value text, -- Optional, only needed for specific condition types
+    dependent_question uuid REFERENCES project_questions(id) ON DELETE SET NULL,
 
     options varchar(255)[], -- For input types that need options
     validations varchar(255),
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS project_answers (
     choices text[],
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now()),
-    UNIQUE(project_id, question_id, input_type_id)
+    UNIQUE(project_id, question_id)
 );
 
 CREATE TABLE IF NOT EXISTS project_documents (
