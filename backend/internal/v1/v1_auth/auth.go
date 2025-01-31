@@ -351,6 +351,7 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 	refreshToken := cookie.Value
 	claims, err := jwt.ParseUnverifiedClaims(refreshToken)
 	if err != nil {
+		unsetRefreshTokenCookie(c)
 		return v1_common.Fail(c, http.StatusUnauthorized, "Cookie has invalid value.", err)
 	}
 
@@ -360,11 +361,13 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 	// get salt
 	user, err := h.server.GetQueries().GetUserByID(ctx, claims.UserID)
 	if err != nil {
+		unsetRefreshTokenCookie(c)
 		return v1_common.Fail(c, http.StatusUnauthorized, "Cookie has invalid value.", err)
 	}
 
 	claims, err = jwt.VerifyTokenWithSalt(refreshToken, user.TokenSalt)
 	if err != nil {
+		unsetRefreshTokenCookie(c)
 		return v1_common.Fail(c, http.StatusUnauthorized, "Cookie is not valid.", err)
 	}
 
@@ -382,6 +385,7 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 	return c.JSON(http.StatusOK, AuthResponse{
 		AccessToken: accessToken,
 		User: UserResponse{
+			ID:            user.ID,
 			Email:         user.Email,
 			EmailVerified: user.EmailVerified,
 			Permissions:   uint32(user.Permissions),
