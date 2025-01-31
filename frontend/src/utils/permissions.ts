@@ -23,7 +23,10 @@ export const Permissions = {
  * Checks if the user has all the specified permissions
  */
 export function hasAllPermissions(userPermissions: number, ...requiredPermissions: number[]): boolean {
-    return requiredPermissions.every(permission => (userPermissions & permission) === permission);
+    // Combine all required permissions into a single mask
+    const requiredMask = requiredPermissions.reduce((mask, perm) => mask | perm, 0);
+    // Check if all required bits are set in userPermissions
+    return (userPermissions & requiredMask) === requiredMask;
 }
 
 /**
@@ -37,14 +40,8 @@ export function hasAnyPermission(userPermissions: number, ...requiredPermissions
  * Checks if the user has admin permissions
  */
 export function isAdmin(userPermissions: number): boolean {
-    return hasAllPermissions(userPermissions,
-        Permissions.PermAdmin,
-        Permissions.PermViewAllProjects,
-        Permissions.PermReviewProjects,
-        Permissions.PermManageUsers,
-        Permissions.PermManagePermissions,
-        Permissions.PermCommentOnProjects
-    );
+    // For admin, we just need to check the admin bit lol
+    return (userPermissions & Permissions.PermAdmin) === Permissions.PermAdmin;
 }
 
 /**
