@@ -7,7 +7,7 @@ import { register, signin, getCompany } from '@/services';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from '@tanstack/react-router';
 import type { AuthFormData, UserDetailsData, FormErrors, RegistrationStep } from '@/types/auth';
-import { isAdmin } from '@/utils/permissions';
+import { isAdmin, isStartupOwner, isInvestor } from '@/utils/permissions';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
@@ -50,6 +50,7 @@ function AuthPage() {
         if (isAdmin(user.permissions)) {
             navigate({ to: '/admin/dashboard', replace: true });
         } else {
+            // Fallback for users with no specific role permissions
             navigate({ to: '/user/dashboard', replace: true });
         }
     };

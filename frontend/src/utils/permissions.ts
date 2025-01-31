@@ -2,18 +2,21 @@
  * Permission flags matching backend permissions
  */
 export const Permissions = {
-    // Basic permissions
-    PermSubmitProject: 1 << 0,
-    PermManageTeam: 1 << 1,
-    PermViewAllProjects: 1 << 2,
-    PermCommentOnProjects: 1 << 3,
-    PermInvestInProjects: 1 << 4,
+    // Project Permissions
+    PermSubmitProject: 1 << 0,        // Startup: submit projects for review
+    PermManageTeam: 1 << 1,           // Startup: manage team members
+    PermViewAllProjects: 1 << 2,      // Admin/Investor: view all projects
+    PermCommentOnProjects: 1 << 3,    // All: comment on projects
+    PermInvestInProjects: 1 << 4,     // Investor: invest in projects
+    PermReviewProjects: 1 << 5,       // Admin: review/approve/decline projects
+    PermManageDocuments: 1 << 6,      // Startup: manage project documents
+    PermManageInvestments: 1 << 7,    // Admin: manage investments
     
     // Admin permissions
-    PermManageUsers: 1 << 28,
-    PermManagePermissions: 1 << 29,
-    PermManageSystem: 1 << 30,
-    PermAdmin: 1 << 31,
+    PermManageUsers: 1 << 28,         // Admin: manage user accounts
+    PermManagePermissions: 1 << 29,   // Admin: modify user permissions
+    PermManageSystem: 1 << 30,        // Admin: system management
+    PermAdmin: 1 << 31,               // Admin: special bit to identify admins
 } as const;
 
 /**
@@ -34,7 +37,37 @@ export function hasAnyPermission(userPermissions: number, ...requiredPermissions
  * Checks if the user has admin permissions
  */
 export function isAdmin(userPermissions: number): boolean {
-    return (userPermissions & Permissions.PermAdmin) === Permissions.PermAdmin;
+    return hasAllPermissions(userPermissions,
+        Permissions.PermAdmin,
+        Permissions.PermViewAllProjects,
+        Permissions.PermReviewProjects,
+        Permissions.PermManageUsers,
+        Permissions.PermManagePermissions,
+        Permissions.PermCommentOnProjects
+    );
+}
+
+/**
+ * Checks if the user has startup owner permissions
+ */
+export function isStartupOwner(userPermissions: number): boolean {
+    return hasAllPermissions(userPermissions,
+        Permissions.PermSubmitProject,
+        Permissions.PermManageDocuments,
+        Permissions.PermManageTeam,
+        Permissions.PermCommentOnProjects
+    );
+}
+
+/**
+ * Checks if the user has investor permissions
+ */
+export function isInvestor(userPermissions: number): boolean {
+    return hasAllPermissions(userPermissions,
+        Permissions.PermViewAllProjects,
+        Permissions.PermCommentOnProjects,
+        Permissions.PermInvestInProjects
+    );
 }
 
 /**
