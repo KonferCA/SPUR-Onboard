@@ -121,10 +121,6 @@ function AuthPage() {
             user.lastName = formData.lastName;
             setAuth(user, accessToken, companyId);
             setCurrentStep('company-creation');
-
-            setTimeout(() => {
-                handleRedirect();
-            }, 1500);
         } catch (error) {
             console.error('Profile update error:', error);
             setErrors({
