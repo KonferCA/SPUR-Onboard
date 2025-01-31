@@ -219,15 +219,13 @@ func AllProjectStatusValues() []ProjectStatus {
 }
 
 type Company struct {
-	ID               string   `json:"id"`
-	OwnerID          string   `json:"owner_id"`
-	Name             string   `json:"name"`
-	WalletAddress    *string  `json:"wallet_address"`
-	LinkedinUrl      string   `json:"linkedin_url"`
-	CompanyStages    []string `json:"company_stages"`
-	InvestementStage *string  `json:"investement_stage"`
-	CreatedAt        int64    `json:"created_at"`
-	UpdatedAt        int64    `json:"updated_at"`
+	ID            string  `json:"id"`
+	OwnerID       string  `json:"owner_id"`
+	Name          string  `json:"name"`
+	WalletAddress *string `json:"wallet_address"`
+	LinkedinUrl   string  `json:"linkedin_url"`
+	CreatedAt     int64   `json:"created_at"`
+	UpdatedAt     int64   `json:"updated_at"`
 }
 
 type Project struct {

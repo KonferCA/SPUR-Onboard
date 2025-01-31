@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS companies (
     name varchar NOT NULL,
     wallet_address varchar,
     linkedin_url varchar NOT NULL,
-    company_stages text[] NOT NULL,
-    investement_stage text,
+    -- company_stages text[] NOT NULL,
+    -- investement_stage text,
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );

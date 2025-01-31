@@ -18,7 +18,7 @@ INSERT INTO companies (
 ) VALUES (
   $1, $2, $3, $4
 )
-RETURNING id, owner_id, name, wallet_address, linkedin_url, company_stages, investement_stage, created_at, updated_at
+RETURNING id, owner_id, name, wallet_address, linkedin_url, created_at, updated_at
 `
 
 type CreateCompanyParams struct {
@@ -42,8 +42,6 @@ func (q *Queries) CreateCompany(ctx context.Context, arg CreateCompanyParams) (C
 		&i.Name,
 		&i.WalletAddress,
 		&i.LinkedinUrl,
-		&i.CompanyStages,
-		&i.InvestementStage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -61,7 +59,7 @@ func (q *Queries) DeleteCompany(ctx context.Context, id string) error {
 }
 
 const getCompanyByID = `-- name: GetCompanyByID :one
-SELECT id, owner_id, name, wallet_address, linkedin_url, company_stages, investement_stage, created_at, updated_at FROM companies
+SELECT id, owner_id, name, wallet_address, linkedin_url, created_at, updated_at FROM companies
 WHERE id = $1
 `
 
@@ -74,8 +72,6 @@ func (q *Queries) GetCompanyByID(ctx context.Context, id string) (Company, error
 		&i.Name,
 		&i.WalletAddress,
 		&i.LinkedinUrl,
-		&i.CompanyStages,
-		&i.InvestementStage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -83,7 +79,7 @@ func (q *Queries) GetCompanyByID(ctx context.Context, id string) (Company, error
 }
 
 const getCompanyByOwnerID = `-- name: GetCompanyByOwnerID :one
-SELECT id, owner_id, name, wallet_address, linkedin_url, company_stages, investement_stage, created_at, updated_at FROM companies
+SELECT id, owner_id, name, wallet_address, linkedin_url, created_at, updated_at FROM companies
 WHERE owner_id = $1
 `
 
@@ -96,8 +92,6 @@ func (q *Queries) GetCompanyByOwnerID(ctx context.Context, ownerID string) (Comp
 		&i.Name,
 		&i.WalletAddress,
 		&i.LinkedinUrl,
-		&i.CompanyStages,
-		&i.InvestementStage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -105,7 +99,7 @@ func (q *Queries) GetCompanyByOwnerID(ctx context.Context, ownerID string) (Comp
 }
 
 const getCompanyWithAuth = `-- name: GetCompanyWithAuth :one
-SELECT id, owner_id, name, wallet_address, linkedin_url, company_stages, investement_stage, created_at, updated_at FROM companies 
+SELECT id, owner_id, name, wallet_address, linkedin_url, created_at, updated_at FROM companies 
 WHERE (owner_id = $1 OR $2 = 'admin') AND id = $3
 `
 
@@ -124,8 +118,6 @@ func (q *Queries) GetCompanyWithAuth(ctx context.Context, arg GetCompanyWithAuth
 		&i.Name,
 		&i.WalletAddress,
 		&i.LinkedinUrl,
-		&i.CompanyStages,
-		&i.InvestementStage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -133,7 +125,7 @@ func (q *Queries) GetCompanyWithAuth(ctx context.Context, arg GetCompanyWithAuth
 }
 
 const listCompanies = `-- name: ListCompanies :many
-SELECT id, owner_id, name, wallet_address, linkedin_url, company_stages, investement_stage, created_at, updated_at FROM companies
+SELECT id, owner_id, name, wallet_address, linkedin_url, created_at, updated_at FROM companies
 WHERE owner_id = $1
 ORDER BY created_at DESC
 `
@@ -153,8 +145,6 @@ func (q *Queries) ListCompanies(ctx context.Context, ownerID string) ([]Company,
 			&i.Name,
 			&i.WalletAddress,
 			&i.LinkedinUrl,
-			&i.CompanyStages,
-			&i.InvestementStage,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -176,7 +166,7 @@ SET
   linkedin_url = COALESCE($4, linkedin_url),
   updated_at = extract(epoch from now())
 WHERE id = $1
-RETURNING id, owner_id, name, wallet_address, linkedin_url, company_stages, investement_stage, created_at, updated_at
+RETURNING id, owner_id, name, wallet_address, linkedin_url, created_at, updated_at
 `
 
 type UpdateCompanyParams struct {
@@ -200,8 +190,6 @@ func (q *Queries) UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (C
 		&i.Name,
 		&i.WalletAddress,
 		&i.LinkedinUrl,
-		&i.CompanyStages,
-		&i.InvestementStage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
