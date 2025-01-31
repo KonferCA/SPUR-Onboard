@@ -63,20 +63,6 @@ CREATE TABLE IF NOT EXISTS projects (
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
 
-CREATE TABLE project_questions (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    question varchar NOT NULL,
-    section varchar NOT NULL,
-    sub_section varchar NOT NULL,
-    section_order int NOT NULL, -- defines the section order, aka step in the frontend
-    sub_section_order int NOT NULL, -- defines in which order the sub-section is within the section
-    question_order int NOT NULL, -- defines in which order the question appears in the sub-section
-    required boolean NOT NULL DEFAULT false,
-    created_at bigint NOT NULL DEFAULT extract(epoch from now()),
-    updated_at bigint NOT NULL DEFAULT extract(epoch from now())
-);
-
-
 CREATE TYPE input_type_enum AS ENUM (
     'url',
     'file',
@@ -88,32 +74,36 @@ CREATE TYPE input_type_enum AS ENUM (
     'radio'
 );
 
--- New table to handle multiple input types per question
-CREATE TABLE question_input_types (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    question_id uuid NOT NULL REFERENCES project_questions(id) ON DELETE CASCADE,
-    input_type input_type_enum NOT NULL,
-    options varchar(255)[], -- For input types that need options
-    validations varchar(255),
-    created_at bigint NOT NULL DEFAULT extract(epoch from now()),
-    updated_at bigint NOT NULL DEFAULT extract(epoch from now())
-);
-
 CREATE TYPE condition_type_enum AS ENUM (
     'not_empty',
+    'empty',
     'equals',
     'contains'
 );
 
-CREATE TABLE question_input_type_conditions (
+CREATE TABLE project_questions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    question_id uuid NOT NULL REFERENCES project_questions(id) ON DELETE CASCADE,
-    parent_input_type_id uuid NOT NULL REFERENCES question_input_types(id) ON DELETE CASCADE,
-    condition_type condition_type_enum NOT NULL, -- 'not_empty', 'equals', 'contains'
-    condition_value text, -- Optional, only needed for specific condition types
+
+    question text NOT NULL,
+
+    section text NOT NULL,
+    sub_section text NOT NULL,
+
+    section_order int NOT NULL, -- defines the section order, aka step in the frontend
+    sub_section_order int NOT NULL, -- defines in which order the sub-section is within the section
+    question_order int NOT NULL, -- defines in which order the question appears in the sub-section
+
+
     input_type input_type_enum NOT NULL,
+    parent_input_type_id uuid NOT NULL REFERENCES question_input_types(id) ON DELETE CASCADE,
+
+    condition_type condition_type_enum, -- 'empty', 'not_empty', 'equals', 'contains'
+    condition_value text, -- Optional, only needed for specific condition types
+
     options varchar(255)[], -- For input types that need options
     validations varchar(255),
+
+    required boolean NOT NULL DEFAULT false,
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
     updated_at bigint NOT NULL DEFAULT extract(epoch from now())
 );
@@ -122,8 +112,6 @@ CREATE TABLE IF NOT EXISTS project_answers (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     question_id uuid NOT NULL REFERENCES project_questions(id) ON DELETE CASCADE,
-    input_type_id uuid NOT NULL REFERENCES question_input_types(id) ON DELETE CASCADE,
-    conditional_input_type_id uuid REFERENCES question_input_type_conditions(id) ON DELETE SET NULL,
     answer text NOT NULL DEFAULT '',
     choices text[],
     created_at bigint NOT NULL DEFAULT extract(epoch from now()),
@@ -192,8 +180,6 @@ DROP TABLE IF EXISTS transactions;
 DROP TABLE IF EXISTS project_comments;
 DROP TABLE IF EXISTS project_documents;
 DROP TABLE IF EXISTS project_answers;
-DROP TABLE IF EXISTS question_input_type_conditions;
-DROP TABLE IF EXISTS question_input_types;
 DROP TABLE IF EXISTS project_questions;
 DROP TABLE IF EXISTS projects;
 DROP TABLE IF EXISTS team_members;
