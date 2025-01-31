@@ -11,6 +11,67 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type ConditionTypeEnum string
+
+const (
+	ConditionTypeEnumNotEmpty ConditionTypeEnum = "not_empty"
+	ConditionTypeEnumEquals   ConditionTypeEnum = "equals"
+	ConditionTypeEnumContains ConditionTypeEnum = "contains"
+)
+
+func (e *ConditionTypeEnum) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ConditionTypeEnum(s)
+	case string:
+		*e = ConditionTypeEnum(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ConditionTypeEnum: %T", src)
+	}
+	return nil
+}
+
+type NullConditionTypeEnum struct {
+	ConditionTypeEnum ConditionTypeEnum `json:"condition_type_enum"`
+	Valid             bool              `json:"valid"` // Valid is true if ConditionTypeEnum is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullConditionTypeEnum) Scan(value interface{}) error {
+	if value == nil {
+		ns.ConditionTypeEnum, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ConditionTypeEnum.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullConditionTypeEnum) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ConditionTypeEnum), nil
+}
+
+func (e ConditionTypeEnum) Valid() bool {
+	switch e {
+	case ConditionTypeEnumNotEmpty,
+		ConditionTypeEnumEquals,
+		ConditionTypeEnumContains:
+		return true
+	}
+	return false
+}
+
+func AllConditionTypeEnumValues() []ConditionTypeEnum {
+	return []ConditionTypeEnum{
+		ConditionTypeEnumNotEmpty,
+		ConditionTypeEnumEquals,
+		ConditionTypeEnumContains,
+	}
+}
+
 type InputTypeEnum string
 
 const (
@@ -175,13 +236,15 @@ type Project struct {
 }
 
 type ProjectAnswer struct {
-	ID          string `json:"id"`
-	ProjectID   string `json:"project_id"`
-	QuestionID  string `json:"question_id"`
-	InputTypeID string `json:"input_type_id"`
-	Answer      string `json:"answer"`
-	CreatedAt   int64  `json:"created_at"`
-	UpdatedAt   int64  `json:"updated_at"`
+	ID                     string      `json:"id"`
+	ProjectID              string      `json:"project_id"`
+	QuestionID             string      `json:"question_id"`
+	InputTypeID            string      `json:"input_type_id"`
+	ConditionalInputTypeID pgtype.UUID `json:"conditional_input_type_id"`
+	Answer                 string      `json:"answer"`
+	Choices                []string    `json:"choices"`
+	CreatedAt              int64       `json:"created_at"`
+	UpdatedAt              int64       `json:"updated_at"`
 }
 
 type ProjectComment struct {
@@ -230,6 +293,19 @@ type QuestionInputType struct {
 	Validations *string       `json:"validations"`
 	CreatedAt   int64         `json:"created_at"`
 	UpdatedAt   int64         `json:"updated_at"`
+}
+
+type QuestionInputTypeCondition struct {
+	ID                string            `json:"id"`
+	QuestionID        string            `json:"question_id"`
+	ParentInputTypeID string            `json:"parent_input_type_id"`
+	ConditionType     ConditionTypeEnum `json:"condition_type"`
+	ConditionValue    *string           `json:"condition_value"`
+	InputType         InputTypeEnum     `json:"input_type"`
+	Options           []string          `json:"options"`
+	Validations       *string           `json:"validations"`
+	CreatedAt         int64             `json:"created_at"`
+	UpdatedAt         int64             `json:"updated_at"`
 }
 
 type TeamMember struct {

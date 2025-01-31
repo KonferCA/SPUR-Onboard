@@ -129,26 +129,42 @@ WHERE company_id = $1
 ORDER BY created_at DESC; 
 
 -- name: GetProjectQuestions :many
-SELECT 
-    pq.id,
-    pq.question,
-    pq.section,
-    pq.sub_section,
-    pq.section_order,
-    pq.sub_section_order,
-    pq.question_order,
-    qit.id AS input_type_id,
-    qit.input_type,
-    qit.options,
-    pq.required,
-    qit.validations,
-    '' AS answer -- Default empty answer to match the same result set when querying questions for an existing project
-FROM project_questions pq
-JOIN question_input_types qit ON qit.question_id = pq.id
+WITH all_questions AS (
+    SELECT 
+        pq.id,
+        pq.question,
+        pq.section,
+        pq.sub_section,
+        pq.section_order,
+        pq.sub_section_order,
+        pq.question_order,
+        qit.id AS input_type_id,
+        qit.input_type,
+        qit.options,
+        pq.required,
+        qit.validations,
+        qitc.id AS conditional_input_type_id,
+        qitc.condition_type,
+        qitc.condition_value,
+        qitc.input_type AS conditional_input_type,
+        qitc.options AS conditional_options,
+        qitc.validations AS conditional_validations,
+        COALESCE(pa.answer, '') AS answer,
+        COALESCE(pa_cond.answer, '') AS conditional_answer
+    FROM project_questions pq
+    JOIN question_input_types qit ON qit.question_id = pq.id
+    LEFT JOIN question_input_type_conditions qitc ON qitc.question_id = pq.id 
+        AND qitc.parent_input_type_id = qit.id
+    LEFT JOIN project_answers pa ON pa.question_id = pq.id 
+        AND pa.input_type_id = qit.id 
+    LEFT JOIN project_answers pa_cond ON pa_cond.question_id = pq.id
+        AND pa_cond.conditional_input_type_id = qitc.id
+)
+SELECT * FROM all_questions
 ORDER BY
-    pq.section_order,
-    pq.sub_section_order,
-    pq.question_order;
+    section_order,
+    sub_section_order,
+    question_order;
 
 -- name: GetQuestionsByProject :many
 WITH project_owner_check AS (
@@ -159,25 +175,37 @@ WITH project_owner_check AS (
    AND c.owner_id = $2
 ),
 all_questions AS (
-   SELECT 
-       pq.id,
-       pq.question,
-       pq.section,
-       pq.sub_section,
-       pq.section_order,
-       pq.sub_section_order,
-       pq.question_order,
-       qit.id AS input_type_id,
-       qit.input_type,
-       qit.options,
-       pq.required,
-       qit.validations,
-       COALESCE(pa.answer, '') AS answer
-   FROM project_questions pq
-   JOIN question_input_types qit ON qit.question_id = pq.id
-   LEFT JOIN project_answers pa ON pa.question_id = pq.id 
-       AND pa.input_type_id = qit.id 
-       AND pa.project_id = $1
+    SELECT 
+        pq.id,
+        pq.question,
+        pq.section,
+        pq.sub_section,
+        pq.section_order,
+        pq.sub_section_order,
+        pq.question_order,
+        qit.id AS input_type_id,
+        qit.input_type,
+        qit.options,
+        pq.required,
+        qit.validations,
+        qitc.id AS conditional_input_type_id,
+        qitc.condition_type,
+        qitc.condition_value,
+        qitc.input_type AS conditional_input_type,
+        qitc.options AS conditional_options,
+        qitc.validations AS conditional_validations,
+        COALESCE(pa.answer, '') AS answer,
+        COALESCE(pa_cond.answer, '') AS conditional_answer
+    FROM project_questions pq
+    JOIN question_input_types qit ON qit.question_id = pq.id
+    LEFT JOIN question_input_type_conditions qitc ON qitc.question_id = pq.id 
+        AND qitc.parent_input_type_id = qit.id
+    LEFT JOIN project_answers pa ON pa.question_id = pq.id 
+        AND pa.input_type_id = qit.id 
+        AND pa.project_id = $1
+    LEFT JOIN project_answers pa_cond ON pa_cond.question_id = pq.id
+        AND pa_cond.conditional_input_type_id = qitc.id
+        AND pa_cond.project_id = $1
    WHERE EXISTS (SELECT 1 FROM project_owner_check)
 )
 SELECT * FROM all_questions
