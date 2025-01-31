@@ -45,7 +45,7 @@ func SetupAuthRoutes(e *echo.Group, s interfaces.CoreServer) {
 		h.handleEmailVerificationStatus,
 		middleware.Auth(s.GetDB(), permissions.PermSubmitProject),
 	)
-	e.GET("/auth/verify", h.handleVerifyCookie)
+	e.POST("/auth/verify", h.handleVerifyCookie)
 	e.GET("/auth/verify-email", h.handleVerifyEmail)
 	e.POST("/auth/register", h.handleRegister)
 	e.POST("/auth/logout", h.handleLogout)
