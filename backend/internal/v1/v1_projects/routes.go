@@ -11,11 +11,11 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	h := &Handler{server: s}
 
 	// Base project routes with auth
-	// projects := g.Group("/project", middleware.Auth(s.GetDB(),
-	// 	permissions.PermSubmitProject,
-	// 	permissions.PermViewAllProjects,
-	// ))
-	projects := g.Group("/project")
+	projects := g.Group("/project", middleware.Auth(s.GetDB(),
+		permissions.PermSubmitProject,
+		permissions.PermViewAllProjects,
+	))
+	// projects := g.Group("/project")
 
 	// Static routes - require project submission permission
 	projectSubmitGroup := projects.Group("", middleware.Auth(s.GetDB(), permissions.PermSubmitProject))
