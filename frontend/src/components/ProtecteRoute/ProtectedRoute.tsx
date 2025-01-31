@@ -1,16 +1,19 @@
 import { useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { hasAllPermissions } from '@/utils/permissions';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
     requiredRole?: 'startup_owner' | 'admin' | 'investor';
+    requiredPermissions?: number[];
     requireEmailVerified?: boolean;
 }
 
 export function ProtectedRoute({ 
     children, 
     requiredRole, 
+    requiredPermissions = [],
     requireEmailVerified = true 
 }: ProtectedRouteProps) {
     const { user, isLoading } = useAuth();
@@ -23,7 +26,13 @@ export function ProtectedRoute({
         }
 
         if (!isLoading && user) {
-            // Check role requirements if specified
+            // Check permissions if specified
+            if (requiredPermissions.length > 0 && !hasAllPermissions(user.permissions, ...requiredPermissions)) {
+                navigate({ to: '/auth', replace: true });
+                return;
+            }
+
+            // Legacy role check (deprecated)
             if (requiredRole && user.role !== requiredRole) {
                 navigate({ to: '/auth', replace: true });
                 return;
@@ -39,7 +48,7 @@ export function ProtectedRoute({
                 return;
             }
         }
-    }, [isLoading, user, requiredRole, requireEmailVerified, navigate]);
+    }, [isLoading, user, requiredRole, requiredPermissions, requireEmailVerified, navigate]);
 
     if (isLoading) {
         return (
@@ -50,6 +59,8 @@ export function ProtectedRoute({
     }
 
     if (!user) return null;
+
+    if (requiredPermissions.length > 0 && !hasAllPermissions(user.permissions, ...requiredPermissions)) return null;
 
     if (requiredRole && user.role !== requiredRole) return null;
 

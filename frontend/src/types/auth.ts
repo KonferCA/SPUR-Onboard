@@ -13,6 +13,7 @@ export interface User {
     first_name: string;
     last_name: string;
     role: UserRole;
+    permissions: number;
     wallet_address: string;
     email_verified: boolean;
 }
