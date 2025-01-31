@@ -16,7 +16,7 @@ INSERT INTO team_members (
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7
 )
-RETURNING id, company_id, first_name, last_name, title, bio, linkedin_url, is_account_owner, created_at, updated_at
+RETURNING id, company_id, first_name, last_name, title, bio, linkedin_url, is_account_owner, personal_website, commitment_type, introduction, industy_experience, detailed_biography, previous_work, resume_external_url, resume_internal_url, founders_agreement_external_url, founders_agreement_internal_url, created_at, updated_at
 `
 
 type CreateTeamMemberParams struct {
@@ -49,6 +49,16 @@ func (q *Queries) CreateTeamMember(ctx context.Context, arg CreateTeamMemberPara
 		&i.Bio,
 		&i.LinkedinUrl,
 		&i.IsAccountOwner,
+		&i.PersonalWebsite,
+		&i.CommitmentType,
+		&i.Introduction,
+		&i.IndustyExperience,
+		&i.DetailedBiography,
+		&i.PreviousWork,
+		&i.ResumeExternalUrl,
+		&i.ResumeInternalUrl,
+		&i.FoundersAgreementExternalUrl,
+		&i.FoundersAgreementInternalUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -71,7 +81,7 @@ func (q *Queries) DeleteTeamMember(ctx context.Context, arg DeleteTeamMemberPara
 }
 
 const getTeamMember = `-- name: GetTeamMember :one
-SELECT id, company_id, first_name, last_name, title, bio, linkedin_url, is_account_owner, created_at, updated_at FROM team_members 
+SELECT id, company_id, first_name, last_name, title, bio, linkedin_url, is_account_owner, personal_website, commitment_type, introduction, industy_experience, detailed_biography, previous_work, resume_external_url, resume_internal_url, founders_agreement_external_url, founders_agreement_internal_url, created_at, updated_at FROM team_members 
 WHERE id = $1 AND company_id = $2 
 LIMIT 1
 `
@@ -93,6 +103,16 @@ func (q *Queries) GetTeamMember(ctx context.Context, arg GetTeamMemberParams) (T
 		&i.Bio,
 		&i.LinkedinUrl,
 		&i.IsAccountOwner,
+		&i.PersonalWebsite,
+		&i.CommitmentType,
+		&i.Introduction,
+		&i.IndustyExperience,
+		&i.DetailedBiography,
+		&i.PreviousWork,
+		&i.ResumeExternalUrl,
+		&i.ResumeInternalUrl,
+		&i.FoundersAgreementExternalUrl,
+		&i.FoundersAgreementInternalUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -100,7 +120,7 @@ func (q *Queries) GetTeamMember(ctx context.Context, arg GetTeamMemberParams) (T
 }
 
 const listTeamMembers = `-- name: ListTeamMembers :many
-SELECT id, company_id, first_name, last_name, title, bio, linkedin_url, is_account_owner, created_at, updated_at FROM team_members 
+SELECT id, company_id, first_name, last_name, title, bio, linkedin_url, is_account_owner, personal_website, commitment_type, introduction, industy_experience, detailed_biography, previous_work, resume_external_url, resume_internal_url, founders_agreement_external_url, founders_agreement_internal_url, created_at, updated_at FROM team_members 
 WHERE company_id = $1 
 ORDER BY created_at DESC
 `
@@ -123,6 +143,16 @@ func (q *Queries) ListTeamMembers(ctx context.Context, companyID string) ([]Team
 			&i.Bio,
 			&i.LinkedinUrl,
 			&i.IsAccountOwner,
+			&i.PersonalWebsite,
+			&i.CommitmentType,
+			&i.Introduction,
+			&i.IndustyExperience,
+			&i.DetailedBiography,
+			&i.PreviousWork,
+			&i.ResumeExternalUrl,
+			&i.ResumeInternalUrl,
+			&i.FoundersAgreementExternalUrl,
+			&i.FoundersAgreementInternalUrl,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -146,7 +176,7 @@ SET
     linkedin_url = COALESCE(NULLIF($5::text, ''), linkedin_url),
     updated_at = extract(epoch from now())
 WHERE id = $6 AND company_id = $7
-RETURNING id, company_id, first_name, last_name, title, bio, linkedin_url, is_account_owner, created_at, updated_at
+RETURNING id, company_id, first_name, last_name, title, bio, linkedin_url, is_account_owner, personal_website, commitment_type, introduction, industy_experience, detailed_biography, previous_work, resume_external_url, resume_internal_url, founders_agreement_external_url, founders_agreement_internal_url, created_at, updated_at
 `
 
 type UpdateTeamMemberParams struct {
@@ -179,6 +209,16 @@ func (q *Queries) UpdateTeamMember(ctx context.Context, arg UpdateTeamMemberPara
 		&i.Bio,
 		&i.LinkedinUrl,
 		&i.IsAccountOwner,
+		&i.PersonalWebsite,
+		&i.CommitmentType,
+		&i.Introduction,
+		&i.IndustyExperience,
+		&i.DetailedBiography,
+		&i.PreviousWork,
+		&i.ResumeExternalUrl,
+		&i.ResumeInternalUrl,
+		&i.FoundersAgreementExternalUrl,
+		&i.FoundersAgreementInternalUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

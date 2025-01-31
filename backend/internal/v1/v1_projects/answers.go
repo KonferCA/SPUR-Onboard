@@ -31,10 +31,9 @@ func (h *Handler) handleSaveProjectDraft(c echo.Context) error {
 	var params []db.UpdateProjectDraftParams
 	for _, item := range req.Draft {
 		params = append(params, db.UpdateProjectDraftParams{
-			ProjectID:   projectID,
-			QuestionID:  item.QuestionID,
-			InputTypeID: item.InputTypeID,
-			Answer:      item.Answer,
+			ProjectID:  projectID,
+			QuestionID: item.QuestionID,
+			Answer:     item.Answer,
 		})
 	}
 	batch := q.UpdateProjectDraft(c.Request().Context(), params)
@@ -87,13 +86,13 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 	}
 
 	// Validate the answer content
-	if question.Validations != nil && *question.Validations != "" {
-		if !isValidAnswer(req.Content, *question.Validations) {
+	if question.Validations != nil {
+		if !isValidAnswer(req.Content, question.Validations) {
 			return c.JSON(http.StatusBadRequest, map[string]interface{}{
 				"validation_errors": []ValidationError{
 					{
 						Question: question.Question,
-						Message:  getValidationMessage(*question.Validations),
+						Message:  getValidationMessage(question.Validations),
 					},
 				},
 			})

@@ -17,9 +17,9 @@ var (
 )
 
 const updateProjectDraft = `-- name: UpdateProjectDraft :batchexec
-INSERT INTO project_answers (project_id, question_id, input_type_id, answer, updated_at)
-    VALUES ($1, $2, $3, $4, extract(epoch from now()))
-    ON CONFLICT (project_id, question_id, input_type_id)
+INSERT INTO project_answers (project_id, question_id, answer, updated_at)
+    VALUES ($1, $2, $3, extract(epoch from now()))
+    ON CONFLICT (project_id, question_id)
     DO UPDATE
     SET answer = EXCLUDED.answer,
     updated_at = EXCLUDED.updated_at
@@ -32,10 +32,9 @@ type UpdateProjectDraftBatchResults struct {
 }
 
 type UpdateProjectDraftParams struct {
-	ProjectID   string `json:"project_id"`
-	QuestionID  string `json:"question_id"`
-	InputTypeID string `json:"input_type_id"`
-	Answer      string `json:"answer"`
+	ProjectID  string `json:"project_id"`
+	QuestionID string `json:"question_id"`
+	Answer     string `json:"answer"`
 }
 
 func (q *Queries) UpdateProjectDraft(ctx context.Context, arg []UpdateProjectDraftParams) *UpdateProjectDraftBatchResults {
@@ -44,7 +43,6 @@ func (q *Queries) UpdateProjectDraft(ctx context.Context, arg []UpdateProjectDra
 		vals := []interface{}{
 			a.ProjectID,
 			a.QuestionID,
-			a.InputTypeID,
 			a.Answer,
 		}
 		batch.Queue(updateProjectDraft, vals...)

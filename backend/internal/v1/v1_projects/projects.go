@@ -324,11 +324,11 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		}
 
 		// Validate answer against rules if validations exist
-		if question.Validations != nil && *question.Validations != "" {
-			if !isValidAnswer(answer, *question.Validations) {
+		if question.Validations != nil {
+			if !isValidAnswer(answer, question.Validations) {
 				validationErrors = append(validationErrors, ValidationError{
 					Question: question.Question,
-					Message:  getValidationMessage(*question.Validations),
+					Message:  getValidationMessage(question.Validations),
 				})
 			}
 		}
@@ -380,12 +380,12 @@ func (h *Handler) handleCreateAnswer(c echo.Context) error {
 	}
 
 	if question.Validations != nil {
-		if !isValidAnswer(req.Content, *question.Validations) {
+		if !isValidAnswer(req.Content, question.Validations) {
 			return c.JSON(http.StatusBadRequest, map[string]interface{}{
 				"validation_errors": []ValidationError{
 					{
 						Question: question.Question,
-						Message:  getValidationMessage(*question.Validations),
+						Message:  getValidationMessage(question.Validations),
 					},
 				},
 			})
@@ -394,10 +394,9 @@ func (h *Handler) handleCreateAnswer(c echo.Context) error {
 
 	// Create the answer
 	answer, err := h.server.GetQueries().CreateProjectAnswer(c.Request().Context(), db.CreateProjectAnswerParams{
-		ProjectID:   projectID,
-		QuestionID:  req.QuestionID,
-		InputTypeID: question.InputTypeID,
-		Answer:      req.Content,
+		ProjectID:  projectID,
+		QuestionID: req.QuestionID,
+		Answer:     req.Content,
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create answer", err)

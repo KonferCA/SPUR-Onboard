@@ -15,6 +15,7 @@ type ConditionTypeEnum string
 
 const (
 	ConditionTypeEnumNotEmpty ConditionTypeEnum = "not_empty"
+	ConditionTypeEnumEmpty    ConditionTypeEnum = "empty"
 	ConditionTypeEnumEquals   ConditionTypeEnum = "equals"
 	ConditionTypeEnumContains ConditionTypeEnum = "contains"
 )
@@ -57,6 +58,7 @@ func (ns NullConditionTypeEnum) Value() (driver.Value, error) {
 func (e ConditionTypeEnum) Valid() bool {
 	switch e {
 	case ConditionTypeEnumNotEmpty,
+		ConditionTypeEnumEmpty,
 		ConditionTypeEnumEquals,
 		ConditionTypeEnumContains:
 		return true
@@ -67,6 +69,7 @@ func (e ConditionTypeEnum) Valid() bool {
 func AllConditionTypeEnumValues() []ConditionTypeEnum {
 	return []ConditionTypeEnum{
 		ConditionTypeEnumNotEmpty,
+		ConditionTypeEnumEmpty,
 		ConditionTypeEnumEquals,
 		ConditionTypeEnumContains,
 	}
@@ -75,14 +78,14 @@ func AllConditionTypeEnumValues() []ConditionTypeEnum {
 type InputTypeEnum string
 
 const (
-	InputTypeEnumUrl       InputTypeEnum = "url"
-	InputTypeEnumFile      InputTypeEnum = "file"
-	InputTypeEnumTextarea  InputTypeEnum = "textarea"
-	InputTypeEnumTextinput InputTypeEnum = "textinput"
-	InputTypeEnumSelect    InputTypeEnum = "select"
-	InputTypeEnumTeam      InputTypeEnum = "team"
-	InputTypeEnumCheckbox  InputTypeEnum = "checkbox"
-	InputTypeEnumRadio     InputTypeEnum = "radio"
+	InputTypeEnumUrl         InputTypeEnum = "url"
+	InputTypeEnumFile        InputTypeEnum = "file"
+	InputTypeEnumTextarea    InputTypeEnum = "textarea"
+	InputTypeEnumTextinput   InputTypeEnum = "textinput"
+	InputTypeEnumSelect      InputTypeEnum = "select"
+	InputTypeEnumMultiselect InputTypeEnum = "multiselect"
+	InputTypeEnumTeam        InputTypeEnum = "team"
+	InputTypeEnumDate        InputTypeEnum = "date"
 )
 
 func (e *InputTypeEnum) Scan(src interface{}) error {
@@ -127,9 +130,9 @@ func (e InputTypeEnum) Valid() bool {
 		InputTypeEnumTextarea,
 		InputTypeEnumTextinput,
 		InputTypeEnumSelect,
+		InputTypeEnumMultiselect,
 		InputTypeEnumTeam,
-		InputTypeEnumCheckbox,
-		InputTypeEnumRadio:
+		InputTypeEnumDate:
 		return true
 	}
 	return false
@@ -142,9 +145,9 @@ func AllInputTypeEnumValues() []InputTypeEnum {
 		InputTypeEnumTextarea,
 		InputTypeEnumTextinput,
 		InputTypeEnumSelect,
+		InputTypeEnumMultiselect,
 		InputTypeEnumTeam,
-		InputTypeEnumCheckbox,
-		InputTypeEnumRadio,
+		InputTypeEnumDate,
 	}
 }
 
@@ -216,13 +219,15 @@ func AllProjectStatusValues() []ProjectStatus {
 }
 
 type Company struct {
-	ID            string  `json:"id"`
-	OwnerID       string  `json:"owner_id"`
-	Name          string  `json:"name"`
-	WalletAddress *string `json:"wallet_address"`
-	LinkedinUrl   string  `json:"linkedin_url"`
-	CreatedAt     int64   `json:"created_at"`
-	UpdatedAt     int64   `json:"updated_at"`
+	ID               string   `json:"id"`
+	OwnerID          string   `json:"owner_id"`
+	Name             string   `json:"name"`
+	WalletAddress    *string  `json:"wallet_address"`
+	LinkedinUrl      string   `json:"linkedin_url"`
+	CompanyStages    []string `json:"company_stages"`
+	InvestementStage *string  `json:"investement_stage"`
+	CreatedAt        int64    `json:"created_at"`
+	UpdatedAt        int64    `json:"updated_at"`
 }
 
 type Project struct {
@@ -236,15 +241,13 @@ type Project struct {
 }
 
 type ProjectAnswer struct {
-	ID                     string      `json:"id"`
-	ProjectID              string      `json:"project_id"`
-	QuestionID             string      `json:"question_id"`
-	InputTypeID            string      `json:"input_type_id"`
-	ConditionalInputTypeID pgtype.UUID `json:"conditional_input_type_id"`
-	Answer                 string      `json:"answer"`
-	Choices                []string    `json:"choices"`
-	CreatedAt              int64       `json:"created_at"`
-	UpdatedAt              int64       `json:"updated_at"`
+	ID         string   `json:"id"`
+	ProjectID  string   `json:"project_id"`
+	QuestionID string   `json:"question_id"`
+	Answer     string   `json:"answer"`
+	Choices    []string `json:"choices"`
+	CreatedAt  int64    `json:"created_at"`
+	UpdatedAt  int64    `json:"updated_at"`
 }
 
 type ProjectComment struct {
@@ -273,52 +276,49 @@ type ProjectDocument struct {
 }
 
 type ProjectQuestion struct {
-	ID              string `json:"id"`
-	Question        string `json:"question"`
-	Section         string `json:"section"`
-	SubSection      string `json:"sub_section"`
-	SectionOrder    int32  `json:"section_order"`
-	SubSectionOrder int32  `json:"sub_section_order"`
-	QuestionOrder   int32  `json:"question_order"`
-	Required        bool   `json:"required"`
-	CreatedAt       int64  `json:"created_at"`
-	UpdatedAt       int64  `json:"updated_at"`
-}
-
-type QuestionInputType struct {
-	ID          string        `json:"id"`
-	QuestionID  string        `json:"question_id"`
-	InputType   InputTypeEnum `json:"input_type"`
-	Options     []string      `json:"options"`
-	Validations *string       `json:"validations"`
-	CreatedAt   int64         `json:"created_at"`
-	UpdatedAt   int64         `json:"updated_at"`
-}
-
-type QuestionInputTypeCondition struct {
-	ID                string            `json:"id"`
-	QuestionID        string            `json:"question_id"`
-	ParentInputTypeID string            `json:"parent_input_type_id"`
-	ConditionType     ConditionTypeEnum `json:"condition_type"`
-	ConditionValue    *string           `json:"condition_value"`
-	InputType         InputTypeEnum     `json:"input_type"`
-	Options           []string          `json:"options"`
-	Validations       *string           `json:"validations"`
-	CreatedAt         int64             `json:"created_at"`
-	UpdatedAt         int64             `json:"updated_at"`
+	ID                  string                `json:"id"`
+	Question            string                `json:"question"`
+	Section             string                `json:"section"`
+	SubSection          string                `json:"sub_section"`
+	SectionOrder        int32                 `json:"section_order"`
+	SubSectionOrder     int32                 `json:"sub_section_order"`
+	QuestionOrder       int32                 `json:"question_order"`
+	ConditionType       NullConditionTypeEnum `json:"condition_type"`
+	ConditionValue      *string               `json:"condition_value"`
+	DependentQuestionID pgtype.UUID           `json:"dependent_question_id"`
+	Validations         []string              `json:"validations"`
+	QuestionGroupID     pgtype.UUID           `json:"question_group_id"`
+	InputType           InputTypeEnum         `json:"input_type"`
+	Options             []string              `json:"options"`
+	Required            bool                  `json:"required"`
+	Placeholder         *string               `json:"placeholder"`
+	Description         *string               `json:"description"`
+	Disabled            bool                  `json:"disabled"`
+	CreatedAt           int64                 `json:"created_at"`
+	UpdatedAt           int64                 `json:"updated_at"`
 }
 
 type TeamMember struct {
-	ID             string `json:"id"`
-	CompanyID      string `json:"company_id"`
-	FirstName      string `json:"first_name"`
-	LastName       string `json:"last_name"`
-	Title          string `json:"title"`
-	Bio            string `json:"bio"`
-	LinkedinUrl    string `json:"linkedin_url"`
-	IsAccountOwner bool   `json:"is_account_owner"`
-	CreatedAt      int64  `json:"created_at"`
-	UpdatedAt      int64  `json:"updated_at"`
+	ID                           string  `json:"id"`
+	CompanyID                    string  `json:"company_id"`
+	FirstName                    string  `json:"first_name"`
+	LastName                     string  `json:"last_name"`
+	Title                        string  `json:"title"`
+	Bio                          string  `json:"bio"`
+	LinkedinUrl                  string  `json:"linkedin_url"`
+	IsAccountOwner               bool    `json:"is_account_owner"`
+	PersonalWebsite              *string `json:"personal_website"`
+	CommitmentType               string  `json:"commitment_type"`
+	Introduction                 string  `json:"introduction"`
+	IndustyExperience            string  `json:"industy_experience"`
+	DetailedBiography            string  `json:"detailed_biography"`
+	PreviousWork                 *string `json:"previous_work"`
+	ResumeExternalUrl            *string `json:"resume_external_url"`
+	ResumeInternalUrl            *string `json:"resume_internal_url"`
+	FoundersAgreementExternalUrl *string `json:"founders_agreement_external_url"`
+	FoundersAgreementInternalUrl *string `json:"founders_agreement_internal_url"`
+	CreatedAt                    int64   `json:"created_at"`
+	UpdatedAt                    int64   `json:"updated_at"`
 }
 
 type Transaction struct {

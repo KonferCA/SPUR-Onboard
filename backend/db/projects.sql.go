@@ -59,37 +59,27 @@ const createProjectAnswer = `-- name: CreateProjectAnswer :one
 INSERT INTO project_answers (
     project_id,
     question_id,
-    input_type_id,
     answer
 ) VALUES (
     $1, -- project_id
     $2, -- question_id
-    $3, -- input_type_id
-    $4  -- answer
-) RETURNING id, project_id, question_id, input_type_id, conditional_input_type_id, answer, choices, created_at, updated_at
+    $3  -- answer
+) RETURNING id, project_id, question_id, answer, choices, created_at, updated_at
 `
 
 type CreateProjectAnswerParams struct {
-	ProjectID   string `json:"project_id"`
-	QuestionID  string `json:"question_id"`
-	InputTypeID string `json:"input_type_id"`
-	Answer      string `json:"answer"`
+	ProjectID  string `json:"project_id"`
+	QuestionID string `json:"question_id"`
+	Answer     string `json:"answer"`
 }
 
 func (q *Queries) CreateProjectAnswer(ctx context.Context, arg CreateProjectAnswerParams) (ProjectAnswer, error) {
-	row := q.db.QueryRow(ctx, createProjectAnswer,
-		arg.ProjectID,
-		arg.QuestionID,
-		arg.InputTypeID,
-		arg.Answer,
-	)
+	row := q.db.QueryRow(ctx, createProjectAnswer, arg.ProjectID, arg.QuestionID, arg.Answer)
 	var i ProjectAnswer
 	err := row.Scan(
 		&i.ID,
 		&i.ProjectID,
 		&i.QuestionID,
-		&i.InputTypeID,
-		&i.ConditionalInputTypeID,
 		&i.Answer,
 		&i.Choices,
 		&i.CreatedAt,
@@ -99,16 +89,14 @@ func (q *Queries) CreateProjectAnswer(ctx context.Context, arg CreateProjectAnsw
 }
 
 const createProjectAnswers = `-- name: CreateProjectAnswers :many
-INSERT INTO project_answers (id, project_id, question_id, input_type_id, answer)
+INSERT INTO project_answers (id, project_id, question_id, answer)
 SELECT 
     gen_random_uuid(),
     $1,  -- project_id
     pq.id,
-    qit.id, -- input_type_id
     ''   -- empty default answer
 FROM project_questions pq
-JOIN question_input_types qit ON qit.question_id = pq.id
-RETURNING id, project_id, question_id, input_type_id, conditional_input_type_id, answer, choices, created_at, updated_at
+RETURNING id, project_id, question_id, answer, choices, created_at, updated_at
 `
 
 func (q *Queries) CreateProjectAnswers(ctx context.Context, projectID string) ([]ProjectAnswer, error) {
@@ -124,8 +112,6 @@ func (q *Queries) CreateProjectAnswers(ctx context.Context, projectID string) ([
 			&i.ID,
 			&i.ProjectID,
 			&i.QuestionID,
-			&i.InputTypeID,
-			&i.ConditionalInputTypeID,
 			&i.Answer,
 			&i.Choices,
 			&i.CreatedAt,
@@ -286,7 +272,7 @@ func (q *Queries) DeleteProjectDocument(ctx context.Context, arg DeleteProjectDo
 }
 
 const getCompanyByUserID = `-- name: GetCompanyByUserID :one
-SELECT id, owner_id, name, wallet_address, linkedin_url, created_at, updated_at FROM companies 
+SELECT id, owner_id, name, wallet_address, linkedin_url, company_stages, investement_stage, created_at, updated_at FROM companies 
 WHERE owner_id = $1 
 LIMIT 1
 `
@@ -300,6 +286,8 @@ func (q *Queries) GetCompanyByUserID(ctx context.Context, ownerID string) (Compa
 		&i.Name,
 		&i.WalletAddress,
 		&i.LinkedinUrl,
+		&i.CompanyStages,
+		&i.InvestementStage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -526,30 +514,14 @@ func (q *Queries) GetProjectDocuments(ctx context.Context, projectID string) ([]
 }
 
 const getProjectQuestion = `-- name: GetProjectQuestion :one
-SELECT q.id, q.question, q.section, q.sub_section, q.section_order, q.sub_section_order, q.question_order, q.required, q.created_at, q.updated_at, qit.validations, qit.id as input_type_id FROM project_questions q
-JOIN question_input_types qit ON q.id = qit.question_id
-WHERE q.id = $1
+SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, condition_type, condition_value, dependent_question_id, validations, question_group_id, input_type, options, required, placeholder, description, disabled, created_at, updated_at FROM project_questions
+WHERE id = $1
 LIMIT 1
 `
 
-type GetProjectQuestionRow struct {
-	ID              string  `json:"id"`
-	Question        string  `json:"question"`
-	Section         string  `json:"section"`
-	SubSection      string  `json:"sub_section"`
-	SectionOrder    int32   `json:"section_order"`
-	SubSectionOrder int32   `json:"sub_section_order"`
-	QuestionOrder   int32   `json:"question_order"`
-	Required        bool    `json:"required"`
-	CreatedAt       int64   `json:"created_at"`
-	UpdatedAt       int64   `json:"updated_at"`
-	Validations     *string `json:"validations"`
-	InputTypeID     string  `json:"input_type_id"`
-}
-
-func (q *Queries) GetProjectQuestion(ctx context.Context, id string) (GetProjectQuestionRow, error) {
+func (q *Queries) GetProjectQuestion(ctx context.Context, id string) (ProjectQuestion, error) {
 	row := q.db.QueryRow(ctx, getProjectQuestion, id)
-	var i GetProjectQuestionRow
+	var i ProjectQuestion
 	err := row.Scan(
 		&i.ID,
 		&i.Question,
@@ -558,11 +530,19 @@ func (q *Queries) GetProjectQuestion(ctx context.Context, id string) (GetProject
 		&i.SectionOrder,
 		&i.SubSectionOrder,
 		&i.QuestionOrder,
+		&i.ConditionType,
+		&i.ConditionValue,
+		&i.DependentQuestionID,
+		&i.Validations,
+		&i.QuestionGroupID,
+		&i.InputType,
+		&i.Options,
 		&i.Required,
+		&i.Placeholder,
+		&i.Description,
+		&i.Disabled,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Validations,
-		&i.InputTypeID,
 	)
 	return i, err
 }
@@ -577,29 +557,22 @@ WITH all_questions AS (
         pq.section_order,
         pq.sub_section_order,
         pq.question_order,
-        qit.id AS input_type_id,
-        qit.input_type,
-        qit.options,
+        pq.input_type,
+        pq.options,
         pq.required,
-        qit.validations,
-        qitc.id AS conditional_input_type_id,
-        qitc.condition_type,
-        qitc.condition_value,
-        qitc.input_type AS conditional_input_type,
-        qitc.options AS conditional_options,
-        qitc.validations AS conditional_validations,
-        COALESCE(pa.answer, '') AS answer,
-        COALESCE(pa_cond.answer, '') AS conditional_answer
+        pq.validations,
+        pq.condition_type,
+        pq.condition_value,
+        pq.dependent_question_id,
+        pq.question_group_id,
+        pq.placeholder,
+        pq.description,
+        pq.disabled,
+        '' AS answer, -- these are here to match the query output when fetching QA for a project
+        ARRAY[]::text[] as choices -- same here
     FROM project_questions pq
-    JOIN question_input_types qit ON qit.question_id = pq.id
-    LEFT JOIN question_input_type_conditions qitc ON qitc.question_id = pq.id 
-        AND qitc.parent_input_type_id = qit.id
-    LEFT JOIN project_answers pa ON pa.question_id = pq.id 
-        AND pa.input_type_id = qit.id 
-    LEFT JOIN project_answers pa_cond ON pa_cond.question_id = pq.id
-        AND pa_cond.conditional_input_type_id = qitc.id
 )
-SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, input_type_id, input_type, options, required, validations, conditional_input_type_id, condition_type, condition_value, conditional_input_type, conditional_options, conditional_validations, answer, conditional_answer FROM all_questions
+SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, input_type, options, required, validations, condition_type, condition_value, dependent_question_id, question_group_id, placeholder, description, disabled, answer, choices FROM all_questions
 ORDER BY
     section_order,
     sub_section_order,
@@ -607,26 +580,26 @@ ORDER BY
 `
 
 type GetProjectQuestionsRow struct {
-	ID                     string                `json:"id"`
-	Question               string                `json:"question"`
-	Section                string                `json:"section"`
-	SubSection             string                `json:"sub_section"`
-	SectionOrder           int32                 `json:"section_order"`
-	SubSectionOrder        int32                 `json:"sub_section_order"`
-	QuestionOrder          int32                 `json:"question_order"`
-	InputTypeID            string                `json:"input_type_id"`
-	InputType              InputTypeEnum         `json:"input_type"`
-	Options                []string              `json:"options"`
-	Required               bool                  `json:"required"`
-	Validations            *string               `json:"validations"`
-	ConditionalInputTypeID pgtype.UUID           `json:"conditional_input_type_id"`
-	ConditionType          NullConditionTypeEnum `json:"condition_type"`
-	ConditionValue         *string               `json:"condition_value"`
-	ConditionalInputType   NullInputTypeEnum     `json:"conditional_input_type"`
-	ConditionalOptions     []string              `json:"conditional_options"`
-	ConditionalValidations *string               `json:"conditional_validations"`
-	Answer                 string                `json:"answer"`
-	ConditionalAnswer      string                `json:"conditional_answer"`
+	ID                  string                `json:"id"`
+	Question            string                `json:"question"`
+	Section             string                `json:"section"`
+	SubSection          string                `json:"sub_section"`
+	SectionOrder        int32                 `json:"section_order"`
+	SubSectionOrder     int32                 `json:"sub_section_order"`
+	QuestionOrder       int32                 `json:"question_order"`
+	InputType           InputTypeEnum         `json:"input_type"`
+	Options             []string              `json:"options"`
+	Required            bool                  `json:"required"`
+	Validations         []string              `json:"validations"`
+	ConditionType       NullConditionTypeEnum `json:"condition_type"`
+	ConditionValue      *string               `json:"condition_value"`
+	DependentQuestionID pgtype.UUID           `json:"dependent_question_id"`
+	QuestionGroupID     pgtype.UUID           `json:"question_group_id"`
+	Placeholder         *string               `json:"placeholder"`
+	Description         *string               `json:"description"`
+	Disabled            bool                  `json:"disabled"`
+	Answer              string                `json:"answer"`
+	Choices             []string              `json:"choices"`
 }
 
 func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestionsRow, error) {
@@ -646,19 +619,19 @@ func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestion
 			&i.SectionOrder,
 			&i.SubSectionOrder,
 			&i.QuestionOrder,
-			&i.InputTypeID,
 			&i.InputType,
 			&i.Options,
 			&i.Required,
 			&i.Validations,
-			&i.ConditionalInputTypeID,
 			&i.ConditionType,
 			&i.ConditionValue,
-			&i.ConditionalInputType,
-			&i.ConditionalOptions,
-			&i.ConditionalValidations,
+			&i.DependentQuestionID,
+			&i.QuestionGroupID,
+			&i.Placeholder,
+			&i.Description,
+			&i.Disabled,
 			&i.Answer,
-			&i.ConditionalAnswer,
+			&i.Choices,
 		); err != nil {
 			return nil, err
 		}
@@ -705,30 +678,14 @@ func (q *Queries) GetProjectsByCompanyID(ctx context.Context, companyID string) 
 }
 
 const getQuestionByAnswerID = `-- name: GetQuestionByAnswerID :one
-SELECT q.id, q.question, q.section, q.sub_section, q.section_order, q.sub_section_order, q.question_order, q.required, q.created_at, q.updated_at, qit.validations, qit.input_type FROM project_questions q
+SELECT q.id, q.question, q.section, q.sub_section, q.section_order, q.sub_section_order, q.question_order, q.condition_type, q.condition_value, q.dependent_question_id, q.validations, q.question_group_id, q.input_type, q.options, q.required, q.placeholder, q.description, q.disabled, q.created_at, q.updated_at FROM project_questions q
 JOIN project_answers a ON a.question_id = q.id
-JOIN question_input_types qit ON qit.question_id = a.question_id
 WHERE a.id = $1
 `
 
-type GetQuestionByAnswerIDRow struct {
-	ID              string        `json:"id"`
-	Question        string        `json:"question"`
-	Section         string        `json:"section"`
-	SubSection      string        `json:"sub_section"`
-	SectionOrder    int32         `json:"section_order"`
-	SubSectionOrder int32         `json:"sub_section_order"`
-	QuestionOrder   int32         `json:"question_order"`
-	Required        bool          `json:"required"`
-	CreatedAt       int64         `json:"created_at"`
-	UpdatedAt       int64         `json:"updated_at"`
-	Validations     *string       `json:"validations"`
-	InputType       InputTypeEnum `json:"input_type"`
-}
-
-func (q *Queries) GetQuestionByAnswerID(ctx context.Context, id string) (GetQuestionByAnswerIDRow, error) {
+func (q *Queries) GetQuestionByAnswerID(ctx context.Context, id string) (ProjectQuestion, error) {
 	row := q.db.QueryRow(ctx, getQuestionByAnswerID, id)
-	var i GetQuestionByAnswerIDRow
+	var i ProjectQuestion
 	err := row.Scan(
 		&i.ID,
 		&i.Question,
@@ -737,11 +694,19 @@ func (q *Queries) GetQuestionByAnswerID(ctx context.Context, id string) (GetQues
 		&i.SectionOrder,
 		&i.SubSectionOrder,
 		&i.QuestionOrder,
+		&i.ConditionType,
+		&i.ConditionValue,
+		&i.DependentQuestionID,
+		&i.Validations,
+		&i.QuestionGroupID,
+		&i.InputType,
+		&i.Options,
 		&i.Required,
+		&i.Placeholder,
+		&i.Description,
+		&i.Disabled,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Validations,
-		&i.InputType,
 	)
 	return i, err
 }
@@ -753,78 +718,68 @@ WITH project_owner_check AS (
    JOIN companies c ON p.company_id = c.id 
    WHERE p.id = $1
    AND c.owner_id = $2
-),
-all_questions AS (
-    SELECT 
-        pq.id,
-        pq.question,
-        pq.section,
-        pq.sub_section,
-        pq.section_order,
-        pq.sub_section_order,
-        pq.question_order,
-        qit.id AS input_type_id,
-        qit.input_type,
-        qit.options,
-        pq.required,
-        qit.validations,
-        qitc.id AS conditional_input_type_id,
-        qitc.condition_type,
-        qitc.condition_value,
-        qitc.input_type AS conditional_input_type,
-        qitc.options AS conditional_options,
-        qitc.validations AS conditional_validations,
-        COALESCE(pa.answer, '') AS answer,
-        COALESCE(pa_cond.answer, '') AS conditional_answer
-    FROM project_questions pq
-    JOIN question_input_types qit ON qit.question_id = pq.id
-    LEFT JOIN question_input_type_conditions qitc ON qitc.question_id = pq.id 
-        AND qitc.parent_input_type_id = qit.id
-    LEFT JOIN project_answers pa ON pa.question_id = pq.id 
-        AND pa.input_type_id = qit.id 
-        AND pa.project_id = $1
-    LEFT JOIN project_answers pa_cond ON pa_cond.question_id = pq.id
-        AND pa_cond.conditional_input_type_id = qitc.id
-        AND pa_cond.project_id = $1
-   WHERE EXISTS (SELECT 1 FROM project_owner_check)
 )
-SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, input_type_id, input_type, options, required, validations, conditional_input_type_id, condition_type, condition_value, conditional_input_type, conditional_options, conditional_validations, answer, conditional_answer FROM all_questions
+SELECT 
+    pq.id,
+    pq.question,
+    pq.section,
+    pq.sub_section,
+    pq.section_order,
+    pq.sub_section_order,
+    pq.question_order,
+    pq.input_type,
+    pq.options,
+    pq.required,
+    pq.validations,
+    pq.condition_type,
+    pq.condition_value,
+    pq.dependent_question_id,
+    pq.question_group_id,
+    pq.placeholder,
+    pq.description,
+    pq.disabled,
+    COALESCE(pa.answer, '') AS answer,
+    COALESCE(pa.choices, ARRAY[]::text[]) as choices
+FROM project_questions pq
+LEFT JOIN project_answers pa ON pa.question_id = pq.id 
+    AND pa.project_id = $1
+WHERE EXISTS (SELECT 1 FROM project_owner_check)
 ORDER BY
-   section_order,
-   sub_section_order,
-   question_order
+    pq.section_order,
+    pq.sub_section_order,
+    pq.question_order
 `
 
 type GetQuestionsByProjectParams struct {
-	ID      string `json:"id"`
-	OwnerID string `json:"owner_id"`
+	ProjectID string `json:"project_id"`
+	OwnerID   string `json:"owner_id"`
 }
 
 type GetQuestionsByProjectRow struct {
-	ID                     string                `json:"id"`
-	Question               string                `json:"question"`
-	Section                string                `json:"section"`
-	SubSection             string                `json:"sub_section"`
-	SectionOrder           int32                 `json:"section_order"`
-	SubSectionOrder        int32                 `json:"sub_section_order"`
-	QuestionOrder          int32                 `json:"question_order"`
-	InputTypeID            string                `json:"input_type_id"`
-	InputType              InputTypeEnum         `json:"input_type"`
-	Options                []string              `json:"options"`
-	Required               bool                  `json:"required"`
-	Validations            *string               `json:"validations"`
-	ConditionalInputTypeID pgtype.UUID           `json:"conditional_input_type_id"`
-	ConditionType          NullConditionTypeEnum `json:"condition_type"`
-	ConditionValue         *string               `json:"condition_value"`
-	ConditionalInputType   NullInputTypeEnum     `json:"conditional_input_type"`
-	ConditionalOptions     []string              `json:"conditional_options"`
-	ConditionalValidations *string               `json:"conditional_validations"`
-	Answer                 string                `json:"answer"`
-	ConditionalAnswer      string                `json:"conditional_answer"`
+	ID                  string                `json:"id"`
+	Question            string                `json:"question"`
+	Section             string                `json:"section"`
+	SubSection          string                `json:"sub_section"`
+	SectionOrder        int32                 `json:"section_order"`
+	SubSectionOrder     int32                 `json:"sub_section_order"`
+	QuestionOrder       int32                 `json:"question_order"`
+	InputType           InputTypeEnum         `json:"input_type"`
+	Options             []string              `json:"options"`
+	Required            bool                  `json:"required"`
+	Validations         []string              `json:"validations"`
+	ConditionType       NullConditionTypeEnum `json:"condition_type"`
+	ConditionValue      *string               `json:"condition_value"`
+	DependentQuestionID pgtype.UUID           `json:"dependent_question_id"`
+	QuestionGroupID     pgtype.UUID           `json:"question_group_id"`
+	Placeholder         *string               `json:"placeholder"`
+	Description         *string               `json:"description"`
+	Disabled            bool                  `json:"disabled"`
+	Answer              string                `json:"answer"`
+	Choices             []string              `json:"choices"`
 }
 
 func (q *Queries) GetQuestionsByProject(ctx context.Context, arg GetQuestionsByProjectParams) ([]GetQuestionsByProjectRow, error) {
-	rows, err := q.db.Query(ctx, getQuestionsByProject, arg.ID, arg.OwnerID)
+	rows, err := q.db.Query(ctx, getQuestionsByProject, arg.ProjectID, arg.OwnerID)
 	if err != nil {
 		return nil, err
 	}
@@ -840,19 +795,19 @@ func (q *Queries) GetQuestionsByProject(ctx context.Context, arg GetQuestionsByP
 			&i.SectionOrder,
 			&i.SubSectionOrder,
 			&i.QuestionOrder,
-			&i.InputTypeID,
 			&i.InputType,
 			&i.Options,
 			&i.Required,
 			&i.Validations,
-			&i.ConditionalInputTypeID,
 			&i.ConditionType,
 			&i.ConditionValue,
-			&i.ConditionalInputType,
-			&i.ConditionalOptions,
-			&i.ConditionalValidations,
+			&i.DependentQuestionID,
+			&i.QuestionGroupID,
+			&i.Placeholder,
+			&i.Description,
+			&i.Disabled,
 			&i.Answer,
-			&i.ConditionalAnswer,
+			&i.Choices,
 		); err != nil {
 			return nil, err
 		}
@@ -966,7 +921,7 @@ SET
 WHERE 
     project_answers.id = $2 
     AND project_id = $3
-RETURNING id, project_id, question_id, input_type_id, conditional_input_type_id, answer, choices, created_at, updated_at
+RETURNING id, project_id, question_id, answer, choices, created_at, updated_at
 `
 
 type UpdateProjectAnswerParams struct {
@@ -982,8 +937,6 @@ func (q *Queries) UpdateProjectAnswer(ctx context.Context, arg UpdateProjectAnsw
 		&i.ID,
 		&i.ProjectID,
 		&i.QuestionID,
-		&i.InputTypeID,
-		&i.ConditionalInputTypeID,
 		&i.Answer,
 		&i.Choices,
 		&i.CreatedAt,
