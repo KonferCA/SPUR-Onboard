@@ -5,6 +5,7 @@ export type FormFieldType =
     | 'textinput'
     | 'date'
     | 'select'
+    | 'multiselect'
     | 'textarea'
     | 'file'
     | 'team';
@@ -21,6 +22,7 @@ export interface FormField {
     label: string;
     required?: boolean;
     placeholder?: string;
+    description?: string;
     rows?: number;
     options?: Array<{
         id: number;

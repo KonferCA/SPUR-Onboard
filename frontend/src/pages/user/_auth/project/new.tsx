@@ -7,7 +7,11 @@ import {
     ProjectDraft,
     saveProjectDraft,
 } from '@/services/project';
-import { GroupedProjectQuestions, groupProjectQuestions } from '@/config/forms';
+import {
+    GroupedProjectQuestions,
+    groupProjectQuestions,
+    Question,
+} from '@/config/forms';
 import { SectionedLayout } from '@/templates';
 import { cva } from 'class-variance-authority';
 import { sanitizeHtmlId } from '@/utils/html';
@@ -193,6 +197,48 @@ const NewProjectPage = () => {
         })
     );
 
+    const shouldRenderQuestion = (
+        question: Question,
+        allQuestions: Question[]
+    ) => {
+        if (!question.dependentQuestionId) return true;
+
+        const dependentQuestion = allQuestions.find(
+            (q) => q.id === question.dependentQuestionId
+        );
+        if (!dependentQuestion) return true;
+
+        // Find the answer in the grouped questions
+        let dependentAnswer = '';
+        for (const group of groupedQuestions) {
+            for (const subSection of group.subSections) {
+                const foundQuestion = subSection.questions.find(
+                    (q) => q.id === question.dependentQuestionId
+                );
+                if (
+                    foundQuestion &&
+                    foundQuestion.inputFields[0]?.value.value
+                ) {
+                    dependentAnswer = foundQuestion.inputFields[0].value.value;
+                    break;
+                }
+            }
+        }
+
+        switch (question.conditionType?.conditionTypeEnum) {
+            case 'empty':
+                return !dependentAnswer;
+            case 'not_empty':
+                return !!dependentAnswer;
+            case 'equals':
+                return dependentAnswer === question.conditionValue;
+            case 'contains':
+                return dependentAnswer.includes(question.conditionValue || '');
+            default:
+                return true;
+        }
+    };
+
     // TODO: make a better loading screen
     if (groupedQuestions.length < 1 || loadingQuestions) return null;
 
@@ -255,13 +301,18 @@ const NewProjectPage = () => {
                                     <div
                                         className={questionGroupQuestionsContainerStyles()}
                                     >
-                                        {subSection.questions.map((q) => (
-                                            <QuestionInputs
-                                                key={q.id}
-                                                question={q}
-                                                onChange={handleChange}
-                                            />
-                                        ))}
+                                        {subSection.questions.map((q) =>
+                                            shouldRenderQuestion(
+                                                q,
+                                                subSection.questions
+                                            ) ? (
+                                                <QuestionInputs
+                                                    key={q.id}
+                                                    question={q}
+                                                    onChange={handleChange}
+                                                />
+                                            ) : null
+                                        )}
                                     </div>
                                 </div>
                             )

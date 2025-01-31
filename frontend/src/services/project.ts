@@ -22,20 +22,32 @@ export interface ProjectResponse {
     updatedAt: number;
 }
 
+export interface ConditionType {
+    conditionTypeEnum: string;
+    valid: boolean;
+}
+
 export interface ProjectQuestion {
     id: string;
     question: string;
-    inputType: string;
-    inputTypeId: string;
-    options: string[] | null;
     section: string;
     subSection: string;
     sectionOrder: number;
     subSectionOrder: number;
     questionOrder: number;
+    inputType: string;
+    options: string[] | null;
     required: boolean;
-    validations?: string;
+    validations: string[] | null;
+    conditionType: ConditionType;
+    conditionValue: string | null;
+    dependentQuestionId: string | null;
+    questionGroupId: string | null;
+    placeholder: string | null;
+    description: string | null;
+    disabled: boolean;
     answer: string;
+    choices: string[];
 }
 
 // Frontend interfaces

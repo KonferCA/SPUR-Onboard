@@ -4,6 +4,7 @@ import {
     FileUpload,
     Dropdown,
     TeamMembers,
+    DateInput,
 } from '@/components';
 import { Question } from '@/config/forms';
 import { FormField } from '@/types';
@@ -56,16 +57,23 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     />
                 );
 
+            case 'multiselect':
             case 'select':
+                const selectedOption = field.options?.find(
+                    (opt) => opt.value === field.value.value
+                ) || {
+                    id: -1,
+                    label: '',
+                    value: '',
+                };
+
                 return (
                     <Dropdown
                         options={field.options ?? []}
-                        value={{
-                            id: field.key,
-                            label: field.value.value || '',
-                            value: field.value.value || '',
-                        }}
-                        onChange={(v) => onChange(question.id, field.key, v)}
+                        value={selectedOption}
+                        onChange={(selected) =>
+                            onChange(question.id, field.key, selected.value)
+                        }
                     />
                 );
 
@@ -76,6 +84,9 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         onChange={(v) => onChange(question.id, field.key, v)}
                     />
                 );
+
+            case 'date':
+                return <DateInput onChange={console.log} />;
 
             default:
                 return null;

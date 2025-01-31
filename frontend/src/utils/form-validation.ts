@@ -3,10 +3,8 @@ import zod from 'zod';
 /*
  * Creates an array of ZodSchema that can be used to validate an input.
  */
-export function createZodSchema(validationString?: string) {
-    if (!validationString) return [];
-
-    const validations = validationString.split('|');
+export function createZodSchema(validations?: string[]) {
+    if (!validations) return [];
 
     const schemas = validations.map((val) => {
         switch (val) {
