@@ -85,7 +85,7 @@ func sendEmailVerification(userID, email string, queries *db.Queries) {
 Simple route handler that just returns whether the email has been verified or not in JSON body.
 */
 func (h *Handler) handleEmailVerificationStatus(c echo.Context) error {
-	user, ok := c.Get("user").(*db.GetUserByIDRow)
+	user, ok := c.Get("user").(*db.User)
 	if !ok {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", errors.New("Failed to cast user type from context that should have been set by Auth middleware."))
 	}

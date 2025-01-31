@@ -1,13 +1,13 @@
 package v1_teams
 
 import (
-	"time"
 	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/v1/v1_common"
 	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/v1/v1_common"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"time"
 )
 
 /*
@@ -48,9 +48,9 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		CompanyID:      companyID,
 		FirstName:      req.FirstName,
 		LastName:       req.LastName,
-		Title:         req.Title,
-		Bio:           req.Bio,
-		LinkedinUrl:   req.LinkedinUrl,
+		Title:          req.Title,
+		Bio:            req.Bio,
+		LinkedinUrl:    req.LinkedinUrl,
 		IsAccountOwner: false,
 	})
 	if err != nil {
@@ -62,11 +62,11 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		ID:             member.ID,
 		FirstName:      member.FirstName,
 		LastName:       member.LastName,
-		Title:         member.Title,
-		Bio:           member.Bio,
-		LinkedinUrl:   member.LinkedinUrl,
+		Title:          member.Title,
+		Bio:            member.Bio,
+		LinkedinUrl:    member.LinkedinUrl,
 		IsAccountOwner: member.IsAccountOwner,
-		CreatedAt:     formatTime(member.CreatedAt),
+		CreatedAt:      formatTime(member.CreatedAt),
 	}
 	return c.JSON(http.StatusCreated, response)
 }
@@ -102,11 +102,11 @@ func (h *Handler) handleGetTeamMembers(c echo.Context) error {
 			ID:             member.ID,
 			FirstName:      member.FirstName,
 			LastName:       member.LastName,
-			Title:         member.Title,
-			Bio:           member.Bio,
-			LinkedinUrl:   member.LinkedinUrl,
+			Title:          member.Title,
+			Bio:            member.Bio,
+			LinkedinUrl:    member.LinkedinUrl,
 			IsAccountOwner: member.IsAccountOwner,
-			CreatedAt:     formatTime(member.CreatedAt),
+			CreatedAt:      formatTime(member.CreatedAt),
 		})
 	}
 
@@ -150,14 +150,14 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 
 	response := TeamMemberResponse{
 		ID:             member.ID,
-			FirstName:      member.FirstName,
-			LastName:       member.LastName,
-			Title:         member.Title,
-			Bio:           member.Bio,
-			LinkedinUrl:   member.LinkedinUrl,
-			IsAccountOwner: member.IsAccountOwner,
-			CreatedAt:     formatTime(member.CreatedAt),
-					UpdatedAt:     formatTime(member.UpdatedAt),
+		FirstName:      member.FirstName,
+		LastName:       member.LastName,
+		Title:          member.Title,
+		Bio:            member.Bio,
+		LinkedinUrl:    member.LinkedinUrl,
+		IsAccountOwner: member.IsAccountOwner,
+		CreatedAt:      formatTime(member.CreatedAt),
+		UpdatedAt:      formatTime(member.UpdatedAt),
 	}
 	return c.JSON(http.StatusOK, response)
 }
@@ -211,14 +211,14 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 
 	response := TeamMemberResponse{
 		ID:             member.ID,
-			FirstName:      member.FirstName,
-			LastName:       member.LastName,
-			Title:         member.Title,
-			Bio:           member.Bio,
-			LinkedinUrl:   member.LinkedinUrl,
-			IsAccountOwner: member.IsAccountOwner,
-			CreatedAt:     formatTime(member.CreatedAt),
-			UpdatedAt:     formatTime(member.UpdatedAt),
+		FirstName:      member.FirstName,
+		LastName:       member.LastName,
+		Title:          member.Title,
+		Bio:            member.Bio,
+		LinkedinUrl:    member.LinkedinUrl,
+		IsAccountOwner: member.IsAccountOwner,
+		CreatedAt:      formatTime(member.CreatedAt),
+		UpdatedAt:      formatTime(member.UpdatedAt),
 	}
 	return c.JSON(http.StatusOK, response)
 }
@@ -248,7 +248,7 @@ func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
 
 	// First check if member exists
 	_, err := queries.GetTeamMember(c.Request().Context(), db.GetTeamMemberParams{
-		ID: memberID,
+		ID:        memberID,
 		CompanyID: companyID,
 	})
 	if err != nil {
@@ -290,7 +290,7 @@ func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
  *   - error if access is denied or validation fails
  */
 func (h *Handler) validateCompanyAccess(c echo.Context, companyID string, requireOwner bool) error {
-	user := c.Get("user").(*db.GetUserByIDRow)
+	user := c.Get("user").(*db.User)
 	if user == nil {
 		return v1_common.NewAuthError("User not found in context")
 	}

@@ -23,7 +23,7 @@ func (h *Handler) handleCreateCompany(c echo.Context) error {
 		return err
 	}
 
-	user, ok := c.Get("user").(*db.GetUserByIDRow)
+	user, ok := c.Get("user").(*db.User)
 	if !ok {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", errors.New("failed to cast user type from context"))
 	}
@@ -77,7 +77,7 @@ func (h *Handler) handleUpdateCompany(c echo.Context) error {
 		return err
 	}
 
-	user, ok := c.Get("user").(*db.GetUserByIDRow)
+	user, ok := c.Get("user").(*db.User)
 	if !ok {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", errors.New("failed to cast user type from context"))
 	}
@@ -135,7 +135,7 @@ func (h *Handler) handleUpdateCompany(c echo.Context) error {
  * Response: CompanyResponse
  */
 func (h *Handler) handleGetCompany(c echo.Context) error {
-	user, ok := c.Get("user").(*db.GetUserByIDRow)
+	user, ok := c.Get("user").(*db.User)
 	if !ok {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", errors.New("failed to cast user type from context"))
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password, permissions, email_verified, created_at, updated_at, token_salt FROM users WHERE email = $1 LIMIT 1
+SELECT id, first_name, last_name, email, password, permissions, email_verified, created_at, updated_at, token_salt FROM users WHERE email = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -18,6 +18,8 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.FirstName,
+		&i.LastName,
 		&i.Email,
 		&i.Password,
 		&i.Permissions,
@@ -30,27 +32,24 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, permissions, email_verified, token_salt
+SELECT id, first_name, last_name, email, password, permissions, email_verified, created_at, updated_at, token_salt
 FROM users 
 WHERE id = $1
 `
 
-type GetUserByIDRow struct {
-	ID            string `json:"id"`
-	Email         string `json:"email"`
-	Permissions   int32  `json:"permissions"`
-	EmailVerified bool   `json:"email_verified"`
-	TokenSalt     []byte `json:"token_salt"`
-}
-
-func (q *Queries) GetUserByID(ctx context.Context, id string) (GetUserByIDRow, error) {
+func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByID, id)
-	var i GetUserByIDRow
+	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.FirstName,
+		&i.LastName,
 		&i.Email,
+		&i.Password,
 		&i.Permissions,
 		&i.EmailVerified,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 		&i.TokenSalt,
 	)
 	return i, err

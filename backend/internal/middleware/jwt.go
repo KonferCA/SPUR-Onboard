@@ -26,7 +26,7 @@ func CompanyAccess(dbPool *pgxpool.Pool) echo.MiddlewareFunc {
 			}
 
 			// Get user from context (set by Auth middleware)
-			user, ok := c.Get("user").(*db.GetUserByIDRow)
+			user, ok := c.Get("user").(*db.User)
 			if !ok {
 				// This is a true auth error - user not authenticated
 				return v1_common.Fail(c, http.StatusUnauthorized, "Authentication required", nil)
@@ -65,7 +65,7 @@ func CompanyAccess(dbPool *pgxpool.Pool) echo.MiddlewareFunc {
 // Auth creates a middleware that validates JWT access tokens with specified user roles
 func Auth(dbPool *pgxpool.Pool, requiredPerms ...uint32) echo.MiddlewareFunc {
 	return AuthWithConfig(AuthConfig{
-		AcceptTokenType: jwt.ACCESS_TOKEN_TYPE,
+		AcceptTokenType:     jwt.ACCESS_TOKEN_TYPE,
 		RequiredPermissions: requiredPerms,
 	}, dbPool)
 }
@@ -129,4 +129,3 @@ func AuthWithConfig(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc
 		}
 	}
 }
-

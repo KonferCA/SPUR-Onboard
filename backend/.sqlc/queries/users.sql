@@ -1,5 +1,5 @@
 -- name: GetUserByID :one
-SELECT id, email, permissions, email_verified, token_salt
+SELECT *
 FROM users 
 WHERE id = $1;
 
