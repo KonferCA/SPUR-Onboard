@@ -5,94 +5,59 @@ import { UserDetailsForm } from '@/components/UserDetailsForm';
 import { VerifyEmail } from '@/components/VerifyEmail';
 import { register, signin, getCompany } from '@/services';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate, useLocation } from '@tanstack/react-router';
-import { handleEmailVerificationRedirect, isVerificationRedirect } from '@/services/verification';
-import type { AuthFormData, UserDetailsData, FormErrors, RegistrationStep } from '@/types/auth';
+import { useNavigate } from '@tanstack/react-router';
+import type {
+    AuthFormData,
+    UserDetailsData,
+    FormErrors,
+    RegistrationStep,
+} from '@/types/auth';
+import { Permission } from '@/services/auth';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
-    const location = useLocation();
-    const { user, accessToken, companyId, setAuth, clearAuth } = useAuth();
-    const searchParams = new URLSearchParams(window.location.search);
+    const {
+        user,
+        accessToken,
+        companyId,
+        isLoading: authLoading,
+        setAuth,
+        clearAuth,
+    } = useAuth();
 
-    const [currentStep, setCurrentStep] = useState<RegistrationStep>(() => {
-        const state = location.state as { step?: RegistrationStep } | null;
-        
-        if (state?.step) {
-            return state.step;
-        }
-
-        if (user && !user.email_verified) {
-            return 'verify-email';
-        }
-
-        return 'login-register';
-    });
+    const [currentStep, setCurrentStep] =
+        useState<RegistrationStep>('login-register');
 
     const [mode, setMode] = useState<'login' | 'register'>('login');
     const [isLoading, setIsLoading] = useState(false);
-    const [isResendingVerification, setIsResendingVerification] = useState(false);
+    const [isResendingVerification, setIsResendingVerification] =
+        useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
 
     useEffect(() => {
-        const handleVerificationRedirect = async () => {
-            if (!isVerificationRedirect(searchParams)) return;
-
-            try {
-                setIsLoading(true);
-                if (user) {
-                    const success = await handleEmailVerificationRedirect(
-                        searchParams,
-                        user,
-                        setAuth,
-                        companyId
-                    );
-                    if (success) {
-                        handleRedirect();
-                        return;
-                    }
-                }
-                
-                setErrors({
-                    email: 'Email verification failed. Please try signing in again.'
-                });
-                clearAuth();
-                setCurrentStep('login-register');
-            } catch (error) {
-                console.error('Verification redirect error:', error);
-                setErrors({
-                    email: 'Failed to complete verification. Please try signing in.'
-                });
-                clearAuth();
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        handleVerificationRedirect();
-    }, [searchParams, user]);
-
-    useEffect(() => {
-        if (user && currentStep === 'login-register') {
+        if (user) {
             if (!user.email_verified) {
                 setCurrentStep('verify-email');
+            } else if (!user.first_name || !user.last_name) {
+                setCurrentStep('form-details');
+            } else if (!companyId) {
+                setCurrentStep('company-creation');
             } else {
                 handleRedirect();
             }
         }
-    }, [user, currentStep]);
+    }, [user]);
+
+    useEffect(() => {}, [authLoading]);
 
     const handleRedirect = () => {
         if (!user) return;
-        
-        switch (user.role) {
-            case 'admin':
-                navigate({ to: '/admin/dashboard', replace: true });
-                break;
-            case 'startup_owner':
-            case 'investor':
-                navigate({ to: '/user/dashboard', replace: true });
-                break;
+
+        const perms = user.permissions;
+        if (perms & Permission.IsAdmin) {
+            navigate({ to: '/admin/dashboard', replace: true });
+        } else {
+            navigate({ to: '/user/dashboard', replace: true });
         }
     };
 
@@ -102,11 +67,17 @@ function AuthPage() {
 
         try {
             if (mode === 'register') {
-                const regResp = await register(formData.email, formData.password);
+                const regResp = await register(
+                    formData.email,
+                    formData.password
+                );
                 setAuth(regResp.user, regResp.access_token);
                 setCurrentStep('verify-email');
             } else {
-                const signinResp = await signin(formData.email, formData.password);
+                const signinResp = await signin(
+                    formData.email,
+                    formData.password
+                );
                 const company = await getCompany(signinResp.access_token);
                 setAuth(
                     signinResp.user,
@@ -136,7 +107,7 @@ function AuthPage() {
         try {
             if (!user) throw new Error('No user found');
 
-            // TODO: Add user details update API call 
+            // TODO: Add user details update API call
             // await updateUserDetails(user.id, {
             //     first_name: formData.firstName,
             //     last_name: formData.lastName,
@@ -149,7 +120,7 @@ function AuthPage() {
             user.last_name = formData.lastName;
             setAuth(user, accessToken, companyId);
             setCurrentStep('registration-complete');
-            
+
             setTimeout(() => {
                 handleRedirect();
             }, 1500);
@@ -165,7 +136,7 @@ function AuthPage() {
 
     const handleResendVerification = async () => {
         if (!user?.email) return;
-        
+
         setIsResendingVerification(true);
         try {
             // TODO: Add resend verification email API call here
@@ -178,6 +149,13 @@ function AuthPage() {
         }
     };
 
+    const handleOnVerified = () => {
+        if (!user) return;
+        user.email_verified = true;
+        setAuth(user, accessToken, companyId);
+        setCurrentStep('form-details');
+    };
+
     const renderCurrentStep = () => {
         switch (currentStep) {
             case 'login-register':
@@ -187,36 +165,48 @@ function AuthPage() {
                         isLoading={isLoading}
                         errors={errors}
                         mode={mode}
-                        onToggleMode={() => setMode(mode === 'login' ? 'register' : 'login')}
+                        onToggleMode={() =>
+                            setMode(mode === 'login' ? 'register' : 'login')
+                        }
                     />
                 );
-                
+
             case 'verify-email':
                 return user ? (
                     <VerifyEmail
                         email={user.email}
+                        onVerified={handleOnVerified}
                         onResendVerification={handleResendVerification}
                         isResending={isResendingVerification}
                     />
                 ) : null;
-                
+
             case 'form-details':
                 return (
                     <UserDetailsForm
                         onSubmit={handleUserDetailsSubmit}
                         isLoading={isLoading}
                         errors={errors}
-                        initialData={user ? {
-                            firstName: user.first_name,
-                            lastName: user.last_name,
-                        } : undefined}
+                        initialData={
+                            user
+                                ? {
+                                      firstName: user.first_name,
+                                      lastName: user.last_name,
+                                  }
+                                : undefined
+                        }
                     />
                 );
-                
+
+            case 'company-creation':
+                return <div>company</div>;
+
             case 'registration-complete':
                 return (
                     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md text-center">
-                        <h2 className="text-2xl font-semibold mb-4">Registration Complete!</h2>
+                        <h2 className="text-2xl font-semibold mb-4">
+                            Registration Complete!
+                        </h2>
                         <p className="text-gray-600">
                             Redirecting you to the dashboard...
                         </p>
@@ -225,7 +215,7 @@ function AuthPage() {
                         </div>
                     </div>
                 );
-                
+
             case 'signing-in':
                 return (
                     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md text-center">
@@ -235,6 +225,8 @@ function AuthPage() {
                 );
         }
     };
+
+    if (authLoading) return null;
 
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

@@ -3,9 +3,28 @@
  */
 
 import { getApiUrl, HttpStatusCode } from '@utils';
-import { RegisterError, ApiError } from './errors';
+import { ApiError } from './errors';
 
 import type { User, UserRole } from '@t';
+
+export enum Permission {
+    ViewAllProjects = 1,
+    ReviewProjects = 2,
+    ManageUsers = 4,
+    ManagePermissions = 8,
+    SubmitProject = 16,
+    CommentOnProjects = 32,
+    InvestInProjects = 64,
+    ManageDocuments = 128,
+    ManageInvestments = 256,
+    ManageTeam = 512,
+    IsAdmin = 1024,
+
+    // Roles
+    AdminRole = 1071,
+    StartupOwnerRole = 688,
+    InvestorRole = 97,
+}
 
 export interface AuthResponse {
     access_token: string;
@@ -14,8 +33,6 @@ export interface AuthResponse {
 
 export interface RegisterReponse extends AuthResponse {}
 export interface SigninResponse extends AuthResponse {}
-
-let currentAccessToken: string | null = null;
 
 /**
  * Registers a user if the given email is not already registered.
@@ -30,14 +47,18 @@ export async function register(
         method: 'POST',
         credentials: 'include',
         headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, role })
+        body: JSON.stringify({ email, password, role }),
     });
 
     if (!res.ok) {
-        throw new ApiError('Failed to register', res.status, await res.json().catch(() => ({})));
+        throw new ApiError(
+            'Failed to register',
+            res.status,
+            await res.json().catch(() => ({}))
+        );
     }
 
     const json = await res.json();
@@ -57,14 +78,18 @@ export async function signin(
         method: 'POST',
         credentials: 'include',
         headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
     });
 
     if (!res.ok) {
-        throw new ApiError('Failed to sign in', res.status, await res.json().catch(() => ({})));
+        throw new ApiError(
+            'Failed to sign in',
+            res.status,
+            await res.json().catch(() => ({}))
+        );
     }
 
     const json = await res.json();
@@ -74,16 +99,20 @@ export async function signin(
 export async function refreshAccessToken(): Promise<AuthResponse> {
     const url = getApiUrl('/auth/verify');
     const res = await fetch(url, {
-        method: 'GET',
+        method: 'POST',
         credentials: 'include',
         headers: {
-            'Accept': 'application/json',
+            Accept: 'application/json',
             'Content-Type': 'application/json',
-        }
+        },
     });
 
     if (!res.ok) {
-        throw new ApiError('Failed to refresh token', res.status, await res.json());
+        throw new ApiError(
+            'Failed to refresh token',
+            res.status,
+            await res.json()
+        );
     }
 
     const json = await res.json();
@@ -98,8 +127,22 @@ export async function refreshAccessToken(): Promise<AuthResponse> {
  */
 export async function signout(): Promise<void> {
     const url = getApiUrl('/auth/logout');
-    await fetch(url, { 
+    await fetch(url, {
         method: 'POST',
-        credentials: 'include' 
+        credentials: 'include',
     });
+}
+
+export async function checkEmailVerifiedStatus(
+    accessToken: string
+): Promise<boolean> {
+    const url = getApiUrl('/auth/ami-verified');
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+    const body = await res.json();
+    return res.status === HttpStatusCode.OK && body.verified;
 }

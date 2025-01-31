@@ -13,6 +13,8 @@ export interface AuthState {
         companyId?: string | null
     ) => void;
     clearAuth: () => void;
+    setUser: (user: User | null) => void;
+    setAccessToken: (token: string | null) => void;
     setCompanyId: (companyId: string | null) => void;
 }
 
@@ -102,6 +104,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setAuth,
                 clearAuth,
                 setCompanyId,
+                setUser,
+                setAccessToken,
             }}
         >
             {children}
