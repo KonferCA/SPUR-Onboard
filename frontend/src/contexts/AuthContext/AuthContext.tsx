@@ -19,6 +19,7 @@ export interface AuthState {
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
 const LOCAL_STORAGE_AUTH_KEY = 'auth_state';
+const AUTH_TOKEN_KEY = 'auth_token';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
@@ -26,14 +27,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Load auth state from localStorage on mount
     useEffect(() => {
         const savedAuth = localStorage.getItem(LOCAL_STORAGE_AUTH_KEY);
+        const savedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+        
         if (savedAuth) {
             try {
-                const { user, accessToken, companyId } = JSON.parse(savedAuth);
+                const { user, companyId } = JSON.parse(savedAuth);
                 setUser(user);
-                setAccessToken(accessToken);
-                setCompanyId(companyId); 
+                setCompanyId(companyId);
+                setAccessToken(savedToken); // Use token from auth service
             } catch (error) {
                 console.error('Failed to parse auth state from local storage: ', error);
                 localStorage.removeItem(LOCAL_STORAGE_AUTH_KEY);
@@ -53,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try {
                 const newAccessToken = await refreshAccessToken();
                 setAccessToken(newAccessToken);
-                saveToLocalStorage({ user, accessToken: newAccessToken, companyId });
+                saveToLocalStorage({ user, companyId });
             } catch (error) {
                 console.error('Failed to refresh token: ', error);
                 clearAuth();
@@ -69,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, [accessToken, user, companyId]);
 
-    const saveToLocalStorage = (authState: { user: User | null; accessToken: string | null; companyId: string | null }) => {
+    const saveToLocalStorage = (authState: { user: User | null; companyId: string | null }) => {
         localStorage.setItem(LOCAL_STORAGE_AUTH_KEY, JSON.stringify(authState));
     };
 
@@ -81,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(user);
         setAccessToken(token);
         setCompanyId(companyId);
-        saveToLocalStorage({ user, accessToken: token, companyId });
+        saveToLocalStorage({ user, companyId });
     };
 
     const clearAuth = async () => {

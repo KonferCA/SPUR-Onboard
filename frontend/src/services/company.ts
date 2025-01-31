@@ -1,5 +1,7 @@
 import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
+import { fetchWithAuth } from './auth';
+import type { Company, UpdateCompanyRequest } from '@/types/company'
 
 interface CreateCompanyResponse {
     ID: string;
@@ -41,28 +43,28 @@ export async function createCompany(
     return json as CreateCompanyResponse;
 }
 
-export async function getCompany(
-    accessToken: string
-): Promise<CreateCompanyResponse | null> {
-    const url = getApiUrl('/company');
+export async function getCompany(): Promise<Company> {
+    const response = await fetchWithAuth(getApiUrl('/company'))
 
-    const res = await fetch(url, {
-        method: 'GET',
+    if (!response.ok) {
+        throw new Error('Failed to fetch company')
+    }
+
+    return response.json()
+}
+
+export async function updateCompany(data: UpdateCompanyRequest): Promise<Company> {
+    const response = await fetchWithAuth(getApiUrl('/company'), {
+        method: 'PUT',
         headers: {
-            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
         },
-        credentials: 'include'
-    });
+        body: JSON.stringify(data),
+    })
 
-    const json = await res.json();
-
-    if (res.status === HttpStatusCode.NOT_FOUND) {
-        return null;
+    if (!response.ok) {
+        throw new Error('Failed to update company')
     }
 
-    if (res.status !== HttpStatusCode.OK) {
-        throw new ApiError('Failed to create company', res.status, json);
-    }
-
-    return json as CreateCompanyResponse;
+    return response.json()
 }
