@@ -14,6 +14,7 @@ import type {
 } from '@/types/auth';
 import { Permission } from '@/services/auth';
 import { updateUserDetails } from '@/services/user';
+import { CompanyForm } from '@/components/CompanyForm/CompanyForm';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
@@ -196,7 +197,12 @@ function AuthPage() {
                 );
 
             case 'company-creation':
-                return <div>company</div>;
+                return (
+                    <CompanyForm
+                        onSubmit={(data) => {}}
+                        isLoading={isLoading}
+                    />
+                );
 
             case 'registration-complete':
                 return (

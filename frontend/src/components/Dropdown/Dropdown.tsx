@@ -11,9 +11,11 @@ export interface DropdownOption {
 export interface DropdownProps {
     label?: string;
     options: DropdownOption[];
-    value: DropdownOption | null;
-    onChange: (value: DropdownOption) => void;
+    value: DropdownOption | DropdownOption[] | null;
+    onChange: (value: DropdownOption | DropdownOption[]) => void;
     placeholder?: string;
+    required?: boolean;
+    multiple?: boolean;
 }
 
 const Dropdown: React.FC<DropdownProps> = ({
@@ -21,7 +23,9 @@ const Dropdown: React.FC<DropdownProps> = ({
     options,
     value,
     onChange,
+    required = false,
     placeholder = 'Select',
+    multiple,
 }) => {
     return (
         <div className="w-full">
@@ -30,18 +34,36 @@ const Dropdown: React.FC<DropdownProps> = ({
                     <label className="block text-sm font-medium text-gray-900">
                         {label}
                     </label>
+                    {required && (
+                        <span className="text-sm text-gray-500">Required</span>
+                    )}
                 </div>
             )}
-            <Listbox value={value} onChange={onChange}>
+            <Listbox value={value} onChange={onChange} multiple={multiple}>
                 <div className="relative">
                     <Listbox.Button className="relative w-full py-3 px-4 text-left bg-white rounded-lg border border-gray-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-                        <span className="block truncate text-base">
-                            {value?.label || (
-                                <span className="text-gray-500">
-                                    {placeholder}
+                        {Array.isArray(value) ? (
+                            value.map((v) => (
+                                <span
+                                    key={v.id}
+                                    className="block truncate text-base"
+                                >
+                                    {v.label || (
+                                        <span className="text-gray-500">
+                                            {placeholder}
+                                        </span>
+                                    )}
                                 </span>
-                            )}
-                        </span>
+                            ))
+                        ) : (
+                            <span className="block truncate text-base">
+                                {value?.label || (
+                                    <span className="text-gray-500">
+                                        {placeholder}
+                                    </span>
+                                )}
+                            </span>
+                        )}
                         <span className="absolute inset-y-0 right-0 flex items-center pr-4">
                             <FiChevronDown
                                 className="h-5 w-5 text-gray-400"
@@ -91,4 +113,3 @@ const Dropdown: React.FC<DropdownProps> = ({
 };
 
 export { Dropdown };
-
