@@ -1,9 +1,14 @@
 -- name: CreateTeamMember :one
 INSERT INTO team_members (
     company_id, first_name, last_name, 
-    title, bio, linkedin_url, is_account_owner
+    title, linkedin_url, is_account_owner,
+    personal_website, commitment_type, introduction,
+    industry_experience, detailed_biography, previous_work,
+    resume_external_url, resume_internal_url,
+    founders_agreement_external_url, founders_agreement_internal_url
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8,
+    $9, $10, $11, $12, $13, $14, $15, $16
 )
 RETURNING *; 
 

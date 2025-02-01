@@ -302,13 +302,12 @@ type TeamMember struct {
 	FirstName                    string  `json:"first_name"`
 	LastName                     string  `json:"last_name"`
 	Title                        string  `json:"title"`
-	Bio                          string  `json:"bio"`
 	LinkedinUrl                  string  `json:"linkedin_url"`
 	IsAccountOwner               bool    `json:"is_account_owner"`
 	PersonalWebsite              *string `json:"personal_website"`
 	CommitmentType               string  `json:"commitment_type"`
 	Introduction                 string  `json:"introduction"`
-	IndustyExperience            string  `json:"industy_experience"`
+	IndustryExperience           string  `json:"industry_experience"`
 	DetailedBiography            string  `json:"detailed_biography"`
 	PreviousWork                 *string `json:"previous_work"`
 	ResumeExternalUrl            *string `json:"resume_external_url"`

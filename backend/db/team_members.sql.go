@@ -12,21 +12,35 @@ import (
 const createTeamMember = `-- name: CreateTeamMember :one
 INSERT INTO team_members (
     company_id, first_name, last_name, 
-    title, bio, linkedin_url, is_account_owner
+    title, linkedin_url, is_account_owner,
+    personal_website, commitment_type, introduction,
+    industry_experience, detailed_biography, previous_work,
+    resume_external_url, resume_internal_url,
+    founders_agreement_external_url, founders_agreement_internal_url
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8,
+    $9, $10, $11, $12, $13, $14, $15, $16
 )
-RETURNING id, company_id, first_name, last_name, title, bio, linkedin_url, is_account_owner, personal_website, commitment_type, introduction, industy_experience, detailed_biography, previous_work, resume_external_url, resume_internal_url, founders_agreement_external_url, founders_agreement_internal_url, created_at, updated_at
+RETURNING id, company_id, first_name, last_name, title, linkedin_url, is_account_owner, personal_website, commitment_type, introduction, industry_experience, detailed_biography, previous_work, resume_external_url, resume_internal_url, founders_agreement_external_url, founders_agreement_internal_url, created_at, updated_at
 `
 
 type CreateTeamMemberParams struct {
-	CompanyID      string `json:"company_id"`
-	FirstName      string `json:"first_name"`
-	LastName       string `json:"last_name"`
-	Title          string `json:"title"`
-	Bio            string `json:"bio"`
-	LinkedinUrl    string `json:"linkedin_url"`
-	IsAccountOwner bool   `json:"is_account_owner"`
+	CompanyID                    string  `json:"company_id"`
+	FirstName                    string  `json:"first_name"`
+	LastName                     string  `json:"last_name"`
+	Title                        string  `json:"title"`
+	LinkedinUrl                  string  `json:"linkedin_url"`
+	IsAccountOwner               bool    `json:"is_account_owner"`
+	PersonalWebsite              *string `json:"personal_website"`
+	CommitmentType               string  `json:"commitment_type"`
+	Introduction                 string  `json:"introduction"`
+	IndustryExperience           string  `json:"industry_experience"`
+	DetailedBiography            string  `json:"detailed_biography"`
+	PreviousWork                 *string `json:"previous_work"`
+	ResumeExternalUrl            *string `json:"resume_external_url"`
+	ResumeInternalUrl            *string `json:"resume_internal_url"`
+	FoundersAgreementExternalUrl *string `json:"founders_agreement_external_url"`
+	FoundersAgreementInternalUrl *string `json:"founders_agreement_internal_url"`
 }
 
 func (q *Queries) CreateTeamMember(ctx context.Context, arg CreateTeamMemberParams) (TeamMember, error) {
@@ -35,9 +49,18 @@ func (q *Queries) CreateTeamMember(ctx context.Context, arg CreateTeamMemberPara
 		arg.FirstName,
 		arg.LastName,
 		arg.Title,
-		arg.Bio,
 		arg.LinkedinUrl,
 		arg.IsAccountOwner,
+		arg.PersonalWebsite,
+		arg.CommitmentType,
+		arg.Introduction,
+		arg.IndustryExperience,
+		arg.DetailedBiography,
+		arg.PreviousWork,
+		arg.ResumeExternalUrl,
+		arg.ResumeInternalUrl,
+		arg.FoundersAgreementExternalUrl,
+		arg.FoundersAgreementInternalUrl,
 	)
 	var i TeamMember
 	err := row.Scan(
@@ -46,13 +69,12 @@ func (q *Queries) CreateTeamMember(ctx context.Context, arg CreateTeamMemberPara
 		&i.FirstName,
 		&i.LastName,
 		&i.Title,
-		&i.Bio,
 		&i.LinkedinUrl,
 		&i.IsAccountOwner,
 		&i.PersonalWebsite,
 		&i.CommitmentType,
 		&i.Introduction,
-		&i.IndustyExperience,
+		&i.IndustryExperience,
 		&i.DetailedBiography,
 		&i.PreviousWork,
 		&i.ResumeExternalUrl,
@@ -81,7 +103,7 @@ func (q *Queries) DeleteTeamMember(ctx context.Context, arg DeleteTeamMemberPara
 }
 
 const getTeamMember = `-- name: GetTeamMember :one
-SELECT id, company_id, first_name, last_name, title, bio, linkedin_url, is_account_owner, personal_website, commitment_type, introduction, industy_experience, detailed_biography, previous_work, resume_external_url, resume_internal_url, founders_agreement_external_url, founders_agreement_internal_url, created_at, updated_at FROM team_members 
+SELECT id, company_id, first_name, last_name, title, linkedin_url, is_account_owner, personal_website, commitment_type, introduction, industry_experience, detailed_biography, previous_work, resume_external_url, resume_internal_url, founders_agreement_external_url, founders_agreement_internal_url, created_at, updated_at FROM team_members 
 WHERE id = $1 AND company_id = $2 
 LIMIT 1
 `
@@ -100,13 +122,12 @@ func (q *Queries) GetTeamMember(ctx context.Context, arg GetTeamMemberParams) (T
 		&i.FirstName,
 		&i.LastName,
 		&i.Title,
-		&i.Bio,
 		&i.LinkedinUrl,
 		&i.IsAccountOwner,
 		&i.PersonalWebsite,
 		&i.CommitmentType,
 		&i.Introduction,
-		&i.IndustyExperience,
+		&i.IndustryExperience,
 		&i.DetailedBiography,
 		&i.PreviousWork,
 		&i.ResumeExternalUrl,
@@ -120,7 +141,7 @@ func (q *Queries) GetTeamMember(ctx context.Context, arg GetTeamMemberParams) (T
 }
 
 const listTeamMembers = `-- name: ListTeamMembers :many
-SELECT id, company_id, first_name, last_name, title, bio, linkedin_url, is_account_owner, personal_website, commitment_type, introduction, industy_experience, detailed_biography, previous_work, resume_external_url, resume_internal_url, founders_agreement_external_url, founders_agreement_internal_url, created_at, updated_at FROM team_members 
+SELECT id, company_id, first_name, last_name, title, linkedin_url, is_account_owner, personal_website, commitment_type, introduction, industry_experience, detailed_biography, previous_work, resume_external_url, resume_internal_url, founders_agreement_external_url, founders_agreement_internal_url, created_at, updated_at FROM team_members 
 WHERE company_id = $1 
 ORDER BY created_at DESC
 `
@@ -140,13 +161,12 @@ func (q *Queries) ListTeamMembers(ctx context.Context, companyID string) ([]Team
 			&i.FirstName,
 			&i.LastName,
 			&i.Title,
-			&i.Bio,
 			&i.LinkedinUrl,
 			&i.IsAccountOwner,
 			&i.PersonalWebsite,
 			&i.CommitmentType,
 			&i.Introduction,
-			&i.IndustyExperience,
+			&i.IndustryExperience,
 			&i.DetailedBiography,
 			&i.PreviousWork,
 			&i.ResumeExternalUrl,
@@ -176,7 +196,7 @@ SET
     linkedin_url = COALESCE(NULLIF($5::text, ''), linkedin_url),
     updated_at = extract(epoch from now())
 WHERE id = $6 AND company_id = $7
-RETURNING id, company_id, first_name, last_name, title, bio, linkedin_url, is_account_owner, personal_website, commitment_type, introduction, industy_experience, detailed_biography, previous_work, resume_external_url, resume_internal_url, founders_agreement_external_url, founders_agreement_internal_url, created_at, updated_at
+RETURNING id, company_id, first_name, last_name, title, linkedin_url, is_account_owner, personal_website, commitment_type, introduction, industry_experience, detailed_biography, previous_work, resume_external_url, resume_internal_url, founders_agreement_external_url, founders_agreement_internal_url, created_at, updated_at
 `
 
 type UpdateTeamMemberParams struct {
@@ -206,13 +226,12 @@ func (q *Queries) UpdateTeamMember(ctx context.Context, arg UpdateTeamMemberPara
 		&i.FirstName,
 		&i.LastName,
 		&i.Title,
-		&i.Bio,
 		&i.LinkedinUrl,
 		&i.IsAccountOwner,
 		&i.PersonalWebsite,
 		&i.CommitmentType,
 		&i.Introduction,
-		&i.IndustyExperience,
+		&i.IndustryExperience,
 		&i.DetailedBiography,
 		&i.PreviousWork,
 		&i.ResumeExternalUrl,

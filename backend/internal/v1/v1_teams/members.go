@@ -1,13 +1,13 @@
 package v1_teams
 
 import (
-	"time"
 	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/v1/v1_common"
 	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/v1/v1_common"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"time"
 )
 
 /*
@@ -45,30 +45,29 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 	// Create team member in database
 	queries := db.New(h.server.GetDB())
 	member, err := queries.CreateTeamMember(c.Request().Context(), db.CreateTeamMemberParams{
-		CompanyID:      companyID,
-		FirstName:      req.FirstName,
-		LastName:       req.LastName,
-		Title:         req.Title,
-		Bio:           req.Bio,
-		LinkedinUrl:   req.LinkedinUrl,
-		IsAccountOwner: false,
+		CompanyID:                    companyID,
+		FirstName:                    req.FirstName,
+		LastName:                     req.LastName,
+		Title:                        req.Title,
+		LinkedinUrl:                  req.LinkedinUrl,
+		IsAccountOwner:               false,
+		PersonalWebsite:              req.PersonalWebsite,
+		CommitmentType:               req.CommitmentType,
+		Introduction:                 req.Introduction,
+		IndustryExperience:           req.IndustryExperience,
+		DetailedBiography:            req.Bio,
+		PreviousWork:                 req.PreviousWork,
+		ResumeExternalUrl:            req.ResumeExternalUrl,
+		ResumeInternalUrl:            req.ResumeInternalUrl,
+		FoundersAgreementExternalUrl: req.FoundersAgreementExternalUrl,
+		FoundersAgreementInternalUrl: req.FoundersAgreementInternalUrl,
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create team member", err)
 	}
 
 	// Return success response with member data
-	response := TeamMemberResponse{
-		ID:             member.ID,
-		FirstName:      member.FirstName,
-		LastName:       member.LastName,
-		Title:         member.Title,
-		Bio:           member.Bio,
-		LinkedinUrl:   member.LinkedinUrl,
-		IsAccountOwner: member.IsAccountOwner,
-		CreatedAt:     formatTime(member.CreatedAt),
-	}
-	return c.JSON(http.StatusCreated, response)
+	return c.JSON(http.StatusCreated, member)
 }
 
 /*
@@ -102,11 +101,11 @@ func (h *Handler) handleGetTeamMembers(c echo.Context) error {
 			ID:             member.ID,
 			FirstName:      member.FirstName,
 			LastName:       member.LastName,
-			Title:         member.Title,
-			Bio:           member.Bio,
-			LinkedinUrl:   member.LinkedinUrl,
+			Title:          member.Title,
+			Bio:            member.DetailedBiography,
+			LinkedinUrl:    member.LinkedinUrl,
 			IsAccountOwner: member.IsAccountOwner,
-			CreatedAt:     formatTime(member.CreatedAt),
+			CreatedAt:      formatTime(member.CreatedAt),
 		})
 	}
 
@@ -150,14 +149,14 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 
 	response := TeamMemberResponse{
 		ID:             member.ID,
-			FirstName:      member.FirstName,
-			LastName:       member.LastName,
-			Title:         member.Title,
-			Bio:           member.Bio,
-			LinkedinUrl:   member.LinkedinUrl,
-			IsAccountOwner: member.IsAccountOwner,
-			CreatedAt:     formatTime(member.CreatedAt),
-					UpdatedAt:     formatTime(member.UpdatedAt),
+		FirstName:      member.FirstName,
+		LastName:       member.LastName,
+		Title:          member.Title,
+		Bio:            member.DetailedBiography,
+		LinkedinUrl:    member.LinkedinUrl,
+		IsAccountOwner: member.IsAccountOwner,
+		CreatedAt:      formatTime(member.CreatedAt),
+		UpdatedAt:      formatTime(member.UpdatedAt),
 	}
 	return c.JSON(http.StatusOK, response)
 }
@@ -211,14 +210,14 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 
 	response := TeamMemberResponse{
 		ID:             member.ID,
-			FirstName:      member.FirstName,
-			LastName:       member.LastName,
-			Title:         member.Title,
-			Bio:           member.Bio,
-			LinkedinUrl:   member.LinkedinUrl,
-			IsAccountOwner: member.IsAccountOwner,
-			CreatedAt:     formatTime(member.CreatedAt),
-			UpdatedAt:     formatTime(member.UpdatedAt),
+		FirstName:      member.FirstName,
+		LastName:       member.LastName,
+		Title:          member.Title,
+		Bio:            member.DetailedBiography,
+		LinkedinUrl:    member.LinkedinUrl,
+		IsAccountOwner: member.IsAccountOwner,
+		CreatedAt:      formatTime(member.CreatedAt),
+		UpdatedAt:      formatTime(member.UpdatedAt),
 	}
 	return c.JSON(http.StatusOK, response)
 }
@@ -248,7 +247,7 @@ func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
 
 	// First check if member exists
 	_, err := queries.GetTeamMember(c.Request().Context(), db.GetTeamMemberParams{
-		ID: memberID,
+		ID:        memberID,
 		CompanyID: companyID,
 	})
 	if err != nil {
