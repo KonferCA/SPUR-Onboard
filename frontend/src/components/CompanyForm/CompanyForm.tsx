@@ -5,27 +5,18 @@ import {
     TextArea,
     Button,
     Dropdown,
-    DropdownOption,
+    ProgressSteps,
 } from '@/components';
-
-export interface CompanyInformation {
-    name: string;
-    dateFounded: Date;
-    description: string;
-    stage: DropdownOption[];
-    website?: string;
-    linkedin?: string;
-}
-
-export interface CompanyFormProps {
-    onSubmit: (data: CompanyInformation) => Promise<void>;
-    isLoading: boolean;
-    initialData?: Partial<CompanyInformation>;
-}
+import {
+    CompanyFormProps,
+    CompanyInformation,
+    COMPANY_STAGES
+} from '@/types/company';
 
 export const CompanyForm: FC<CompanyFormProps> = ({
     onSubmit,
     isLoading,
+    errors,
     initialData,
 }) => {
     const [formData, setFormData] = useState<CompanyInformation>({
@@ -46,6 +37,21 @@ export const CompanyForm: FC<CompanyFormProps> = ({
             [name]: value,
         }));
     };
+
+    const handleDateChange = (date: Date) => {
+        setFormData(prev => ({
+            ...prev,
+            dateFounded: date
+        }));
+    };
+
+    const handleStageChange = (selected: any) => {
+        setFormData(prev => ({
+            ...prev,
+            stage: Array.isArray(selected) ? selected : [selected]
+        }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         await onSubmit(formData);
@@ -53,8 +59,10 @@ export const CompanyForm: FC<CompanyFormProps> = ({
 
     return (
         <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
+            <ProgressSteps currentStep={2} />
+
             <h2 className="text-2xl font-semibold text-center mb-6">
-                Complete Your Profile
+                Complete Your Application
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,12 +72,16 @@ export const CompanyForm: FC<CompanyFormProps> = ({
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
+                    error={errors?.name}
                 />
 
                 <DateInput
                     label="Date founded"
                     required
-                    onChange={console.log}
+                    value={formData.dateFounded}
+                    onChange={handleDateChange}
+                    error={errors?.dateFounded}
+                    max={new Date()}
                 />
 
                 <TextArea
@@ -78,28 +90,20 @@ export const CompanyForm: FC<CompanyFormProps> = ({
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
+                    error={errors?.description}
+                    rows={4}
+                    placeholder="Tell us about your company..."
                 />
 
-                {/* TODO: This dropdown has to be multiple, instead of single */}
                 <Dropdown
                     label="Company stage"
                     required
                     value={formData.stage}
-                    options={[
-                        'Ideation',
-                        'MVP',
-                        'Investment',
-                        'Product-market Fit',
-                        'Go-to-market',
-                        'Growth',
-                        'Maturity',
-                    ].map((opt) => ({
-                        id: opt,
-                        label: opt,
-                        value: opt,
-                    }))}
+                    options={COMPANY_STAGES}
                     multiple
-                    onChange={console.log}
+                    onChange={handleStageChange}
+                    error={errors?.stage}
+                    placeholder="Select one or more stages"
                 />
 
                 <TextInput
@@ -107,7 +111,8 @@ export const CompanyForm: FC<CompanyFormProps> = ({
                     name="website"
                     value={formData.website || ''}
                     onChange={handleChange}
-                    placeholder="https://linkedin.com/in/your-profile"
+                    error={errors?.website}
+                    placeholder="https://example.com"
                 />
 
                 <TextInput
@@ -115,7 +120,9 @@ export const CompanyForm: FC<CompanyFormProps> = ({
                     name="linkedin"
                     value={formData.linkedin || ''}
                     onChange={handleChange}
-                    placeholder="https://linkedin.com/in/your-profile"
+                    error={errors?.linkedin}
+                    placeholder="https://linkedin.com/company/your-company"
+                    required
                 />
 
                 <div className="pt-4">
