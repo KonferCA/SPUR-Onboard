@@ -91,7 +91,7 @@ const NewProjectPage = () => {
 
     const handleChange = (
         questionId: string,
-        inputTypeId: string,
+        inputFieldKey: string,
         value: any
     ) => {
         const newGroups = groupedQuestions.map((group, idx) => {
@@ -107,8 +107,8 @@ const NewProjectPage = () => {
                                 ...question,
                                 inputFields: question.inputFields.map(
                                     (field) => {
-                                        if (field.key === inputTypeId) {
-                                            const key = `${questionId}_${inputTypeId}`;
+                                        if (field.key === inputFieldKey) {
+                                            const key = `${questionId}_${inputFieldKey}`;
                                             switch (field.type) {
                                                 case 'file':
                                                     break;
@@ -121,8 +121,6 @@ const NewProjectPage = () => {
                                                         {
                                                             question_id:
                                                                 questionId,
-                                                            input_type_id:
-                                                                inputTypeId,
                                                             answer: value,
                                                         }
                                                     );

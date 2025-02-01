@@ -114,11 +114,6 @@ export function groupProjectQuestions(
                     required: q.required,
                     placeholder: q.placeholder || undefined,
                     description: q.description || undefined,
-                    options: q.options?.map((opt, idx) => ({
-                        id: idx,
-                        label: opt,
-                        value: opt,
-                    })),
                     validations: q.validations
                         ? createZodSchema(q.validations)
                         : undefined,
@@ -132,6 +127,15 @@ export function groupProjectQuestions(
                         break;
                     case 'team':
                         inputField.value.teamMembers = teamMembers ?? [];
+                        break;
+                    case 'multiselect':
+                    case 'select':
+                        inputField.options = q.options?.map((opt, idx) => ({
+                            id: idx,
+                            label: opt,
+                            value: opt,
+                        }));
+                        inputField.value.value = q.choices;
                         break;
                     default:
                         inputField.value.value = q.answer;

@@ -60,7 +60,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
             case 'multiselect':
             case 'select':
                 const selectedOption = field.options?.find(
-                    (opt) => opt.value === field.value.value
+                    (opt) => opt.value === field.value.value[0]
                 ) || {
                     id: -1,
                     label: '',
@@ -72,7 +72,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         options={field.options ?? []}
                         value={selectedOption}
                         onChange={(selected) =>
-                            onChange(question.id, field.key, selected.value)
+                            onChange(question.id, field.key, [selected.value])
                         }
                     />
                 );
@@ -86,7 +86,12 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                 );
 
             case 'date':
-                return <DateInput onChange={console.log} />;
+                return (
+                    <DateInput
+                        value={field.value.value}
+                        onChange={(v) => onChange(question.id, field.key, v)}
+                    />
+                );
 
             default:
                 return null;

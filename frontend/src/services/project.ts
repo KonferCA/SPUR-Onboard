@@ -194,7 +194,6 @@ export async function getProjectDetails(id: string): Promise<Project> {
 
 export interface ProjectDraft {
     question_id: string;
-    input_type_id: string;
     answer: string;
 }
 
