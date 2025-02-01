@@ -10,7 +10,7 @@ import (
 )
 
 const getCompany = `-- name: GetCompany :one
-SELECT id, owner_id, name, wallet_address, linkedin_url, created_at, updated_at FROM companies WHERE id = $1 LIMIT 1
+SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at FROM companies WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetCompany(ctx context.Context, id string) (Company, error) {
@@ -20,6 +20,10 @@ func (q *Queries) GetCompany(ctx context.Context, id string) (Company, error) {
 		&i.ID,
 		&i.OwnerID,
 		&i.Name,
+		&i.Description,
+		&i.DateFounded,
+		&i.Stages,
+		&i.Website,
 		&i.WalletAddress,
 		&i.LinkedinUrl,
 		&i.CreatedAt,
