@@ -1,6 +1,7 @@
-import { ProjectDocument } from '@/services/project';
-import { useState, useRef } from 'react';
-import { FiUpload, FiX } from 'react-icons/fi';
+import { ProjectDocument, uploadDocument, removeDocument } from '@/services/project';
+import { useState, useRef, useEffect } from 'react';
+import { FiUpload, FiX, FiLoader, FiCheck } from 'react-icons/fi';
+import { useDebounceFn } from '@/hooks';
 
 /**
  * UploadableFile is to be able to differentiate between newly added files and already uploaded files.
@@ -32,6 +33,12 @@ export interface FileUploadProps {
     className?: string;
     maxSizeMB?: number;
     initialFiles?: UploadableFile[];
+    projectId?: string;
+    questionId?: string;
+    section?: string;
+    subSection?: string;
+    accessToken?: string;
+    enableAutosave?: boolean;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
@@ -41,11 +48,75 @@ const FileUpload: React.FC<FileUploadProps> = ({
     className = '',
     maxSizeMB = 50,
     initialFiles = [],
+    projectId,
+    questionId,
+    section,
+    subSection,
+    accessToken,
+    enableAutosave = false,
 }) => {
     const [isDragging, setIsDragging] = useState(false);
-    const [uploadedFiles, setUploadedFiles] =
-        useState<UploadableFile[]>(initialFiles);
+    const [uploadedFiles, setUploadedFiles] = useState<UploadableFile[]>(initialFiles);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const pendingChangesRef = useRef<{adds: UploadableFile[], removes: UploadableFile[]}>({
+        adds: [],
+        removes: []
+    });
+
+    // Autosave function
+    const autosave = useDebounceFn(async () => {
+        if (!enableAutosave || !projectId || !accessToken) return;
+        
+        setIsProcessing(true);
+        setError(null);
+
+        try {
+            // Handle removals
+            await Promise.all(
+                pendingChangesRef.current.removes.map(async (file) => {
+                    if (file.metadata?.id) {
+                        await removeDocument(accessToken, {
+                            projectId,
+                            documentId: file.metadata.id,
+                        });
+                    }
+                })
+            );
+
+            // Handle additions
+            const uploadResults = await Promise.all(
+                pendingChangesRef.current.adds.map(async (file) => {
+                    const response = await uploadDocument(accessToken, {
+                        projectId,
+                        file,
+                        questionId: questionId || '',
+                        name: file.name,
+                        section: section || '',
+                        subSection: subSection || '',
+                    });
+                    file.metadata = response;
+                    file.uploaded = true;
+                    return file;
+                })
+            );
+
+            // Clear pending changes and update state
+            pendingChangesRef.current = { adds: [], removes: [] };
+            if (onFilesChange) {
+                onFilesChange(
+                    uploadedFiles
+                        .filter(f => !pendingChangesRef.current.removes.includes(f))
+                        .concat(uploadResults)
+                );
+            }
+        } catch (e) {
+            setError('Failed to save file changes. Please try again.');
+        } finally {
+            setIsProcessing(false);
+        }
+    }, 500, [projectId, questionId, section, subSection, accessToken]);
 
     // handle drag events
     const handleDrag = (e: React.DragEvent) => {
@@ -105,20 +176,25 @@ const FileUpload: React.FC<FileUploadProps> = ({
         }
 
         const newFiles = validFiles.map((f) => createUploadableFile(f));
-
-        // update state and call onChange
-        setUploadedFiles([...uploadedFiles, ...newFiles]);
-
-        if (onFilesChange) {
-            onFilesChange(newFiles);
+        
+        // Track new files for autosave
+        if (enableAutosave) {
+            pendingChangesRef.current.adds.push(...newFiles);
+            setUploadedFiles([...uploadedFiles, ...newFiles]);
+            autosave();
+        } else if (onFilesChange) {
+            onFilesChange([...uploadedFiles, ...newFiles]);
         }
     };
 
     const removeFile = (fileToRemove: File) => {
         const newFiles = uploadedFiles.filter((file) => file !== fileToRemove);
-        setUploadedFiles(newFiles);
-
-        if (onFilesChange) {
+        
+        if (enableAutosave && (fileToRemove as UploadableFile).metadata?.id) {
+            pendingChangesRef.current.removes.push(fileToRemove as UploadableFile);
+            setUploadedFiles(newFiles);
+            autosave();
+        } else if (onFilesChange) {
             onFilesChange(newFiles);
         }
     };
@@ -140,6 +216,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
                 className={`border-2 border-dashed rounded-lg p-6 ${
                     isDragging
                         ? 'border-blue-500 bg-blue-50'
+                        : error
+                        ? 'border-red-300 bg-red-50'
                         : 'border-gray-300'
                 }`}
                 onDragEnter={handleDragIn}
@@ -155,11 +233,15 @@ const FileUpload: React.FC<FileUploadProps> = ({
                                 Drag and drop here
                             </h3>
                         </div>
+                        {error && (
+                            <p className="text-sm text-red-500 mt-2">{error}</p>
+                        )}
                         <p className="text-sm text-gray-500 mt-2">or</p>
                         <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
                             className="mt-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
+                            disabled={isProcessing}
                         >
                             Select File
                         </button>
@@ -172,6 +254,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                     accept=".pdf,.png,.jpeg,.jpg"
                     className="hidden"
                     multiple
+                    disabled={isProcessing}
                 />
             </div>
 
@@ -190,11 +273,18 @@ const FileUpload: React.FC<FileUploadProps> = ({
                                 <span className="text-sm text-gray-500">
                                     {formatFileSize(file.size)}
                                 </span>
+                                {isProcessing && pendingChangesRef.current.adds.includes(file) && (
+                                    <FiLoader className="animate-spin text-blue-500" />
+                                )}
+                                {file.uploaded && (
+                                    <FiCheck className="text-green-500" />
+                                )}
                             </div>
                             <button
                                 type="button"
                                 onClick={() => removeFile(file)}
                                 className="text-gray-400 hover:text-gray-600"
+                                disabled={isProcessing}
                             >
                                 <FiX />
                             </button>
