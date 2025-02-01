@@ -2,11 +2,14 @@ package v1_projects
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 /*
@@ -17,6 +20,8 @@ import (
  * - Verifies project belongs to user's company
  */
 func (h *Handler) handleSaveProjectDraft(c echo.Context) error {
+	logger := middleware.GetLogger(c)
+
 	projectID := c.Param("id")
 	if projectID == "" {
 		return v1_common.Fail(c, http.StatusBadRequest, "Project ID is required", nil)
@@ -31,27 +36,22 @@ func (h *Handler) handleSaveProjectDraft(c echo.Context) error {
 
 	var params []db.UpdateProjectDraftParams
 	for _, item := range req.Draft {
-		question, err := q.GetProjectQuestion(c.Request().Context(), item.QuestionID)
-		if err != nil {
-			return v1_common.Fail(c, http.StatusBadRequest, "Invalid question ID", err)
-		}
-
 		var answer string
 		var choices []string
 
-		switch question.InputType {
-		case db.InputTypeEnumSelect, db.InputTypeEnumMultiselect:
-			switch v := item.Answer.(type) {
-			case string:
-				answer = v
-			case []interface{}:
-				for _, choice := range v {
-					if str, ok := choice.(string); ok {
-						choices = append(choices, str)
-					}
+		switch v := item.Answer.(type) {
+		case string:
+			log.Debug().Str("v", v).Send()
+			answer = v
+		case []interface{}:
+			for _, choice := range v {
+				if str, ok := choice.(string); ok {
+					choices = append(choices, str)
 				}
 			}
 		default:
+			logger.Warn(fmt.Sprintf("Skipping saving answer for question (%s) as it has unsupported type.", item.QuestionID))
+			continue
 		}
 
 		params = append(params, db.UpdateProjectDraftParams{
