@@ -55,7 +55,7 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 		CommitmentType:               req.CommitmentType,
 		Introduction:                 req.Introduction,
 		IndustryExperience:           req.IndustryExperience,
-		DetailedBiography:            req.Bio,
+		DetailedBiography:            req.DetailedBiography,
 		PreviousWork:                 req.PreviousWork,
 		ResumeExternalUrl:            req.ResumeExternalUrl,
 		ResumeInternalUrl:            req.ResumeInternalUrl,

@@ -13,7 +13,6 @@ type AddTeamMemberRequest struct {
 	FirstName          string  `json:"first_name" validate:"required"`
 	LastName           string  `json:"last_name" validate:"required"`
 	Title              string  `json:"title" validate:"required"`
-	Bio                string  `json:"bio" validate:"required"`
 	LinkedinUrl        string  `json:"linkedin_url" validate:"required,url"`
 	IsAccountOwner     bool    `json:"is_account_owner" validate:"boolean"`
 	PersonalWebsite    *string `json:"personal_website" validate:"required,url"`
