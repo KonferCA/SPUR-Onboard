@@ -58,9 +58,7 @@ interface FileChange {
 
 const NewProjectPage = () => {
     const navigate = useNavigate({ from: '/user/project/new' });
-    const [currentProjectId, setCurrentProjectId] = useState(
-        '4065f113-a7b1-4010-97ba-5f3344d72e63'
-    );
+    const [currentProjectId, setCurrentProjectId] = useState('');
     const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
         queryKey: ['projectFormQuestions', currentProjectId],
@@ -83,7 +81,7 @@ const NewProjectPage = () => {
     const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
     const fileChangesRef = useRef<Map<string, FileChange>>(new Map());
 
-    const { accessToken, companyId, setCompanyId } = useAuth();
+    const { accessToken, companyId } = useAuth();
 
     const autosave = useDebounceFn(
         async () => {
@@ -325,7 +323,6 @@ const NewProjectPage = () => {
 
     useEffect(() => {
         if (questionData) {
-            setCompanyId('79da5b09-cfdd-4bb6-893d-52de06c3964e');
             setGroupedQuestions(groupProjectQuestions(questionData));
         }
     }, [questionData]);
