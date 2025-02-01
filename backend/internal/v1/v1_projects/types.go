@@ -3,7 +3,6 @@ package v1_projects
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/interfaces"
-	"mime/multipart"
 )
 
 type Handler struct {
@@ -38,11 +37,10 @@ type PatchAnswerRequest struct {
 }
 
 type UploadDocumentRequest struct {
-	File       *multipart.FileHeader `form:"file"`
-	QuestionID string                `form:"question_id" validate:"required,uuid"`
-	Name       string                `form:"name" validate:"required"`
-	Section    string                `form:"section" validate:"required"`
-	SubSection string                `form:"sub_section" validate:"required"`
+	QuestionID string `form:"question_id" validate:"required,uuid"`
+	Name       string `form:"name" validate:"required"`
+	Section    string `form:"section" validate:"required"`
+	SubSection string `form:"sub_section" validate:"required"`
 }
 
 type DocumentResponse struct {

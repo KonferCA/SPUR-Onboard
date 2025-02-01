@@ -5,7 +5,9 @@ import {
     createProject,
     getProjectFormQuestions,
     ProjectDraft,
+    removeDocument,
     saveProjectDraft,
+    uploadDocument,
 } from '@/services/project';
 import {
     GroupedProjectQuestions,
@@ -106,41 +108,41 @@ const NewProjectPage = () => {
             teamChangesRef.current.clear();
 
             // TODO: handle file changes
-            // const fileChanges = Array.from(fileChangesRef.current.values());
-            // fileChangesRef.current.clear();
+            const fileChanges = Array.from(fileChangesRef.current.values());
+            fileChangesRef.current.clear();
 
             try {
                 // TODO: handle file changes
-                // if (fileChanges.length > 0) {
-                //     // Process file changes
-                //     await Promise.all(
-                //         fileChanges.map(async (change) => {
-                //             if (
-                //                 change.action === 'remove' &&
-                //                 change.file.metadata?.id
-                //             ) {
-                //                 await removeDocument(accessToken, {
-                //                     projectId: currentProjectId,
-                //                     documentId: change.file.metadata.id,
-                //                 });
-                //             } else if (change.action === 'add') {
-                //                 const response = await uploadDocument(
-                //                     accessToken,
-                //                     {
-                //                         projectId: currentProjectId,
-                //                         file: change.file,
-                //                         questionId: change.metadata.questionId,
-                //                         name: change.file.name,
-                //                         section: change.metadata.section,
-                //                         subSection: change.metadata.subSection,
-                //                     }
-                //                 );
-                //                 change.file.metadata = response;
-                //                 change.file.uploaded = true;
-                //             }
-                //         })
-                //     );
-                // }
+                if (fileChanges.length > 0) {
+                    // Process file changes
+                    await Promise.all(
+                        fileChanges.map(async (change) => {
+                            if (
+                                change.action === 'remove' &&
+                                change.file.metadata?.id
+                            ) {
+                                await removeDocument(accessToken, {
+                                    projectId: currentProjectId,
+                                    documentId: change.file.metadata.id,
+                                });
+                            } else if (change.action === 'add') {
+                                const response = await uploadDocument(
+                                    accessToken,
+                                    {
+                                        projectId: currentProjectId,
+                                        file: change.file,
+                                        questionId: change.metadata.questionId,
+                                        name: change.file.name,
+                                        section: change.metadata.section,
+                                        subSection: change.metadata.subSection,
+                                    }
+                                );
+                                change.file.metadata = response;
+                                change.file.uploaded = true;
+                            }
+                        })
+                    );
+                }
                 // Process team member changes
                 await Promise.all(
                     teamChanges.map(async (change) => {

@@ -4,13 +4,16 @@ import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 /*
@@ -39,12 +42,16 @@ func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
 		return v1_common.Fail(c, 400, "Invalid request", err)
 	}
 
-	// Get file from request
-	if req.File == nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "No file provided", nil)
+	log.Debug().Any("req", req).Send()
+
+	form := c.Request().MultipartForm
+	var file *multipart.FileHeader
+	for _, files := range form.File {
+		file = files[0]
+		break
 	}
 
-	mimeType := req.File.Header.Get("Content-Type")
+	mimeType := file.Header.Get("Content-Type")
 
 	// Get project ID from URL
 	projectID := c.Param("id")
@@ -68,7 +75,7 @@ func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
 	}
 
 	// Open the file
-	src, err := req.File.Open()
+	src, err := file.Open()
 	if err != nil {
 		return v1_common.Fail(c, 500, "Failed to open file", err)
 	}
@@ -81,7 +88,7 @@ func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
 	}
 
 	// Generate S3 key
-	fileExt := filepath.Ext(req.File.Filename)
+	fileExt := filepath.Ext(file.Filename)
 	s3Key := fmt.Sprintf("projects/%s/documents/%s%s", projectID, uuid.New().String(), fileExt)
 
 	// Upload to S3
