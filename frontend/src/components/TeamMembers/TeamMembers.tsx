@@ -23,10 +23,10 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             newMember.linkedin &&
             (newMember.resumeInternalUrl || newMember.resumeExternalUrl) &&
             newMember.personalWebsite &&
-            newMember.commitment &&
+            newMember.commitmentType &&
             newMember.introduction &&
-            newMember.relevantExperience &&
-            newMember.bio
+            newMember.industryExperience &&
+            newMember.detailedBiography
         );
     };
 
@@ -37,14 +37,14 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                 firstName: newMember.firstName!,
                 lastName: newMember.lastName!,
                 title: newMember.title!,
-                bio: newMember.bio!,
+                detailedBiography: newMember.detailedBiography!,
                 linkedin: newMember.linkedin!,
                 resumeExternalUrl: newMember.resumeExternalUrl || '',
                 resumeInternalUrl: newMember.resumeInternalUrl || '',
                 personalWebsite: newMember.personalWebsite!,
                 introduction: newMember.introduction!,
-                commitment: newMember.commitment!,
-                relevantExperience: newMember.relevantExperience!,
+                commitmentType: newMember.commitmentType!,
+                industryExperience: newMember.industryExperience!,
                 previousWork: newMember.previousWork || '',
                 founderAgreementExternalUrl:
                     newMember.founderAgreementExternalUrl || '',
@@ -186,11 +186,11 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         />
                         <TextInput
                             label="How committed is this person (e.g., full-time, personal investment)?"
-                            value={newMember.commitment || ''}
+                            value={newMember.commitmentType || ''}
                             onChange={(e) =>
                                 setNewMember((prev) => ({
                                     ...prev,
-                                    commitment: e.target.value,
+                                    commitmentType: e.target.value,
                                 }))
                             }
                             required
@@ -208,22 +208,22 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         />
                         <TextArea
                             label="Does this person have relevant experience in the industry?"
-                            value={newMember.relevantExperience || ''}
+                            value={newMember.industryExperience || ''}
                             onChange={(e) =>
                                 setNewMember((prev) => ({
                                     ...prev,
-                                    relevantExperience: e.target.value,
+                                    industryExperience: e.target.value,
                                 }))
                             }
                             required
                         />
                         <TextArea
                             label="Give a detailed biography of this person, outlining roles, responsibilities, and key achievements."
-                            value={newMember.bio || ''}
+                            value={newMember.detailedBiography || ''}
                             onChange={(e) =>
                                 setNewMember((prev) => ({
                                     ...prev,
-                                    bio: e.target.value,
+                                    detailedBiography: e.target.value,
                                 }))
                             }
                             required

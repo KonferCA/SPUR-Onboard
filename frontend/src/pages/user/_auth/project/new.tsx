@@ -11,6 +11,7 @@ import {
     GroupedProjectQuestions,
     groupProjectQuestions,
     Question,
+    SubSection,
 } from '@/config/forms';
 import { SectionedLayout } from '@/templates';
 import { cva } from 'class-variance-authority';
@@ -20,7 +21,8 @@ import { useQuery } from '@tanstack/react-query';
 import { scrollToTop } from '@/utils';
 import { useDebounceFn } from '@/hooks';
 import { useAuth } from '@/contexts';
-import { TeamMember } from '@/types';
+import { FormField, TeamMember } from '@/types';
+import { addTeamMember, deleteTeamMember } from '@/services/teams';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -50,9 +52,19 @@ interface FileChange {
     };
 }
 
+interface TeamChange {
+    action: 'add' | 'remove';
+    member: TeamMember;
+    metadata: {
+        questionId: string;
+        section: string;
+        subSection: string;
+    };
+}
+
 const NewProjectPage = () => {
     const [currentProjectId, setCurrentProjectId] = useState(
-        'f072e32c-7176-4def-a6ce-86ea41bd7493'
+        '4065f113-a7b1-4010-97ba-5f3344d72e63'
     );
     const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
@@ -62,6 +74,10 @@ const NewProjectPage = () => {
             return data;
         },
         enabled: !!currentProjectId,
+        // if this is not set  to infity, data is refetched on window focus
+        // aka, when the mouse re-enters the browser window... which is dumb
+        // and causes a lot of data transfer that is not needed.
+        staleTime: Infinity,
     });
     const [groupedQuestions, setGroupedQuestions] = useState<
         GroupedProjectQuestions[]
@@ -71,20 +87,23 @@ const NewProjectPage = () => {
     const [currentStep, setCurrentStep] = useState<number>(0);
     const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
     const fileChangesRef = useRef<Map<string, FileChange>>(new Map());
+    const teamChangesRef = useRef<Map<string, TeamChange>>(new Map());
 
-    const { accessToken } = useAuth();
+    const { accessToken, companyId, setCompanyId } = useAuth();
 
     const autosave = useDebounceFn(
         async () => {
+            if (!currentProjectId || !accessToken || !companyId) return;
             setIsSaving(true);
-
-            if (!currentProjectId || !accessToken) return;
 
             // Find all dirty inputs and create params while clearing dirty flags
             const dirtyInputsSnapshot: ProjectDraft[] = Array.from(
                 dirtyInputRef.current.values()
             );
             dirtyInputRef.current.clear();
+
+            const teamChanges = Array.from(teamChangesRef.current.values());
+            teamChangesRef.current.clear();
 
             // TODO: handle file changes
             // const fileChanges = Array.from(fileChangesRef.current.values());
@@ -122,8 +141,35 @@ const NewProjectPage = () => {
                 //         })
                 //     );
                 // }
-
+                // Process team member changes
+                await Promise.all(
+                    teamChanges.map(async (change) => {
+                        if (change.action === 'remove' && change.member.id) {
+                            await deleteTeamMember(accessToken, {
+                                companyId,
+                                teamMember: change.member,
+                            });
+                        } else if (change.action === 'add') {
+                            try {
+                                const response = await addTeamMember(
+                                    accessToken,
+                                    {
+                                        companyId,
+                                        teamMember: change.member,
+                                    }
+                                );
+                                // Update the member with the response data
+                                Object.assign(change.member, {
+                                    id: response.id,
+                                });
+                            } catch (e) {
+                                //TODO: remove the user from the list
+                            }
+                        }
+                    })
+                );
                 if (dirtyInputsSnapshot.length > 0) {
+                    console.log(dirtyInputsSnapshot);
                     await saveProjectDraft(
                         currentProjectId,
                         dirtyInputsSnapshot
@@ -138,8 +184,114 @@ const NewProjectPage = () => {
             }
         },
         300,
-        [currentProjectId, accessToken]
+        [currentProjectId, accessToken, companyId]
     );
+
+    const handleFileChange = (
+        questionId: string,
+        group: GroupedProjectQuestions,
+        subsection: SubSection,
+        field: FormField,
+        files: UploadableFile[]
+    ) => {
+        const currentFiles = (field.value?.value || []) as UploadableFile[];
+
+        // Track removed files
+        currentFiles.forEach((file) => {
+            if (!files.find((f) => f.metadata?.id === file.metadata?.id)) {
+                const changeKey = `remove_${file.metadata?.id}`;
+                fileChangesRef.current.set(changeKey, {
+                    action: 'remove',
+                    file,
+                    metadata: {
+                        questionId,
+                        section: group.section,
+                        subSection: subsection.name,
+                    },
+                });
+            }
+        });
+
+        // Track new files
+        files.forEach((file) => {
+            if (!file.uploaded) {
+                const changeKey = `add_${file.name}_${Date.now()}`;
+                fileChangesRef.current.set(changeKey, {
+                    action: 'add',
+                    file,
+                    metadata: {
+                        questionId,
+                        section: group.section,
+                        subSection: subsection.name,
+                    },
+                });
+            }
+        });
+        return {
+            ...field,
+            value: {
+                ...field.value,
+                files,
+            },
+        };
+    };
+
+    const handleTeamChange = (
+        questionId: string,
+        group: GroupedProjectQuestions,
+        subsection: SubSection,
+        field: FormField,
+        newMembers: TeamMember[]
+    ) => {
+        const currentMembers = (field.value?.teamMembers || []) as TeamMember[];
+
+        // Find members to remove (in current but not in new)
+        const removedMembers = currentMembers.filter(
+            (current) =>
+                !newMembers.find((newMember) => newMember.id === current.id)
+        );
+
+        // Find members to add (in new but not in current)
+        const addedMembers = newMembers.filter(
+            (newMember) =>
+                !currentMembers.find((current) => current.id === newMember.id)
+        );
+
+        // Track changes
+        removedMembers.forEach((member) => {
+            const changeKey = `remove_member_${member.id}`;
+            teamChangesRef.current.set(changeKey, {
+                action: 'remove',
+                member,
+                metadata: {
+                    questionId,
+                    section: group.section,
+                    subSection: subsection.name,
+                },
+            });
+        });
+
+        addedMembers.forEach((member) => {
+            const changeKey = `add_member_${member.id}_${Date.now()}`;
+            teamChangesRef.current.set(changeKey, {
+                action: 'add',
+                member,
+                metadata: {
+                    questionId,
+                    section: group.section,
+                    subSection: subsection.name,
+                },
+            });
+        });
+
+        return {
+            ...field,
+            value: {
+                ...field.value,
+                teamMembers: newMembers,
+            },
+        };
+    };
 
     const handleChange = (
         questionId: string,
@@ -163,85 +315,21 @@ const NewProjectPage = () => {
                                             const key = `${questionId}_${inputFieldKey}`;
                                             switch (field.type) {
                                                 case 'file':
-                                                    const files =
-                                                        value as UploadableFile[];
-                                                    const currentFiles = (field
-                                                        .value?.value ||
-                                                        []) as UploadableFile[];
-
-                                                    // Track removed files
-                                                    currentFiles.forEach(
-                                                        (file) => {
-                                                            if (
-                                                                !files.find(
-                                                                    (f) =>
-                                                                        f
-                                                                            .metadata
-                                                                            ?.id ===
-                                                                        file
-                                                                            .metadata
-                                                                            ?.id
-                                                                )
-                                                            ) {
-                                                                const changeKey = `remove_${file.metadata?.id}`;
-                                                                fileChangesRef.current.set(
-                                                                    changeKey,
-                                                                    {
-                                                                        action: 'remove',
-                                                                        file,
-                                                                        metadata:
-                                                                            {
-                                                                                questionId,
-                                                                                section:
-                                                                                    group.section,
-                                                                                subSection:
-                                                                                    subsection.name,
-                                                                            },
-                                                                    }
-                                                                );
-                                                            }
-                                                        }
+                                                    return handleFileChange(
+                                                        questionId,
+                                                        group,
+                                                        subsection,
+                                                        field,
+                                                        value as UploadableFile[]
                                                     );
-
-                                                    // Track new files
-                                                    files.forEach((file) => {
-                                                        if (!file.uploaded) {
-                                                            const changeKey = `add_${file.name}_${Date.now()}`;
-                                                            fileChangesRef.current.set(
-                                                                changeKey,
-                                                                {
-                                                                    action: 'add',
-                                                                    file,
-                                                                    metadata: {
-                                                                        questionId,
-                                                                        section:
-                                                                            group.section,
-                                                                        subSection:
-                                                                            subsection.name,
-                                                                    },
-                                                                }
-                                                            );
-                                                        }
-                                                    });
-                                                    return {
-                                                        ...field,
-                                                        value: {
-                                                            ...field.value,
-                                                            files,
-                                                        },
-                                                    };
                                                 case 'team':
-                                                    const members =
-                                                        value as TeamMember[];
-                                                    return {
-                                                        ...field,
-                                                        value: {
-                                                            ...field.value,
-                                                            teamMembers:
-                                                                members,
-                                                        },
-                                                    };
-
+                                                    return handleTeamChange(
+                                                        questionId,
+                                                        group,
+                                                        subsection,
+                                                        field,
+                                                        value as TeamMember[]
+                                                    );
                                                 default:
                                                     dirtyInputRef.current.set(
                                                         key,
@@ -300,6 +388,7 @@ const NewProjectPage = () => {
 
     useEffect(() => {
         if (questionData) {
+            setCompanyId('79da5b09-cfdd-4bb6-893d-52de06c3964e');
             setGroupedQuestions(groupProjectQuestions(questionData));
         }
     }, [questionData]);

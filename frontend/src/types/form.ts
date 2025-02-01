@@ -45,14 +45,14 @@ export interface TeamMember {
     firstName: string;
     lastName: string;
     title: string;
-    bio: string;
+    detailedBiography: string;
     linkedin: string;
     resumeExternalUrl: string;
     resumeInternalUrl: string;
     personalWebsite: string;
-    commitment: string;
+    commitmentType: string;
     introduction: string;
-    relevantExperience: string;
+    industryExperience: string;
     previousWork?: string;
     founderAgreementExternalUrl?: string;
     founderAgreementInternalUrl?: string;
