@@ -7,6 +7,7 @@ import {
     ProjectDraft,
     removeDocument,
     saveProjectDraft,
+    submitProject,
     uploadDocument,
 } from '@/services/project';
 import {
@@ -25,6 +26,7 @@ import { useDebounceFn } from '@/hooks';
 import { useAuth } from '@/contexts';
 import { FormField } from '@/types';
 import { getSampleAnswer } from '@/utils/sampleData';
+import { useNavigate } from '@tanstack/react-router';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -55,6 +57,7 @@ interface FileChange {
 }
 
 const NewProjectPage = () => {
+    const navigate = useNavigate({ from: '/user/project/new' });
     const [currentProjectId, setCurrentProjectId] = useState(
         '4065f113-a7b1-4010-97ba-5f3344d72e63'
     );
@@ -387,7 +390,7 @@ const NewProjectPage = () => {
         }
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         // validate all the questions
         const valid = groupedQuestions.every((group) => {
             return group.subSections.every((subsection) => {
@@ -457,6 +460,14 @@ const NewProjectPage = () => {
         });
 
         if (valid) {
+            try {
+                if (!accessToken || !currentProjectId) return;
+                await submitProject(accessToken, currentProjectId);
+                // replace to not let them go back, it causes the creation of a new project
+                navigate({ to: '/user/dashboard', replace: true });
+            } catch (e) {
+                console.error(e);
+            }
         } else {
             // update the group questions so that it refreshes the ui
             setGroupedQuestions((prev) => [...prev]);

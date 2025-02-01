@@ -277,3 +277,18 @@ export async function removeDocument(
 
     return res.json();
 }
+
+export async function submitProject(accessToken: string, projectId: string) {
+    const url = getApiUrl(`/project/${projectId}/submit`);
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    const json = await res.json();
+    if (res.status !== HttpStatusCode.OK) {
+        throw new Error(`Failed to submit project: ${json.message}`);
+    }
+}
