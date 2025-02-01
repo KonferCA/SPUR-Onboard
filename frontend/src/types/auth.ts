@@ -59,3 +59,12 @@ export interface AuthResponse {
     access_token: string;
     user: User;
 }
+
+export interface CompanyFormErrors extends FormErrors {
+    name?: string;
+    dateFounded?: string;
+    description?: string;
+    stage?: string;
+    website?: string;
+    linkedin?: string;
+}
