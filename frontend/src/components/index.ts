@@ -39,3 +39,5 @@ export type { SocialLinksProps } from './SocialLinks';
 
 export { DateInput } from './DateInput';
 export type { DateInputProps } from './DateInput';
+
+export { ProgressSteps } from './ProgressSteps';
