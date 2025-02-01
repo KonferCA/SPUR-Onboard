@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '@components';
+import { Button, UploadableFile } from '@components';
 import {
     createProject,
     getProjectFormQuestions,
@@ -19,6 +19,7 @@ import { QuestionInputs } from '@/components/QuestionInputs/QuestionInputs';
 import { useQuery } from '@tanstack/react-query';
 import { scrollToTop } from '@/utils';
 import { useDebounceFn } from '@/hooks';
+import { useAuth } from '@/contexts';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -38,8 +39,20 @@ const questionGroupTitleSeparatorStyles = cva(
 );
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
+interface FileChange {
+    action: 'add' | 'remove';
+    file: UploadableFile;
+    metadata: {
+        questionId: string;
+        section: string;
+        subSection: string;
+    };
+}
+
 const NewProjectPage = () => {
-    const [currentProjectId, setCurrentProjectId] = useState('');
+    const [currentProjectId, setCurrentProjectId] = useState(
+        'f072e32c-7176-4def-a6ce-86ea41bd7493'
+    );
     const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
         queryKey: ['projectFormQuestions', currentProjectId],
@@ -56,12 +69,15 @@ const NewProjectPage = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [currentStep, setCurrentStep] = useState<number>(0);
     const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
+    const fileChangesRef = useRef<Map<string, FileChange>>(new Map());
+
+    const { accessToken } = useAuth();
 
     const autosave = useDebounceFn(
         async () => {
             setIsSaving(true);
 
-            if (!currentProjectId) return;
+            if (!currentProjectId || !accessToken) return;
 
             // Find all dirty inputs and create params while clearing dirty flags
             const dirtyInputsSnapshot: ProjectDraft[] = Array.from(
@@ -69,8 +85,43 @@ const NewProjectPage = () => {
             );
             dirtyInputRef.current.clear();
 
+            // TODO: handle file changes
+            // const fileChanges = Array.from(fileChangesRef.current.values());
+            // fileChangesRef.current.clear();
+
             try {
-                console.log(dirtyInputsSnapshot);
+                // TODO: handle file changes
+                // if (fileChanges.length > 0) {
+                //     // Process file changes
+                //     await Promise.all(
+                //         fileChanges.map(async (change) => {
+                //             if (
+                //                 change.action === 'remove' &&
+                //                 change.file.metadata?.id
+                //             ) {
+                //                 await removeDocument(accessToken, {
+                //                     projectId: currentProjectId,
+                //                     documentId: change.file.metadata.id,
+                //                 });
+                //             } else if (change.action === 'add') {
+                //                 const response = await uploadDocument(
+                //                     accessToken,
+                //                     {
+                //                         projectId: currentProjectId,
+                //                         file: change.file,
+                //                         questionId: change.metadata.questionId,
+                //                         name: change.file.name,
+                //                         section: change.metadata.section,
+                //                         subSection: change.metadata.subSection,
+                //                     }
+                //                 );
+                //                 change.file.metadata = response;
+                //                 change.file.uploaded = true;
+                //             }
+                //         })
+                //     );
+                // }
+
                 if (dirtyInputsSnapshot.length > 0) {
                     await saveProjectDraft(
                         currentProjectId,
@@ -86,7 +137,7 @@ const NewProjectPage = () => {
             }
         },
         300,
-        [currentProjectId]
+        [currentProjectId, accessToken]
     );
 
     const handleChange = (
@@ -111,7 +162,73 @@ const NewProjectPage = () => {
                                             const key = `${questionId}_${inputFieldKey}`;
                                             switch (field.type) {
                                                 case 'file':
-                                                    break;
+                                                    const files =
+                                                        value as UploadableFile[];
+                                                    const currentFiles = (field
+                                                        .value?.value ||
+                                                        []) as UploadableFile[];
+
+                                                    // Track removed files
+                                                    currentFiles.forEach(
+                                                        (file) => {
+                                                            if (
+                                                                !files.find(
+                                                                    (f) =>
+                                                                        f
+                                                                            .metadata
+                                                                            ?.id ===
+                                                                        file
+                                                                            .metadata
+                                                                            ?.id
+                                                                )
+                                                            ) {
+                                                                const changeKey = `remove_${file.metadata?.id}`;
+                                                                fileChangesRef.current.set(
+                                                                    changeKey,
+                                                                    {
+                                                                        action: 'remove',
+                                                                        file,
+                                                                        metadata:
+                                                                            {
+                                                                                questionId,
+                                                                                section:
+                                                                                    group.section,
+                                                                                subSection:
+                                                                                    subsection.name,
+                                                                            },
+                                                                    }
+                                                                );
+                                                            }
+                                                        }
+                                                    );
+
+                                                    // Track new files
+                                                    files.forEach((file) => {
+                                                        if (!file.uploaded) {
+                                                            const changeKey = `add_${file.name}_${Date.now()}`;
+                                                            fileChangesRef.current.set(
+                                                                changeKey,
+                                                                {
+                                                                    action: 'add',
+                                                                    file,
+                                                                    metadata: {
+                                                                        questionId,
+                                                                        section:
+                                                                            group.section,
+                                                                        subSection:
+                                                                            subsection.name,
+                                                                    },
+                                                                }
+                                                            );
+                                                        }
+                                                    });
+                                                    return {
+                                                        ...field,
+                                                        value: {
+                                                            ...field.value,
+                                                            files,
+                                                        },
+                                                    };
                                                 case 'team':
                                                     break;
 

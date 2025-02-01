@@ -1,4 +1,4 @@
-import { getApiUrl } from '@utils';
+import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
 import { fetchWithAuth } from './auth';
 import { snakeToCamel } from '@/utils/object';
@@ -213,4 +213,67 @@ export async function saveProjectDraft(
         return false;
     }
     return true;
+}
+
+export interface uploadDocumentData {
+    projectId: string;
+    file: File;
+    questionId: string;
+    name: string;
+    section: string;
+    subSection: string;
+}
+
+export async function uploadDocument(
+    accessToken: string,
+    data: uploadDocumentData
+) {
+    const formData = new FormData();
+
+    formData.append('file', data.file);
+    formData.append('question_id', data.questionId);
+    formData.append('name', data.name);
+    formData.append('section', data.section);
+    formData.append('sub_section', data.subSection);
+
+    const url = getApiUrl(`/project/${data.projectId}/documents`);
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+    });
+
+    if (res.status !== HttpStatusCode.CREATED) {
+        throw new Error('Failed to upload document');
+    }
+
+    return await res.json();
+}
+
+export interface RemoveDocumentData {
+    projectId: string;
+    documentId: string;
+}
+
+export async function removeDocument(
+    accessToken: string,
+    data: RemoveDocumentData
+) {
+    const url = getApiUrl(
+        `/project/${data.projectId}/documents/${data.documentId}`
+    );
+    const res = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    if (res.status !== HttpStatusCode.OK) {
+        throw new Error('Failed to remove document');
+    }
+
+    return res.json();
 }
