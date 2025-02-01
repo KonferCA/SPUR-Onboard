@@ -14,11 +14,20 @@ interface QuestionInputsProps {
     question: Question;
     onChange: (questionID: string, inputTypeID: string, value: any) => void;
     className?: string;
+    fileUploadProps?: {
+        projectId?: string;
+        questionId?: string;
+        section?: string;
+        subSection?: string;
+        accessToken?: string;
+        enableAutosave?: boolean;
+    };
 }
 
 export const QuestionInputs: FC<QuestionInputsProps> = ({
     question,
     onChange,
+    fileUploadProps,
 }) => {
     const renderInput = (field: FormField) => {
         switch (field.type) {
@@ -51,9 +60,13 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                 return (
                     <FileUpload
                         onFilesChange={(v) =>
-                            onChange(question.id, field.key, v)
+                            onChange(field.key, field.key, v)
                         }
                         initialFiles={field.value.files || []}
+                        {...(fileUploadProps && {
+                            ...fileUploadProps,
+                            questionId: field.key,
+                        })}
                     />
                 );
 
