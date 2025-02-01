@@ -116,8 +116,7 @@ export async function refreshAccessToken(): Promise<AuthResponse> {
     }
 
     const json = await res.json();
-
-    return json as AuthResponse;
+    return json.access_token;
 }
 
 /**
@@ -143,6 +142,7 @@ export async function checkEmailVerifiedStatus(
             Authorization: `Bearer ${accessToken}`,
         },
     });
+  
     const body = await res.json();
     return res.status === HttpStatusCode.OK && body.verified;
 }

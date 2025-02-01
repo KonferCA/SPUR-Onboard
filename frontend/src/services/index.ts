@@ -8,6 +8,10 @@ export {
     type RegisterReponse
 } from './auth';
 
+export { 
+    getUserProfile, updateUserProfile
+} from './user';
+
 export {
     RegisterError,
     ApiError,
