@@ -3,7 +3,6 @@ package v1_projects
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/v1/v1_common"
-	"database/sql"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -49,22 +48,22 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 
 		// Get all questions from database for the given project
 		questions, err = q.GetQuestionsByProject(c.Request().Context(), db.GetQuestionsByProjectParams{
-			ID:      projectID,
-			OwnerID: user.ID,
+			ProjectID: projectID,
+			OwnerID:   user.ID,
 		})
 		if err != nil {
 			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
 		}
 
 		documents, err = q.GetProjectDocuments(c.Request().Context(), projectID)
-		if err != nil && err != sql.ErrNoRows {
+		if err != nil && err.Error() != "no rows in result set" {
 			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
 		}
 	} else {
 		// Get all questions from database
 		questions, err = q.GetProjectQuestions(c.Request().Context())
 		if err != nil {
-			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
+			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions (1)", err)
 		}
 	}
 
@@ -75,14 +74,14 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 
 	company, err := q.GetCompanyByOwnerID(c.Request().Context(), user.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err.Error() == "no rows in result set" {
 			return v1_common.Fail(c, http.StatusBadRequest, "Missing company to get project questions", err)
 		}
-		return v1_common.Fail(c, http.StatusBadRequest, "Failed to get questions", err)
+		return v1_common.Fail(c, http.StatusBadRequest, "Failed to get questions (2)", err)
 	}
 
 	teamMembers, err = q.ListTeamMembers(c.Request().Context(), company.ID)
-	if err != nil {
+	if err != nil && err.Error() != "no rows in result set" {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
 	}
 

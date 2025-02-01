@@ -4,6 +4,7 @@ import {
     FileUpload,
     Dropdown,
     TeamMembers,
+    DateInput,
 } from '@/components';
 import { Question } from '@/config/forms';
 import { FormField } from '@/types';
@@ -11,14 +12,12 @@ import { FC } from 'react';
 
 interface QuestionInputsProps {
     question: Question;
-    values: Record<string, any>;
     onChange: (questionID: string, inputTypeID: string, value: any) => void;
     className?: string;
 }
 
 export const QuestionInputs: FC<QuestionInputsProps> = ({
     question,
-    values,
     onChange,
 }) => {
     const renderInput = (field: FormField) => {
@@ -26,9 +25,8 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
             case 'textinput':
                 return (
                     <TextInput
-                        key={field.key}
                         placeholder={field.placeholder}
-                        value={values[field.key] || ''}
+                        value={field.value.value || ''}
                         onChange={(e) =>
                             onChange(question.id, field.key, e.target.value)
                         }
@@ -39,9 +37,8 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
             case 'textarea':
                 return (
                     <TextArea
-                        key={field.key}
                         placeholder={field.placeholder}
-                        value={values[field.key] || ''}
+                        value={field.value.value || ''}
                         onChange={(e) =>
                             onChange(question.id, field.key, e.target.value)
                         }
@@ -56,28 +53,42 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         onFilesChange={(v) =>
                             onChange(question.id, field.key, v)
                         }
-                        initialFiles={field.files || []}
+                        initialFiles={field.value.files || []}
                     />
                 );
 
+            case 'multiselect':
             case 'select':
+                const selectedOption = field.options?.find(
+                    (opt) => opt.value === field.value.value[0]
+                ) || {
+                    id: -1,
+                    label: '',
+                    value: '',
+                };
+
                 return (
                     <Dropdown
-                        key={field.key}
                         options={field.options ?? []}
-                        value={{
-                            id: field.key,
-                            label: values[field.key] || '',
-                            value: values[field.key] || '',
-                        }}
-                        onChange={(v) => onChange(question.id, field.key, v)}
+                        value={selectedOption}
+                        onChange={(selected) =>
+                            onChange(question.id, field.key, [selected.value])
+                        }
                     />
                 );
 
             case 'team':
                 return (
                     <TeamMembers
-                        value={field.teamMembers || []}
+                        value={field.value.teamMembers || []}
+                        onChange={(v) => onChange(question.id, field.key, v)}
+                    />
+                );
+
+            case 'date':
+                return (
+                    <DateInput
+                        value={field.value.value}
                         onChange={(v) => onChange(question.id, field.key, v)}
                     />
                 );
@@ -99,7 +110,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
             </div>
             <div className="space-y-4">
                 {question.inputFields.map((field) => (
-                    <div key={`${question.id}_${field.key}`} className="w-full">
+                    <div key={field.key} className="w-full">
                         {renderInput(field)}
                     </div>
                 ))}

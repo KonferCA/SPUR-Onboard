@@ -19,7 +19,7 @@ export interface UploadableFile extends File {
  */
 export function createUploadableFile(
     file: File,
-    metadata: ProjectDocument,
+    metadata?: ProjectDocument,
     initialUploaded = false
 ): UploadableFile {
     return Object.assign(file, { uploaded: initialUploaded, metadata });
@@ -43,7 +43,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
     initialFiles = [],
 }) => {
     const [isDragging, setIsDragging] = useState(false);
-    const [uploadedFiles, setUploadedFiles] = useState<File[]>(initialFiles);
+    const [uploadedFiles, setUploadedFiles] =
+        useState<UploadableFile[]>(initialFiles);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // handle drag events
@@ -103,9 +104,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
             return;
         }
 
+        const newFiles = validFiles.map((f) => createUploadableFile(f));
+
         // update state and call onChange
-        const newFiles = [...uploadedFiles, ...validFiles];
-        setUploadedFiles(newFiles);
+        setUploadedFiles([...uploadedFiles, ...newFiles]);
 
         if (onFilesChange) {
             onFilesChange(newFiles);
@@ -155,6 +157,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                         </div>
                         <p className="text-sm text-gray-500 mt-2">or</p>
                         <button
+                            type="button"
                             onClick={() => fileInputRef.current?.click()}
                             className="mt-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
                         >
@@ -189,6 +192,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                                 </span>
                             </div>
                             <button
+                                type="button"
                                 onClick={() => removeFile(file)}
                                 className="text-gray-400 hover:text-gray-600"
                             >

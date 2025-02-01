@@ -1,44 +1,53 @@
-import { getApiUrl } from '@utils';
+import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
 import { fetchWithAuth } from './auth';
 import { snakeToCamel } from '@/utils/object';
 import { TeamMember } from '@/types';
 
-interface CompanyResponse {
-    ID: string;
-    Name: string;
-    Industry: string | null;
-    FoundedDate: string | null;
-    CompanyStage: string | null;
-}
+// interface CompanyResponse {
+//     ID: string;
+//     Name: string;
+//     Industry: string | null;
+//     FoundedDate: string | null;
+//     CompanyStage: string | null;
+// }
 
 // Backend response interface
-interface ProjectResponse {
-    ID: string;
-    CompanyID: string;
-    Title: string;
-    Description: string | null;
-    Status: string;
-    CreatedAt: string;
-    UpdatedAt: string;
-    Company?: CompanyResponse;
-    Sections?: ProjectSection[];
+export interface ProjectResponse {
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    createdAt: number;
+    updatedAt: number;
+}
+
+export interface ConditionType {
+    conditionTypeEnum: string;
+    valid: boolean;
 }
 
 export interface ProjectQuestion {
     id: string;
     question: string;
-    inputType: string;
-    inputTypeId: string;
-    options: string[] | null;
     section: string;
     subSection: string;
     sectionOrder: number;
     subSectionOrder: number;
     questionOrder: number;
+    inputType: string;
+    options: string[] | null;
     required: boolean;
-    validations?: string;
+    validations: string[] | null;
+    conditionType: ConditionType;
+    conditionValue: string | null;
+    dependentQuestionId: string | null;
+    questionGroupId: string | null;
+    placeholder: string | null;
+    description: string | null;
+    disabled: boolean;
     answer: string;
+    choices: string[];
 }
 
 // Frontend interfaces
@@ -129,30 +138,10 @@ const transformProject = (data: any): Project => {
     };
 };
 
-export async function createProject(
-    _companyId: string,
-    payload: {
-        company_id: string;
-        title: string;
-        description: string;
-        status: string;
-        files: any[];
-        links: { link_type: string; url: string }[];
-        sections: {
-            title: string;
-            questions: { question: string; answer: string }[];
-        }[];
-    }
-): Promise<ProjectResponse> {
-    const url = getApiUrl('/projects');
+export async function createProject(): Promise<ProjectResponse> {
+    const url = getApiUrl('/project/new');
 
-    const response = await fetchWithAuth(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-    });
+    const response = await fetchWithAuth(url, { method: 'POST' });
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -164,7 +153,9 @@ export async function createProject(
         );
     }
 
-    return response.json();
+    const json = await response.json();
+
+    return snakeToCamel(json);
 }
 
 export async function getProjects(): Promise<Project[]> {
@@ -199,4 +190,90 @@ export async function getProjectDetails(id: string): Promise<Project> {
 
     const data = await response.json();
     return transformProject(data);
+}
+
+export interface ProjectDraft {
+    question_id: string;
+    answer: string;
+}
+
+export async function saveProjectDraft(
+    projectId: string,
+    draft: ProjectDraft[]
+) {
+    const url = getApiUrl(`project/${projectId}/draft`);
+    const response = await fetchWithAuth(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ draft }),
+    });
+    if (response.status !== 200) {
+        return false;
+    }
+    return true;
+}
+
+export interface uploadDocumentData {
+    projectId: string;
+    file: File;
+    questionId: string;
+    name: string;
+    section: string;
+    subSection: string;
+}
+
+export async function uploadDocument(
+    accessToken: string,
+    data: uploadDocumentData
+) {
+    const formData = new FormData();
+
+    formData.append('file', data.file);
+    formData.append('question_id', data.questionId);
+    formData.append('name', data.name);
+    formData.append('section', data.section);
+    formData.append('sub_section', data.subSection);
+
+    const url = getApiUrl(`/project/${data.projectId}/documents`);
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+    });
+
+    if (res.status !== HttpStatusCode.CREATED) {
+        throw new Error('Failed to upload document');
+    }
+
+    return await res.json();
+}
+
+export interface RemoveDocumentData {
+    projectId: string;
+    documentId: string;
+}
+
+export async function removeDocument(
+    accessToken: string,
+    data: RemoveDocumentData
+) {
+    const url = getApiUrl(
+        `/project/${data.projectId}/documents/${data.documentId}`
+    );
+    const res = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    if (res.status !== HttpStatusCode.OK) {
+        throw new Error('Failed to remove document');
+    }
+
+    return res.json();
 }

@@ -1,14 +1,30 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
-import { AnchorLinkItem, Button } from '@components';
-import { getProjectFormQuestions } from '@/services/project';
-import { GroupedProjectQuestions, groupProjectQuestions } from '@/config/forms';
+import { useEffect, useRef, useState } from 'react';
+import { Button, UploadableFile } from '@components';
+import {
+    createProject,
+    getProjectFormQuestions,
+    ProjectDraft,
+    removeDocument,
+    saveProjectDraft,
+    uploadDocument,
+} from '@/services/project';
+import {
+    GroupedProjectQuestions,
+    groupProjectQuestions,
+    Question,
+    SubSection,
+} from '@/config/forms';
 import { SectionedLayout } from '@/templates';
 import { cva } from 'class-variance-authority';
 import { sanitizeHtmlId } from '@/utils/html';
 import { QuestionInputs } from '@/components/QuestionInputs/QuestionInputs';
 import { useQuery } from '@tanstack/react-query';
 import { scrollToTop } from '@/utils';
+import { useDebounceFn } from '@/hooks';
+import { useAuth } from '@/contexts';
+import { FormField, TeamMember } from '@/types';
+import { addTeamMember, deleteTeamMember } from '@/services/teams';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -28,40 +44,328 @@ const questionGroupTitleSeparatorStyles = cva(
 );
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
+interface FileChange {
+    action: 'add' | 'remove';
+    file: UploadableFile;
+    metadata: {
+        questionId: string;
+        section: string;
+        subSection: string;
+    };
+}
+
+interface TeamChange {
+    action: 'add' | 'remove';
+    member: TeamMember;
+    metadata: {
+        questionId: string;
+        section: string;
+        subSection: string;
+    };
+}
+
 const NewProjectPage = () => {
-    const { data, isLoading } = useQuery({
+    const [currentProjectId, setCurrentProjectId] = useState(
+        '4065f113-a7b1-4010-97ba-5f3344d72e63'
+    );
+    const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
-        queryKey: ['projectFormQuestions'],
-        queryFn: getProjectFormQuestions,
+        queryKey: ['projectFormQuestions', currentProjectId],
+        queryFn: async () => {
+            const data = await getProjectFormQuestions(currentProjectId);
+            return data;
+        },
+        enabled: !!currentProjectId,
+        // if this is not set  to infity, data is refetched on window focus
+        // aka, when the mouse re-enters the browser window... which is dumb
+        // and causes a lot of data transfer that is not needed.
+        staleTime: Infinity,
     });
     const [groupedQuestions, setGroupedQuestions] = useState<
         GroupedProjectQuestions[]
     >([]);
 
+    const [isSaving, setIsSaving] = useState(false);
     const [currentStep, setCurrentStep] = useState<number>(0);
-    const [formData, setFormData] = useState<
-        Record<string, Record<string, any>>
-    >({});
+    const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
+    const fileChangesRef = useRef<Map<string, FileChange>>(new Map());
+    const teamChangesRef = useRef<Map<string, TeamChange>>(new Map());
+
+    const { accessToken, companyId, setCompanyId } = useAuth();
+
+    const autosave = useDebounceFn(
+        async () => {
+            if (!currentProjectId || !accessToken || !companyId) return;
+            setIsSaving(true);
+
+            // Find all dirty inputs and create params while clearing dirty flags
+            const dirtyInputsSnapshot: ProjectDraft[] = Array.from(
+                dirtyInputRef.current.values()
+            );
+            dirtyInputRef.current.clear();
+
+            const teamChanges = Array.from(teamChangesRef.current.values());
+            teamChangesRef.current.clear();
+
+            // TODO: handle file changes
+            const fileChanges = Array.from(fileChangesRef.current.values());
+            fileChangesRef.current.clear();
+
+            try {
+                // TODO: handle file changes
+                if (fileChanges.length > 0) {
+                    // Process file changes
+                    await Promise.all(
+                        fileChanges.map(async (change) => {
+                            if (
+                                change.action === 'remove' &&
+                                change.file.metadata?.id
+                            ) {
+                                await removeDocument(accessToken, {
+                                    projectId: currentProjectId,
+                                    documentId: change.file.metadata.id,
+                                });
+                            } else if (change.action === 'add') {
+                                const response = await uploadDocument(
+                                    accessToken,
+                                    {
+                                        projectId: currentProjectId,
+                                        file: change.file,
+                                        questionId: change.metadata.questionId,
+                                        name: change.file.name,
+                                        section: change.metadata.section,
+                                        subSection: change.metadata.subSection,
+                                    }
+                                );
+                                change.file.metadata = response;
+                                change.file.uploaded = true;
+                            }
+                        })
+                    );
+                }
+                // Process team member changes
+                await Promise.all(
+                    teamChanges.map(async (change) => {
+                        if (change.action === 'remove' && change.member.id) {
+                            await deleteTeamMember(accessToken, {
+                                companyId,
+                                teamMember: change.member,
+                            });
+                        } else if (change.action === 'add') {
+                            try {
+                                const response = await addTeamMember(
+                                    accessToken,
+                                    {
+                                        companyId,
+                                        teamMember: change.member,
+                                    }
+                                );
+                                // Update the member with the response data
+                                Object.assign(change.member, {
+                                    id: response.id,
+                                });
+                            } catch (e) {
+                                //TODO: remove the user from the list
+                            }
+                        }
+                    })
+                );
+                if (dirtyInputsSnapshot.length > 0) {
+                    console.log(dirtyInputsSnapshot);
+                    await saveProjectDraft(
+                        currentProjectId,
+                        dirtyInputsSnapshot
+                    );
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setTimeout(() => {
+                    setIsSaving(false);
+                }, 2000);
+            }
+        },
+        300,
+        [currentProjectId, accessToken, companyId]
+    );
+
+    const handleFileChange = (
+        questionId: string,
+        group: GroupedProjectQuestions,
+        subsection: SubSection,
+        field: FormField,
+        files: UploadableFile[]
+    ) => {
+        const currentFiles = (field.value?.value || []) as UploadableFile[];
+
+        // Track removed files
+        currentFiles.forEach((file) => {
+            if (!files.find((f) => f.metadata?.id === file.metadata?.id)) {
+                const changeKey = `remove_${file.metadata?.id}`;
+                fileChangesRef.current.set(changeKey, {
+                    action: 'remove',
+                    file,
+                    metadata: {
+                        questionId,
+                        section: group.section,
+                        subSection: subsection.name,
+                    },
+                });
+            }
+        });
+
+        // Track new files
+        files.forEach((file) => {
+            if (!file.uploaded) {
+                const changeKey = `add_${file.name}_${Date.now()}`;
+                fileChangesRef.current.set(changeKey, {
+                    action: 'add',
+                    file,
+                    metadata: {
+                        questionId,
+                        section: group.section,
+                        subSection: subsection.name,
+                    },
+                });
+            }
+        });
+        return {
+            ...field,
+            value: {
+                ...field.value,
+                files,
+            },
+        };
+    };
+
+    const handleTeamChange = (
+        questionId: string,
+        group: GroupedProjectQuestions,
+        subsection: SubSection,
+        field: FormField,
+        newMembers: TeamMember[]
+    ) => {
+        const currentMembers = (field.value?.teamMembers || []) as TeamMember[];
+
+        // Find members to remove (in current but not in new)
+        const removedMembers = currentMembers.filter(
+            (current) =>
+                !newMembers.find((newMember) => newMember.id === current.id)
+        );
+
+        // Find members to add (in new but not in current)
+        const addedMembers = newMembers.filter(
+            (newMember) =>
+                !currentMembers.find((current) => current.id === newMember.id)
+        );
+
+        // Track changes
+        removedMembers.forEach((member) => {
+            const changeKey = `remove_member_${member.id}`;
+            teamChangesRef.current.set(changeKey, {
+                action: 'remove',
+                member,
+                metadata: {
+                    questionId,
+                    section: group.section,
+                    subSection: subsection.name,
+                },
+            });
+        });
+
+        addedMembers.forEach((member) => {
+            const changeKey = `add_member_${member.id}_${Date.now()}`;
+            teamChangesRef.current.set(changeKey, {
+                action: 'add',
+                member,
+                metadata: {
+                    questionId,
+                    section: group.section,
+                    subSection: subsection.name,
+                },
+            });
+        });
+
+        return {
+            ...field,
+            value: {
+                ...field.value,
+                teamMembers: newMembers,
+            },
+        };
+    };
 
     const handleChange = (
-        questionID: string,
-        inputTypeID: string,
+        questionId: string,
+        inputFieldKey: string,
         value: any
     ) => {
-        // find the question and then the input
-        if (formData[questionID]) {
-            formData[questionID][inputTypeID] = value;
-        } else {
-            formData[questionID] = {
-                [inputTypeID]: value,
+        const newGroups = groupedQuestions.map((group, idx) => {
+            if (currentStep !== idx) return group;
+            return {
+                ...group,
+                subSections: group.subSections.map((subsection) => {
+                    return {
+                        ...subsection,
+                        questions: subsection.questions.map((question) => {
+                            if (question.id !== questionId) return question;
+                            return {
+                                ...question,
+                                inputFields: question.inputFields.map(
+                                    (field) => {
+                                        if (field.key === inputFieldKey) {
+                                            const key = `${questionId}_${inputFieldKey}`;
+                                            switch (field.type) {
+                                                case 'file':
+                                                    return handleFileChange(
+                                                        questionId,
+                                                        group,
+                                                        subsection,
+                                                        field,
+                                                        value as UploadableFile[]
+                                                    );
+                                                case 'team':
+                                                    return handleTeamChange(
+                                                        questionId,
+                                                        group,
+                                                        subsection,
+                                                        field,
+                                                        value as TeamMember[]
+                                                    );
+                                                default:
+                                                    dirtyInputRef.current.set(
+                                                        key,
+                                                        {
+                                                            question_id:
+                                                                questionId,
+                                                            answer: value,
+                                                        }
+                                                    );
+                                                    break;
+                                            }
+                                            return {
+                                                ...field,
+                                                value: {
+                                                    ...field.value,
+                                                    value: value,
+                                                },
+                                            };
+                                        }
+                                        return field;
+                                    }
+                                ),
+                            };
+                        }),
+                    };
+                }),
             };
-        }
-        setFormData({ ...formData });
+        });
+        setGroupedQuestions(newGroups);
+        autosave();
     };
 
     const handleSubmit = () => {
         console.log(groupedQuestions);
-        console.log(formData);
     };
 
     const handleNextStep = () => {
@@ -85,116 +389,178 @@ const NewProjectPage = () => {
     };
 
     useEffect(() => {
-        if (data) {
-            setGroupedQuestions(groupProjectQuestions(data));
+        if (questionData) {
+            setCompanyId('79da5b09-cfdd-4bb6-893d-52de06c3964e');
+            setGroupedQuestions(groupProjectQuestions(questionData));
         }
-    }, [data]);
+    }, [questionData]);
 
-    const asideLinks = useMemo<AnchorLinkItem[]>(
-        () => {
-            if (groupedQuestions.length < 1) return [];
-            const group = groupedQuestions[currentStep];
-            const links: AnchorLinkItem[] = group.subSectionNames.map(
-                (name) => ({
-                    label: name,
-                    target: `#${sanitizeHtmlId(group.section + '-' + name)}`,
-                })
-            );
-            return links;
-        },
-        // re-compute the aside links when the current step is changed
-        // or new sections/questions are fetched
-        [currentStep, groupedQuestions]
+    useEffect(() => {
+        // create project on mount
+        if (!currentProjectId) {
+            const newProject = async () => {
+                const project = await createProject();
+                setCurrentProjectId(project.id);
+            };
+            newProject();
+        }
+    }, []);
+
+    const asideLinks = groupedQuestions[currentStep]?.subSectionNames.map(
+        (name) => ({
+            target: `#${sanitizeHtmlId(name)}`,
+            label: name,
+        })
     );
 
+    const shouldRenderQuestion = (
+        question: Question,
+        allQuestions: Question[]
+    ) => {
+        if (!question.dependentQuestionId) return true;
+
+        const dependentQuestion = allQuestions.find(
+            (q) => q.id === question.dependentQuestionId
+        );
+        if (!dependentQuestion) return true;
+
+        // Find the answer in the grouped questions
+        let dependentAnswer = '';
+        for (const group of groupedQuestions) {
+            for (const subSection of group.subSections) {
+                const foundQuestion = subSection.questions.find(
+                    (q) => q.id === question.dependentQuestionId
+                );
+                if (
+                    foundQuestion &&
+                    foundQuestion.inputFields[0]?.value.value
+                ) {
+                    dependentAnswer = foundQuestion.inputFields[0].value.value;
+                    break;
+                }
+            }
+        }
+
+        switch (question.conditionType?.conditionTypeEnum) {
+            case 'empty':
+                return !dependentAnswer;
+            case 'not_empty':
+                return !!dependentAnswer;
+            case 'equals':
+                return dependentAnswer === question.conditionValue;
+            case 'contains':
+                return dependentAnswer.includes(question.conditionValue || '');
+            default:
+                return true;
+        }
+    };
+
     // TODO: make a better loading screen
-    if (groupedQuestions.length < 1 || isLoading) return <div>Loading...</div>;
+    if (groupedQuestions.length < 1 || loadingQuestions) return null;
 
     return (
-        <SectionedLayout asideTitle="Submit a project" links={asideLinks}>
-            <div>
-                <div>
-                    <nav>
-                        <ul className="flex gap-4 items-center justify-center">
-                            {groupedQuestions.map((group, idx) => (
-                                <li
-                                    key={`step_${group.section}`}
-                                    className={stepItemStyles({
-                                        active: currentStep === idx,
-                                    })}
-                                    onClick={() => {
-                                        setCurrentStep(idx);
-                                    }}
-                                >
-                                    <span>{group.section}</span>
-                                    {currentStep === idx ? (
-                                        <div className="absolute bottom-0 h-[2px] bg-gray-700 w-full"></div>
-                                    ) : null}
-                                </li>
-                            ))}
-                        </ul>
-                    </nav>
+        <div>
+            <nav className="h-24 bg-gray-800"></nav>
+            {isSaving && (
+                <div className="fixed left-0 right-0 top-0 z-10">
+                    <p className="text-center py-2 bg-gray-200">
+                        Saving application...
+                    </p>
                 </div>
-                <form className="space-y-12 lg:max-w-3xl mx-auto mt-12">
-                    {groupedQuestions[currentStep].subSections.map(
-                        (subSection) => (
-                            <div
-                                id={sanitizeHtmlId(
-                                    `${groupedQuestions[currentStep].section}-${subSection.name}`
-                                )}
-                                key={`${groupedQuestions[currentStep].section}_${subSection.name}`}
-                                className={questionGroupContainerStyles()}
-                            >
-                                <div>
-                                    <h1 className={questionGroupTitleStyles()}>
-                                        {subSection.name}
-                                    </h1>
-                                </div>
-                                <div
-                                    className={questionGroupTitleSeparatorStyles()}
-                                ></div>
-                                <div
-                                    className={questionGroupQuestionsContainerStyles()}
-                                >
-                                    {subSection.questions.map((q) => (
-                                        <QuestionInputs
-                                            key={q.id}
-                                            question={q}
-                                            values={formData[q.id] ?? {}}
-                                            onChange={handleChange}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )
-                    )}
-                    <div className="pb-32 flex gap-8">
-                        <Button
-                            variant="outline"
-                            liquid
-                            type="button"
-                            disabled={currentStep === 0}
-                            onClick={handleBackStep}
-                        >
-                            Back
-                        </Button>
-                        <Button
-                            liquid
-                            type="button"
-                            onClick={
-                                currentStep < groupedQuestions.length - 1
-                                    ? handleNextStep
-                                    : handleSubmit
-                            }
-                        >
-                            {currentStep < groupedQuestions.length - 1
-                                ? 'Continue'
-                                : 'Submit'}
-                        </Button>
+            )}
+            <SectionedLayout
+                asideTitle="Submit a project"
+                linkContainerClassnames="top-36"
+                links={asideLinks}
+            >
+                <div>
+                    <div>
+                        <nav>
+                            <ul className="flex gap-4 items-center justify-center">
+                                {groupedQuestions.map((group, idx) => (
+                                    <li
+                                        key={`step_${group.section}`}
+                                        className={stepItemStyles({
+                                            active: currentStep === idx,
+                                        })}
+                                        onClick={() => {
+                                            setCurrentStep(idx);
+                                        }}
+                                    >
+                                        <span>{group.section}</span>
+                                        {currentStep === idx ? (
+                                            <div className="absolute bottom-0 h-[2px] bg-gray-700 w-full"></div>
+                                        ) : null}
+                                    </li>
+                                ))}
+                            </ul>
+                        </nav>
                     </div>
-                </form>
-            </div>
-        </SectionedLayout>
+                    <form className="space-y-12 lg:max-w-3xl mx-auto mt-12">
+                        {groupedQuestions[currentStep].subSections.map(
+                            (subSection) => (
+                                <div
+                                    id={sanitizeHtmlId(subSection.name)}
+                                    key={subSection.name}
+                                    className={questionGroupContainerStyles()}
+                                >
+                                    <div>
+                                        <h1
+                                            className={questionGroupTitleStyles()}
+                                        >
+                                            {subSection.name}
+                                        </h1>
+                                    </div>
+                                    <div
+                                        className={questionGroupTitleSeparatorStyles()}
+                                    ></div>
+                                    <div
+                                        className={questionGroupQuestionsContainerStyles()}
+                                    >
+                                        {subSection.questions.map((q) =>
+                                            shouldRenderQuestion(
+                                                q,
+                                                subSection.questions
+                                            ) ? (
+                                                <QuestionInputs
+                                                    key={q.id}
+                                                    question={q}
+                                                    onChange={handleChange}
+                                                />
+                                            ) : null
+                                        )}
+                                    </div>
+                                </div>
+                            )
+                        )}
+                        <div className="pb-32 flex gap-8">
+                            <Button
+                                variant="outline"
+                                liquid
+                                type="button"
+                                disabled={currentStep === 0}
+                                onClick={handleBackStep}
+                            >
+                                Back
+                            </Button>
+                            <Button
+                                liquid
+                                type="button"
+                                onClick={
+                                    currentStep < groupedQuestions.length - 1
+                                        ? handleNextStep
+                                        : handleSubmit
+                                }
+                            >
+                                {currentStep < groupedQuestions.length - 1
+                                    ? 'Continue'
+                                    : 'Submit'}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            </SectionedLayout>
+        </div>
     );
 };
 

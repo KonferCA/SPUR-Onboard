@@ -122,10 +122,8 @@ func parseValidationRule(rule string) (name string, param string) {
  * - true if answer passes all validations
  * - false if any validation fails
  */
-func isValidAnswer(answer string, validations string) bool {
-	rules := strings.Split(validations, ",")
-
-	for _, rule := range rules {
+func isValidAnswer(answer string, validations []string) bool {
+	for _, rule := range validations {
 		name, param := parseValidationRule(rule)
 		vType, ok := validationTypes[name]
 		if ok && !vType.Validate(answer, param) {
@@ -149,10 +147,8 @@ func isValidAnswer(answer string, validations string) bool {
  * Example:
  * For "min=100", returns "Must be at least 100 characters long"
  */
-func getValidationMessage(validations string) string {
-	rules := strings.Split(validations, ",")
-
-	for _, rule := range rules {
+func getValidationMessage(validations []string) string {
+	for _, rule := range validations {
 		name, param := parseValidationRule(rule)
 		vType, ok := validationTypes[name]
 		if ok {

@@ -10,11 +10,24 @@ type Handler struct {
 
 // Request types
 type AddTeamMemberRequest struct {
-	FirstName   string `json:"first_name" validate:"required"`
-	LastName    string `json:"last_name" validate:"required"`
-	Title       string `json:"title" validate:"required"`
-	Bio         string `json:"bio" validate:"required"`
-	LinkedinUrl string `json:"linkedin_url" validate:"required,url"`
+	FirstName          string  `json:"first_name" validate:"required"`
+	LastName           string  `json:"last_name" validate:"required"`
+	Title              string  `json:"title" validate:"required"`
+	LinkedinUrl        string  `json:"linkedin_url" validate:"required,url"`
+	IsAccountOwner     bool    `json:"is_account_owner" validate:"boolean"`
+	PersonalWebsite    *string `json:"personal_website" validate:"required,url"`
+	CommitmentType     string  `json:"commitment_type" validate:"required"`
+	Introduction       string  `json:"introduction" validate:"required"`
+	IndustryExperience string  `json:"industry_experience" validate:"required"`
+	DetailedBiography  string  `json:"detailed_biography" validate:"required"`
+	PreviousWork       *string `json:"previous_work"`
+
+	// These fields have to be validated in the handler because
+	// one of the two being defined makes the input valid
+	ResumeExternalUrl            *string `json:"resume_external_url"`
+	ResumeInternalUrl            *string `json:"resume_internal_url"`
+	FoundersAgreementExternalUrl *string `json:"founders_agreement_external_url"`
+	FoundersAgreementInternalUrl *string `json:"founders_agreement_internal_url"`
 }
 
 type UpdateTeamMemberRequest struct {

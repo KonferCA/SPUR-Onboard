@@ -1,5 +1,9 @@
-import { createUploadableFile } from '@/components';
-import { ProjectQuestionsData } from '@/services/project';
+import { createUploadableFile, UploadableFile } from '@/components';
+import {
+    ConditionType,
+    ProjectQuestion,
+    ProjectQuestionsData,
+} from '@/services/project';
 import { FormField, FormFieldType } from '@/types';
 import { createZodSchema } from '@/utils/form-validation';
 
@@ -20,6 +24,13 @@ export interface Question {
     question: string;
     required: boolean;
     inputFields: FormField[];
+    dependentQuestionId?: string;
+    conditionType?: ConditionType;
+    conditionValue?: string;
+    questionGroupId?: string;
+    questionOrder: number;
+    description?: string;
+    answer?: string;
 }
 
 /*
@@ -31,16 +42,43 @@ export function groupProjectQuestions(
     data: ProjectQuestionsData
 ): GroupedProjectQuestions[] {
     const { questions, documents, teamMembers } = data;
-    const sortedQuestions = [...questions].sort((a, b) => {
-        if (a.sectionOrder !== b.sectionOrder)
-            return a.sectionOrder - b.sectionOrder;
-        if (a.subSectionOrder !== b.subSectionOrder)
-            return a.subSectionOrder - b.subSectionOrder;
-        return a.questionOrder - b.questionOrder;
-    });
 
-    return sortedQuestions.reduce<GroupedProjectQuestions[]>(
+    // Pre-process documents for faster lookup
+    const documentsByQuestion =
+        documents?.reduce(
+            (acc, doc) => {
+                if (!acc[doc.questionId]) {
+                    acc[doc.questionId] = [];
+                }
+                const file = new File([new ArrayBuffer(doc.size)], doc.name, {
+                    type: doc.mimeType,
+                });
+                acc[doc.questionId].push(createUploadableFile(file, doc, true));
+                return acc;
+            },
+            {} as Record<string, UploadableFile[]>
+        ) ?? {};
+
+    // Group questions by questionGroupId
+    const questionGroups = questions.reduce(
+        (acc, q) => {
+            const groupId = q.questionGroupId || q.id;
+            if (!acc[groupId]) {
+                acc[groupId] = [];
+            }
+            acc[groupId].push(q);
+            return acc;
+        },
+        {} as Record<string, ProjectQuestion[]>
+    );
+
+    return questions.reduce<GroupedProjectQuestions[]>(
         (acc, projectQuestion) => {
+            // Skip if this question is part of a group but not the primary question
+            if (projectQuestion.questionGroupId) {
+                return acc;
+            }
+
             let group = acc.find((g) => g.section === projectQuestion.section);
             if (!group) {
                 group = {
@@ -63,57 +101,66 @@ export function groupProjectQuestions(
                 group.subSectionNames.push(projectQuestion.subSection);
             }
 
-            const inputField: FormField = {
-                key: projectQuestion.inputTypeId,
-                type: projectQuestion.inputType as FormFieldType,
-                label: projectQuestion.question,
+            // Get all questions in this group
+            const groupQuestions = questionGroups[projectQuestion.id] || [
+                projectQuestion,
+            ];
+
+            const inputFields = groupQuestions.map((q) => {
+                const inputField: FormField = {
+                    key: q.id,
+                    type: q.inputType as FormFieldType,
+                    label: q.question,
+                    required: q.required,
+                    placeholder: q.placeholder || undefined,
+                    description: q.description || undefined,
+                    validations: q.validations
+                        ? createZodSchema(q.validations)
+                        : undefined,
+                    value: {},
+                };
+
+                switch (inputField.type) {
+                    case 'file':
+                        inputField.value.files =
+                            documentsByQuestion[q.id] ?? [];
+                        break;
+                    case 'team':
+                        inputField.value.teamMembers = teamMembers ?? [];
+                        break;
+                    case 'multiselect':
+                    case 'select':
+                        inputField.options = q.options?.map((opt, idx) => ({
+                            id: idx,
+                            label: opt,
+                            value: opt,
+                        }));
+                        inputField.value.value = q.choices;
+                        break;
+                    default:
+                        inputField.value.value = q.answer;
+                        break;
+                }
+
+                return inputField;
+            });
+
+            const question: Question = {
+                id: projectQuestion.id,
+                question: projectQuestion.question,
                 required: projectQuestion.required,
-                options: projectQuestion.options?.map((opt, idx) => ({
-                    id: idx,
-                    label: opt,
-                    value: opt,
-                })),
-                validations: projectQuestion.validations
-                    ? createZodSchema(projectQuestion.validations)
-                    : undefined,
+                inputFields,
+                dependentQuestionId:
+                    projectQuestion.dependentQuestionId || undefined,
+                conditionType:
+                    (projectQuestion.conditionType as any) || undefined,
+                conditionValue: projectQuestion.conditionValue || undefined,
+                questionOrder: projectQuestion.questionOrder,
+                description: projectQuestion.description || undefined,
+                answer: projectQuestion.answer,
             };
 
-            if (inputField.type === 'file' && documents) {
-                // try to find if there are any already uploaded documents
-                const files = documents
-                    .filter((doc) => doc.questionId === projectQuestion.id)
-                    .map((doc) => {
-                        // the new array buffer is to provide size information when rendering the uploaded documents
-                        const f = new File(
-                            [new ArrayBuffer(doc.size)],
-                            doc.name,
-                            {
-                                type: doc.mimeType,
-                            }
-                        );
-                        return createUploadableFile(f, doc, true);
-                    });
-                inputField.files = files;
-            }
-
-            if (inputField.type === 'team') {
-                inputField.teamMembers = teamMembers;
-            }
-
-            let question = subSection.questions.find(
-                (q) => q.id === projectQuestion.id
-            );
-            if (!question) {
-                question = {
-                    id: projectQuestion.id,
-                    question: projectQuestion.question,
-                    required: projectQuestion.required,
-                    inputFields: [inputField],
-                };
-                subSection.questions.push(question);
-            } else {
-                question.inputFields.push(inputField);
-            }
+            subSection.questions.push(question);
 
             return acc;
         },

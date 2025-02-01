@@ -3,7 +3,6 @@ package v1_projects
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/interfaces"
-	"mime/multipart"
 )
 
 type Handler struct {
@@ -38,11 +37,10 @@ type PatchAnswerRequest struct {
 }
 
 type UploadDocumentRequest struct {
-	File       *multipart.FileHeader `form:"file"`
-	QuestionID string                `form:"question_id" validate:"required,uuid"`
-	Name       string                `form:"name" validate:"required"`
-	Section    string                `form:"section" validate:"required"`
-	SubSection string                `form:"sub_section" validate:"required"`
+	QuestionID string `form:"question_id" validate:"required,uuid"`
+	Name       string `form:"name" validate:"required"`
+	Section    string `form:"section" validate:"required"`
+	SubSection string `form:"sub_section" validate:"required"`
 }
 
 type DocumentResponse struct {
@@ -117,4 +115,15 @@ type CreateCommentRequest struct {
 
 type UpdateCommentRequest struct {
 	Comment string `json:"comment" validate:"required"`
+}
+
+type ProjectDraftContent struct {
+	QuestionID string `json:"question_id" validate:"required,uuid"`
+	// Answer is not validated since its a draft content and it can be wrong
+	// It can be a string or array of strings.
+	Answer interface{} `json:"answer,omitempty"`
+}
+
+type SaveProjectDraftRequest struct {
+	Draft []ProjectDraftContent `json:"draft" validate:"required,dive"`
 }
