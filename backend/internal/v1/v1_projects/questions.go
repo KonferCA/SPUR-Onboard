@@ -67,23 +67,23 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 		}
 	}
 
-	// user, err := getUserFromContext(c)
-	// if err != nil {
-	// 	return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
-	// }
-	//
-	// company, err := q.GetCompanyByOwnerID(c.Request().Context(), user.ID)
-	// if err != nil {
-	// 	if err.Error() == "no rows in result set" {
-	// 		return v1_common.Fail(c, http.StatusBadRequest, "Missing company to get project questions", err)
-	// 	}
-	// 	return v1_common.Fail(c, http.StatusBadRequest, "Failed to get questions (2)", err)
-	// }
-	//
-	// teamMembers, err = q.ListTeamMembers(c.Request().Context(), company.ID)
-	// if err != nil && err.Error() != "no rows in result set" {
-	// 	return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
-	// }
+	user, err := getUserFromContext(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
+	}
+
+	company, err := q.GetCompanyByOwnerID(c.Request().Context(), user.ID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return v1_common.Fail(c, http.StatusBadRequest, "Missing company to get project questions", err)
+		}
+		return v1_common.Fail(c, http.StatusBadRequest, "Failed to get questions (2)", err)
+	}
+
+	teamMembers, err = q.ListTeamMembers(c.Request().Context(), company.ID)
+	if err != nil && err.Error() != "no rows in result set" {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
+	}
 
 	// Return questions array
 	return c.JSON(http.StatusOK, map[string]interface{}{
