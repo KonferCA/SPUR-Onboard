@@ -24,7 +24,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             (newMember.resumeInternalUrl || newMember.resumeExternalUrl) &&
             newMember.personalWebsite &&
             newMember.commitment &&
-            newMember.backgroundAndExpertise &&
+            newMember.introduction &&
             newMember.relevantExperience &&
             newMember.bio
         );
@@ -42,7 +42,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                 resumeExternalUrl: newMember.resumeExternalUrl || '',
                 resumeInternalUrl: newMember.resumeInternalUrl || '',
                 personalWebsite: newMember.personalWebsite!,
-                backgroundAndExpertise: newMember.backgroundAndExpertise!,
+                introduction: newMember.introduction!,
                 commitment: newMember.commitment!,
                 relevantExperience: newMember.relevantExperience!,
                 previousWork: newMember.previousWork || '',
@@ -197,11 +197,11 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         />
                         <TextInput
                             label="Give a brief introduction as to who this person is and what their background and expertise are."
-                            value={newMember.backgroundAndExpertise || ''}
+                            value={newMember.introduction || ''}
                             onChange={(e) =>
                                 setNewMember((prev) => ({
                                     ...prev,
-                                    backgroundAndExpertise: e.target.value,
+                                    introduction: e.target.value,
                                 }))
                             }
                             required

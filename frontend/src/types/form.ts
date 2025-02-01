@@ -51,7 +51,7 @@ export interface TeamMember {
     resumeInternalUrl: string;
     personalWebsite: string;
     commitment: string;
-    backgroundAndExpertise: string;
+    introduction: string;
     relevantExperience: string;
     previousWork?: string;
     founderAgreementExternalUrl?: string;
