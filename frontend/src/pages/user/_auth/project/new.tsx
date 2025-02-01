@@ -24,6 +24,7 @@ import { scrollToTop } from '@/utils';
 import { useDebounceFn } from '@/hooks';
 import { useAuth } from '@/contexts';
 import { FormField } from '@/types';
+import { getSampleAnswer } from '@/utils/sampleData';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -130,7 +131,6 @@ const NewProjectPage = () => {
                 }
 
                 if (dirtyInputsSnapshot.length > 0) {
-                    console.log(dirtyInputsSnapshot);
                     await saveProjectDraft(
                         currentProjectId,
                         dirtyInputsSnapshot
@@ -144,7 +144,7 @@ const NewProjectPage = () => {
                 }, 2000);
             }
         },
-        300,
+        1500,
         [currentProjectId, accessToken, companyId]
     );
 
@@ -258,10 +258,6 @@ const NewProjectPage = () => {
         autosave();
     };
 
-    const handleSubmit = () => {
-        console.log(groupedQuestions);
-    };
-
     const handleNextStep = () => {
         setCurrentStep((curr) => {
             if (curr < groupedQuestions.length - 1) return curr + 1;
@@ -280,6 +276,48 @@ const NewProjectPage = () => {
         setTimeout(() => {
             scrollToTop();
         }, 120);
+    };
+
+    const handleFillSampleData = () => {
+        const newGroups = groupedQuestions.map((group) => ({
+            ...group,
+            subSections: group.subSections.map((subsection) => ({
+                ...subsection,
+                questions: subsection.questions.map((question) => ({
+                    ...question,
+                    inputFields: question.inputFields.map((field) => {
+                        const key = `${question.id}_${field.key}`;
+
+                        // Skip file and team input types
+                        if (field.type === 'file' || field.type === 'team') {
+                            return field;
+                        }
+
+                        const sampleValue = getSampleAnswer(
+                            question.question,
+                            field.type
+                        );
+
+                        // Add to dirty inputs for saving
+                        dirtyInputRef.current.set(key, {
+                            question_id: question.id,
+                            answer: sampleValue,
+                        });
+
+                        return {
+                            ...field,
+                            value: {
+                                ...field.value,
+                                value: sampleValue,
+                            },
+                        };
+                    }),
+                })),
+            })),
+        }));
+
+        setGroupedQuestions(newGroups);
+        autosave();
     };
 
     useEffect(() => {
@@ -349,6 +387,82 @@ const NewProjectPage = () => {
         }
     };
 
+    const handleSubmit = () => {
+        // validate all the questions
+        const valid = groupedQuestions.every((group) => {
+            return group.subSections.every((subsection) => {
+                return subsection.questions.every((question) => {
+                    // if question is dependent on previous and it should be rendered
+                    // then we check the answer of this input
+                    if (
+                        question.conditionType &&
+                        question.conditionType.valid &&
+                        !shouldRenderQuestion(question, subsection.questions)
+                    ) {
+                        return true;
+                    }
+
+                    return question.inputFields.every((input) => {
+                        let valid = true;
+
+                        // reset invalid state
+                        input.invalid = false;
+
+                        if (!input.required && !input.value.value) return true;
+
+                        switch (input.type) {
+                            case 'date':
+                            case 'textarea':
+                            case 'textinput':
+                                if (!input.value.value) {
+                                    valid = false;
+                                } else if (input.validations) {
+                                    valid = input.validations.every(
+                                        (validation) =>
+                                            validation.safeParse(
+                                                input.value.value
+                                            ).success
+                                    );
+                                }
+                                break;
+                            case 'select':
+                            case 'multiselect':
+                                if (
+                                    !Array.isArray(input.value.value) ||
+                                    !input.value.value.length
+                                ) {
+                                    return false;
+                                } else if (input.validations) {
+                                    const values = input.value
+                                        .value as string[];
+                                    valid = values.every((v) =>
+                                        input.validations?.every(
+                                            (validation) =>
+                                                validation.safeParse(v).success
+                                        )
+                                    );
+                                }
+                                break;
+
+                            default:
+                                break;
+                        }
+
+                        input.invalid = !valid;
+
+                        return valid;
+                    });
+                });
+            });
+        });
+
+        if (valid) {
+        } else {
+            // update the group questions so that it refreshes the ui
+            setGroupedQuestions((prev) => [...prev]);
+        }
+    };
+
     // TODO: make a better loading screen
     if (groupedQuestions.length < 1 || loadingQuestions) return null;
 
@@ -389,6 +503,15 @@ const NewProjectPage = () => {
                                 ))}
                             </ul>
                         </nav>
+                    </div>
+                    <div className="flex justify-end px-4 py-2">
+                        <Button
+                            variant="outline"
+                            type="button"
+                            onClick={handleFillSampleData}
+                        >
+                            Fill with Sample Data
+                        </Button>
                     </div>
                     <form className="space-y-12 lg:max-w-3xl mx-auto mt-12">
                         {groupedQuestions[currentStep].subSections.map(

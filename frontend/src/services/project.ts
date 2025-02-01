@@ -194,7 +194,7 @@ export async function getProjectDetails(id: string): Promise<Project> {
 
 export interface ProjectDraft {
     question_id: string;
-    answer: string;
+    answer: string | string[];
 }
 
 export async function saveProjectDraft(
