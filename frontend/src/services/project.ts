@@ -194,7 +194,7 @@ export async function getProjectDetails(id: string): Promise<Project> {
 
 export interface ProjectDraft {
     question_id: string;
-    answer: string;
+    answer: string | string[];
 }
 
 export async function saveProjectDraft(
@@ -276,4 +276,19 @@ export async function removeDocument(
     }
 
     return res.json();
+}
+
+export async function submitProject(accessToken: string, projectId: string) {
+    const url = getApiUrl(`/project/${projectId}/submit`);
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    const json = await res.json();
+    if (res.status !== HttpStatusCode.OK) {
+        throw new Error(`Failed to submit project: ${json.message}`);
+    }
 }

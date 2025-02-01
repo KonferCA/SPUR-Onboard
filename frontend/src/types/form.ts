@@ -31,6 +31,7 @@ export interface FormField {
     }>;
     validations?: ZodString[];
     value: FormFieldValue;
+    invalid?: boolean;
 }
 
 export interface FormSection {

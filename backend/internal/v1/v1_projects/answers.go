@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog/log"
 )
 
 /*
@@ -41,7 +40,6 @@ func (h *Handler) handleSaveProjectDraft(c echo.Context) error {
 
 		switch v := item.Answer.(type) {
 		case string:
-			log.Debug().Str("v", v).Send()
 			answer = v
 		case []interface{}:
 			for _, choice := range v {

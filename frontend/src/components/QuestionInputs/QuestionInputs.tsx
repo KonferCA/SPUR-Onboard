@@ -39,6 +39,11 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         onChange={(e) =>
                             onChange(question.id, field.key, e.target.value)
                         }
+                        error={
+                            field.invalid
+                                ? 'This input has invalid content'
+                                : ''
+                        }
                         required={field.required}
                     />
                 );
@@ -53,6 +58,11 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         }
                         required={field.required}
                         rows={field.rows || 4}
+                        error={
+                            field.invalid
+                                ? 'This input has invalid content'
+                                : ''
+                        }
                     />
                 );
 

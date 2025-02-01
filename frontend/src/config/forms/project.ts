@@ -115,7 +115,10 @@ export function groupProjectQuestions(
                     placeholder: q.placeholder || undefined,
                     description: q.description || undefined,
                     validations: q.validations
-                        ? createZodSchema(q.validations)
+                        ? createZodSchema(
+                              q.inputType as FormFieldType,
+                              q.validations
+                          )
                         : undefined,
                     value: {},
                 };

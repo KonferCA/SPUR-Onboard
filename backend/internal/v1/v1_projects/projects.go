@@ -285,53 +285,61 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusBadRequest, "Only draft projects can be submitted", nil)
 	}
 
-	// Get all questions and answers for this project
-	answers, err := h.server.GetQueries().GetProjectAnswers(c.Request().Context(), projectID)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get project answers", err)
-	}
-
 	// Get all questions
-	questions, err := h.server.GetQueries().GetProjectQuestions(c.Request().Context())
+	questions, err := h.server.GetQueries().GetQuestionsByProject(c.Request().Context(), db.GetQuestionsByProjectParams{
+		ProjectID: projectID,
+		OwnerID:   user.ID,
+	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get project questions", err)
 	}
 
 	var validationErrors []ValidationError
 
-	// Create a map of question IDs to answers for easy lookup
-	answerMap := make(map[string]string)
-	for _, answer := range answers {
-		answerMap[answer.QuestionID] = answer.Answer
-	}
-
 	// Validate each question
 	for _, question := range questions {
-		answer, exists := answerMap[question.ID]
-
 		// Check if required question is answered
-		if question.Required && (!exists || answer == "") {
-			validationErrors = append(validationErrors, ValidationError{
-				Question: question.Question,
-				Message:  "This question requires an answer",
-			})
-			continue
-		}
-
-		// Skip validation if answer is empty and question is not required
-		if !exists || answer == "" {
-			continue
-		}
-
-		// Validate answer against rules if validations exist
-		if question.Validations != nil {
-			if !isValidAnswer(answer, question.Validations) {
-				validationErrors = append(validationErrors, ValidationError{
-					Question: question.Question,
-					Message:  getValidationMessage(question.Validations),
-				})
+		if question.Required {
+			switch question.InputType {
+			case db.InputTypeEnumTextinput, db.InputTypeEnumTextarea:
+				answer := question.Answer
+				if answer == "" {
+					validationErrors = append(validationErrors, ValidationError{
+						Question: question.Question,
+						Message:  "This question requires an answer",
+					})
+					continue
+				}
+				// Validate answer against rules if validations exist
+				if question.Validations != nil {
+					if !isValidAnswer(answer, question.Validations) {
+						validationErrors = append(validationErrors, ValidationError{
+							Question: question.Question,
+							Message:  getValidationMessage(question.Validations),
+						})
+					}
+				}
+			case db.InputTypeEnumSelect, db.InputTypeEnumMultiselect:
+				if len(question.Choices) < 1 {
+					validationErrors = append(validationErrors, ValidationError{
+						Question: question.Question,
+						Message:  "This question requires an answer",
+					})
+					continue
+				}
+				if question.Validations != nil {
+					for _, answer := range question.Choices {
+						if !isValidAnswer(answer, question.Validations) {
+							validationErrors = append(validationErrors, ValidationError{
+								Question: question.Question,
+								Message:  getValidationMessage(question.Validations),
+							})
+						}
+					}
+				}
 			}
 		}
+
 	}
 
 	// If there are any validation errors, return them
