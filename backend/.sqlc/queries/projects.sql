@@ -40,11 +40,11 @@ WHERE
 RETURNING *; 
 
 -- name: UpdateProjectDraft :batchexec
-INSERT INTO project_answers (project_id, question_id, answer, updated_at)
-    VALUES ($1, $2, $3, extract(epoch from now()))
+INSERT INTO project_answers (project_id, question_id, answer, choices, updated_at)
+    VALUES ($1, $2, $3, $4, extract(epoch from now()))
     ON CONFLICT (project_id, question_id)
     DO UPDATE
-    SET answer = EXCLUDED.answer,
+    SET answer = EXCLUDED.answer, choices = EXCLUDED.choices,
     updated_at = EXCLUDED.updated_at;
 
 -- name: GetProjectAnswers :many

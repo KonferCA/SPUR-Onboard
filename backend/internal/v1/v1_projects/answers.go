@@ -11,6 +11,7 @@ import (
 
 /*
  * handleSaveProjectDraft updates a batch of answers for a project.
+ * These answers must be of type string or array of string
  *
  * Security:
  * - Verifies project belongs to user's company
@@ -30,10 +31,34 @@ func (h *Handler) handleSaveProjectDraft(c echo.Context) error {
 
 	var params []db.UpdateProjectDraftParams
 	for _, item := range req.Draft {
+		question, err := q.GetProjectQuestion(c.Request().Context(), item.QuestionID)
+		if err != nil {
+			return v1_common.Fail(c, http.StatusBadRequest, "Invalid question ID", err)
+		}
+
+		var answer string
+		var choices []string
+
+		switch question.InputType {
+		case db.InputTypeEnumSelect, db.InputTypeEnumMultiselect:
+			switch v := item.Answer.(type) {
+			case string:
+				answer = v
+			case []interface{}:
+				for _, choice := range v {
+					if str, ok := choice.(string); ok {
+						choices = append(choices, str)
+					}
+				}
+			}
+		default:
+		}
+
 		params = append(params, db.UpdateProjectDraftParams{
 			ProjectID:  projectID,
 			QuestionID: item.QuestionID,
-			Answer:     item.Answer,
+			Answer:     answer,
+			Choices:    choices,
 		})
 	}
 	batch := q.UpdateProjectDraft(c.Request().Context(), params)

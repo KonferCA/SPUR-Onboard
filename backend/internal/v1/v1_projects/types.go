@@ -122,7 +122,8 @@ type UpdateCommentRequest struct {
 type ProjectDraftContent struct {
 	QuestionID string `json:"question_id" validate:"required,uuid"`
 	// Answer is not validated since its a draft content and it can be wrong
-	Answer string `json:"answer"`
+	// It can be a string or array of strings.
+	Answer interface{} `json:"answer,omitempty"`
 }
 
 type SaveProjectDraftRequest struct {
