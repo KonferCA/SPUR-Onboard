@@ -23,8 +23,7 @@ import { useQuery } from '@tanstack/react-query';
 import { scrollToTop } from '@/utils';
 import { useDebounceFn } from '@/hooks';
 import { useAuth } from '@/contexts';
-import { FormField, TeamMember } from '@/types';
-import { addTeamMember, deleteTeamMember } from '@/services/teams';
+import { FormField } from '@/types';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -47,16 +46,6 @@ const questionGroupQuestionsContainerStyles = cva('space-y-6');
 interface FileChange {
     action: 'add' | 'remove';
     file: UploadableFile;
-    metadata: {
-        questionId: string;
-        section: string;
-        subSection: string;
-    };
-}
-
-interface TeamChange {
-    action: 'add' | 'remove';
-    member: TeamMember;
     metadata: {
         questionId: string;
         section: string;
@@ -89,7 +78,6 @@ const NewProjectPage = () => {
     const [currentStep, setCurrentStep] = useState<number>(0);
     const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
     const fileChangesRef = useRef<Map<string, FileChange>>(new Map());
-    const teamChangesRef = useRef<Map<string, TeamChange>>(new Map());
 
     const { accessToken, companyId, setCompanyId } = useAuth();
 
@@ -103,9 +91,6 @@ const NewProjectPage = () => {
                 dirtyInputRef.current.values()
             );
             dirtyInputRef.current.clear();
-
-            const teamChanges = Array.from(teamChangesRef.current.values());
-            teamChangesRef.current.clear();
 
             // TODO: handle file changes
             const fileChanges = Array.from(fileChangesRef.current.values());
@@ -143,33 +128,7 @@ const NewProjectPage = () => {
                         })
                     );
                 }
-                // Process team member changes
-                await Promise.all(
-                    teamChanges.map(async (change) => {
-                        if (change.action === 'remove' && change.member.id) {
-                            await deleteTeamMember(accessToken, {
-                                companyId,
-                                teamMember: change.member,
-                            });
-                        } else if (change.action === 'add') {
-                            try {
-                                const response = await addTeamMember(
-                                    accessToken,
-                                    {
-                                        companyId,
-                                        teamMember: change.member,
-                                    }
-                                );
-                                // Update the member with the response data
-                                Object.assign(change.member, {
-                                    id: response.id,
-                                });
-                            } catch (e) {
-                                //TODO: remove the user from the list
-                            }
-                        }
-                    })
-                );
+
                 if (dirtyInputsSnapshot.length > 0) {
                     console.log(dirtyInputsSnapshot);
                     await saveProjectDraft(
@@ -238,63 +197,6 @@ const NewProjectPage = () => {
         };
     };
 
-    const handleTeamChange = (
-        questionId: string,
-        group: GroupedProjectQuestions,
-        subsection: SubSection,
-        field: FormField,
-        newMembers: TeamMember[]
-    ) => {
-        const currentMembers = (field.value?.teamMembers || []) as TeamMember[];
-
-        // Find members to remove (in current but not in new)
-        const removedMembers = currentMembers.filter(
-            (current) =>
-                !newMembers.find((newMember) => newMember.id === current.id)
-        );
-
-        // Find members to add (in new but not in current)
-        const addedMembers = newMembers.filter(
-            (newMember) =>
-                !currentMembers.find((current) => current.id === newMember.id)
-        );
-
-        // Track changes
-        removedMembers.forEach((member) => {
-            const changeKey = `remove_member_${member.id}`;
-            teamChangesRef.current.set(changeKey, {
-                action: 'remove',
-                member,
-                metadata: {
-                    questionId,
-                    section: group.section,
-                    subSection: subsection.name,
-                },
-            });
-        });
-
-        addedMembers.forEach((member) => {
-            const changeKey = `add_member_${member.id}_${Date.now()}`;
-            teamChangesRef.current.set(changeKey, {
-                action: 'add',
-                member,
-                metadata: {
-                    questionId,
-                    section: group.section,
-                    subSection: subsection.name,
-                },
-            });
-        });
-
-        return {
-            ...field,
-            value: {
-                ...field.value,
-                teamMembers: newMembers,
-            },
-        };
-    };
-
     const handleChange = (
         questionId: string,
         inputFieldKey: string,
@@ -323,14 +225,6 @@ const NewProjectPage = () => {
                                                         subsection,
                                                         field,
                                                         value as UploadableFile[]
-                                                    );
-                                                case 'team':
-                                                    return handleTeamChange(
-                                                        questionId,
-                                                        group,
-                                                        subsection,
-                                                        field,
-                                                        value as TeamMember[]
                                                     );
                                                 default:
                                                     dirtyInputRef.current.set(
