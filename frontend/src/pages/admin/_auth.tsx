@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { isAdmin } from '@/utils/permissions';
 
 export const Route = createFileRoute('/admin/_auth')({
     component: RouteComponent,
@@ -6,7 +7,7 @@ export const Route = createFileRoute('/admin/_auth')({
         if (
             !context.auth ||
             !context.auth.user ||
-            context.auth.user.role !== 'admin'
+            !isAdmin(context.auth.user.permissions)
         ) {
             throw redirect({
                 to: '/auth',

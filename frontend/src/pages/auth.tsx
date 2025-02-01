@@ -6,12 +6,8 @@ import { VerifyEmail } from '@/components/VerifyEmail';
 import { register, signin, getCompany } from '@/services';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from '@tanstack/react-router';
-import type {
-    AuthFormData,
-    UserDetailsData,
-    FormErrors,
-    RegistrationStep,
-} from '@/types/auth';
+import type { AuthFormData, UserDetailsData, FormErrors, RegistrationStep } from '@/types/auth';
+import { isAdmin, isStartupOwner, isInvestor } from '@/utils/permissions';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
@@ -50,17 +46,14 @@ function AuthPage() {
 
     const handleRedirect = () => {
         if (!user) return;
-
-        // switch (user.role) {
-        //     case 'admin':
-        //         navigate({ to: '/admin/dashboard', replace: true });
-        //         break;
-        //     case 'startup_owner':
-        //     case 'investor':
-        //         navigate({ to: '/user/dashboard', replace: true });
-        //         break;
-        // }
-        navigate({ to: '/user/project/new', replace: true });
+        
+        // Redirect based on permissions
+        if (isAdmin(user.permissions)) {
+            navigate({ to: '/admin/dashboard', replace: true });
+        } else {
+            // Fallback for users with no specific role permissions
+            navigate({ to: '/user/dashboard', replace: true });
+        }
     };
 
     const handleAuthSubmit = async (formData: AuthFormData) => {
