@@ -47,6 +47,15 @@ export interface TeamMember {
     title: string;
     bio: string;
     linkedin: string;
+    resumeExternalUrl: string;
+    resumeInternalUrl: string;
+    personalWebsite: string;
+    commitment: string;
+    backgroundAndExpertise: string;
+    relevantExperience: string;
+    previousWork?: string;
+    founderAgreementExternalUrl?: string;
+    founderAgreementInternalUrl?: string;
     isAccountOwner: boolean;
 }
 

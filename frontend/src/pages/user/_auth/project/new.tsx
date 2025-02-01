@@ -20,6 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import { scrollToTop } from '@/utils';
 import { useDebounceFn } from '@/hooks';
 import { useAuth } from '@/contexts';
+import { TeamMember } from '@/types';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -230,7 +231,16 @@ const NewProjectPage = () => {
                                                         },
                                                     };
                                                 case 'team':
-                                                    break;
+                                                    const members =
+                                                        value as TeamMember[];
+                                                    return {
+                                                        ...field,
+                                                        value: {
+                                                            ...field.value,
+                                                            teamMembers:
+                                                                members,
+                                                        },
+                                                    };
 
                                                 default:
                                                     dirtyInputRef.current.set(
