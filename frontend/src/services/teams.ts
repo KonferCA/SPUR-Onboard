@@ -4,7 +4,7 @@ import { snakeToCamel } from '@/utils/object';
 
 export interface TeamMemberData {
     companyId: string;
-    teamMember: TeamMember;
+    member: TeamMember;
 }
 export async function addTeamMember(accessToken: string, data: TeamMemberData) {
     const url = getApiUrl(`/companies/${data.companyId}/team`);
@@ -15,23 +15,23 @@ export async function addTeamMember(accessToken: string, data: TeamMemberData) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            first_name: data.teamMember.firstName,
-            last_name: data.teamMember.lastName,
-            title: data.teamMember.title,
-            detailed_biography: data.teamMember.detailedBiography,
-            linkedin_url: data.teamMember.linkedin,
-            is_account_owner: data.teamMember.isAccountOwner,
-            personal_website: data.teamMember.personalWebsite,
-            commitment_type: data.teamMember.commitmentType,
-            introduction: data.teamMember.introduction,
-            industry_experience: data.teamMember.industryExperience,
-            previous_work: data.teamMember.previousWork,
-            resume_external_url: data.teamMember.resumeExternalUrl,
-            resume_internal_url: data.teamMember.resumeInternalUrl,
+            first_name: data.member.firstName,
+            last_name: data.member.lastName,
+            title: data.member.title,
+            detailed_biography: data.member.detailedBiography,
+            linkedin_url: data.member.linkedin,
+            is_account_owner: data.member.isAccountOwner,
+            personal_website: data.member.personalWebsite,
+            commitment_type: data.member.commitmentType,
+            introduction: data.member.introduction,
+            industry_experience: data.member.industryExperience,
+            previous_work: data.member.previousWork,
+            resume_external_url: data.member.resumeExternalUrl,
+            resume_internal_url: data.member.resumeInternalUrl,
             founders_agreement_external_url:
-                data.teamMember.founderAgreementExternalUrl,
+                data.member.founderAgreementExternalUrl,
             founders_agreement_internal_url:
-                data.teamMember.founderAgreementInternalUrl,
+                data.member.founderAgreementInternalUrl,
         }),
     });
 
@@ -48,7 +48,7 @@ export async function deleteTeamMember(
     data: TeamMemberData
 ) {
     const url = getApiUrl(
-        `/companies/${data.companyId}/team/${data.teamMember.id}`
+        `/companies/${data.companyId}/team/${data.member.id}`
     );
     const res = await fetch(url, {
         method: 'DELETE',
@@ -57,7 +57,7 @@ export async function deleteTeamMember(
             'Content-Type': 'application/json',
         },
     });
-    if (res.status === HttpStatusCode.OK) {
+    if (res.status !== HttpStatusCode.OK) {
         throw new Error('Failed to remove team member');
     }
     return;

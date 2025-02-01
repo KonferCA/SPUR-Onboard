@@ -79,10 +79,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
 
             case 'team':
                 return (
-                    <TeamMembers
-                        value={field.value.teamMembers || []}
-                        onChange={(v) => onChange(question.id, field.key, v)}
-                    />
+                    <TeamMembers initialValue={field.value.teamMembers || []} />
                 );
 
             case 'date':
