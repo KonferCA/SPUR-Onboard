@@ -38,6 +38,7 @@ export function VerifyEmail({
         return () => {
             if (intervalRef.current !== null) {
                 window.clearInterval(intervalRef.current);
+                intervalRef.current = null;
             }
         };
     }, [accessToken]);
