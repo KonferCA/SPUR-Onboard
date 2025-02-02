@@ -57,7 +57,7 @@ interface FileChange {
 const NewProjectPage = () => {
     const navigate = useNavigate({ from: '/user/project/new' });
     const [currentProjectId, setCurrentProjectId] = useState('');
-    const { accessToken, companyId, setCompanyId } = useAuth();
+    const { accessToken, companyId } = useAuth();
     const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
         queryKey: ['projectFormQuestions', accessToken, currentProjectId],
