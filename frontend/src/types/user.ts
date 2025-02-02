@@ -30,6 +30,14 @@ export interface UpdateProfileRequest {
     linkedin_url?: string;
 }
 
+export interface InitialProfileRequest {
+    firstName: string;
+    lastName: string;
+    title: string;
+    bio: string;
+    linkedin: string;
+}
+
 export interface ProfileResponse extends UserProfile {}
 
 // Zod validation schemas
@@ -39,4 +47,5 @@ export const profileValidationSchema = z.object({
     title: z.string().min(2, 'Title must be at least 2 characters'),
     bio: z.string().min(10, 'Bio must be at least 10 characters'),
     linkedin_url: z.string().url('Invalid LinkedIn URL').optional().nullable(),
-}); 
+});
+

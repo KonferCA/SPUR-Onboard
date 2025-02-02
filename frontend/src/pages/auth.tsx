@@ -15,6 +15,7 @@ import type {
 import { CompanyForm } from '@/components/CompanyForm/CompanyForm';
 import { CompanyInformation } from '@/types/company';
 import { isAdmin } from '@/utils/permissions';
+import { initialUserProfile } from '@/services/user';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
@@ -118,8 +119,17 @@ function AuthPage() {
                 return;
             }
 
+            await initialUserProfile(accessToken, user.id, {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                title: formData.position,
+                bio: formData.bio,
+                linkedin: formData.linkedIn,
+            });
+
             user.firstName = formData.firstName;
             user.lastName = formData.lastName;
+
             setAuth(user, accessToken, companyId);
             setCurrentStep('company-creation');
         } catch (error: any) {
