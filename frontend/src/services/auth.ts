@@ -10,6 +10,7 @@ import { snakeToCamel } from '@/utils/object';
 
 export interface AuthResponse {
     accessToken: string;
+    companyId: string | null;
     user: User;
 }
 

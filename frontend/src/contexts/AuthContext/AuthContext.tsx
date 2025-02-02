@@ -39,8 +39,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try {
                 const response = await refreshAccessToken();
                 if (response) {
+                    console.log(response);
                     setUser(snakeToCamel(response.user));
                     setAccessToken(response.accessToken);
+                    setCompanyId(response.companyId);
+
+                    if (intervalRef.current === null) {
+                        const REFRESH_INTERVAL = 1000 * 60 * 4; // 4 minutes (just under the 5-minute backend token expiry)
+                        const refreshToken = async () => {
+                            try {
+                                const response = await refreshAccessToken();
+                                if (response) {
+                                    setAccessToken(response.accessToken);
+                                }
+                            } catch (error) {
+                                console.error(
+                                    'Failed to refresh token:',
+                                    error
+                                );
+                                clearAuth();
+                            }
+                        };
+                        intervalRef.current = window.setInterval(
+                            refreshToken,
+                            REFRESH_INTERVAL
+                        );
+                    }
                 }
             } catch (error) {
                 console.error('Initial auth verification failed:', error);
@@ -50,30 +74,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
 
         verifyAuth();
-    }, []);
-
-    useEffect(() => {
-        if (!accessToken) return;
-
-        if (intervalRef.current === null) {
-            const REFRESH_INTERVAL = 1000 * 60 * 4; // 4 minutes (just under the 5-minute backend token expiry)
-            const refreshToken = async () => {
-                try {
-                    const response = await refreshAccessToken();
-                    if (response) {
-                        setUser(response.user);
-                        setAccessToken(response.accessToken);
-                    }
-                } catch (error) {
-                    console.error('Failed to refresh token:', error);
-                    clearAuth();
-                }
-            };
-            intervalRef.current = window.setInterval(
-                refreshToken,
-                REFRESH_INTERVAL
-            );
-        }
 
         return () => {
             if (intervalRef.current !== null) {
@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 intervalRef.current = null;
             }
         };
-    }, [accessToken]);
+    }, []);
 
     const setAuth = (
         newUser: User | null,

@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { AuthForm } from '@/components/AuthForm';
 import { UserDetailsForm } from '@/components/UserDetailsForm';
 import { VerifyEmail } from '@/components/VerifyEmail';
-import { register, signin, createCompany, getCompany } from '@/services';
+import { register, signin, createCompany } from '@/services';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from '@tanstack/react-router';
 import type {
@@ -37,7 +37,7 @@ function AuthPage() {
     const [errors, setErrors] = useState<CompanyFormErrors>({});
 
     useEffect(() => {
-        if (user) {
+        if (user && companyId) {
             if (!user.emailVerified) {
                 setCurrentStep('verify-email');
             } else if (!user.firstName || !user.lastName) {
@@ -48,7 +48,7 @@ function AuthPage() {
                 handleRedirect();
             }
         }
-    }, [user]);
+    }, [user, companyId]);
 
     useEffect(() => {}, [authLoading]);
 
@@ -80,11 +80,10 @@ function AuthPage() {
                     formData.email,
                     formData.password
                 );
-                const company = await getCompany(signinResp.accessToken);
                 setAuth(
                     signinResp.user,
                     signinResp.accessToken,
-                    company ? company.id : null
+                    signinResp.companyId
                 );
 
                 if (!signinResp.user.emailVerified) {
