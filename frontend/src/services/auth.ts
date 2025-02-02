@@ -7,25 +7,6 @@ import { ApiError } from './errors';
 
 import type { User, UserRole } from '@t';
 
-export enum Permission {
-    ViewAllProjects = 1,
-    ReviewProjects = 2,
-    ManageUsers = 4,
-    ManagePermissions = 8,
-    SubmitProject = 16,
-    CommentOnProjects = 32,
-    InvestInProjects = 64,
-    ManageDocuments = 128,
-    ManageInvestments = 256,
-    ManageTeam = 512,
-    IsAdmin = 1024,
-
-    // Roles
-    AdminRole = 1071,
-    StartupOwnerRole = 688,
-    InvestorRole = 97,
-}
-
 export interface AuthResponse {
     access_token: string;
     user: User;

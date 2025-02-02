@@ -12,9 +12,9 @@ import type {
     CompanyFormErrors,
     RegistrationStep,
 } from '@/types/auth';
-import { Permission } from '@/services/auth';
 import { CompanyForm } from '@/components/CompanyForm/CompanyForm';
 import { CompanyInformation } from '@/types/company';
+import { isAdmin } from '@/utils/permissions';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
@@ -56,7 +56,7 @@ function AuthPage() {
         if (!user) return;
 
         const perms = user.permissions;
-        if (perms & Permission.IsAdmin) {
+        if (isAdmin(perms)) {
             navigate({ to: '/admin/dashboard', replace: true });
         } else {
             navigate({ to: '/user/dashboard', replace: true });
