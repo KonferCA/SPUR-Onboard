@@ -14,7 +14,6 @@ import {
     GroupedProjectQuestions,
     groupProjectQuestions,
     Question,
-    SubSection,
 } from '@/config/forms';
 import { SectionedLayout } from '@/templates';
 import { cva } from 'class-variance-authority';
@@ -24,7 +23,6 @@ import { useQuery } from '@tanstack/react-query';
 import { scrollToTop } from '@/utils';
 import { useDebounceFn } from '@/hooks';
 import { useAuth } from '@/contexts';
-import { FormField } from '@/types';
 import { getSampleAnswer } from '@/utils/sampleData';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -59,11 +57,16 @@ interface FileChange {
 const NewProjectPage = () => {
     const navigate = useNavigate({ from: '/user/project/new' });
     const [currentProjectId, setCurrentProjectId] = useState('');
+    const { accessToken, companyId, setCompanyId } = useAuth();
     const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
-        queryKey: ['projectFormQuestions', currentProjectId],
+        queryKey: ['projectFormQuestions', accessToken, currentProjectId],
         queryFn: async () => {
-            const data = await getProjectFormQuestions(currentProjectId);
+            if (!accessToken) return;
+            const data = await getProjectFormQuestions(
+                accessToken,
+                currentProjectId
+            );
             return data;
         },
         enabled: !!currentProjectId,
@@ -80,8 +83,6 @@ const NewProjectPage = () => {
     const [currentStep, setCurrentStep] = useState<number>(0);
     const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
     const fileChangesRef = useRef<Map<string, FileChange>>(new Map());
-
-    const { accessToken, companyId } = useAuth();
 
     const autosave = useDebounceFn(
         async () => {
@@ -133,6 +134,7 @@ const NewProjectPage = () => {
 
                 if (dirtyInputsSnapshot.length > 0) {
                     await saveProjectDraft(
+                        accessToken,
                         currentProjectId,
                         dirtyInputsSnapshot
                     );
@@ -149,56 +151,6 @@ const NewProjectPage = () => {
         [currentProjectId, accessToken, companyId]
     );
 
-    const handleFileChange = (
-        questionId: string,
-        group: GroupedProjectQuestions,
-        subsection: SubSection,
-        field: FormField,
-        files: UploadableFile[]
-    ) => {
-        const currentFiles = (field.value?.value || []) as UploadableFile[];
-
-        // Track removed files
-        currentFiles.forEach((file) => {
-            if (!files.find((f) => f.metadata?.id === file.metadata?.id)) {
-                const changeKey = `remove_${file.metadata?.id}`;
-                fileChangesRef.current.set(changeKey, {
-                    action: 'remove',
-                    file,
-                    metadata: {
-                        questionId,
-                        section: group.section,
-                        subSection: subsection.name,
-                    },
-                });
-            }
-        });
-
-        // Track new files
-        files.forEach((file) => {
-            if (!file.uploaded) {
-                const changeKey = `add_${file.name}_${Date.now()}`;
-                fileChangesRef.current.set(changeKey, {
-                    action: 'add',
-                    file,
-                    metadata: {
-                        questionId,
-                        section: group.section,
-                        subSection: subsection.name,
-                    },
-                });
-            }
-        });
-
-        return {
-            ...field,
-            value: {
-                ...field.value,
-                files,
-            },
-        };
-    };
-
     const handleChange = (
         questionId: string,
         inputFieldKey: string,
@@ -209,7 +161,7 @@ const NewProjectPage = () => {
             inputFieldKey,
             valueType: typeof value,
             isArray: Array.isArray(value),
-            value
+            value,
         });
 
         const newGroups = groupedQuestions.map((group, idx) => {
@@ -221,43 +173,69 @@ const NewProjectPage = () => {
                         ...subsection,
                         questions: subsection.questions.map((question) => {
                             // For file inputs, we use the field key as the question ID
-                            const isFileInput = question.inputFields.some(f => 
-                                f.type === 'file' && f.key === questionId
+                            const isFileInput = question.inputFields.some(
+                                (f) => f.type === 'file' && f.key === questionId
                             );
-                            
-                            if (!isFileInput && question.id !== questionId) return question;
-                            
+
+                            if (!isFileInput && question.id !== questionId)
+                                return question;
+
                             return {
                                 ...question,
                                 inputFields: question.inputFields.map(
                                     (field) => {
                                         if (field.key === inputFieldKey) {
                                             if (field.type !== 'file') {
-                                                console.log('[ProjectPage] Adding to draft save queue:', {
+                                                console.log(
+                                                    '[ProjectPage] Adding to draft save queue:',
+                                                    {
+                                                        questionId,
+                                                        value,
+                                                    }
+                                                );
+                                                dirtyInputRef.current.set(
                                                     questionId,
-                                                    value
-                                                });
-                                                dirtyInputRef.current.set(questionId, {
-                                                    question_id: questionId,
-                                                    answer: value,
-                                                });
+                                                    {
+                                                        question_id: questionId,
+                                                        answer: value,
+                                                    }
+                                                );
                                                 autosave();
                                             } else {
                                                 // For files, only update if they have metadata (bc that means the upload is complete)
-                                                const files = value as UploadableFile[];
-                                                const uploadedFiles = files.filter(f => f.metadata?.id);
+                                                const files =
+                                                    value as UploadableFile[];
+                                                const uploadedFiles =
+                                                    files.filter(
+                                                        (f) => f.metadata?.id
+                                                    );
                                                 if (uploadedFiles.length > 0) {
-                                                    console.log('[ProjectPage] Adding uploaded files to draft:', {
-                                                        questionId,
+                                                    console.log(
+                                                        '[ProjectPage] Adding uploaded files to draft:',
+                                                        {
+                                                            questionId,
+                                                            inputFieldKey,
+                                                            fileIds:
+                                                                uploadedFiles.map(
+                                                                    (f) =>
+                                                                        f
+                                                                            .metadata
+                                                                            ?.id
+                                                                ),
+                                                        }
+                                                    );
+                                                    dirtyInputRef.current.set(
                                                         inputFieldKey,
-                                                        fileIds: uploadedFiles.map(f => f.metadata?.id)
-                                                    });
-                                                    dirtyInputRef.current.set(inputFieldKey, {
-                                                        question_id: inputFieldKey,
-                                                        answer: uploadedFiles[0].metadata?.id || ''
-                                                    });
+                                                        {
+                                                            question_id:
+                                                                inputFieldKey,
+                                                            answer:
+                                                                uploadedFiles[0]
+                                                                    .metadata
+                                                                    ?.id || '',
+                                                        }
+                                                    );
                                                     autosave();
-
                                                 }
                                             }
 
@@ -350,15 +328,16 @@ const NewProjectPage = () => {
     }, [questionData]);
 
     useEffect(() => {
+        if (!accessToken) return;
         // create project on mount
         if (!currentProjectId) {
             const newProject = async () => {
-                const project = await createProject();
+                const project = await createProject(accessToken);
                 setCurrentProjectId(project.id);
             };
             newProject();
         }
-    }, []);
+    }, [accessToken]);
 
     const asideLinks = groupedQuestions[currentStep]?.subSectionNames.map(
         (name) => ({
@@ -544,43 +523,62 @@ const NewProjectPage = () => {
                         </Button>
                     </div>
                     <form className="space-y-12 lg:max-w-3xl mx-auto mt-12">
-                        {groupedQuestions[currentStep].subSections.map((subsection) => (
-                            <div
-                                id={sanitizeHtmlId(subsection.name)}
-                                key={subsection.name}
-                                className={questionGroupContainerStyles()}
-                            >
-                                <div>
-                                    <h1 className={questionGroupTitleStyles()}>
-                                        {subsection.name}
-                                    </h1>
+                        {groupedQuestions[currentStep].subSections.map(
+                            (subsection) => (
+                                <div
+                                    id={sanitizeHtmlId(subsection.name)}
+                                    key={subsection.name}
+                                    className={questionGroupContainerStyles()}
+                                >
+                                    <div>
+                                        <h1
+                                            className={questionGroupTitleStyles()}
+                                        >
+                                            {subsection.name}
+                                        </h1>
+                                    </div>
+                                    <div
+                                        className={questionGroupTitleSeparatorStyles()}
+                                    ></div>
+                                    <div
+                                        className={questionGroupQuestionsContainerStyles()}
+                                    >
+                                        {subsection.questions.map((q) =>
+                                            shouldRenderQuestion(
+                                                q,
+                                                subsection.questions
+                                            ) ? (
+                                                <QuestionInputs
+                                                    key={q.id}
+                                                    question={q}
+                                                    onChange={handleChange}
+                                                    fileUploadProps={
+                                                        accessToken
+                                                            ? {
+                                                                  projectId:
+                                                                      currentProjectId,
+                                                                  questionId:
+                                                                      q.id,
+                                                                  section:
+                                                                      groupedQuestions[
+                                                                          currentStep
+                                                                      ].section,
+                                                                  subSection:
+                                                                      subsection.name,
+                                                                  accessToken:
+                                                                      accessToken,
+                                                                  enableAutosave:
+                                                                      true,
+                                                              }
+                                                            : undefined
+                                                    }
+                                                />
+                                            ) : null
+                                        )}
+                                    </div>
                                 </div>
-                                <div className={questionGroupTitleSeparatorStyles()}></div>
-                                <div className={questionGroupQuestionsContainerStyles()}>
-                                    {subsection.questions.map((q) =>
-                                        shouldRenderQuestion(q, subsection.questions) ? (
-                                            <QuestionInputs
-                                                key={q.id}
-                                                question={q}
-                                                onChange={handleChange}
-                                                fileUploadProps={
-                                                    accessToken
-                                                        ? {
-                                                              projectId: currentProjectId,
-                                                              questionId: q.id,
-                                                              section: groupedQuestions[currentStep].section,
-                                                              subSection: subsection.name,
-                                                              accessToken: accessToken,
-                                                              enableAutosave: true,
-                                                          }
-                                                        : undefined
-                                                }
-                                            />
-                                        ) : null
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+                            )
+                        )}
                         <div className="pb-32 flex gap-8">
                             <Button
                                 variant="outline"

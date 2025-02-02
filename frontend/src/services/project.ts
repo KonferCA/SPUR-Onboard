@@ -1,6 +1,5 @@
 import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
-import { fetchWithAuth } from './auth';
 import { snakeToCamel } from '@/utils/object';
 import { TeamMember } from '@/types';
 
@@ -99,6 +98,7 @@ export interface Project {
  * Get project questions for the project submission form
  */
 export async function getProjectFormQuestions(
+    accessToken: string,
     projectId?: string
 ): Promise<ProjectQuestionsData> {
     let url = getApiUrl('/project/questions');
@@ -107,7 +107,13 @@ export async function getProjectFormQuestions(
         url += `?project_id=${projectId}`;
     }
 
-    const response = await fetchWithAuth(url, { method: 'GET' });
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+    });
     if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new ApiError(
@@ -138,10 +144,18 @@ const transformProject = (data: any): Project => {
     };
 };
 
-export async function createProject(): Promise<ProjectResponse> {
+export async function createProject(
+    accessToken: string
+): Promise<ProjectResponse> {
     const url = getApiUrl('/project/new');
 
-    const response = await fetchWithAuth(url, { method: 'POST' });
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+    });
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -158,9 +172,16 @@ export async function createProject(): Promise<ProjectResponse> {
     return snakeToCamel(json);
 }
 
-export async function getProjects(): Promise<Project[]> {
+export async function getProjects(accessToken: string): Promise<Project[]> {
     const url = getApiUrl('/projects').replace(/([^:]\/)\/+/g, '$1');
-    const response = await fetchWithAuth(url);
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+    });
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -175,9 +196,19 @@ export async function getProjects(): Promise<Project[]> {
     return data.map(transformProject);
 }
 
-export async function getProjectDetails(id: string): Promise<Project> {
+export async function getProjectDetails(
+    accessToken: string,
+    id: string
+): Promise<Project> {
     const url = `${getApiUrl()}/projects/${id}`.replace(/([^:]\/)\/+/g, '$1');
-    const response = await fetchWithAuth(url);
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+    });
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -198,13 +229,15 @@ export interface ProjectDraft {
 }
 
 export async function saveProjectDraft(
+    accessToken: string,
     projectId: string,
     draft: ProjectDraft[]
 ) {
     const url = getApiUrl(`project/${projectId}/draft`);
-    const response = await fetchWithAuth(url, {
+    const response = await fetch(url, {
         method: 'POST',
         headers: {
+            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ draft }),
