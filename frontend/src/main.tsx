@@ -13,18 +13,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient();
 
-// Create router after auth is ready
+const router = createRouter({
+    routeTree,
+    context: {
+        auth: undefined,
+    },
+});
+
 function Router() {
     const auth = useAuth();
-
-    const router = createRouter({
-        routeTree,
-        context: {
-            auth,
-        },
-    });
-
-    return <RouterProvider router={router} />;
+    return <RouterProvider router={router} context={{ auth }} />;
 }
 
 // Render the app
