@@ -25,7 +25,8 @@ export {
 
 export {
     createCompany,
-    getCompany
+    getCompany,
+    updateCompany
 } from './company';
 
 export {
