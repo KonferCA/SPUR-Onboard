@@ -1,2 +1,2 @@
-export { FileUpload } from './FileUpload';
-export type { FileUploadProps } from './FileUpload';
+export { FileUpload, createUploadableFile } from './FileUpload';
+export type { FileUploadProps, UploadableFile } from './FileUpload';

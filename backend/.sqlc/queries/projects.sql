@@ -3,6 +3,9 @@ SELECT * FROM companies
 WHERE owner_id = $1 
 LIMIT 1;
 
+-- name: GetProjectCountOwnedByCompany :one
+SELECT COUNT(id) FROM projects WHERE company_id = $1;
+
 -- name: CreateProject :one
 INSERT INTO projects (
     company_id,
@@ -36,6 +39,14 @@ WHERE
     AND project_id = $3
 RETURNING *; 
 
+-- name: UpdateProjectDraft :batchexec
+INSERT INTO project_answers (project_id, question_id, answer, choices, updated_at)
+    VALUES ($1, $2, $3, $4, extract(epoch from now()))
+    ON CONFLICT (project_id, question_id)
+    DO UPDATE
+    SET answer = EXCLUDED.answer, choices = EXCLUDED.choices,
+    updated_at = EXCLUDED.updated_at;
+
 -- name: GetProjectAnswers :many
 SELECT 
     pa.id as answer_id,
@@ -50,15 +61,13 @@ ORDER BY pq.section, pq.id;
 
 
 -- name: CreateProjectAnswers :many
-INSERT INTO project_answers (id, project_id, question_id, input_type_id, answer)
+INSERT INTO project_answers (id, project_id, question_id, answer)
 SELECT 
     gen_random_uuid(),
     $1,  -- project_id
     pq.id,
-    qit.id, -- input_type_id
     ''   -- empty default answer
 FROM project_questions pq
-JOIN question_input_types qit ON qit.question_id = pq.id
 RETURNING *;
 
 
@@ -71,6 +80,8 @@ INSERT INTO project_documents (
     url,
     section,
     sub_section,
+    mime_type,
+    size,
     created_at,
     updated_at
 ) VALUES (
@@ -81,6 +92,8 @@ INSERT INTO project_documents (
     $4, -- url
     $5, -- section
     $6, -- sub_section
+    $7, -- mime_type
+    $8, -- size in bytes
     extract(epoch from now()),
     extract(epoch from now())
 ) RETURNING *;
@@ -114,26 +127,35 @@ WHERE company_id = $1
 ORDER BY created_at DESC; 
 
 -- name: GetProjectQuestions :many
-SELECT 
-    pq.id,
-    pq.question,
-    pq.section,
-    pq.sub_section,
-    pq.section_order,
-    pq.sub_section_order,
-    pq.question_order,
-    qit.id AS input_type_id,
-    qit.input_type,
-    qit.options,
-    pq.required,
-    qit.validations,
-    '' AS answer -- Default empty answer to match the same result set when querying questions for an existing project
-FROM project_questions pq
-JOIN question_input_types qit ON qit.question_id = pq.id
+WITH all_questions AS (
+    SELECT 
+        pq.id,
+        pq.question,
+        pq.section,
+        pq.sub_section,
+        pq.section_order,
+        pq.sub_section_order,
+        pq.question_order,
+        pq.input_type,
+        pq.options,
+        pq.required,
+        pq.validations,
+        pq.condition_type,
+        pq.condition_value,
+        pq.dependent_question_id,
+        pq.question_group_id,
+        pq.placeholder,
+        pq.description,
+        pq.disabled,
+        '' AS answer, -- these are here to match the query output when fetching QA for a project
+        ARRAY[]::text[] as choices -- same here
+    FROM project_questions pq
+)
+SELECT * FROM all_questions
 ORDER BY
-    pq.section_order,
-    pq.sub_section_order,
-    pq.question_order;
+    section_order,
+    sub_section_order,
+    question_order;
 
 -- name: GetQuestionsByProject :many
 WITH project_owner_check AS (
@@ -142,34 +164,36 @@ WITH project_owner_check AS (
    JOIN companies c ON p.company_id = c.id 
    WHERE p.id = $1
    AND c.owner_id = $2
-),
-all_questions AS (
-   SELECT 
-       pq.id,
-       pq.question,
-       pq.section,
-       pq.sub_section,
-       pq.section_order,
-       pq.sub_section_order,
-       pq.question_order,
-       qit.id AS input_type_id,
-       qit.input_type,
-       qit.options,
-       pq.required,
-       qit.validations,
-       COALESCE(pa.answer, '') AS answer
-   FROM project_questions pq
-   JOIN question_input_types qit ON qit.question_id = pq.id
-   LEFT JOIN project_answers pa ON pa.question_id = pq.id 
-       AND pa.input_type_id = qit.id 
-       AND pa.project_id = $1
-   WHERE EXISTS (SELECT 1 FROM project_owner_check)
 )
-SELECT * FROM all_questions
+SELECT 
+    pq.id,
+    pq.question,
+    pq.section,
+    pq.sub_section,
+    pq.section_order,
+    pq.sub_section_order,
+    pq.question_order,
+    pq.input_type,
+    pq.options,
+    pq.required,
+    pq.validations,
+    pq.condition_type,
+    pq.condition_value,
+    pq.dependent_question_id,
+    pq.question_group_id,
+    pq.placeholder,
+    pq.description,
+    pq.disabled,
+    COALESCE(pa.answer, '') AS answer,
+    COALESCE(pa.choices, ARRAY[]::text[]) as choices
+FROM project_questions pq
+LEFT JOIN project_answers pa ON pa.question_id = pq.id 
+    AND pa.project_id = $1
+WHERE EXISTS (SELECT 1 FROM project_owner_check)
 ORDER BY
-   section_order,
-   sub_section_order,
-   question_order;
+    pq.section_order,
+    pq.sub_section_order,
+    pq.question_order;
 
 -- name: UpdateProjectStatus :exec
 UPDATE projects 
@@ -179,28 +203,24 @@ SET
 WHERE id = $2; 
 
 -- name: GetQuestionByAnswerID :one
-SELECT q.*, qit.validations, qit.input_type FROM project_questions q
+SELECT q.* FROM project_questions q
 JOIN project_answers a ON a.question_id = q.id
-JOIN question_input_types qit ON qit.question_id = a.question_id
-WHERE a.id = $1; 
+WHERE a.id = $1;
 
 -- name: GetProjectQuestion :one
-SELECT q.*, qit.validations, qit.id as input_type_id FROM project_questions q
-JOIN question_input_types qit ON q.id = qit.question_id
-WHERE q.id = $1
+SELECT * FROM project_questions
+WHERE id = $1
 LIMIT 1;
 
 -- name: CreateProjectAnswer :one
 INSERT INTO project_answers (
     project_id,
     question_id,
-    input_type_id,
     answer
 ) VALUES (
     $1, -- project_id
     $2, -- question_id
-    $3, -- input_type_id
-    $4  -- answer
+    $3  -- answer
 ) RETURNING *;
 
 -- name: GetProjectComments :many

@@ -1,18 +1,28 @@
+import type { UploadableFile } from '@/components';
 import { ZodString } from 'zod';
 
 export type FormFieldType =
     | 'textinput'
     | 'date'
     | 'select'
+    | 'multiselect'
     | 'textarea'
     | 'file'
     | 'team';
+
+export interface FormFieldValue {
+    files?: UploadableFile[];
+    teamMembers?: TeamMember[];
+    value?: any;
+}
+
 export interface FormField {
     key: string;
     type: FormFieldType;
     label: string;
     required?: boolean;
     placeholder?: string;
+    description?: string;
     rows?: number;
     options?: Array<{
         id: number;
@@ -20,6 +30,8 @@ export interface FormField {
         value: string;
     }>;
     validations?: ZodString[];
+    value: FormFieldValue;
+    invalid?: boolean;
 }
 
 export interface FormSection {
@@ -31,9 +43,21 @@ export interface FormSection {
 
 export interface TeamMember {
     id: string;
-    name: string;
-    role: string;
-    avatar?: string;
+    firstName: string;
+    lastName: string;
+    title: string;
+    detailedBiography: string;
+    linkedin: string;
+    resumeExternalUrl: string;
+    resumeInternalUrl: string;
+    personalWebsite: string;
+    commitmentType: string;
+    introduction: string;
+    industryExperience: string;
+    previousWork?: string;
+    founderAgreementExternalUrl?: string;
+    founderAgreementInternalUrl?: string;
+    isAccountOwner: boolean;
 }
 
 export interface SocialLink {

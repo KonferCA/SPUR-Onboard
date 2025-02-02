@@ -144,9 +144,9 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
     }, []);
 
     return (
-        <div className="flex flex-col gap-4">
-            <ul>
-                {controlledLinks.map((link) => (
+        <div>
+            <ul className="flex flex-col gap-2">
+                {controlledLinks.map((link, idx) => (
                     <li
                         key={link.label}
                         onClick={async (e) =>
@@ -162,12 +162,13 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
                             ) : (
                                 <span
                                     className={clsx(
-                                        'transition hover:text-gray-800 hover:cursor-pointer',
+                                        'flex gap-2 transition hover:text-gray-800 hover:cursor-pointer',
                                         link.active && 'text-black',
                                         !link.active && 'text-gray-400'
                                     )}
                                 >
-                                    {link.label}
+                                    <span>{idx + 1}.</span>
+                                    <span>{link.label}</span>
                                 </span>
                             )}
                         </ScrollLink>

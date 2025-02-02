@@ -182,7 +182,7 @@ function AuthPage() {
             setAuth(user, accessToken, company.id);
             
             setCurrentStep('registration-complete');
-            
+
             setTimeout(() => {
                 handleRedirect();
             }, 1500);
@@ -323,3 +323,4 @@ function AuthPage() {
 export const Route = createFileRoute('/auth')({
     component: AuthPage,
 });
+

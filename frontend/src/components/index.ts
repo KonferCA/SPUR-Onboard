@@ -4,8 +4,8 @@ export type { TextInputProps } from './TextInput';
 export { Dropdown } from './Dropdown';
 export type { DropdownOption, DropdownProps } from './Dropdown';
 
-export { FileUpload } from './FileUpload';
-export type { FileUploadProps } from './FileUpload';
+export { FileUpload, createUploadableFile } from './FileUpload';
+export type { FileUploadProps, UploadableFile } from './FileUpload';
 
 export { InfoCard } from './InforCard';
 export type { InfoCardProps } from './InforCard';

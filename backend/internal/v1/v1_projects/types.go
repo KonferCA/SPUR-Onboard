@@ -1,8 +1,8 @@
 package v1_projects
 
 import (
-	"KonferCA/SPUR/internal/interfaces"
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/interfaces"
 )
 
 type Handler struct {
@@ -15,12 +15,12 @@ type CreateProjectRequest struct {
 }
 
 type ProjectResponse struct {
-	ID          string         `json:"id"`
-	Title       string         `json:"title"`
-	Description string         `json:"description"`
+	ID          string           `json:"id"`
+	Title       string           `json:"title"`
+	Description string           `json:"description"`
 	Status      db.ProjectStatus `json:"status"`
-	CreatedAt   int64         `json:"created_at"`
-	UpdatedAt   int64         `json:"updated_at"`
+	CreatedAt   int64            `json:"created_at"`
+	UpdatedAt   int64            `json:"updated_at"`
 }
 
 type ProjectAnswerResponse struct {
@@ -37,8 +37,10 @@ type PatchAnswerRequest struct {
 }
 
 type UploadDocumentRequest struct {
-	Name    string `json:"name" validate:"required"`
-	Section string `json:"section" validate:"required"`
+	QuestionID string `form:"question_id" validate:"required,uuid"`
+	Name       string `form:"name" validate:"required"`
+	Section    string `form:"section" validate:"required"`
+	SubSection string `form:"sub_section" validate:"required"`
 }
 
 type DocumentResponse struct {
@@ -66,7 +68,7 @@ type AnswerSubmission struct {
 }
 
 type SubmitProjectResponse struct {
-	Message string         `json:"message"`
+	Message string           `json:"message"`
 	Status  db.ProjectStatus `json:"status"`
 }
 
@@ -97,7 +99,7 @@ type CommentResponse struct {
 	TargetID    string `json:"target_id"`
 	Comment     string `json:"comment"`
 	CommenterID string `json:"commenter_id"`
-	Resolved   bool   `json:"resolved"`
+	Resolved    bool   `json:"resolved"`
 	CreatedAt   int64  `json:"created_at"`
 	UpdatedAt   int64  `json:"updated_at"`
 }
@@ -113,4 +115,15 @@ type CreateCommentRequest struct {
 
 type UpdateCommentRequest struct {
 	Comment string `json:"comment" validate:"required"`
+}
+
+type ProjectDraftContent struct {
+	QuestionID string `json:"question_id" validate:"required,uuid"`
+	// Answer is not validated since its a draft content and it can be wrong
+	// It can be a string or array of strings.
+	Answer interface{} `json:"answer,omitempty"`
+}
+
+type SaveProjectDraftRequest struct {
+	Draft []ProjectDraftContent `json:"draft" validate:"required,dive"`
 }
