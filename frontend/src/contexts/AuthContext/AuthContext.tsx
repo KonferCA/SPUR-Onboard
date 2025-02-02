@@ -79,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => {
             if (intervalRef.current !== null) {
                 window.clearInterval(intervalRef.current);
+                intervalRef.current = null;
             }
         };
     }, [accessToken]);
