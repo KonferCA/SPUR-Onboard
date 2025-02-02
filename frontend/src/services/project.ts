@@ -1,6 +1,5 @@
 import { getApiUrl } from '@utils';
 import { ApiError } from './errors';
-import { fetchWithAuth } from './auth';
 import { snakeToCamel } from '@/utils/object';
 
 interface CompanyResponse {
@@ -72,24 +71,43 @@ export interface Project {
     sections: ProjectSection[];
 }
 
+/**
+ * Base fetch function for project-related API calls
+ */
+async function fetchProject(url: string, options: RequestInit = {}): Promise<Response> {
+    const defaultOptions: RequestInit = {
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        },
+    };
+
+    const response = await fetch(url, { ...defaultOptions, ...options });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new ApiError(
+            'Project operation failed',
+            response.status,
+            errorData
+        );
+    }
+
+    return response;
+}
+
 /*
  * Get project questions for the project submission form
  */
 export async function getProjectFormQuestions(): Promise<ProjectQuestion[]> {
     const url = getApiUrl('/project/questions');
 
-    const response = await fetchWithAuth(url, { method: 'GET' });
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new ApiError(
-            'Failed to fetch project questions',
-            response.status,
-            errorData || {}
-        );
-    }
+    const response = await fetchProject(url);
     const data = await response.json();
     return snakeToCamel(data.questions);
 }
+
 
 // Transform backend response to frontend format
 const transformProject = (data: any): Project => {
@@ -110,7 +128,7 @@ const transformProject = (data: any): Project => {
 };
 
 export async function createProject(
-    _companyId: string,
+    companyId: string,
     payload: {
         company_id: string;
         title: string;
@@ -126,57 +144,24 @@ export async function createProject(
 ): Promise<ProjectResponse> {
     const url = getApiUrl('/projects');
 
-    const response = await fetchWithAuth(url, {
+    const response = await fetchProject(url, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
     });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        console.error('Server error:', errorData);
-        throw new ApiError(
-            'Failed to create project',
-            response.status,
-            errorData || {}
-        );
-    }
 
     return response.json();
 }
 
 export async function getProjects(): Promise<Project[]> {
     const url = getApiUrl('/projects').replace(/([^:]\/)\/+/g, '$1');
-    const response = await fetchWithAuth(url);
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new ApiError(
-            'Failed to fetch projects',
-            response.status,
-            errorData || {}
-        );
-    }
-
+    const response = await fetchProject(url);
     const data = await response.json();
     return data.map(transformProject);
 }
 
 export async function getProjectDetails(id: string): Promise<Project> {
     const url = `${getApiUrl()}/projects/${id}`.replace(/([^:]\/)\/+/g, '$1');
-    const response = await fetchWithAuth(url);
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new ApiError(
-            'Failed to fetch project details',
-            response.status,
-            errorData || {}
-        );
-    }
-
+    const response = await fetchProject(url);
     const data = await response.json();
     return transformProject(data);
 }

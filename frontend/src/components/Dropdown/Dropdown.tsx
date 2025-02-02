@@ -11,9 +11,12 @@ export interface DropdownOption {
 export interface DropdownProps {
     label?: string;
     options: DropdownOption[];
-    value: DropdownOption | null;
-    onChange: (value: DropdownOption) => void;
+    value: DropdownOption | DropdownOption[] | null;
+    onChange: (value: DropdownOption | DropdownOption[]) => void;
     placeholder?: string;
+    required?: boolean;
+    multiple?: boolean;
+    error?: string;
 }
 
 const Dropdown: React.FC<DropdownProps> = ({
@@ -21,8 +24,31 @@ const Dropdown: React.FC<DropdownProps> = ({
     options,
     value,
     onChange,
+    required = false,
     placeholder = 'Select',
+    multiple,
+    error,
 }) => {
+    const renderSelectedValue = () => {
+        if (Array.isArray(value) && value.length > 0) {
+            return (
+                <span className="block truncate text-base">
+                    {value.map(v => v.label).join(', ')}
+                </span>
+            );
+        }
+        
+        if (!Array.isArray(value) && value?.label) {
+            return <span className="block truncate text-base">{value.label}</span>;
+        }
+        
+        return (
+            <span className="block truncate text-base text-gray-400">
+                {placeholder}
+            </span>
+        );
+    };
+
     return (
         <div className="w-full">
             {label && (
@@ -30,18 +56,21 @@ const Dropdown: React.FC<DropdownProps> = ({
                     <label className="block text-sm font-medium text-gray-900">
                         {label}
                     </label>
+                    {required && (
+                        <span className="text-sm text-gray-500">Required</span>
+                    )}
                 </div>
             )}
-            <Listbox value={value} onChange={onChange}>
+            <Listbox value={value} onChange={onChange} multiple={multiple}>
                 <div className="relative">
-                    <Listbox.Button className="relative w-full py-3 px-4 text-left bg-white rounded-lg border border-gray-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-                        <span className="block truncate text-base">
-                            {value?.label || (
-                                <span className="text-gray-500">
-                                    {placeholder}
-                                </span>
-                            )}
-                        </span>
+                    <Listbox.Button 
+                        className={`relative w-full py-4 px-4 text-left bg-white rounded-lg border ${
+                            error ? 'border-red-500' : 'border-gray-300'
+                        } cursor-pointer focus:outline-none focus-visible:ring-2 ${
+                            error ? 'focus-visible:ring-red-500' : 'focus-visible:ring-blue-500'
+                        }`}
+                    >
+                        {renderSelectedValue()}
                         <span className="absolute inset-y-0 right-0 flex items-center pr-4">
                             <FiChevronDown
                                 className="h-5 w-5 text-gray-400"
@@ -60,9 +89,9 @@ const Dropdown: React.FC<DropdownProps> = ({
                             {options.map((option) => (
                                 <Listbox.Option
                                     key={option.id}
-                                    className={({ active }) =>
+                                    className={({ active, selected }) =>
                                         `cursor-pointer select-none relative py-3 px-4 ${
-                                            active
+                                            active || selected
                                                 ? 'bg-gray-100'
                                                 : 'text-gray-900'
                                         }`
@@ -86,9 +115,13 @@ const Dropdown: React.FC<DropdownProps> = ({
                     </Transition>
                 </div>
             </Listbox>
+            {error && (
+                <p className="mt-1 text-sm text-red-500">
+                    {error}
+                </p>
+            )}
         </div>
     );
 };
 
 export { Dropdown };
-

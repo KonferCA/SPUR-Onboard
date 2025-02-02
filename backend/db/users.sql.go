@@ -10,7 +10,7 @@ import (
 )
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password, permissions, email_verified, created_at, updated_at, token_salt FROM users WHERE email = $1 LIMIT 1
+SELECT id, first_name, last_name, bio, title, linkedin, email, password, permissions, email_verified, created_at, updated_at, token_salt FROM users WHERE email = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -18,6 +18,11 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Bio,
+		&i.Title,
+		&i.Linkedin,
 		&i.Email,
 		&i.Password,
 		&i.Permissions,
@@ -30,27 +35,27 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, permissions, email_verified, token_salt
+SELECT id, first_name, last_name, bio, title, linkedin, email, password, permissions, email_verified, created_at, updated_at, token_salt
 FROM users 
 WHERE id = $1
 `
 
-type GetUserByIDRow struct {
-	ID            string `json:"id"`
-	Email         string `json:"email"`
-	Permissions   int32  `json:"permissions"`
-	EmailVerified bool   `json:"email_verified"`
-	TokenSalt     []byte `json:"token_salt"`
-}
-
-func (q *Queries) GetUserByID(ctx context.Context, id string) (GetUserByIDRow, error) {
+func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByID, id)
-	var i GetUserByIDRow
+	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Bio,
+		&i.Title,
+		&i.Linkedin,
 		&i.Email,
+		&i.Password,
 		&i.Permissions,
 		&i.EmailVerified,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 		&i.TokenSalt,
 	)
 	return i, err
@@ -99,6 +104,33 @@ func (q *Queries) NewUser(ctx context.Context, arg NewUserParams) (NewUserRow, e
 		&i.TokenSalt,
 	)
 	return i, err
+}
+
+const updateUserDetails = `-- name: UpdateUserDetails :exec
+UPDATE users
+SET first_name = $1, last_name = $2, title = $3, bio = $4, linkedin = $5
+WHERE id = $6
+`
+
+type UpdateUserDetailsParams struct {
+	FirstName *string `json:"first_name"`
+	LastName  *string `json:"last_name"`
+	Title     *string `json:"title"`
+	Bio       *string `json:"bio"`
+	Linkedin  *string `json:"linkedin"`
+	ID        string  `json:"id"`
+}
+
+func (q *Queries) UpdateUserDetails(ctx context.Context, arg UpdateUserDetailsParams) error {
+	_, err := q.db.Exec(ctx, updateUserDetails,
+		arg.FirstName,
+		arg.LastName,
+		arg.Title,
+		arg.Bio,
+		arg.Linkedin,
+		arg.ID,
+	)
+	return err
 }
 
 const updateUserEmailVerifiedStatus = `-- name: UpdateUserEmailVerifiedStatus :exec

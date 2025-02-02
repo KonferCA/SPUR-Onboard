@@ -18,7 +18,7 @@ func getRefreshTokenCookieConfig() *http.Cookie {
 	cookie := &http.Cookie{
 		Name: COOKIE_REFRESH_TOKEN,
 		// this is a static path, that it should only be allowed in
-		Path:     "/api/v1/auth/verify",
+		Path:     "/api/v1/",
 		Domain:   os.Getenv("URL_DOMAIN"),
 		Secure:   os.Getenv("APP_ENV") != common.DEVELOPMENT_ENV,
 		SameSite: http.SameSiteStrictMode,
@@ -30,6 +30,9 @@ func getRefreshTokenCookieConfig() *http.Cookie {
 
 	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
 		cookie.SameSite = http.SameSiteLaxMode
+		// only for dev!!!
+		cookie.Secure = false
+		cookie.Domain = "localhost"
 	}
 
 	return cookie

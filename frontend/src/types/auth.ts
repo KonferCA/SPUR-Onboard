@@ -3,19 +3,18 @@ export type RegistrationStep =
     | 'verify-email'
     | 'signing-in'
     | 'form-details'
+    | 'company-creation'
     | 'registration-complete';
 
 export type UserRole = 'startup_owner' | 'admin' | 'investor';
 
 export interface User {
     id: string;
+    firstName: string;
+    lastName: string;
     email: string;
-    first_name: string;
-    last_name: string;
-    role: UserRole;
+    emailVerified: boolean;
     permissions: number;
-    wallet_address: string;
-    email_verified: boolean;
 }
 
 export interface AuthFormData {
@@ -59,4 +58,13 @@ export interface UserDetailsFormProps {
 export interface AuthResponse {
     access_token: string;
     user: User;
+}
+
+export interface CompanyFormErrors extends FormErrors {
+    name?: string;
+    dateFounded?: string;
+    description?: string;
+    stage?: string;
+    website?: string;
+    linkedin?: string;
 }

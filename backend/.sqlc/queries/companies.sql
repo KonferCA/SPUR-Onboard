@@ -3,9 +3,13 @@ INSERT INTO companies (
   owner_id,
   name,
   wallet_address,
-  linkedin_url
+  linkedin_url,
+  description,
+  date_founded,
+  website,
+  stages
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3, $4, $5, $6, $7, $8
 )
 RETURNING *;
 
@@ -23,6 +27,10 @@ SET
   name = COALESCE($2, name),
   wallet_address = COALESCE($3, wallet_address),
   linkedin_url = COALESCE($4, linkedin_url),
+  description = COALESCE($5, description),
+  date_founded = COALESCE($6, date_founded),
+  website = COALESCE($7, website),
+  stages = COALESCE($8, stages),
   updated_at = extract(epoch from now())
 WHERE id = $1
 RETURNING *;

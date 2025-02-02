@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"KonferCA/SPUR/internal/permissions"
+
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
@@ -84,7 +85,7 @@ func sendEmailVerification(userID, email string, queries *db.Queries) {
 Simple route handler that just returns whether the email has been verified or not in JSON body.
 */
 func (h *Handler) handleEmailVerificationStatus(c echo.Context) error {
-	user, ok := c.Get("user").(*db.GetUserByIDRow)
+	user, ok := c.Get("user").(*db.User)
 	if !ok {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", errors.New("Failed to cast user type from context that should have been set by Auth middleware."))
 	}
@@ -157,6 +158,7 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	return c.JSON(http.StatusCreated, AuthResponse{
 		AccessToken: accessToken,
 		User: UserResponse{
+			ID:            newUser.ID,
 			Email:         newUser.Email,
 			EmailVerified: newUser.EmailVerified,
 			Permissions:   uint32(newUser.Permissions),
@@ -202,6 +204,9 @@ func (h *Handler) handleLogin(c echo.Context) error {
 	return c.JSON(http.StatusOK, AuthResponse{
 		AccessToken: accessToken,
 		User: UserResponse{
+			ID:            user.ID,
+			FirstName:     user.FirstName,
+			LastName:      user.LastName,
 			Email:         user.Email,
 			EmailVerified: user.EmailVerified,
 			Permissions:   uint32(user.Permissions),
@@ -350,6 +355,7 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 	refreshToken := cookie.Value
 	claims, err := jwt.ParseUnverifiedClaims(refreshToken)
 	if err != nil {
+		unsetRefreshTokenCookie(c)
 		return v1_common.Fail(c, http.StatusUnauthorized, "Cookie has invalid value.", err)
 	}
 
@@ -359,11 +365,13 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 	// get salt
 	user, err := h.server.GetQueries().GetUserByID(ctx, claims.UserID)
 	if err != nil {
+		unsetRefreshTokenCookie(c)
 		return v1_common.Fail(c, http.StatusUnauthorized, "Cookie has invalid value.", err)
 	}
 
 	claims, err = jwt.VerifyTokenWithSalt(refreshToken, user.TokenSalt)
 	if err != nil {
+		unsetRefreshTokenCookie(c)
 		return v1_common.Fail(c, http.StatusUnauthorized, "Cookie is not valid.", err)
 	}
 
@@ -381,6 +389,9 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 	return c.JSON(http.StatusOK, AuthResponse{
 		AccessToken: accessToken,
 		User: UserResponse{
+			ID:            user.ID,
+			FirstName:     user.FirstName,
+			LastName:      user.LastName,
 			Email:         user.Email,
 			EmailVerified: user.EmailVerified,
 			Permissions:   uint32(user.Permissions),

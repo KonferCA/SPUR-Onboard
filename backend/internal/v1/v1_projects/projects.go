@@ -22,13 +22,13 @@ import (
  */
 
 // Helper function to get validated user from context
-func getUserFromContext(c echo.Context) (*db.GetUserByIDRow, error) {
+func getUserFromContext(c echo.Context) (*db.User, error) {
 	userVal := c.Get("user")
 	if userVal == nil {
 		return nil, fmt.Errorf("user not found in context")
 	}
 
-	user, ok := userVal.(*db.GetUserByIDRow)
+	user, ok := userVal.(*db.User)
 	if !ok {
 		return nil, fmt.Errorf("invalid user type in context")
 	}

@@ -1,15 +1,21 @@
 import { getApiUrl } from '@utils';
 import { ApiError } from './errors';
-import { fetchWithAuth } from './auth';
 import type { ProfileResponse, UpdateProfileRequest } from '@/types/user';
 
 /**
  * Get the current user's profile
  */
-export async function getUserProfile(): Promise<ProfileResponse> {
+export async function getUserProfile(token: string): Promise<ProfileResponse> {
     // First get the company
-    const companyUrl = getApiUrl('/company');
-    const companyResponse = await fetchWithAuth(companyUrl);
+    const companyUrl = getApiUrl('/v1/company');
+    const companyResponse = await fetch(companyUrl, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+    });
 
     if (!companyResponse.ok) {
         const errorData = await companyResponse.json().catch(() => null);
@@ -23,8 +29,15 @@ export async function getUserProfile(): Promise<ProfileResponse> {
     const { id: companyId } = await companyResponse.json();
 
     // Then get the team members
-    const url = getApiUrl(`/companies/${companyId}/team`);
-    const response = await fetchWithAuth(url);
+    const url = getApiUrl(`/v1/companies/${companyId}/team`);
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+    });
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -36,6 +49,7 @@ export async function getUserProfile(): Promise<ProfileResponse> {
     }
 
     const { team_members } = await response.json();
+    
     // Find the team member that is the account owner
     const profile = team_members.find((member: any) => member.is_account_owner);
     if (!profile) {
@@ -48,10 +62,20 @@ export async function getUserProfile(): Promise<ProfileResponse> {
 /**
  * Update the current user's profile
  */
-export async function updateUserProfile(data: UpdateProfileRequest): Promise<ProfileResponse> {
+export async function updateUserProfile(
+    token: string,
+    data: UpdateProfileRequest
+): Promise<ProfileResponse> {
     // First get the company
-    const companyUrl = getApiUrl('/company');
-    const companyResponse = await fetchWithAuth(companyUrl);
+    const companyUrl = getApiUrl('/v1/company');
+    const companyResponse = await fetch(companyUrl, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+    });
 
     if (!companyResponse.ok) {
         const errorData = await companyResponse.json().catch(() => null);
@@ -65,8 +89,15 @@ export async function updateUserProfile(data: UpdateProfileRequest): Promise<Pro
     const { id: companyId } = await companyResponse.json();
 
     // Then get the team members
-    const teamUrl = getApiUrl(`/companies/${companyId}/team`);
-    const teamResponse = await fetchWithAuth(teamUrl);
+    const teamUrl = getApiUrl(`/v1/companies/${companyId}/team`);
+    const teamResponse = await fetch(teamUrl, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+    });
 
     if (!teamResponse.ok) {
         const errorData = await teamResponse.json().catch(() => null);
@@ -78,6 +109,7 @@ export async function updateUserProfile(data: UpdateProfileRequest): Promise<Pro
     }
 
     const { team_members } = await teamResponse.json();
+    
     // Find the team member that is the account owner
     const profile = team_members.find((member: any) => member.is_account_owner);
     if (!profile) {
@@ -85,12 +117,14 @@ export async function updateUserProfile(data: UpdateProfileRequest): Promise<Pro
     }
 
     // Finally update the team member
-    const url = getApiUrl(`/companies/${companyId}/team/${profile.id}`);
-    const response = await fetchWithAuth(url, {
+    const url = getApiUrl(`/v1/companies/${companyId}/team/${profile.id}`);
+    const response = await fetch(url, {
         method: 'PUT',
         headers: {
-            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(data),
     });
 

@@ -23,7 +23,7 @@ func (h *Handler) handleCreateCompany(c echo.Context) error {
 		return err
 	}
 
-	user, ok := c.Get("user").(*db.GetUserByIDRow)
+	user, ok := c.Get("user").(*db.User)
 	if !ok {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", errors.New("failed to cast user type from context"))
 	}
@@ -43,9 +43,23 @@ func (h *Handler) handleCreateCompany(c echo.Context) error {
 		walletAddress = &req.WalletAddress
 	}
 
+	var website *string
+	if req.Website != "" {
+		website = &req.Website
+	}
+
+	var description *string
+	if req.Description != "" {
+		description = &req.Description
+	}
+
 	company, err := h.server.GetQueries().CreateCompany(c.Request().Context(), db.CreateCompanyParams{
 		OwnerID:       user.ID,
 		Name:          req.Name,
+		Description:   description,
+		DateFounded:   req.DateFounded,
+		Stages:        req.Stages,
+		Website:       website,
 		WalletAddress: walletAddress,
 		LinkedinUrl:   req.LinkedinURL,
 	})
@@ -58,6 +72,10 @@ func (h *Handler) handleCreateCompany(c echo.Context) error {
 		ID:            company.ID,
 		OwnerID:       company.OwnerID,
 		Name:          company.Name,
+		Description:   company.Description,
+		DateFounded:   company.DateFounded,
+		Stages:        company.Stages,
+		Website:       company.Website,
 		WalletAddress: company.WalletAddress,
 		LinkedinURL:   company.LinkedinUrl,
 		CreatedAt:     company.CreatedAt,
@@ -77,7 +95,7 @@ func (h *Handler) handleUpdateCompany(c echo.Context) error {
 		return err
 	}
 
-	user, ok := c.Get("user").(*db.GetUserByIDRow)
+	user, ok := c.Get("user").(*db.User)
 	if !ok {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", errors.New("failed to cast user type from context"))
 	}
@@ -93,9 +111,32 @@ func (h *Handler) handleUpdateCompany(c echo.Context) error {
 		return v1_common.NewNotFoundError("company")
 	}
 
-	var walletAddress *string
+	var (
+		walletAddress *string
+		website       *string
+		description   *string
+		dateFounded   int64
+		stages        []string
+	)
+
 	if req.WalletAddress != "" {
 		walletAddress = &req.WalletAddress
+	}
+	if req.Website != "" {
+		website = &req.Website
+	}
+	if req.Description != "" {
+		description = &req.Description
+	}
+	if req.DateFounded != nil {
+		dateFounded = *req.DateFounded
+	} else {
+		dateFounded = company.DateFounded
+	}
+	if len(req.Stages) > 0 {
+		stages = req.Stages
+	} else {
+		stages = company.Stages
 	}
 
 	name := req.Name
@@ -110,6 +151,10 @@ func (h *Handler) handleUpdateCompany(c echo.Context) error {
 	updatedCompany, err := h.server.GetQueries().UpdateCompany(c.Request().Context(), db.UpdateCompanyParams{
 		ID:            company.ID,
 		Name:          name,
+		Description:   description,
+		DateFounded:   dateFounded,
+		Stages:        stages,
+		Website:       website,
 		WalletAddress: walletAddress,
 		LinkedinUrl:   linkedinURL,
 	})
@@ -122,6 +167,10 @@ func (h *Handler) handleUpdateCompany(c echo.Context) error {
 		ID:            updatedCompany.ID,
 		OwnerID:       updatedCompany.OwnerID,
 		Name:          updatedCompany.Name,
+		Description:   updatedCompany.Description,
+		DateFounded:   updatedCompany.DateFounded,
+		Stages:        updatedCompany.Stages,
+		Website:       updatedCompany.Website,
 		WalletAddress: updatedCompany.WalletAddress,
 		LinkedinURL:   updatedCompany.LinkedinUrl,
 		CreatedAt:     updatedCompany.CreatedAt,
@@ -135,7 +184,7 @@ func (h *Handler) handleUpdateCompany(c echo.Context) error {
  * Response: CompanyResponse
  */
 func (h *Handler) handleGetCompany(c echo.Context) error {
-	user, ok := c.Get("user").(*db.GetUserByIDRow)
+	user, ok := c.Get("user").(*db.User)
 	if !ok {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", errors.New("failed to cast user type from context"))
 	}
@@ -157,6 +206,10 @@ func (h *Handler) handleGetCompany(c echo.Context) error {
 			ID:            company.ID,
 			OwnerID:       company.OwnerID,
 			Name:          company.Name,
+			Description:   company.Description,
+			DateFounded:   company.DateFounded,
+			Stages:        company.Stages,
+			Website:       company.Website,
 			WalletAddress: company.WalletAddress,
 			LinkedinURL:   company.LinkedinUrl,
 			CreatedAt:     company.CreatedAt,
@@ -174,6 +227,10 @@ func (h *Handler) handleGetCompany(c echo.Context) error {
 		ID:            company.ID,
 		OwnerID:       company.OwnerID,
 		Name:          company.Name,
+		Description:   company.Description,
+		DateFounded:   company.DateFounded,
+		Stages:        company.Stages,
+		Website:       company.Website,
 		WalletAddress: company.WalletAddress,
 		LinkedinURL:   company.LinkedinUrl,
 		CreatedAt:     company.CreatedAt,

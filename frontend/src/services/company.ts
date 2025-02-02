@@ -1,28 +1,33 @@
 import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
-import { fetchWithAuth } from './auth';
-import type { Company, UpdateCompanyRequest } from '@/types/company'
+import { CompanyInformation } from '@/types/company';
 
-interface CreateCompanyResponse {
-    ID: string;
-    OwnerUserID: string;
-    Name: string;
-    Description: string | null;
-    IsVerified: boolean;
-    CreatedAt: string;
-    UpdatedAt: string;
+export interface CompanyResponse {
+    id: string;
+    owner_id: string;
+    name: string;
+    description: string | null;
+    date_founded: number;
+    stages: string[];
+    website: string | null;
+    wallet_address: string | null;
+    linkedin_url: string;
+    created_at: number;
+    updated_at: number;
 }
 
 export async function createCompany(
-    ownerUserId: string,
-    name: string,
-    description?: string
-): Promise<CreateCompanyResponse> {
-    const url = getApiUrl('/companies');
+    token: string,
+    data: CompanyInformation
+): Promise<CompanyResponse> {
+    const url = getApiUrl('/company/new');
     const body = {
-        owner_user_id: ownerUserId,
-        name,
-        description,
+        name: data.name,
+        description: data.description,
+        date_founded: Math.floor(data.dateFounded.getTime() / 1000),
+        stages: data.stage.map(s => s.value),
+        website: data.website,
+        linkedin_url: data.linkedin || "",
     };
 
     const res = await fetch(url, {
@@ -30,41 +35,69 @@ export async function createCompany(
         body: JSON.stringify(body),
         headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        credentials: 'include'
+    });
+    
+    const json = await res.json();
+    if (res.status !== HttpStatusCode.CREATED) {
+        throw new ApiError('Failed to create company', res.status, json);
+    }
+    return json as CompanyResponse;
+}
+
+export async function getCompany(
+    token: string
+): Promise<CompanyResponse | null> {
+    const url = getApiUrl('/company');
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+    });
+
+    if (res.status === HttpStatusCode.NOT_FOUND) {
+        return null;
+    }
+
+    const json = await res.json();
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to get company', res.status, json);
+    }
+    return json as CompanyResponse;
+}
+
+export async function updateCompany(
+    token: string,
+    data: Partial<CompanyInformation>
+): Promise<CompanyResponse> {
+    const url = getApiUrl('/company');
+    const body = {
+        ...(data.name && { name: data.name }),
+        ...(data.description && { description: data.description }),
+        ...(data.dateFounded && { date_founded: Math.floor(data.dateFounded.getTime() / 1000) }),
+        ...(data.stage && { stages: data.stage.map(s => s.value) }),
+        ...(data.website && { website: data.website }),
+        ...(data.linkedin && { linkedin_url: data.linkedin }),
+    };
+
+    const res = await fetch(url, {
+        method: 'PUT',
+        body: JSON.stringify(body),
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
         },
         credentials: 'include'
     });
 
     const json = await res.json();
-
-    if (res.status !== HttpStatusCode.CREATED) {
-        throw new ApiError('Failed to create company', res.status, json);
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to update company', res.status, json);
     }
-
-    return json as CreateCompanyResponse;
-}
-
-export async function getCompany(): Promise<Company> {
-    const response = await fetchWithAuth(getApiUrl('/company'))
-
-    if (!response.ok) {
-        throw new Error('Failed to fetch company')
-    }
-
-    return response.json()
-}
-
-export async function updateCompany(data: UpdateCompanyRequest): Promise<Company> {
-    const response = await fetchWithAuth(getApiUrl('/company'), {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-        throw new Error('Failed to update company')
-    }
-
-    return response.json()
+    return json as CompanyResponse;
 }
