@@ -6,9 +6,10 @@ import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
 
 import type { User, UserRole } from '@t';
+import { snakeToCamel } from '@/utils/object';
 
 export interface AuthResponse {
-    access_token: string;
+    accessToken: string;
     user: User;
 }
 
@@ -43,7 +44,7 @@ export async function register(
     }
 
     const json = await res.json();
-    return json as RegisterReponse;
+    return snakeToCamel(json);
 }
 
 /**
@@ -74,7 +75,7 @@ export async function signin(
     }
 
     const json = await res.json();
-    return json as SigninResponse;
+    return snakeToCamel(json);
 }
 
 export async function refreshAccessToken(): Promise<AuthResponse> {
@@ -97,7 +98,7 @@ export async function refreshAccessToken(): Promise<AuthResponse> {
     }
 
     const json = await res.json();
-    return json.access_token;
+    return snakeToCamel(json);
 }
 
 /**
@@ -123,7 +124,7 @@ export async function checkEmailVerifiedStatus(
             Authorization: `Bearer ${accessToken}`,
         },
     });
-  
+
     const body = await res.json();
     return res.status === HttpStatusCode.OK && body.verified;
 }

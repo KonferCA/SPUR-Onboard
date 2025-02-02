@@ -56,7 +56,7 @@ export interface UserDetailsFormProps {
 }
 
 export interface AuthResponse {
-    access_token: string;
+    accessToken: string;
     user: User;
 }
 
@@ -68,3 +68,4 @@ export interface CompanyFormErrors extends FormErrors {
     website?: string;
     linkedin?: string;
 }
+
