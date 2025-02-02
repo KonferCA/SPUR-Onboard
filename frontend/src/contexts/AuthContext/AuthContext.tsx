@@ -39,7 +39,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try {
                 const response = await refreshAccessToken();
                 if (response) {
-                    console.log(response);
                     setUser(snakeToCamel(response.user));
                     setAccessToken(response.accessToken);
                     setCompanyId(response.companyId);
