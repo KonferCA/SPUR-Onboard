@@ -1,13 +1,13 @@
 package v1_transactions
 
 import (
-	"net/http"
-	"github.com/labstack/echo/v4"
+	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/v1/v1_common"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"KonferCA/SPUR/internal/v1/v1_common"
-	"KonferCA/SPUR/internal/permissions"
-	"KonferCA/SPUR/db"
+	"github.com/labstack/echo/v4"
+	"net/http"
 )
 
 func (h *Handler) handleCreateTransaction(c echo.Context) error {
@@ -17,8 +17,8 @@ func (h *Handler) handleCreateTransaction(c echo.Context) error {
 	}
 
 	// Get user from context and verify permissions
-	user := c.Get("user").(*db.GetUserByIDRow)
-	if !permissions.HasAnyPermission(uint32(user.Permissions), 
+	user := c.Get("user").(*db.User)
+	if !permissions.HasAnyPermission(uint32(user.Permissions),
 		permissions.PermInvestInProjects,
 		permissions.PermManageInvestments,
 	) {

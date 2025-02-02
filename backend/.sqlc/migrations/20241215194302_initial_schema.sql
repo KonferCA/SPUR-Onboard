@@ -14,6 +14,11 @@ CREATE TYPE project_status AS ENUM (
 
 CREATE TABLE IF NOT EXISTS users (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    first_name text,
+    last_name text,
+    bio text,
+    title text,
+    linkedin text,
     email varchar UNIQUE NOT NULL,
     password char(256) NOT NULL,
     permissions integer NOT NULL DEFAULT 0,
@@ -34,6 +39,10 @@ CREATE TABLE IF NOT EXISTS companies (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_id uuid NOT NULL REFERENCES users(id),
     name varchar NOT NULL,
+    description text,
+    date_founded bigint NOT NULL DEFAULT extract(epoch from now()),
+    stages varchar[] DEFAULT '{}',
+    website varchar,
     wallet_address varchar,
     linkedin_url varchar NOT NULL,
     -- company_stages text[] NOT NULL,

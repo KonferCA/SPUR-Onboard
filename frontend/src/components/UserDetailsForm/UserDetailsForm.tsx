@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button, TextInput, TextArea } from '@/components';
+import { Button, TextInput, TextArea, ProgressSteps } from '@/components';
 import type { UserDetailsFormProps, UserDetailsData } from '@/types/auth';
 
 const LINKEDIN_REGEX = /^(https?:\/\/)?([\w]+\.)?linkedin\.com\/(pub|in|profile)\/([-a-zA-Z0-9]+)\/?$/;
@@ -45,7 +45,15 @@ export function UserDetailsForm({
 
     return (
         <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
-            <h2 className="text-2xl font-semibold text-center mb-6">Complete Your Profile</h2>
+            <ProgressSteps currentStep={1} />
+            
+            <h2 className="text-2xl font-semibold text-center mb-2">
+                Welcome to SPUR + Konfer
+            </h2>
+
+            <p className="text-gray-600 text-center mb-6">
+                To begin your application, please enter your details.
+            </p>
             
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -107,12 +115,22 @@ export function UserDetailsForm({
                         variant="primary"
                         disabled={isLoading || !isValid}
                     >
-                        {isLoading ? 'Saving Profile...' : 'Complete Profile'}
+                        {isLoading ? 'Saving Profile...' : 'Continue to Company Details'}
                     </Button>
                 </div>
+
+                <p className="text-gray-600 text-center text-sm mt-4">
+                    By registering, you agree to our{' '}
+                    <a href="#" className="text-blue-600">
+                        Terms of Service
+                    </a>{' '}
+                    and{' '}
+                    <a href="#" className="text-blue-600">
+                        Privacy Policy
+                    </a>
+                    .
+                </p>
             </form>
         </div>
     );
 }
-
-export default UserDetailsForm;

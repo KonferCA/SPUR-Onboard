@@ -7,6 +7,7 @@ import { SettingsPage } from '@/templates/SettingsPage/SettingsPage'
 import { getUserProfile, updateUserProfile } from '@/services'
 import { profileValidationSchema } from '@/types/user'
 import type { UpdateProfileRequest } from '@/types/user'
+import { useAuth } from '@/contexts/AuthContext'
 
 export const Route = createFileRoute('/user/_auth/_appshell/settings/profile')({
   component: ProfileSettings,
@@ -14,6 +15,7 @@ export const Route = createFileRoute('/user/_auth/_appshell/settings/profile')({
 
 function ProfileSettings() {
   const queryClient = useQueryClient()
+  const { accessToken } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'basics' | 'socials'>('basics')
   const [newPlatformUrl, setNewPlatformUrl] = useState('')
@@ -21,12 +23,19 @@ function ProfileSettings() {
   // Fetch profile data
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile'],
-    queryFn: getUserProfile,
+    queryFn: () => {
+      if (!accessToken) throw new Error('No access token')
+      return getUserProfile(accessToken)
+    },
+    enabled: !!accessToken // Only run query if we have a token
   })
 
   // Update profile mutation
   const { mutate: updateProfile, isLoading: isUpdating } = useMutation({
-    mutationFn: (data: UpdateProfileRequest) => updateUserProfile(data),
+    mutationFn: (data: UpdateProfileRequest) => {
+      if (!accessToken) throw new Error('No access token')
+      return updateUserProfile(accessToken, data)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] })
       setError(null)
@@ -63,6 +72,10 @@ function ProfileSettings() {
         setError(err.errors[0].message)
       }
     }
+  }
+
+  if (!accessToken) {
+    return <SettingsPage title="Personal Profile">Please log in to view your profile.</SettingsPage>
   }
 
   if (isLoading) {

@@ -39,11 +39,11 @@ export function ProtectedRoute({
             }
 
             // Check email verification if required
-            if (requireEmailVerified && !user.email_verified) {
-                navigate({ 
+            if (requireEmailVerified && !user.emailVerified) {
+                navigate({
                     to: '/auth',
                     replace: true,
-                    state: { step: 'verify-email', email: user.email }
+                    state: { step: 'verify-email', email: user.email },
                 });
                 return;
             }
@@ -64,7 +64,8 @@ export function ProtectedRoute({
 
     if (requiredRole && user.role !== requiredRole) return null;
 
-    if (requireEmailVerified && !user.email_verified) return null;
+    if (requireEmailVerified && !user.emailVerified) return null;
 
     return <>{children}</>;
 }
+

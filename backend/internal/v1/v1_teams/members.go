@@ -289,7 +289,7 @@ func (h *Handler) handleDeleteTeamMember(c echo.Context) error {
  *   - error if access is denied or validation fails
  */
 func (h *Handler) validateCompanyAccess(c echo.Context, companyID string, requireOwner bool) error {
-	user := c.Get("user").(*db.GetUserByIDRow)
+	user := c.Get("user").(*db.User)
 	if user == nil {
 		return v1_common.NewAuthError("User not found in context")
 	}

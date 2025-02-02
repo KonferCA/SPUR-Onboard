@@ -124,6 +124,7 @@ export async function getProjectFormQuestions(
     }
     const data = await response.json();
     return snakeToCamel(data);
+
 }
 
 // Transform backend response to frontend format
@@ -148,7 +149,7 @@ export async function createProject(
     accessToken: string
 ): Promise<ProjectResponse> {
     const url = getApiUrl('/project/new');
-
+  
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -218,7 +219,7 @@ export async function getProjectDetails(
             errorData || {}
         );
     }
-
+  
     const data = await response.json();
     return transformProject(data);
 }

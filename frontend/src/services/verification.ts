@@ -1,33 +1,50 @@
 import { getApiUrl } from '@/utils';
-import { fetchWithAuth } from './auth';
+import { ApiError } from './errors';
 import type { User } from '@/types';
 
 interface VerificationStatusResponse {
     verified: boolean;
 }
 
+/**
+ * Checks the user's email verification status.
+ * Uses cookies for authentication.
+ */
 export async function checkVerificationStatus(): Promise<boolean> {
+    const url = getApiUrl('/auth/ami-verified');
+    
     try {
-        const response = await fetchWithAuth(
-            getApiUrl('/auth/ami-verified'),
-            {
-                method: 'GET',
-                credentials: 'include'
+        const response = await fetch(url, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
             }
-        );
+        });
 
         if (!response.ok) {
-            throw new Error('Failed to check verification status');
+            const errorData = await response.json();
+            throw new ApiError('Failed to check verification status', response.status, errorData);
         }
 
         const data = await response.json() as VerificationStatusResponse;
         return data.verified;
     } catch (error) {
-        console.error('Error checking verification status:', error);
-        return false;
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(
+            'Failed to check verification status',
+            500,
+            { message: error instanceof Error ? error.message : 'Unknown error' }
+        );
     }
 }
 
+/**
+ * Handles the email verification redirect from the backend.
+ * Updates the auth state with the new verification status and token.
+ */
 export async function handleEmailVerificationRedirect(
     params: URLSearchParams,
     currentUser: User | null,
@@ -38,15 +55,30 @@ export async function handleEmailVerificationRedirect(
     const token = params.get('token');
     const email = params.get('email');
 
-    if (verified && token && email && currentUser) {
+    if (!verified || !token || !email || !currentUser) {
+        return false;
+    }
+
+    try {
+        // Update the user object with the new verification status
         const updatedUser = {
             ...currentUser,
             email_verified: true,
-            email: email
+            email: decodeURIComponent(email)
         };
-        setAuth(updatedUser, token, companyId);
+
+        // Update auth state with the new token and verified user
+        setAuth(updatedUser, decodeURIComponent(token), companyId);
         return true;
+    } catch (error) {
+        console.error('Error handling verification redirect:', error);
+        return false;
     }
-    
-    return false;
+}
+
+/**
+ * Helper function to check if we're currently on a verification redirect URL
+ */
+export function isVerificationRedirect(params: URLSearchParams): boolean {
+    return params.has('verified') && params.has('token') && params.has('email');
 }

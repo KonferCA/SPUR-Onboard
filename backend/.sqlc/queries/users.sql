@@ -1,5 +1,5 @@
 -- name: GetUserByID :one
-SELECT id, email, permissions, email_verified, token_salt
+SELECT *
 FROM users 
 WHERE id = $1;
 
@@ -20,3 +20,8 @@ SELECT * FROM users WHERE email = $1 LIMIT 1;
 
 -- name: UpdateUserEmailVerifiedStatus :exec
 UPDATE users SET email_verified = $1 WHERE id = $2;
+
+-- name: UpdateUserDetails :exec
+UPDATE users
+SET first_name = $1, last_name = $2, title = $3, bio = $4, linkedin = $5
+WHERE id = $6;
