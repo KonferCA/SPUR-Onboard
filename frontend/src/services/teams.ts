@@ -1,6 +1,7 @@
 import { TeamMember } from '@/types';
 import { getApiUrl, HttpStatusCode } from '@/utils';
 import { snakeToCamel } from '@/utils/object';
+import { ApiError } from './errors';
 
 export interface TeamMemberData {
     companyId: string;
@@ -61,4 +62,46 @@ export async function deleteTeamMember(
         throw new Error('Failed to remove team member');
     }
     return;
+}
+
+export interface UploadTeamMemberDocumentData {
+    memberId: string;
+    companyId: string;
+    docType: 'resume' | 'founders_agreement';
+    file: File;
+}
+
+export interface UploadTeamMemberDocumentResponse {
+    url: string;
+}
+
+export async function uploadTeamMemberDocument(
+    accessToken: string,
+    data: UploadTeamMemberDocumentData
+) {
+    const url = getApiUrl(
+        `/companies/${data.companyId}/team/${data.memberId}/${data.docType}/document`
+    );
+
+    const formData = new FormData();
+    formData.append('file', data.file);
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+    });
+
+    const json = await res.json();
+    if (res.status !== HttpStatusCode.CREATED) {
+        throw new ApiError(
+            'Failed to upload team member document',
+            res.status,
+            json
+        );
+    }
+
+    return snakeToCamel(json) as UploadTeamMemberDocumentResponse;
 }
