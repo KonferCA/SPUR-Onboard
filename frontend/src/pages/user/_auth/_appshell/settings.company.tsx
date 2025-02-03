@@ -6,6 +6,7 @@ import { SettingsPage } from '@/templates/SettingsPage/SettingsPage';
 import { FiCalendar } from 'react-icons/fi';
 import { getCompany, updateCompany } from '@/services';
 import type { UpdateCompanyRequest } from '@/types/company';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const Route = createFileRoute('/user/_auth/_appshell/settings/company')({
     component: CompanySettings,
@@ -22,17 +23,25 @@ const COMPANY_STAGES = [
 
 function CompanySettings() {
     const queryClient = useQueryClient();
+    const { accessToken } = useAuth();
     const [error, setError] = useState<string | null>(null);
 
     // Fetch company data
     const { data: company, isLoading } = useQuery({
         queryKey: ['company'],
-        queryFn: getCompany,
+        queryFn: () => {
+            if (!accessToken) throw new Error('No access token');
+            return getCompany(accessToken);
+        },
+        enabled: !!accessToken,
     });
 
     // Update company mutation
     const { mutate: updateProfile, isLoading: isUpdating } = useMutation({
-        mutationFn: (data: UpdateCompanyRequest) => updateCompany(data),
+        mutationFn: (data: UpdateCompanyRequest) => {
+            if (!accessToken) throw new Error('No access token');
+            return updateCompany(accessToken, data);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['company'] });
             setError(null);
@@ -54,8 +63,8 @@ function CompanySettings() {
         const formData = new FormData(e.currentTarget);
         const data = {
             name: formData.get('name') as string,
-            date_founded: formData.get('date_founded') as string,
-            stage: formData.get('stage') as string,
+            date_founded: Math.floor(new Date(formData.get('date_founded') as string).getTime() / 1000),
+            stages: [formData.get('stage') as string],
             description: formData.get('description') as string,
         };
 
@@ -105,7 +114,7 @@ function CompanySettings() {
                         </label>
                         <select
                             name="stage"
-                            defaultValue={company?.stage}
+                            defaultValue={company?.stages?.[0] || COMPANY_STAGES[0].value}
                             required
                             className="w-full rounded-md border border-gray-300 py-2 px-3 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
