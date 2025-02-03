@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, {
+    createContext,
+    useContext,
+    useState,
+    useEffect,
+    useRef,
+} from 'react';
 import { refreshAccessToken, signout } from '@/services/auth';
 import type { User } from '@/types';
 import { snakeToCamel } from '@/utils/object';
@@ -26,15 +32,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [companyId, setCompanyId] = useState<string | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const intervalRef = useRef<number | null>(null);
 
     useEffect(() => {
         const verifyAuth = async () => {
             try {
                 const response = await refreshAccessToken();
                 if (response) {
-                    console.log(response);
                     setUser(snakeToCamel(response.user));
-                    setAccessToken(response.access_token);
+                    setAccessToken(response.accessToken);
+                    setCompanyId(response.companyId);
+
+                    if (intervalRef.current === null) {
+                        const REFRESH_INTERVAL = 1000 * 60 * 4; // 4 minutes (just under the 5-minute backend token expiry)
+                        const refreshToken = async () => {
+                            try {
+                                const response = await refreshAccessToken();
+                                if (response) {
+                                    setAccessToken(response.accessToken);
+                                }
+                            } catch (error) {
+                                console.error(
+                                    'Failed to refresh token:',
+                                    error
+                                );
+                                clearAuth();
+                            }
+                        };
+                        intervalRef.current = window.setInterval(
+                            refreshToken,
+                            REFRESH_INTERVAL
+                        );
+                    }
                 }
             } catch (error) {
                 console.error('Initial auth verification failed:', error);
@@ -44,35 +73,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
 
         verifyAuth();
-    }, []);
-
-    useEffect(() => {
-        if (!accessToken) return;
-
-        const REFRESH_INTERVAL = 1000 * 60 * 4; // 4 minutes (just under the 5-minute backend token expiry)
-        let refreshTimeout: NodeJS.Timeout | null = null;
-
-        const refreshToken = async () => {
-            try {
-                const response = await refreshAccessToken();
-                if (response) {
-                    setUser(response.user);
-                    setAccessToken(response.access_token);
-                }
-            } catch (error) {
-                console.error('Failed to refresh token:', error);
-                clearAuth();
-            }
-        };
-
-        refreshTimeout = setInterval(refreshToken, REFRESH_INTERVAL);
 
         return () => {
-            if (refreshTimeout) {
-                clearInterval(refreshTimeout);
+            if (intervalRef.current !== null) {
+                window.clearInterval(intervalRef.current);
+                intervalRef.current = null;
             }
         };
-    }, [accessToken]);
+    }, []);
 
     const setAuth = (
         newUser: User | null,

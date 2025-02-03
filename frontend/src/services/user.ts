@@ -1,6 +1,10 @@
-import { getApiUrl } from '@utils';
+import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
-import type { ProfileResponse, UpdateProfileRequest } from '@/types/user';
+import type {
+    InitialProfileRequest,
+    ProfileResponse,
+    UpdateProfileRequest,
+} from '@/types/user';
 
 /**
  * Get the current user's profile
@@ -11,10 +15,10 @@ export async function getUserProfile(token: string): Promise<ProfileResponse> {
     const companyResponse = await fetch(companyUrl, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
         },
-        credentials: 'include'
+        credentials: 'include',
     });
 
     if (!companyResponse.ok) {
@@ -33,10 +37,10 @@ export async function getUserProfile(token: string): Promise<ProfileResponse> {
     const response = await fetch(url, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
         },
-        credentials: 'include'
+        credentials: 'include',
     });
 
     if (!response.ok) {
@@ -49,7 +53,7 @@ export async function getUserProfile(token: string): Promise<ProfileResponse> {
     }
 
     const { team_members } = await response.json();
-    
+
     // Find the team member that is the account owner
     const profile = team_members.find((member: any) => member.is_account_owner);
     if (!profile) {
@@ -71,10 +75,10 @@ export async function updateUserProfile(
     const companyResponse = await fetch(companyUrl, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
         },
-        credentials: 'include'
+        credentials: 'include',
     });
 
     if (!companyResponse.ok) {
@@ -93,10 +97,10 @@ export async function updateUserProfile(
     const teamResponse = await fetch(teamUrl, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
         },
-        credentials: 'include'
+        credentials: 'include',
     });
 
     if (!teamResponse.ok) {
@@ -109,7 +113,7 @@ export async function updateUserProfile(
     }
 
     const { team_members } = await teamResponse.json();
-    
+
     // Find the team member that is the account owner
     const profile = team_members.find((member: any) => member.is_account_owner);
     if (!profile) {
@@ -121,8 +125,8 @@ export async function updateUserProfile(
     const response = await fetch(url, {
         method: 'PUT',
         headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify(data),
@@ -139,3 +143,30 @@ export async function updateUserProfile(
 
     return response.json();
 }
+
+/**
+ * Sets the initial user profile
+ */
+export async function initialUserProfile(
+    token: string,
+    id: string,
+    data: InitialProfileRequest
+) {
+    const url = getApiUrl(`/users/${id}/details`);
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError(
+            'Failed to update user profile',
+            res.status,
+            await res.json()
+        );
+    }
+}
+

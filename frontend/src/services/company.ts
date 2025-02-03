@@ -25,9 +25,9 @@ export async function createCompany(
         name: data.name,
         description: data.description,
         date_founded: Math.floor(data.dateFounded.getTime() / 1000),
-        stages: data.stage.map(s => s.value),
+        stages: data.stage.map((s) => s.value),
         website: data.website,
-        linkedin_url: data.linkedin || "",
+        linkedin_url: data.linkedin || '',
     };
 
     const res = await fetch(url, {
@@ -35,11 +35,11 @@ export async function createCompany(
         body: JSON.stringify(body),
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
         },
-        credentials: 'include'
+        credentials: 'include',
     });
-    
+
     const json = await res.json();
     if (res.status !== HttpStatusCode.CREATED) {
         throw new ApiError('Failed to create company', res.status, json);
@@ -55,9 +55,9 @@ export async function getCompany(
         method: 'GET',
         headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
         },
-        credentials: 'include'
+        credentials: 'include',
     });
 
     if (res.status === HttpStatusCode.NOT_FOUND) {
@@ -79,8 +79,10 @@ export async function updateCompany(
     const body = {
         ...(data.name && { name: data.name }),
         ...(data.description && { description: data.description }),
-        ...(data.dateFounded && { date_founded: Math.floor(data.dateFounded.getTime() / 1000) }),
-        ...(data.stage && { stages: data.stage.map(s => s.value) }),
+        ...(data.dateFounded && {
+            date_founded: Math.floor(data.dateFounded.getTime() / 1000),
+        }),
+        ...(data.stage && { stages: data.stage.map((s) => s.value) }),
         ...(data.website && { website: data.website }),
         ...(data.linkedin && { linkedin_url: data.linkedin }),
     };
@@ -90,9 +92,9 @@ export async function updateCompany(
         body: JSON.stringify(body),
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
         },
-        credentials: 'include'
+        credentials: 'include',
     });
 
     const json = await res.json();
