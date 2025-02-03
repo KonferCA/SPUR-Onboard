@@ -5,5 +5,7 @@ export interface CardProps {
 }
 
 export const Card: FC<CardProps> = ({ children }) => {
-    return <div className="rounded-md shadow-md p-4">{children}</div>;
+    return (
+        <div className="rounded-md border border-gray-300 p-4">{children}</div>
+    );
 };
