@@ -1,5 +1,5 @@
 import { ProjectDocument, uploadDocument, removeDocument } from '@/services/project';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { FiUpload, FiX, FiLoader, FiCheck } from 'react-icons/fi';
 import { useDebounceFn } from '@/hooks';
 
