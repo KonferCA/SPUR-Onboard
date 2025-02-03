@@ -17,8 +17,6 @@ function ProfileSettings() {
     const queryClient = useQueryClient();
     const { accessToken, user } = useAuth();
     const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'basics' | 'socials'>('basics');
-    const [newPlatformUrl, setNewPlatformUrl] = useState('');
 
     // Fetch profile data
     const { data: profile, isLoading } = useQuery({
@@ -90,137 +88,58 @@ function ProfileSettings() {
 
     return (
         <SettingsPage title="Personal Profile" error={error}>
-            {/* Tabs */}
-            <div className="flex gap-2 mb-8">
-                <Button
-                    variant={activeTab === 'basics' ? 'outline' : 'secondary'}
-                    onClick={() => setActiveTab('basics')}
-                >
-                    Basics
-                </Button>
-                <Button
-                    variant={activeTab === 'socials' ? 'outline' : 'secondary'}
-                    onClick={() => setActiveTab('socials')}
-                >
-                    Socials
-                </Button>
-            </div>
-
-            {activeTab === 'basics' ? (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-4">
-                        <TextInput
-                            name="first_name"
-                            label="First name"
-                            defaultValue={profile?.first_name}
-                            required
-                        />
-                        <TextInput
-                            name="last_name"
-                            label="Last name"
-                            defaultValue={profile?.last_name}
-                            required
-                        />
-                        <TextInput
-                            name="email"
-                            label="Email"
-                            defaultValue={user.email}
-                            disabled
-                        />
-                        <TextInput
-                            name="title"
-                            label="Position/Title"
-                            defaultValue={profile?.title}
-                            required
-                        />
-                        <TextArea
-                            name="bio"
-                            label="Brief Biography"
-                            defaultValue={profile?.bio}
-                            required
-                            rows={4}
-                        />
-                    </div>
-
-                    <Button
-                        type="submit"
-                        variant="primary"
-                        liquid
-                        isLoading={isUpdating}
-                    >
-                        {isEmptyProfile ? 'Complete Profile' : 'Save Changes'}
-                    </Button>
-                </form>
-            ) : (
-                <div className="space-y-8">
-                    {/* Add new platform section */}
-                    <div>
-                        <h2 className="text-lg font-medium mb-2">Add a new platform</h2>
-                        <p className="text-gray-600 text-sm mb-4">
-                            Connect social media or related websites
-                        </p>
-                        <div className="space-y-4">
-                            <div className="flex gap-2">
-                                <TextInput
-                                    label="Paste URL link"
-                                    value={newPlatformUrl}
-                                    onChange={(e) => setNewPlatformUrl(e.target.value)}
-                                    placeholder="https://"
-                                    type="url"
-                                    className="flex-1"
-                                />
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => {
-                                        if (newPlatformUrl && profile) {
-                                            updateProfile({
-                                                first_name: profile.first_name,
-                                                last_name: profile.last_name,
-                                                title: profile.title,
-                                                bio: profile.bio,
-                                                linkedin_url: newPlatformUrl,
-                                            });
-                                            setNewPlatformUrl('');
-                                        }
-                                    }}
-                                    className="self-end"
-                                    disabled={!newPlatformUrl}
-                                >
-                                    Save
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Connected platforms */}
-                    <div>
-                        <h2 className="text-lg font-medium mb-4">Connected</h2>
-                        <div className="space-y-2">
-                            {profile?.linkedin_url && (
-                                <div className="flex items-center justify-between py-2 px-4 bg-gray-50 rounded-md">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm">
-                                            {profile.linkedin_url}
-                                        </span>
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => {
-                                            updateProfile({
-                                                ...profile,
-                                                linkedin_url: '',
-                                            });
-                                        }}
-                                        className="text-red-500 hover:text-red-600 !p-1"
-                                    >
-                                        Remove
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-4">
+                    <TextInput
+                        name="first_name"
+                        label="First name"
+                        defaultValue={profile?.first_name}
+                        required
+                    />
+                    <TextInput
+                        name="last_name"
+                        label="Last name"
+                        defaultValue={profile?.last_name}
+                        required
+                    />
+                    <TextInput
+                        name="email"
+                        label="Email"
+                        defaultValue={user.email}
+                        disabled
+                    />
+                    <TextInput
+                        name="title"
+                        label="Position/Title"
+                        defaultValue={profile?.title}
+                        required
+                    />
+                    <TextArea
+                        name="bio"
+                        label="Brief Biography"
+                        defaultValue={profile?.bio}
+                        required
+                        rows={4}
+                    />
+                    <TextInput
+                        name="linkedin_url"
+                        label="LinkedIn Profile URL"
+                        defaultValue={profile?.linkedin_url}
+                        placeholder="https://linkedin.com/in/your-profile"
+                        type="url"
+                        required
+                    />
                 </div>
-            )}
+
+                <Button
+                    type="submit"
+                    variant="primary"
+                    liquid
+                    isLoading={isUpdating}
+                >
+                    {isEmptyProfile ? 'Complete Profile' : 'Save Changes'}
+                </Button>
+            </form>
         </SettingsPage>
     );
 }
