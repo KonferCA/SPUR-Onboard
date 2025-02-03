@@ -138,7 +138,11 @@ export function groupProjectQuestions(
                             label: opt,
                             value: opt,
                         }));
-                        inputField.value.value = q.choices;
+                        inputField.value.value = q.choices.map((c, idx) => ({
+                            id: idx,
+                            label: c,
+                            value: c,
+                        }));
                         break;
                     default:
                         inputField.value.value = q.answer;
