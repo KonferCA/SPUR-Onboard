@@ -231,6 +231,20 @@ const NewProjectPage = () => {
                                                     );
                                                     break;
 
+                                                case 'date':
+                                                    const date = value as Date;
+                                                    dirtyInputRef.current.set(
+                                                        questionId,
+                                                        {
+                                                            question_id:
+                                                                questionId,
+                                                            answer: date
+                                                                .toISOString()
+                                                                .split('T')[0],
+                                                        }
+                                                    );
+                                                    break;
+
                                                 default:
                                                     dirtyInputRef.current.set(
                                                         questionId,

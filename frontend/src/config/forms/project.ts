@@ -144,6 +144,10 @@ export function groupProjectQuestions(
                             value: c,
                         }));
                         break;
+                    case 'date':
+                        const date = new Date(q.answer);
+                        inputField.value.value = date;
+                        break;
                     default:
                         inputField.value.value = q.answer;
                         break;
