@@ -12,6 +12,13 @@ INSERT INTO team_members (
 )
 RETURNING *; 
 
+-- name: UpdateTeamMemberDocuments :exec
+UPDATE team_members
+SET
+    resume_internal_url = $1,
+    founders_agreement_internal_url = $2
+WHERE id = $3 AND company_id = $4;
+
 -- name: ListTeamMembers :many
 SELECT * FROM team_members 
 WHERE company_id = $1 
