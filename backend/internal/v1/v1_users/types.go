@@ -13,3 +13,14 @@ type UpdateUserDetailsRequest struct {
 	Bio       string `json:"bio" validate:"required"`
 	LinkedIn  string `json:"linkedin" validate:"required,url"`
 }
+
+type UserDetailsResponse struct {
+	ID        string  `json:"id"`
+	FirstName string  `json:"first_name"`
+	LastName  string  `json:"last_name"`
+	Title     string  `json:"title"`
+	Bio       string  `json:"bio"`
+	LinkedIn  string  `json:"linkedin_url"`
+	CreatedAt string  `json:"created_at"`
+	UpdatedAt *string `json:"updated_at,omitempty"`
+}

@@ -9,31 +9,8 @@ import type {
 /**
  * Get the current user's profile
  */
-export async function getUserProfile(token: string): Promise<ProfileResponse> {
-    // First get the company
-    const companyUrl = getApiUrl('/v1/company');
-    const companyResponse = await fetch(companyUrl, {
-        method: 'GET',
-        headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-    });
-
-    if (!companyResponse.ok) {
-        const errorData = await companyResponse.json().catch(() => null);
-        throw new ApiError(
-            'Failed to fetch company',
-            companyResponse.status,
-            errorData || {}
-        );
-    }
-
-    const { id: companyId } = await companyResponse.json();
-
-    // Then get the team members
-    const url = getApiUrl(`/v1/companies/${companyId}/team`);
+export async function getUserProfile(token: string, userId: string): Promise<ProfileResponse> {
+    const url = getApiUrl(`users/${userId}/details`);
     const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -52,15 +29,7 @@ export async function getUserProfile(token: string): Promise<ProfileResponse> {
         );
     }
 
-    const { team_members } = await response.json();
-
-    // Find the team member that is the account owner
-    const profile = team_members.find((member: any) => member.is_account_owner);
-    if (!profile) {
-        throw new ApiError('Failed to find user profile', 404, {});
-    }
-
-    return profile;
+    return response.json();
 }
 
 /**
@@ -68,68 +37,24 @@ export async function getUserProfile(token: string): Promise<ProfileResponse> {
  */
 export async function updateUserProfile(
     token: string,
+    userId: string,
     data: UpdateProfileRequest
 ): Promise<ProfileResponse> {
-    // First get the company
-    const companyUrl = getApiUrl('/v1/company');
-    const companyResponse = await fetch(companyUrl, {
-        method: 'GET',
-        headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-    });
-
-    if (!companyResponse.ok) {
-        const errorData = await companyResponse.json().catch(() => null);
-        throw new ApiError(
-            'Failed to fetch company',
-            companyResponse.status,
-            errorData || {}
-        );
-    }
-
-    const { id: companyId } = await companyResponse.json();
-
-    // Then get the team members
-    const teamUrl = getApiUrl(`/v1/companies/${companyId}/team`);
-    const teamResponse = await fetch(teamUrl, {
-        method: 'GET',
-        headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-    });
-
-    if (!teamResponse.ok) {
-        const errorData = await teamResponse.json().catch(() => null);
-        throw new ApiError(
-            'Failed to fetch user profile',
-            teamResponse.status,
-            errorData || {}
-        );
-    }
-
-    const { team_members } = await teamResponse.json();
-
-    // Find the team member that is the account owner
-    const profile = team_members.find((member: any) => member.is_account_owner);
-    if (!profile) {
-        throw new ApiError('Failed to find user profile', 404, {});
-    }
-
-    // Finally update the team member
-    const url = getApiUrl(`/v1/companies/${companyId}/team/${profile.id}`);
+    const url = getApiUrl(`users/${userId}/details`);
     const response = await fetch(url, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+            firstName: data.first_name,
+            lastName: data.last_name,
+            title: data.title,
+            bio: data.bio,
+            linkedin: data.linkedin_url,
+        }),
     });
 
     if (!response.ok) {
@@ -141,7 +66,8 @@ export async function updateUserProfile(
         );
     }
 
-    return response.json();
+    // Return the updated profile
+    return getUserProfile(token, userId);
 }
 
 /**
@@ -152,7 +78,7 @@ export async function initialUserProfile(
     id: string,
     data: InitialProfileRequest
 ) {
-    const url = getApiUrl(`/users/${id}/details`);
+    const url = getApiUrl(`users/${id}/details`);
     const res = await fetch(url, {
         method: 'POST',
         headers: {
