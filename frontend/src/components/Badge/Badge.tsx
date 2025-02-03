@@ -6,7 +6,7 @@ export interface BadgeProps {
 
 export const Badge: FC<BadgeProps> = ({ text }) => {
     return (
-        <div className="rounded-full border border-gray-300 px-2 py-1 min-w-16 flex items-center justify-center">
+        <div className="rounded-full border border-gray-300 px-2 py-1 min-w-20 flex items-center justify-center">
             <span>{text}</span>
         </div>
     );
