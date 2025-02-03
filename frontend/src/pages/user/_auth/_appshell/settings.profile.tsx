@@ -15,29 +15,29 @@ export const Route = createFileRoute('/user/_auth/_appshell/settings/profile')({
 
 function ProfileSettings() {
     const queryClient = useQueryClient();
-    const { accessToken } = useAuth();
+    const { accessToken, user } = useAuth();
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'basics' | 'socials'>('basics');
     const [newPlatformUrl, setNewPlatformUrl] = useState('');
 
     // Fetch profile data
     const { data: profile, isLoading } = useQuery({
-        queryKey: ['profile'],
+        queryKey: ['profile', user?.id],
         queryFn: () => {
-            if (!accessToken) throw new Error('No access token');
-            return getUserProfile(accessToken);
+            if (!accessToken || !user?.id) throw new Error('No access token or user ID');
+            return getUserProfile(accessToken, user.id);
         },
-        enabled: !!accessToken, // Only run query if we have a token
+        enabled: !!accessToken && !!user?.id, // Only run query if we have a token and user ID
     });
 
     // Update profile mutation
     const { mutate: updateProfile, isLoading: isUpdating } = useMutation({
         mutationFn: (data: UpdateProfileRequest) => {
-            if (!accessToken) throw new Error('No access token');
-            return updateUserProfile(accessToken, data);
+            if (!accessToken || !user?.id) throw new Error('No access token or user ID');
+            return updateUserProfile(accessToken, user.id, data);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
             setError(null);
         },
         onError: (err) => {
@@ -60,7 +60,7 @@ function ProfileSettings() {
             last_name: formData.get('last_name') as string,
             title: formData.get('title') as string,
             bio: formData.get('bio') as string,
-            linkedin_url: (formData.get('linkedin_url') as string) || undefined,
+            linkedin_url: formData.get('linkedin_url') as string,
         };
 
         try {
@@ -74,7 +74,7 @@ function ProfileSettings() {
         }
     };
 
-    if (!accessToken) {
+    if (!accessToken || !user) {
         return (
             <SettingsPage title="Personal Profile">
                 Please log in to view your profile.
@@ -85,6 +85,8 @@ function ProfileSettings() {
     if (isLoading) {
         return <SettingsPage title="Personal Profile">Loading...</SettingsPage>;
     }
+
+    const isEmptyProfile = !profile?.first_name && !profile?.last_name && !profile?.title && !profile?.bio;
 
     return (
         <SettingsPage title="Personal Profile" error={error}>
@@ -122,7 +124,7 @@ function ProfileSettings() {
                         <TextInput
                             name="email"
                             label="Email"
-                            defaultValue="amir@konfer.ca"
+                            defaultValue={user.email}
                             disabled
                         />
                         <TextInput
@@ -146,16 +148,14 @@ function ProfileSettings() {
                         liquid
                         isLoading={isUpdating}
                     >
-                        Save
+                        {isEmptyProfile ? 'Complete Profile' : 'Save Changes'}
                     </Button>
                 </form>
             ) : (
                 <div className="space-y-8">
                     {/* Add new platform section */}
                     <div>
-                        <h2 className="text-lg font-medium mb-2">
-                            Add a new platform
-                        </h2>
+                        <h2 className="text-lg font-medium mb-2">Add a new platform</h2>
                         <p className="text-gray-600 text-sm mb-4">
                             Connect social media or related websites
                         </p>
@@ -164,9 +164,7 @@ function ProfileSettings() {
                                 <TextInput
                                     label="Paste URL link"
                                     value={newPlatformUrl}
-                                    onChange={(e) =>
-                                        setNewPlatformUrl(e.target.value)
-                                    }
+                                    onChange={(e) => setNewPlatformUrl(e.target.value)}
                                     placeholder="https://"
                                     type="url"
                                     className="flex-1"
@@ -174,13 +172,19 @@ function ProfileSettings() {
                                 <Button
                                     variant="secondary"
                                     onClick={() => {
-                                        console.log(
-                                            'Saving link:',
-                                            newPlatformUrl
-                                        );
-                                        setNewPlatformUrl('');
+                                        if (newPlatformUrl && profile) {
+                                            updateProfile({
+                                                first_name: profile.first_name,
+                                                last_name: profile.last_name,
+                                                title: profile.title,
+                                                bio: profile.bio,
+                                                linkedin_url: newPlatformUrl,
+                                            });
+                                            setNewPlatformUrl('');
+                                        }
                                     }}
                                     className="self-end"
+                                    disabled={!newPlatformUrl}
                                 >
                                     Save
                                 </Button>
@@ -196,17 +200,17 @@ function ProfileSettings() {
                                 <div className="flex items-center justify-between py-2 px-4 bg-gray-50 rounded-md">
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm">
-                                            LinkedIn.com/company/konfer
+                                            {profile.linkedin_url}
                                         </span>
                                     </div>
                                     <Button
                                         variant="outline"
-                                        onClick={() =>
-                                            console.log(
-                                                'Remove:',
-                                                profile.linkedin_url
-                                            )
-                                        }
+                                        onClick={() => {
+                                            updateProfile({
+                                                ...profile,
+                                                linkedin_url: '',
+                                            });
+                                        }}
                                         className="text-red-500 hover:text-red-600 !p-1"
                                     >
                                         Remove
