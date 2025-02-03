@@ -1,14 +1,18 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/user/_auth/_appshell/dashboard')({
-  component: RouteComponent,
-})
+    component: RouteComponent,
+});
 
 function RouteComponent() {
-  return (
-    <div>
-      Hello "/user/dashbaord"!
-      <Link to="/user/project/new">project new</Link>
-    </div>
-  )
+    return (
+        <div>
+            <div>
+                <nav></nav>
+            </div>
+            <div>
+                <main></main>
+            </div>
+        </div>
+    );
 }
