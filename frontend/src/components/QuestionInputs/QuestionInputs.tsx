@@ -80,13 +80,16 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
 
             case 'multiselect':
             case 'select':
-                const selectedOption = field.type === 'multiselect' ? field.value.value : field.options?.find(
-                    (opt) => opt.value === field.value.value[0]
-                ) || {
-                    id: -1,
-                    label: '',
-                    value: '',
-                };
+                const selectedOption =
+                    field.type === 'multiselect'
+                        ? field.value.value
+                        : field.options?.find(
+                              (opt) => opt.value === field.value.value[0]?.value
+                          ) || {
+                              id: -1,
+                              label: '',
+                              value: '',
+                          };
 
                 return (
                     <Dropdown
@@ -96,9 +99,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                             onChange(
                                 question.id,
                                 field.key,
-                                Array.isArray(selected)
-                                    ? selected
-                                    : [selected.value]
+                                Array.isArray(selected) ? selected : [selected]
                             )
                         }
                         multiple={field.type === 'multiselect'}

@@ -363,7 +363,7 @@ const NewProjectPage = () => {
         if (!dependentQuestion) return true;
 
         // Find the answer in the grouped questions
-        let dependentAnswer = '';
+        let dependentAnswer: string | DropdownOption[] = '';
         for (const group of groupedQuestions) {
             for (const subSection of group.subSections) {
                 const foundQuestion = subSection.questions.find(
@@ -379,17 +379,40 @@ const NewProjectPage = () => {
             }
         }
 
-        switch (question.conditionType?.conditionTypeEnum) {
-            case 'empty':
-                return !dependentAnswer;
-            case 'not_empty':
-                return !!dependentAnswer;
-            case 'equals':
-                return dependentAnswer === question.conditionValue;
-            case 'contains':
-                return dependentAnswer.includes(question.conditionValue || '');
-            default:
-                return true;
+        if (Array.isArray(dependentAnswer)) {
+            switch (question.conditionType?.conditionTypeEnum) {
+                case 'empty':
+                    return dependentAnswer.length === 0;
+                case 'not_empty':
+                    return dependentAnswer.length > 0;
+                case 'equals':
+                    return dependentAnswer.every(
+                        (a) => a.value === question.conditionValue
+                    );
+                case 'contains':
+                    return (
+                        dependentAnswer.findIndex(
+                            (a) => a.value === question.conditionValue
+                        ) !== -1
+                    );
+                default:
+                    return true;
+            }
+        } else {
+            switch (question.conditionType?.conditionTypeEnum) {
+                case 'empty':
+                    return !dependentAnswer;
+                case 'not_empty':
+                    return !!dependentAnswer;
+                case 'equals':
+                    return dependentAnswer === question.conditionValue;
+                case 'contains':
+                    return dependentAnswer.includes(
+                        question.conditionValue || ''
+                    );
+                default:
+                    return true;
+            }
         }
     };
 
