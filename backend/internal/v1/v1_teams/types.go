@@ -38,6 +38,10 @@ type UpdateTeamMemberRequest struct {
 	LinkedinUrl string `json:"linkedin_url,omitempty" validate:"omitempty,url"`
 }
 
+type UploadTeamMemberDocumentResponse struct {
+	Url string `json:"url"`
+}
+
 // Response types
 type TeamMemberResponse struct {
 	ID             string `json:"id"`
