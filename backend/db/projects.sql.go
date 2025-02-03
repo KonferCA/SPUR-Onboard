@@ -272,7 +272,7 @@ func (q *Queries) DeleteProjectDocument(ctx context.Context, arg DeleteProjectDo
 }
 
 const getCompanyByUserID = `-- name: GetCompanyByUserID :one
-SELECT id, owner_id, name, wallet_address, linkedin_url, created_at, updated_at FROM companies 
+SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at FROM companies 
 WHERE owner_id = $1 
 LIMIT 1
 `
@@ -284,6 +284,10 @@ func (q *Queries) GetCompanyByUserID(ctx context.Context, ownerID string) (Compa
 		&i.ID,
 		&i.OwnerID,
 		&i.Name,
+		&i.Description,
+		&i.DateFounded,
+		&i.Stages,
+		&i.Website,
 		&i.WalletAddress,
 		&i.LinkedinUrl,
 		&i.CreatedAt,
@@ -818,20 +822,36 @@ func (q *Queries) GetQuestionsByProject(ctx context.Context, arg GetQuestionsByP
 }
 
 const listCompanyProjects = `-- name: ListCompanyProjects :many
-SELECT projects.id, projects.company_id, projects.title, projects.description, projects.status, projects.created_at, projects.updated_at FROM projects
-WHERE company_id = $1
-ORDER BY created_at DESC
+SELECT p.id, p.company_id, p.title, p.description, p.status, p.created_at, p.updated_at, COUNT(d.id) as document_count, COUNT(t.id) as team_member_count
+FROM projects p
+LEFT JOIN project_documents d ON d.project_id = p.id
+LEFT JOIN team_members t ON t.company_id = $1
+WHERE p.company_id = $1
+GROUP BY p.id
+ORDER BY p.created_at DESC
 `
 
-func (q *Queries) ListCompanyProjects(ctx context.Context, companyID string) ([]Project, error) {
+type ListCompanyProjectsRow struct {
+	ID              string        `json:"id"`
+	CompanyID       string        `json:"company_id"`
+	Title           string        `json:"title"`
+	Description     *string       `json:"description"`
+	Status          ProjectStatus `json:"status"`
+	CreatedAt       int64         `json:"created_at"`
+	UpdatedAt       int64         `json:"updated_at"`
+	DocumentCount   int64         `json:"document_count"`
+	TeamMemberCount int64         `json:"team_member_count"`
+}
+
+func (q *Queries) ListCompanyProjects(ctx context.Context, companyID string) ([]ListCompanyProjectsRow, error) {
 	rows, err := q.db.Query(ctx, listCompanyProjects, companyID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Project
+	var items []ListCompanyProjectsRow
 	for rows.Next() {
-		var i Project
+		var i ListCompanyProjectsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.CompanyID,
@@ -840,6 +860,8 @@ func (q *Queries) ListCompanyProjects(ctx context.Context, companyID string) ([]
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.DocumentCount,
+			&i.TeamMemberCount,
 		); err != nil {
 			return nil, err
 		}
