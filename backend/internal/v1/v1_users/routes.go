@@ -18,4 +18,10 @@ func SetupUserRoutes(e *echo.Group, s interfaces.CoreServer) {
 		h.handleUpdateUserDetails,
 		middleware.Auth(s.GetDB()),
 	)
+
+	e.GET(
+		"/users/:id/details",
+		h.handleGetUserDetails,
+		middleware.Auth(s.GetDB()),
+	)
 }
