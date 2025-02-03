@@ -25,3 +25,16 @@ UPDATE users SET email_verified = $1 WHERE id = $2;
 UPDATE users
 SET first_name = $1, last_name = $2, title = $3, bio = $4, linkedin = $5
 WHERE id = $6;
+
+-- name: GetUserDetails :one
+SELECT 
+    id,
+    COALESCE(first_name, '') as first_name,
+    COALESCE(last_name, '') as last_name,
+    COALESCE(title, '') as title,
+    COALESCE(bio, '') as bio,
+    COALESCE(linkedin, '') as linkedin,
+    COALESCE(created_at, EXTRACT(EPOCH FROM NOW())::bigint) as created_at,
+    NULLIF(updated_at, 0)::bigint as updated_at
+FROM users
+WHERE id = $1;
