@@ -101,14 +101,16 @@ type AnswerResponse struct {
 }
 
 type CommentResponse struct {
-	ID          string `json:"id"`
-	ProjectID   string `json:"project_id"`
-	TargetID    string `json:"target_id"`
-	Comment     string `json:"comment"`
-	CommenterID string `json:"commenter_id"`
-	Resolved    bool   `json:"resolved"`
-	CreatedAt   int64  `json:"created_at"`
-	UpdatedAt   int64  `json:"updated_at"`
+	ID                 string  `json:"id"`
+	ProjectID          string  `json:"project_id"`
+	TargetID           string  `json:"target_id"`
+	Comment            string  `json:"comment"`
+	CommenterID        string  `json:"commenter_id"`
+	Resolved           bool    `json:"resolved"`
+	CreatedAt          int64   `json:"created_at"`
+	UpdatedAt          int64   `json:"updated_at"`
+	CommenterFirstName *string `json:"commenter_first_name"`
+	CommenterLastName  *string `json:"commenter_last_name"`
 }
 
 type CommentsResponse struct {

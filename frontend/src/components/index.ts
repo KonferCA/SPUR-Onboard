@@ -50,3 +50,6 @@ export type { ProjectCardProps } from './ProjectCard';
 
 export { Badge } from './Badge';
 export type { BadgeProps } from './Badge';
+
+export { CommentBubble } from './CommentBubble';
+export type { CommentBubbleProps } from './CommentBubble';
