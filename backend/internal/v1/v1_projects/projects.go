@@ -2,13 +2,16 @@ package v1_projects
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 )
 
 /*
@@ -416,4 +419,40 @@ func (h *Handler) handleCreateAnswer(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, answer)
+}
+
+func (h *Handler) handleUpdateProjectStatus(c echo.Context) error {
+	projectID := c.Param("id")
+	if _, err := uuid.Parse(projectID); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request. Invalid project id", err)
+	}
+
+	var req UpdateProjectStatusRequest
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
+	}
+
+	user, err := middleware.GetUserFromContext(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	queries := h.server.GetQueries()
+
+	company, err := queries.GetCompanyByOwnerID(c.Request().Context(), user.ID)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "User does not own any company", err)
+	}
+
+	project, err := queries.GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{ID: projectID, CompanyID: company.ID})
+	if err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Failed to find project to update status", err)
+	}
+
+	err = queries.UpdateProjectStatus(c.Request().Context(), db.UpdateProjectStatusParams{Status: req.Status, ID: project.ID})
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to update project status", err)
+	}
+
+	return v1_common.Success(c, http.StatusOK, "Project status updated")
 }
