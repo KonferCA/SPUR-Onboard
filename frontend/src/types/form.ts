@@ -58,6 +58,8 @@ export interface TeamMember {
     founderAgreementExternalUrl?: string;
     founderAgreementInternalUrl?: string;
     isAccountOwner: boolean;
+    created_at: number;
+    updated_at?: number;
 }
 
 export interface SocialLink {

@@ -7,6 +7,22 @@ export interface TeamMemberData {
     companyId: string;
     member: TeamMember;
 }
+
+export interface TeamMembersResponse {
+    teamMembers: TeamMember[];
+}
+
+interface TeamMemberResponse {
+    id: string;
+    first_name: string;
+    last_name: string;
+    title: string;
+    bio: string;
+    linkedin_url: string;
+    is_account_owner: boolean;
+    created_at: string;
+}
+
 export async function addTeamMember(accessToken: string, data: TeamMemberData) {
     const url = getApiUrl(`/companies/${data.companyId}/team`);
     const res = await fetch(url, {
@@ -62,6 +78,28 @@ export async function deleteTeamMember(
         throw new Error('Failed to remove team member');
     }
     return;
+}
+
+export async function getTeamMembers(
+    accessToken: string,
+    companyId: string
+): Promise<TeamMember[]> {
+    const url = getApiUrl(`/companies/${companyId}/team`);
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (res.status !== HttpStatusCode.OK) {
+        throw new Error('Failed to fetch team members');
+    }
+
+    const json = await res.json();
+    const teamMembers = json.team_members || [] as TeamMemberResponse[];
+    return teamMembers.map((member: TeamMemberResponse) => snakeToCamel(member) as TeamMember);
 }
 
 export interface UploadTeamMemberDocumentData {

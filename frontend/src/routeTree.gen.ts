@@ -19,19 +19,20 @@ import { Route as UserIndexImport } from './pages/user/index'
 import { Route as AdminIndexImport } from './pages/admin/index'
 import { Route as UserAuthImport } from './pages/user/_auth'
 import { Route as AdminAuthImport } from './pages/admin/_auth'
-import { Route as AdminAppshellImport } from './pages/admin/_appshell'
 import { Route as UserAuthAppshellImport } from './pages/user/_auth/_appshell'
+import { Route as AdminAuthAppshellImport } from './pages/admin/_auth/_appshell'
 import { Route as UserAuthProjectNewImport } from './pages/user/_auth/project/new'
 import { Route as UserAuthAppshellSettingsImport } from './pages/user/_auth/_appshell/settings'
 import { Route as UserAuthAppshellProjectsImport } from './pages/user/_auth/_appshell/projects'
 import { Route as UserAuthAppshellDashboardImport } from './pages/user/_auth/_appshell/dashboard'
-import { Route as AdminAuthAppshellDashboardImport } from './pages/admin/_auth._appshell.dashboard'
+import { Route as AdminAuthAppshellDashboardImport } from './pages/admin/_auth/_appshell/dashboard'
 import { Route as AdminAuthAppshellProjectsIndexImport } from './pages/admin/_auth/_appshell/projects/index'
 import { Route as UserAuthAppshellSettingsWalletImport } from './pages/user/_auth/_appshell/settings.wallet'
 import { Route as UserAuthAppshellSettingsProfileImport } from './pages/user/_auth/_appshell/settings.profile'
 import { Route as UserAuthAppshellSettingsCompanyImport } from './pages/user/_auth/_appshell/settings.company'
 import { Route as UserAuthAppshellCompanyNewImport } from './pages/user/_auth/_appshell/company.new'
 import { Route as AdminAuthAppshellProjectsProjectIdSubmissionImport } from './pages/admin/_auth/_appshell/projects/$projectId.submission'
+import { Route as AdminAuthAppshellProjectsProjectIdOverviewImport } from './pages/admin/_auth/_appshell/projects/$projectId.overview'
 import { Route as AdminAuthAppshellProjectsProjectIdDetailsImport } from './pages/admin/_auth/_appshell/projects/$projectId.details'
 
 // Create Virtual Routes
@@ -87,14 +88,14 @@ const AdminAuthRoute = AdminAuthImport.update({
   getParentRoute: () => AdminRoute,
 } as any)
 
-const AdminAppshellRoute = AdminAppshellImport.update({
-  id: '/_appshell',
-  getParentRoute: () => AdminRoute,
-} as any)
-
 const UserAuthAppshellRoute = UserAuthAppshellImport.update({
   id: '/_appshell',
   getParentRoute: () => UserAuthRoute,
+} as any)
+
+const AdminAuthAppshellRoute = AdminAuthAppshellImport.update({
+  id: '/_appshell',
+  getParentRoute: () => AdminAuthRoute,
 } as any)
 
 const UserAuthProjectNewRoute = UserAuthProjectNewImport.update({
@@ -123,17 +124,17 @@ const UserAuthAppshellDashboardRoute = UserAuthAppshellDashboardImport.update({
 
 const AdminAuthAppshellDashboardRoute = AdminAuthAppshellDashboardImport.update(
   {
-    id: '/_appshell/dashboard',
+    id: '/dashboard',
     path: '/dashboard',
-    getParentRoute: () => AdminAuthRoute,
+    getParentRoute: () => AdminAuthAppshellRoute,
   } as any,
 )
 
 const AdminAuthAppshellProjectsIndexRoute =
   AdminAuthAppshellProjectsIndexImport.update({
-    id: '/_appshell/projects/',
+    id: '/projects/',
     path: '/projects/',
-    getParentRoute: () => AdminAuthRoute,
+    getParentRoute: () => AdminAuthAppshellRoute,
   } as any)
 
 const UserAuthAppshellSettingsWalletRoute =
@@ -167,16 +168,23 @@ const UserAuthAppshellCompanyNewRoute = UserAuthAppshellCompanyNewImport.update(
 
 const AdminAuthAppshellProjectsProjectIdSubmissionRoute =
   AdminAuthAppshellProjectsProjectIdSubmissionImport.update({
-    id: '/_appshell/projects/$projectId/submission',
+    id: '/projects/$projectId/submission',
     path: '/projects/$projectId/submission',
-    getParentRoute: () => AdminAuthRoute,
+    getParentRoute: () => AdminAuthAppshellRoute,
+  } as any)
+
+const AdminAuthAppshellProjectsProjectIdOverviewRoute =
+  AdminAuthAppshellProjectsProjectIdOverviewImport.update({
+    id: '/projects/$projectId/overview',
+    path: '/projects/$projectId/overview',
+    getParentRoute: () => AdminAuthAppshellRoute,
   } as any)
 
 const AdminAuthAppshellProjectsProjectIdDetailsRoute =
   AdminAuthAppshellProjectsProjectIdDetailsImport.update({
-    id: '/_appshell/projects/$projectId/details',
+    id: '/projects/$projectId/details',
     path: '/projects/$projectId/details',
-    getParentRoute: () => AdminAuthRoute,
+    getParentRoute: () => AdminAuthAppshellRoute,
   } as any)
 
 // Populate the FileRoutesByPath interface
@@ -204,19 +212,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminImport
       parentRoute: typeof rootRoute
     }
-    '/admin/_appshell': {
-      id: '/admin/_appshell'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminAppshellImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/_auth': {
       id: '/admin/_auth'
-      path: ''
+      path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminAuthImport
-      parentRoute: typeof AdminImport
+      parentRoute: typeof AdminRoute
     }
     '/user': {
       id: '/user'
@@ -246,6 +247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UserIndexImport
       parentRoute: typeof UserImport
     }
+    '/admin/_auth/_appshell': {
+      id: '/admin/_auth/_appshell'
+      path: ''
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminAuthAppshellImport
+      parentRoute: typeof AdminAuthImport
+    }
     '/user/_auth/_appshell': {
       id: '/user/_auth/_appshell'
       path: ''
@@ -258,7 +266,7 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/admin/dashboard'
       preLoaderRoute: typeof AdminAuthAppshellDashboardImport
-      parentRoute: typeof AdminAuthImport
+      parentRoute: typeof AdminAuthAppshellImport
     }
     '/user/_auth/_appshell/dashboard': {
       id: '/user/_auth/_appshell/dashboard'
@@ -321,41 +329,62 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/admin/projects'
       preLoaderRoute: typeof AdminAuthAppshellProjectsIndexImport
-      parentRoute: typeof AdminAuthImport
+      parentRoute: typeof AdminAuthAppshellImport
     }
     '/admin/_auth/_appshell/projects/$projectId/details': {
       id: '/admin/_auth/_appshell/projects/$projectId/details'
       path: '/projects/$projectId/details'
       fullPath: '/admin/projects/$projectId/details'
       preLoaderRoute: typeof AdminAuthAppshellProjectsProjectIdDetailsImport
-      parentRoute: typeof AdminAuthImport
+      parentRoute: typeof AdminAuthAppshellImport
+    }
+    '/admin/_auth/_appshell/projects/$projectId/overview': {
+      id: '/admin/_auth/_appshell/projects/$projectId/overview'
+      path: '/projects/$projectId/overview'
+      fullPath: '/admin/projects/$projectId/overview'
+      preLoaderRoute: typeof AdminAuthAppshellProjectsProjectIdOverviewImport
+      parentRoute: typeof AdminAuthAppshellImport
     }
     '/admin/_auth/_appshell/projects/$projectId/submission': {
       id: '/admin/_auth/_appshell/projects/$projectId/submission'
       path: '/projects/$projectId/submission'
       fullPath: '/admin/projects/$projectId/submission'
       preLoaderRoute: typeof AdminAuthAppshellProjectsProjectIdSubmissionImport
-      parentRoute: typeof AdminAuthImport
+      parentRoute: typeof AdminAuthAppshellImport
     }
   }
 }
 
 // Create and export the route tree
 
-interface AdminAuthRouteChildren {
+interface AdminAuthAppshellRouteChildren {
   AdminAuthAppshellDashboardRoute: typeof AdminAuthAppshellDashboardRoute
   AdminAuthAppshellProjectsIndexRoute: typeof AdminAuthAppshellProjectsIndexRoute
   AdminAuthAppshellProjectsProjectIdDetailsRoute: typeof AdminAuthAppshellProjectsProjectIdDetailsRoute
+  AdminAuthAppshellProjectsProjectIdOverviewRoute: typeof AdminAuthAppshellProjectsProjectIdOverviewRoute
   AdminAuthAppshellProjectsProjectIdSubmissionRoute: typeof AdminAuthAppshellProjectsProjectIdSubmissionRoute
 }
 
-const AdminAuthRouteChildren: AdminAuthRouteChildren = {
+const AdminAuthAppshellRouteChildren: AdminAuthAppshellRouteChildren = {
   AdminAuthAppshellDashboardRoute: AdminAuthAppshellDashboardRoute,
   AdminAuthAppshellProjectsIndexRoute: AdminAuthAppshellProjectsIndexRoute,
   AdminAuthAppshellProjectsProjectIdDetailsRoute:
     AdminAuthAppshellProjectsProjectIdDetailsRoute,
+  AdminAuthAppshellProjectsProjectIdOverviewRoute:
+    AdminAuthAppshellProjectsProjectIdOverviewRoute,
   AdminAuthAppshellProjectsProjectIdSubmissionRoute:
     AdminAuthAppshellProjectsProjectIdSubmissionRoute,
+}
+
+const AdminAuthAppshellRouteWithChildren =
+  AdminAuthAppshellRoute._addFileChildren(AdminAuthAppshellRouteChildren)
+
+interface AdminAuthRouteChildren {
+  AdminAuthAppshellRoute: typeof AdminAuthAppshellRouteWithChildren
+}
+
+const AdminAuthRouteChildren: AdminAuthRouteChildren = {
+  AdminAuthAppshellRoute: AdminAuthAppshellRouteWithChildren,
 }
 
 const AdminAuthRouteWithChildren = AdminAuthRoute._addFileChildren(
@@ -363,13 +392,11 @@ const AdminAuthRouteWithChildren = AdminAuthRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
-  AdminAppshellRoute: typeof AdminAppshellRoute
   AdminAuthRoute: typeof AdminAuthRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
-  AdminAppshellRoute: AdminAppshellRoute,
   AdminAuthRoute: AdminAuthRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -440,7 +467,7 @@ const UserRouteWithChildren = UserRoute._addFileChildren(UserRouteChildren)
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/admin': typeof AdminAuthRouteWithChildren
+  '/admin': typeof AdminAuthAppshellRouteWithChildren
   '/user': typeof UserAuthAppshellRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/user/': typeof UserIndexRoute
@@ -455,13 +482,14 @@ export interface FileRoutesByFullPath {
   '/user/settings/wallet': typeof UserAuthAppshellSettingsWalletRoute
   '/admin/projects': typeof AdminAuthAppshellProjectsIndexRoute
   '/admin/projects/$projectId/details': typeof AdminAuthAppshellProjectsProjectIdDetailsRoute
+  '/admin/projects/$projectId/overview': typeof AdminAuthAppshellProjectsProjectIdOverviewRoute
   '/admin/projects/$projectId/submission': typeof AdminAuthAppshellProjectsProjectIdSubmissionRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/admin': typeof AdminIndexRoute
+  '/admin': typeof AdminAuthAppshellRouteWithChildren
   '/user': typeof UserAuthAppshellRouteWithChildren
   '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute
   '/user/dashboard': typeof UserAuthAppshellDashboardRoute
@@ -474,6 +502,7 @@ export interface FileRoutesByTo {
   '/user/settings/wallet': typeof UserAuthAppshellSettingsWalletRoute
   '/admin/projects': typeof AdminAuthAppshellProjectsIndexRoute
   '/admin/projects/$projectId/details': typeof AdminAuthAppshellProjectsProjectIdDetailsRoute
+  '/admin/projects/$projectId/overview': typeof AdminAuthAppshellProjectsProjectIdOverviewRoute
   '/admin/projects/$projectId/submission': typeof AdminAuthAppshellProjectsProjectIdSubmissionRoute
 }
 
@@ -482,12 +511,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AdminRouteWithChildren
-  '/admin/_appshell': typeof AdminAppshellRoute
   '/admin/_auth': typeof AdminAuthRouteWithChildren
   '/user': typeof UserRouteWithChildren
   '/user/_auth': typeof UserAuthRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/user/': typeof UserIndexRoute
+  '/admin/_auth/_appshell': typeof AdminAuthAppshellRouteWithChildren
   '/user/_auth/_appshell': typeof UserAuthAppshellRouteWithChildren
   '/admin/_auth/_appshell/dashboard': typeof AdminAuthAppshellDashboardRoute
   '/user/_auth/_appshell/dashboard': typeof UserAuthAppshellDashboardRoute
@@ -500,6 +529,7 @@ export interface FileRoutesById {
   '/user/_auth/_appshell/settings/wallet': typeof UserAuthAppshellSettingsWalletRoute
   '/admin/_auth/_appshell/projects/': typeof AdminAuthAppshellProjectsIndexRoute
   '/admin/_auth/_appshell/projects/$projectId/details': typeof AdminAuthAppshellProjectsProjectIdDetailsRoute
+  '/admin/_auth/_appshell/projects/$projectId/overview': typeof AdminAuthAppshellProjectsProjectIdOverviewRoute
   '/admin/_auth/_appshell/projects/$projectId/submission': typeof AdminAuthAppshellProjectsProjectIdSubmissionRoute
 }
 
@@ -523,6 +553,7 @@ export interface FileRouteTypes {
     | '/user/settings/wallet'
     | '/admin/projects'
     | '/admin/projects/$projectId/details'
+    | '/admin/projects/$projectId/overview'
     | '/admin/projects/$projectId/submission'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -541,18 +572,19 @@ export interface FileRouteTypes {
     | '/user/settings/wallet'
     | '/admin/projects'
     | '/admin/projects/$projectId/details'
+    | '/admin/projects/$projectId/overview'
     | '/admin/projects/$projectId/submission'
   id:
     | '__root__'
     | '/'
     | '/auth'
     | '/admin'
-    | '/admin/_appshell'
     | '/admin/_auth'
     | '/user'
     | '/user/_auth'
     | '/admin/'
     | '/user/'
+    | '/admin/_auth/_appshell'
     | '/user/_auth/_appshell'
     | '/admin/_auth/_appshell/dashboard'
     | '/user/_auth/_appshell/dashboard'
@@ -565,6 +597,7 @@ export interface FileRouteTypes {
     | '/user/_auth/_appshell/settings/wallet'
     | '/admin/_auth/_appshell/projects/'
     | '/admin/_auth/_appshell/projects/$projectId/details'
+    | '/admin/_auth/_appshell/projects/$projectId/overview'
     | '/admin/_auth/_appshell/projects/$projectId/submission'
   fileRoutesById: FileRoutesById
 }
@@ -608,23 +641,15 @@ export const routeTree = rootRoute
     "/admin": {
       "filePath": "admin",
       "children": [
-        "/admin/_appshell",
         "/admin/_auth",
         "/admin/"
       ]
-    },
-    "/admin/_appshell": {
-      "filePath": "admin/_appshell.tsx",
-      "parent": "/admin"
     },
     "/admin/_auth": {
       "filePath": "admin/_auth.tsx",
       "parent": "/admin",
       "children": [
-        "/admin/_auth/_appshell/dashboard",
-        "/admin/_auth/_appshell/projects/",
-        "/admin/_auth/_appshell/projects/$projectId/details",
-        "/admin/_auth/_appshell/projects/$projectId/submission"
+        "/admin/_auth/_appshell"
       ]
     },
     "/user": {
@@ -650,6 +675,17 @@ export const routeTree = rootRoute
       "filePath": "user/index.tsx",
       "parent": "/user"
     },
+    "/admin/_auth/_appshell": {
+      "filePath": "admin/_auth/_appshell.tsx",
+      "parent": "/admin/_auth",
+      "children": [
+        "/admin/_auth/_appshell/dashboard",
+        "/admin/_auth/_appshell/projects/",
+        "/admin/_auth/_appshell/projects/$projectId/details",
+        "/admin/_auth/_appshell/projects/$projectId/overview",
+        "/admin/_auth/_appshell/projects/$projectId/submission"
+      ]
+    },
     "/user/_auth/_appshell": {
       "filePath": "user/_auth/_appshell.tsx",
       "parent": "/user/_auth",
@@ -661,8 +697,8 @@ export const routeTree = rootRoute
       ]
     },
     "/admin/_auth/_appshell/dashboard": {
-      "filePath": "admin/_auth._appshell.dashboard.tsx",
-      "parent": "/admin/_auth"
+      "filePath": "admin/_auth/_appshell/dashboard.tsx",
+      "parent": "/admin/_auth/_appshell"
     },
     "/user/_auth/_appshell/dashboard": {
       "filePath": "user/_auth/_appshell/dashboard.tsx",
@@ -703,15 +739,19 @@ export const routeTree = rootRoute
     },
     "/admin/_auth/_appshell/projects/": {
       "filePath": "admin/_auth/_appshell/projects/index.tsx",
-      "parent": "/admin/_auth"
+      "parent": "/admin/_auth/_appshell"
     },
     "/admin/_auth/_appshell/projects/$projectId/details": {
       "filePath": "admin/_auth/_appshell/projects/$projectId.details.tsx",
-      "parent": "/admin/_auth"
+      "parent": "/admin/_auth/_appshell"
+    },
+    "/admin/_auth/_appshell/projects/$projectId/overview": {
+      "filePath": "admin/_auth/_appshell/projects/$projectId.overview.tsx",
+      "parent": "/admin/_auth/_appshell"
     },
     "/admin/_auth/_appshell/projects/$projectId/submission": {
       "filePath": "admin/_auth/_appshell/projects/$projectId.submission.tsx",
-      "parent": "/admin/_auth"
+      "parent": "/admin/_auth/_appshell"
     }
   }
 }

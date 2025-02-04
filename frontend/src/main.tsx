@@ -13,13 +13,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient();
 
-const router = createRouter({
-    routeTree,
-    context: {
-        auth: undefined,
-    },
-});
-
 function Router() {
     const auth = useAuth();
     
@@ -30,6 +23,14 @@ function Router() {
             </div>
         );
     }
+
+    // Only create/update router after auth is loaded
+    const router = createRouter({
+        routeTree,
+        context: {
+            auth,
+        },
+    });
     
     return <RouterProvider router={router} context={{ auth }} />;
 }
