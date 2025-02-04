@@ -6,8 +6,13 @@ export const Route = createFileRoute('/admin/_auth')({
     beforeLoad: ({ context, location }) => {
         const { auth } = context;
         
-        // If auth is not ready or user is not logged in/admin, redirect to auth
-        if (!auth?.user || !isAdmin(auth.user.permissions)) {
+        // If no auth context or auth is loading, don't redirect yet
+        if (!auth || auth.isLoading) {
+            return;
+        }
+        
+        // If auth is loaded and user is not logged in/admin, redirect to auth
+        if (!auth.user || !isAdmin(auth.user.permissions)) {
             throw redirect({
                 to: '/auth',
                 search: {
