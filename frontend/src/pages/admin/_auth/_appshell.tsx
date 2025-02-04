@@ -2,7 +2,7 @@ import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { FiFolder, FiBook, FiUsers, FiSettings } from 'react-icons/fi';
 import { DashboardTemplate } from '@templates';
 
-export const Route = createFileRoute('/admin/_appshell')({
+export const Route = createFileRoute('/admin/_auth/_appshell')({
     component: RouteComponent,
 });
 
@@ -35,4 +35,4 @@ function RouteComponent() {
             <Outlet />
         </DashboardTemplate>
     );
-}
+} 

@@ -31,9 +31,23 @@ export interface FormSection {
 
 export interface TeamMember {
     id: string;
-    name: string;
-    role: string;
-    avatar?: string;
+    firstName: string;
+    lastName: string;
+    title: string;
+    detailedBiography: string;
+    linkedin: string;
+    resumeExternalUrl: string;
+    resumeInternalUrl: string;
+    personalWebsite: string;
+    commitmentType: string;
+    introduction: string;
+    industryExperience: string;
+    previousWork?: string;
+    founderAgreementExternalUrl?: string;
+    founderAgreementInternalUrl?: string;
+    isAccountOwner: boolean;
+    created_at: number;
+    updated_at?: number;
 }
 
 export interface SocialLink {
