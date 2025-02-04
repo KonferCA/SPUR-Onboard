@@ -69,9 +69,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
             case 'file':
                 return (
                     <FileUpload
-                        onFilesChange={(v) =>
-                            onChange(field.key, field.key, v)
-                        }
+                        onFilesChange={(v) => onChange(field.key, field.key, v)}
                         initialFiles={field.value.files || []}
                         {...(fileUploadProps && {
                             ...fileUploadProps,
@@ -82,21 +80,29 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
 
             case 'multiselect':
             case 'select':
-                const selectedOption = field.options?.find(
-                    (opt) => opt.value === field.value.value[0]
-                ) || {
-                    id: -1,
-                    label: '',
-                    value: '',
-                };
+                const selectedOption =
+                    field.type === 'multiselect'
+                        ? field.value.value
+                        : field.options?.find(
+                              (opt) => opt.value === field.value.value[0]?.value
+                          ) || {
+                              id: -1,
+                              label: '',
+                              value: '',
+                          };
 
                 return (
                     <Dropdown
                         options={field.options ?? []}
                         value={selectedOption}
                         onChange={(selected) =>
-                            onChange(question.id, field.key, [selected.value])
+                            onChange(
+                                question.id,
+                                field.key,
+                                Array.isArray(selected) ? selected : [selected]
+                            )
                         }
+                        multiple={field.type === 'multiselect'}
                     />
                 );
 

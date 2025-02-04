@@ -1,5 +1,5 @@
 interface SampleDataConfig {
-    value: string | string[];
+    value: any;
     type: 'text' | 'date' | 'select' | 'multiselect';
 }
 
@@ -10,7 +10,7 @@ const sampleAnswers: Record<string, SampleDataConfig> = {
         type: 'text',
     },
     'When was your company founded?': {
-        value: '2024-01-15',
+        value: new Date('2024-01-15'),
         type: 'date',
     },
     'Company website': {
@@ -177,10 +177,7 @@ const sampleAnswers: Record<string, SampleDataConfig> = {
     },
 };
 
-export const getSampleAnswer = (
-    question: string,
-    inputType: string
-): string | string[] => {
+export const getSampleAnswer = (question: string, inputType: string): any => {
     const config = sampleAnswers[question] || {
         value: `Sample answer for: ${question}. This is a detailed response that demonstrates understanding and expertise in this area.`,
         type: 'text',
@@ -194,10 +191,7 @@ export const getSampleAnswer = (
     // Handle different input types
     switch (inputType) {
         case 'date':
-            return config.type === 'date'
-                ? config.value
-                : new Date().toISOString().split('T')[0];
-
+            return config.value;
         case 'select':
         case 'multiselect':
             return [];
