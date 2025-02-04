@@ -23,8 +23,30 @@ export const ReviewQuestions: FC<ReviewQuestionsProps> = ({
     comments,
     onCreateComment,
 }) => {
-    const [showCreateComment, setShowCreateComment] = useState(false);
+    return question.inputFields.map((field) => {
+        return (
+            <ReviewQuestionInput
+                key={field.key}
+                field={field}
+                comments={comments}
+                onCreateComment={onCreateComment}
+            />
+        );
+    });
+};
 
+interface ReviewQuestionInputProps {
+    field: FormField;
+    comments: Comment[];
+    onCreateComment: (comment: string, targetId: string) => void;
+}
+
+const ReviewQuestionInput: FC<ReviewQuestionInputProps> = ({
+    field,
+    comments,
+    onCreateComment,
+}) => {
+    const [showCreateComment, setShowCreateComment] = useState(false);
     const renderInput = (field: FormField) => {
         switch (field.type) {
             case 'textarea':
@@ -93,45 +115,44 @@ export const ReviewQuestions: FC<ReviewQuestionsProps> = ({
                 return null;
         }
     };
-
-    return question.inputFields.map((field) => {
-        return (
-            <div key={field.key} className="relative">
-                <div className="group p-2 rounded-lg border border-gray-300 bg-white relative">
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="block text-md font-normal text-gray-500">
-                            {question.question}
-                        </span>
-                    </div>
-                    <div className="space-y-4">{renderInput(field)}</div>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setShowCreateComment(true);
-                        }}
-                        className="absolute top-0 right-0 -translate-y-1/2 -translate-x-1/2 bg-gray-100 border-gray-300 border  rounded-lg p-2 invisible group-hover:visible"
-                    >
-                        <BiSolidCommentAdd className="h-6 w-6" />
-                    </button>
-                    {showCreateComment && (
-                        <CommentCreate
-                            className="absolute top-0 right-0 z-50"
-                            onSubmit={(comment) => {
-                                onCreateComment(comment, field.key);
-                                setShowCreateComment(false);
-                            }}
-                            onCancel={() => setShowCreateComment(false)}
-                        />
-                    )}
+    return (
+        <div className="relative">
+            <div className="group p-2 rounded-lg border border-gray-300 bg-white relative">
+                <div className="flex justify-between items-center mb-1">
+                    <span className="block text-md font-normal text-gray-500">
+                        {field.label}
+                    </span>
                 </div>
-                <div className="absolute -right-2 top-0 -translate-y-1/2 translate-x-full flex items-center gap-3">
-                    {comments.map((c) => (
+                <div className="space-y-4">{renderInput(field)}</div>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setShowCreateComment(true);
+                    }}
+                    className="absolute top-0 right-0 -translate-y-1/2 -translate-x-1/2 bg-gray-100 border-gray-300 border  rounded-lg p-2 invisible group-hover:visible"
+                >
+                    <BiSolidCommentAdd className="h-6 w-6" />
+                </button>
+                {showCreateComment && (
+                    <CommentCreate
+                        className="absolute top-0 right-0 z-50"
+                        onSubmit={(comment) => {
+                            onCreateComment(comment, field.key);
+                            setShowCreateComment(false);
+                        }}
+                        onCancel={() => setShowCreateComment(false)}
+                    />
+                )}
+            </div>
+            <div className="absolute -right-2 top-0 -translate-y-1/2 translate-x-full flex items-center gap-3">
+                {comments
+                    .filter((c) => c.targetId === field.key)
+                    .map((c) => (
                         <div key={c.id}>
                             <CommentBubble data={c} />
                         </div>
                     ))}
-                </div>
             </div>
-        );
-    });
+        </div>
+    );
 };

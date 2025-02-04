@@ -283,11 +283,7 @@ function RouteComponent() {
                                                         );
                                                     }}
                                                     comments={
-                                                        commentsData?.filter(
-                                                            (c) =>
-                                                                c.targetId ===
-                                                                q.id
-                                                        ) || []
+                                                        commentsData || []
                                                     }
                                                 />
                                             ) : null
