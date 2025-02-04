@@ -124,6 +124,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                     newMember.founderAgreementInternalUrl || '',
                 isAccountOwner: false,
                 isLoading: true,
+                created_at: Date.now(),
             };
 
             saveToDatabase(member);

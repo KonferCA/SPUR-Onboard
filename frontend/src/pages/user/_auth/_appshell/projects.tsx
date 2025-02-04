@@ -4,6 +4,7 @@ import { ProjectsTable } from '@/components/tables/ProjectsTable'
 import { getProjects } from '@/services/project'
 import type { Project } from '@/services/project'
 import type { SortingState } from '@tanstack/react-table'
+import { useAuth } from '@/contexts'
 
 const UserProjectsPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([])
@@ -17,12 +18,14 @@ const UserProjectsPage: React.FC = () => {
     yearFounded: '',
   })
   const [searchQuery, setSearchQuery] = useState('')
+    const { accessToken } = useAuth();
 
   useEffect(() => {
+        if (!accessToken) return;
     const fetchProjects = async () => {
       try {
         setIsLoading(true)
-        const data = await getProjects()
+        const data = await getProjects(accessToken)
         if (data) {
           setProjects(data)
         }
@@ -36,7 +39,7 @@ const UserProjectsPage: React.FC = () => {
     }
 
     fetchProjects()
-  }, [])
+  }, [accessToken])
 
   const filteredProjects = projects.filter((project) => {
     // Filter by active tab

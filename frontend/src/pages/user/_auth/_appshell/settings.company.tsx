@@ -128,7 +128,7 @@ function CompanySettings() {
                     <TextArea
                         name="description"
                         label="Company description"
-                        defaultValue={company?.description}
+                        defaultValue={company?.description || ''}
                         required
                         rows={4}
                     />

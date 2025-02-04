@@ -1,4 +1,3 @@
-import { Button } from '@components';
 import { Section, Container, Stack, Grid, Header, Footer } from '@layouts';
 import { createFileRoute } from '@tanstack/react-router';
 import { Link } from '@tanstack/react-router';
