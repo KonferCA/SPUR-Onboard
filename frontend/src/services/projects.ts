@@ -79,7 +79,9 @@ export async function getProjectDocuments(
 
     const json = await res.json();
     return {
-        documents: (json.documents || []).map((doc: any) => snakeToCamel(doc) as DocumentResponse)
+        documents: (json.documents || []).map(
+            (doc: any) => snakeToCamel(doc) as DocumentResponse
+        ),
     };
 }
 
@@ -102,14 +104,24 @@ export async function getProjectComments(
 
     const json = await res.json();
     return {
-        comments: (json.comments || []).map((comment: any) => snakeToCamel(comment) as CommentResponse)
+        comments: (json.comments || []).map(
+            (comment: any) => snakeToCamel(comment) as CommentResponse
+        ),
     };
+}
+
+export enum ProjectStatusEnum {
+    Draft = 'draft',
+    Pending = 'pending',
+    Verified = 'verified',
+    Declined = 'declined',
+    Withdrawn = 'withdrawn',
 }
 
 export async function updateProjectStatus(
     accessToken: string,
     projectId: string,
-    status: 'approved' | 'needs_revisions' | 'rejected'
+    status: ProjectStatusEnum
 ): Promise<void> {
     const url = getApiUrl(`/project/${projectId}/status`);
     const res = await fetch(url, {
@@ -122,6 +134,11 @@ export async function updateProjectStatus(
     });
 
     if (res.status !== HttpStatusCode.OK) {
-        throw new ApiError('Failed to update project status', res.status, await res.json());
+        throw new ApiError(
+            'Failed to update project status',
+            res.status,
+            await res.json()
+        );
     }
-} 
+}
+
