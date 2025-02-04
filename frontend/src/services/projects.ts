@@ -1,5 +1,6 @@
 import { getApiUrl, HttpStatusCode } from '@/utils';
 import { snakeToCamel } from '@/utils/object';
+import { ApiError } from '@/services/errors';
 
 export interface ProjectResponse {
     id: string;
@@ -103,4 +104,24 @@ export async function getProjectComments(
     return {
         comments: (json.comments || []).map((comment: any) => snakeToCamel(comment) as CommentResponse)
     };
+}
+
+export async function updateProjectStatus(
+    accessToken: string,
+    projectId: string,
+    status: 'approved' | 'needs_revisions' | 'rejected'
+): Promise<void> {
+    const url = getApiUrl(`/project/${projectId}/status`);
+    const res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+    });
+
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to update project status', res.status, await res.json());
+    }
 } 
