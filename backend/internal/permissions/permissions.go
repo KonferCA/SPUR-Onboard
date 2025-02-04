@@ -27,6 +27,8 @@ const (
     PermStartupOwner = PermSubmitProject | PermCommentOnProjects | PermManageDocuments | PermManageTeam
 
     PermInvestor = PermViewAllProjects | PermCommentOnProjects | PermInvestInProjects
+
+    PermRegular uint32 = 0 // This is a placeholder for the new role
 )
 
 // GetAllPermissionBits returns a mask containing all valid permission bits.

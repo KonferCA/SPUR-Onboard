@@ -3,6 +3,7 @@ package v1_users
 import (
 	"KonferCA/SPUR/internal/interfaces"
 	"KonferCA/SPUR/internal/middleware"
+	"KonferCA/SPUR/internal/permissions"
 
 	"github.com/labstack/echo/v4"
 )
@@ -13,6 +14,7 @@ Sets up the v1 user routes.
 func SetupUserRoutes(e *echo.Group, s interfaces.CoreServer) {
 	h := Handler{server: s}
 
+	// User details routes
 	e.POST(
 		"/users/:id/details",
 		h.handleUpdateUserDetails,
@@ -23,5 +25,24 @@ func SetupUserRoutes(e *echo.Group, s interfaces.CoreServer) {
 		"/users/:id/details",
 		h.handleGetUserDetails,
 		middleware.Auth(s.GetDB()),
+	)
+
+	// Admin-only routes for managing users
+	e.GET(
+		"/users",
+		h.handleListUsers,
+		middleware.Auth(s.GetDB(), permissions.PermAdmin),
+	)
+
+	e.PUT(
+		"/users/:id/role",
+		h.handleUpdateUserRole,
+		middleware.Auth(s.GetDB(), permissions.PermAdmin),
+	)
+
+	e.PUT(
+		"/users/role/bulk",
+		h.handleUpdateUsersRole,
+		middleware.Auth(s.GetDB(), permissions.PermAdmin),
 	)
 }
