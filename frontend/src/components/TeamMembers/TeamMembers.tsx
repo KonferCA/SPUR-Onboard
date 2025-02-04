@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts';
 
 export interface TeamMembersProps {
     initialValue: TeamMember[];
+    disabled?: boolean;
 }
 
 interface LocalTeamMember extends TeamMember {
@@ -25,6 +26,7 @@ interface LocalTeamMember extends TeamMember {
 
 export const TeamMembers: React.FC<TeamMembersProps> = ({
     initialValue = [],
+    disabled = false,
 }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [newMember, setNewMember] = useState<Partial<LocalTeamMember>>({});
@@ -124,6 +126,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                     newMember.founderAgreementInternalUrl || '',
                 isAccountOwner: false,
                 isLoading: true,
+                created_at: Date.now(),
             };
 
             saveToDatabase(member);
@@ -181,7 +184,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
 
                         {/* Actions */}
                         <div className="flex items-center gap-2 flex-shrink-0">
-                            {!member.isLoading && (
+                            {!member.isLoading && !disabled && (
                                 <button
                                     onClick={() => handleRemove(member)}
                                     className="p-1 text-gray-400 hover:text-red-500"
@@ -195,250 +198,252 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             </div>
 
             {/* Add Member Form */}
-            {isAdding ? (
-                <div className="bg-gray-50 rounded-lg p-4 space-y-4 border-2">
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-center gap-2">
+            {!disabled && (
+                isAdding ? (
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-4 border-2">
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-center gap-2">
+                                <TextInput
+                                    label="First Name"
+                                    value={newMember.firstName || ''}
+                                    onChange={(e) =>
+                                        setNewMember((prev) => ({
+                                            ...prev,
+                                            firstName: e.target.value,
+                                        }))
+                                    }
+                                    required
+                                />
+                                <TextInput
+                                    label="Last Name"
+                                    value={newMember.lastName || ''}
+                                    onChange={(e) =>
+                                        setNewMember((prev) => ({
+                                            ...prev,
+                                            lastName: e.target.value,
+                                        }))
+                                    }
+                                    required
+                                />
+                            </div>
                             <TextInput
-                                label="First Name"
-                                value={newMember.firstName || ''}
+                                label="Position/Title"
+                                value={newMember.title || ''}
                                 onChange={(e) =>
                                     setNewMember((prev) => ({
                                         ...prev,
-                                        firstName: e.target.value,
+                                        title: e.target.value,
                                     }))
                                 }
                                 required
                             />
                             <TextInput
-                                label="Last Name"
-                                value={newMember.lastName || ''}
+                                label="LinkedIn Profile"
+                                value={newMember.linkedin || ''}
                                 onChange={(e) =>
                                     setNewMember((prev) => ({
                                         ...prev,
-                                        lastName: e.target.value,
+                                        linkedin: e.target.value,
                                     }))
                                 }
                                 required
                             />
-                        </div>
-                        <TextInput
-                            label="Position/Title"
-                            value={newMember.title || ''}
-                            onChange={(e) =>
-                                setNewMember((prev) => ({
-                                    ...prev,
-                                    title: e.target.value,
-                                }))
-                            }
-                            required
-                        />
-                        <TextInput
-                            label="LinkedIn Profile"
-                            value={newMember.linkedin || ''}
-                            onChange={(e) =>
-                                setNewMember((prev) => ({
-                                    ...prev,
-                                    linkedin: e.target.value,
-                                }))
-                            }
-                            required
-                        />
-                        <fieldset>
-                            <div className="flex justify-between items-center mb-1">
-                                <legend className="block text-md font-normal">
-                                    Resume or CV
-                                </legend>
-                                <span className="text-sm text-gray-500">
-                                    Required
-                                </span>
-                            </div>
-                            <div className="space-y-4">
-                                <TextInput
-                                    value={newMember.resumeExternalUrl || ''}
-                                    onChange={(e) =>
-                                        setNewMember((prev) => ({
-                                            ...prev,
-                                            resumeExternalUrl: e.target.value,
-                                        }))
-                                    }
-                                    placeholder="Provide a link or upload directly"
-                                    required
-                                />
-                                <FileUpload
-                                    limit={1}
-                                    onFilesChange={(files) => {
-                                        if (files.length) {
-                                            setResumeFile(files[0]);
-                                        } else {
-                                            setResumeFile(null);
+                            <fieldset>
+                                <div className="flex justify-between items-center mb-1">
+                                    <legend className="block text-md font-normal">
+                                        Resume or CV
+                                    </legend>
+                                    <span className="text-sm text-gray-500">
+                                        Required
+                                    </span>
+                                </div>
+                                <div className="space-y-4">
+                                    <TextInput
+                                        value={newMember.resumeExternalUrl || ''}
+                                        onChange={(e) =>
+                                            setNewMember((prev) => ({
+                                                ...prev,
+                                                resumeExternalUrl: e.target.value,
+                                            }))
                                         }
-                                    }}
-                                />
-                                {resumeFile && (
-                                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-sm font-medium">
-                                                {resumeFile.name}
-                                            </span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setResumeFile(null)}
-                                            className="text-gray-400 hover:text-gray-600"
-                                        >
-                                            <FiX />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </fieldset>
-                        <TextInput
-                            label="Personal website or portfolio URL"
-                            value={newMember.personalWebsite || ''}
-                            onChange={(e) =>
-                                setNewMember((prev) => ({
-                                    ...prev,
-                                    personalWebsite: e.target.value,
-                                }))
-                            }
-                            required
-                        />
-                        <TextInput
-                            label="How committed is this person (e.g., full-time, personal investment)?"
-                            value={newMember.commitmentType || ''}
-                            onChange={(e) =>
-                                setNewMember((prev) => ({
-                                    ...prev,
-                                    commitmentType: e.target.value,
-                                }))
-                            }
-                            required
-                        />
-                        <TextInput
-                            label="Give a brief introduction as to who this person is and what their background and expertise are."
-                            value={newMember.introduction || ''}
-                            onChange={(e) =>
-                                setNewMember((prev) => ({
-                                    ...prev,
-                                    introduction: e.target.value,
-                                }))
-                            }
-                            required
-                        />
-                        <TextArea
-                            label="Does this person have relevant experience in the industry?"
-                            value={newMember.industryExperience || ''}
-                            onChange={(e) =>
-                                setNewMember((prev) => ({
-                                    ...prev,
-                                    industryExperience: e.target.value,
-                                }))
-                            }
-                            required
-                        />
-                        <TextArea
-                            label="Give a detailed biography of this person, outlining roles, responsibilities, and key achievements."
-                            value={newMember.detailedBiography || ''}
-                            onChange={(e) =>
-                                setNewMember((prev) => ({
-                                    ...prev,
-                                    detailedBiography: e.target.value,
-                                }))
-                            }
-                            required
-                        />
-                        <TextInput
-                            label="Are there any examples of previous work or case studies from past ventures that this person has participated in?"
-                            value={newMember.previousWork || ''}
-                            onChange={(e) =>
-                                setNewMember((prev) => ({
-                                    ...prev,
-                                    previousWork: e.target.value,
-                                }))
-                            }
-                        />
-                        <fieldset>
-                            <div className="flex justify-between items-center mb-1">
-                                <legend className="block text-md font-normal">
-                                    Is there a founder's agreement in place that
-                                    outlines roles, responsibilities, equity
-                                    split, and dispute resolution mechanisms?
-                                </legend>
-                            </div>
-                            <div className="space-y-4">
-                                <TextInput
-                                    value={
-                                        newMember.founderAgreementExternalUrl ||
-                                        ''
-                                    }
-                                    onChange={(e) =>
-                                        setNewMember((prev) => ({
-                                            ...prev,
-                                            founderAgreementExternalUrl:
-                                                e.target.value,
-                                        }))
-                                    }
-                                    placeholder="Provide a link or upload directly"
-                                    required
-                                />
-                                <FileUpload
-                                    limit={1}
-                                    onFilesChange={(files) => {
-                                        if (files.length) {
-                                            setFoundersAgreementFile(files[0]);
-                                        } else {
-                                            setFoundersAgreementFile(null);
-                                        }
-                                    }}
-                                />
-                                {foundersAgreementFile && (
-                                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-sm font-medium">
-                                                {foundersAgreementFile.name}
-                                            </span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setFoundersAgreementFile(null)
+                                        placeholder="Provide a link or upload directly"
+                                        required
+                                    />
+                                    <FileUpload
+                                        limit={1}
+                                        onFilesChange={(files) => {
+                                            if (files.length) {
+                                                setResumeFile(files[0]);
+                                            } else {
+                                                setResumeFile(null);
                                             }
-                                            className="text-gray-400 hover:text-gray-600"
-                                        >
-                                            <FiX />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </fieldset>
+                                        }}
+                                    />
+                                    {resumeFile && (
+                                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-sm font-medium">
+                                                    {resumeFile.name}
+                                                </span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setResumeFile(null)}
+                                                className="text-gray-400 hover:text-gray-600"
+                                            >
+                                                <FiX />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </fieldset>
+                            <TextInput
+                                label="Personal website or portfolio URL"
+                                value={newMember.personalWebsite || ''}
+                                onChange={(e) =>
+                                    setNewMember((prev) => ({
+                                        ...prev,
+                                        personalWebsite: e.target.value,
+                                    }))
+                                }
+                                required
+                            />
+                            <TextInput
+                                label="How committed is this person (e.g., full-time, personal investment)?"
+                                value={newMember.commitmentType || ''}
+                                onChange={(e) =>
+                                    setNewMember((prev) => ({
+                                        ...prev,
+                                        commitmentType: e.target.value,
+                                    }))
+                                }
+                                required
+                            />
+                            <TextInput
+                                label="Give a brief introduction as to who this person is and what their background and expertise are."
+                                value={newMember.introduction || ''}
+                                onChange={(e) =>
+                                    setNewMember((prev) => ({
+                                        ...prev,
+                                        introduction: e.target.value,
+                                    }))
+                                }
+                                required
+                            />
+                            <TextArea
+                                label="Does this person have relevant experience in the industry?"
+                                value={newMember.industryExperience || ''}
+                                onChange={(e) =>
+                                    setNewMember((prev) => ({
+                                        ...prev,
+                                        industryExperience: e.target.value,
+                                    }))
+                                }
+                                required
+                            />
+                            <TextArea
+                                label="Give a detailed biography of this person, outlining roles, responsibilities, and key achievements."
+                                value={newMember.detailedBiography || ''}
+                                onChange={(e) =>
+                                    setNewMember((prev) => ({
+                                        ...prev,
+                                        detailedBiography: e.target.value,
+                                    }))
+                                }
+                                required
+                            />
+                            <TextInput
+                                label="Are there any examples of previous work or case studies from past ventures that this person has participated in?"
+                                value={newMember.previousWork || ''}
+                                onChange={(e) =>
+                                    setNewMember((prev) => ({
+                                        ...prev,
+                                        previousWork: e.target.value,
+                                    }))
+                                }
+                            />
+                            <fieldset>
+                                <div className="flex justify-between items-center mb-1">
+                                    <legend className="block text-md font-normal">
+                                        Is there a founder's agreement in place that
+                                        outlines roles, responsibilities, equity
+                                        split, and dispute resolution mechanisms?
+                                    </legend>
+                                </div>
+                                <div className="space-y-4">
+                                    <TextInput
+                                        value={
+                                            newMember.founderAgreementExternalUrl ||
+                                            ''
+                                        }
+                                        onChange={(e) =>
+                                            setNewMember((prev) => ({
+                                                ...prev,
+                                                founderAgreementExternalUrl:
+                                                    e.target.value,
+                                            }))
+                                        }
+                                        placeholder="Provide a link or upload directly"
+                                        required
+                                    />
+                                    <FileUpload
+                                        limit={1}
+                                        onFilesChange={(files) => {
+                                            if (files.length) {
+                                                setFoundersAgreementFile(files[0]);
+                                            } else {
+                                                setFoundersAgreementFile(null);
+                                            }
+                                        }}
+                                    />
+                                    {foundersAgreementFile && (
+                                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-sm font-medium">
+                                                    {foundersAgreementFile.name}
+                                                </span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setFoundersAgreementFile(null)
+                                                }
+                                                className="text-gray-400 hover:text-gray-600"
+                                            >
+                                                <FiX />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </fieldset>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    setIsAdding(false);
+                                    setNewMember({});
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="button" size="sm" onClick={handleAdd}>
+                                Add Member
+                            </Button>
+                        </div>
                     </div>
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                                setIsAdding(false);
-                                setNewMember({});
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button type="button" size="sm" onClick={handleAdd}>
-                            Add Member
-                        </Button>
-                    </div>
-                </div>
-            ) : (
-                <button
-                    type="button"
-                    onClick={() => setIsAdding(true)}
-                    className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600 flex items-center justify-center gap-2"
-                >
-                    <FiPlus />
-                    Add member
-                </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={() => setIsAdding(true)}
+                        className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600 flex items-center justify-center gap-2"
+                    >
+                        <FiPlus />
+                        Add member
+                    </button>
+                )
             )}
         </div>
     );
