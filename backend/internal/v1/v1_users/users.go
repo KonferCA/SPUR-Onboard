@@ -75,10 +75,10 @@ func (h *Handler) handleGetUserDetails(c echo.Context) error {
 func (h *Handler) handleListUsers(c echo.Context) error {
 	var req ListUsersRequest
 	if err := c.Bind(&req); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request parameters", err)
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request parameters: binding error", err)
 	}
 	if err := c.Validate(&req); err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request parameters", err)
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request parameters: validation error", err)
 	}
 
 	// Set defaults if not provided
