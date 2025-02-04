@@ -104,7 +104,7 @@ function ProjectFormPage() {
                             message: 'Answers saved!',
                             level: 'success',
                             autoClose: true,
-                            duration: 2000,
+                            duration: 1000,
                         });
                     }, 1000);
                 }

@@ -105,7 +105,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                     message: 'Team member saved',
                     level: 'success',
                     autoClose: true,
-                    duration: 2000,
+                    duration: 1000,
                 });
             }, 1000);
 
@@ -176,7 +176,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                     message: 'Team member removed',
                     level: 'success',
                     autoClose: true,
-                    duration: 2000,
+                    duration: 1000,
                 });
             }, 1000);
         } catch (e) {
