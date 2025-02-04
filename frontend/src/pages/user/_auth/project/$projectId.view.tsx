@@ -6,13 +6,13 @@ import {
     Question,
 } from '@/config/forms';
 import { useAuth } from '@/contexts';
-import { createProjectComment, getProjectComments } from '@/services/comment';
+import { getProjectComments } from '@/services/comment';
 import { getProjectFormQuestions } from '@/services/project';
 import { SectionedLayout } from '@/templates';
 import { scrollToTop } from '@/utils';
 import { sanitizeHtmlId } from '@/utils/html';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { cva } from 'class-variance-authority';
 import { useEffect, useState } from 'react';
 import { IoMdArrowRoundBack } from 'react-icons/io';
