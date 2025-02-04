@@ -20,7 +20,7 @@ import { QuestionInputs } from '@/components/QuestionInputs/QuestionInputs';
 import { useQuery } from '@tanstack/react-query';
 import { scrollToTop } from '@/utils';
 import { useDebounceFn } from '@/hooks';
-import { useAuth } from '@/contexts';
+import { useAuth, useNotification } from '@/contexts';
 import { getSampleAnswer } from '@/utils/sampleData';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -72,14 +72,13 @@ function ProjectFormPage() {
         GroupedProjectQuestions[]
     >([]);
 
-    const [isSaving, setIsSaving] = useState(false);
     const [currentStep, setCurrentStep] = useState<number>(0);
     const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
+    const notification = useNotification();
 
     const autosave = useDebounceFn(
         async () => {
             if (!currentProjectId || !accessToken || !companyId) return;
-            setIsSaving(true);
 
             // Find all dirty inputs and create params while clearing dirty flags
             const dirtyInputsSnapshot: ProjectDraft[] = Array.from(
@@ -87,21 +86,38 @@ function ProjectFormPage() {
             );
             dirtyInputRef.current.clear();
 
+            let notificationId = '';
             try {
-                console.log(dirtyInputsSnapshot);
                 if (dirtyInputsSnapshot.length > 0) {
+                    notificationId = notification.push({
+                        message: 'Saving answers...',
+                        level: 'info',
+                        autoClose: false,
+                    });
                     await saveProjectDraft(
                         accessToken,
                         currentProjectId,
                         dirtyInputsSnapshot
                     );
+                    setTimeout(() => {
+                        notification.update(notificationId, {
+                            message: 'Answers saved!',
+                            level: 'success',
+                            autoClose: true,
+                            duration: 2000,
+                        });
+                    }, 1000);
                 }
             } catch (e) {
                 console.error(e);
-            } finally {
-                setTimeout(() => {
-                    setIsSaving(false);
-                }, 2000);
+                if (notificationId) {
+                    notification.update(notificationId, {
+                        message: 'Failed to save answers',
+                        level: 'error',
+                        autoClose: true,
+                        duration: 3000,
+                    });
+                }
             }
         },
         1500,
@@ -509,13 +525,6 @@ function ProjectFormPage() {
                     </li>
                 </ul>
             </nav>
-            {isSaving && (
-                <div className="fixed left-0 right-0 top-0 z-10">
-                    <p className="text-center py-2 bg-gray-200">
-                        Saving application...
-                    </p>
-                </div>
-            )}
             <SectionedLayout
                 asideTitle="Submit a project"
                 linkContainerClassnames="top-36"
