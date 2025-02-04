@@ -307,7 +307,7 @@ func (q *Queries) UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) 
 const updateUsersRole = `-- name: UpdateUsersRole :exec
 UPDATE users
 SET permissions = $2
-WHERE id = ANY($1::text[])
+WHERE id = ANY($1::uuid[])
 `
 
 type UpdateUsersRoleParams struct {

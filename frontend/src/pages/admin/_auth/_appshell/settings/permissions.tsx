@@ -4,7 +4,6 @@ import { FiSearch, FiChevronDown, FiMoreVertical } from 'react-icons/fi';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUsers, updateUserRole, updateUsersRole, type User } from '@/services/users';
 import { useNotification } from '@/contexts/NotificationContext';
-import type { Notification } from '@/contexts/NotificationContext/types';
 
 export const Route = createFileRoute('/admin/_auth/_appshell/settings/permissions')({
   component: PermissionsPage,
@@ -403,6 +402,33 @@ function PermissionsPage() {
           </div>
         </div>
       </div>
+
+      {/* Bulk Actions */}
+      {selectedUsers.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-3 bg-white px-6 py-4 rounded-lg shadow-lg border border-gray-200">
+          <span className="text-sm text-gray-600 mr-2">
+            {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''} selected
+          </span>
+          <button
+            onClick={() => handleBulkRoleUpdate('admin')}
+            className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200"
+          >
+            Make Admin
+          </button>
+          <button
+            onClick={() => handleBulkRoleUpdate('investor')}
+            className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200"
+          >
+            Make Investor
+          </button>
+          <button
+            onClick={() => handleBulkRoleUpdate('regular')}
+            className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200"
+          >
+            Make Regular
+          </button>
+        </div>
+      )}
     </div>
   );
 } 
