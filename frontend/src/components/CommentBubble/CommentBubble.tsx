@@ -5,11 +5,11 @@ import { twMerge } from 'tailwind-merge';
 import { FaXmark } from 'react-icons/fa6';
 
 const commentInfoContainerStyles = cva(
-    'absolute rounded-lg -top-2 -left-2 p-2 border border-gray-300 shadow-lg bg-white invisible min-w-64 min-h-16',
+    'absolute rounded-lg -top-2 -left-2 p-2 border border-gray-300 shadow-lg bg-white hidden min-w-64 min-h-16 z-50',
     {
         variants: {
             active: {
-                true: 'visible',
+                true: 'block',
             },
         },
     }
@@ -28,7 +28,7 @@ export const CommentBubble: FC<CommentBubbleProps> = ({ data }) => {
                     commentInfoContainerStyles({ active: active })
                 )}
             >
-                <div className="flex items-center justify-between ml-10 mt-1">
+                <div className="flex items-center justify-between mt-1">
                     <div className="flex items-center gap-2">
                         <span>{data.commenterFirstName || 'First'}</span>
                         <span>{data.commenterLastName || 'Last'}</span>
