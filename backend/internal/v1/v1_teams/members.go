@@ -45,30 +45,29 @@ func (h *Handler) handleAddTeamMember(c echo.Context) error {
 	// Create team member in database
 	queries := db.New(h.server.GetDB())
 	member, err := queries.CreateTeamMember(c.Request().Context(), db.CreateTeamMemberParams{
-		CompanyID:      companyID,
-		FirstName:      req.FirstName,
-		LastName:       req.LastName,
-		Title:          req.Title,
-		Bio:            req.Bio,
-		LinkedinUrl:    req.LinkedinUrl,
-		IsAccountOwner: false,
+		CompanyID:                    companyID,
+		FirstName:                    req.FirstName,
+		LastName:                     req.LastName,
+		Title:                        req.Title,
+		LinkedinUrl:                  req.LinkedinUrl,
+		IsAccountOwner:               false,
+		PersonalWebsite:              req.PersonalWebsite,
+		CommitmentType:               req.CommitmentType,
+		Introduction:                 req.Introduction,
+		IndustryExperience:           req.IndustryExperience,
+		DetailedBiography:            req.DetailedBiography,
+		PreviousWork:                 req.PreviousWork,
+		ResumeExternalUrl:            req.ResumeExternalUrl,
+		ResumeInternalUrl:            req.ResumeInternalUrl,
+		FoundersAgreementExternalUrl: req.FoundersAgreementExternalUrl,
+		FoundersAgreementInternalUrl: req.FoundersAgreementInternalUrl,
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create team member", err)
 	}
 
 	// Return success response with member data
-	response := TeamMemberResponse{
-		ID:             member.ID,
-		FirstName:      member.FirstName,
-		LastName:       member.LastName,
-		Title:          member.Title,
-		Bio:            member.Bio,
-		LinkedinUrl:    member.LinkedinUrl,
-		IsAccountOwner: member.IsAccountOwner,
-		CreatedAt:      formatTime(member.CreatedAt),
-	}
-	return c.JSON(http.StatusCreated, response)
+	return c.JSON(http.StatusCreated, member)
 }
 
 /*
@@ -103,7 +102,7 @@ func (h *Handler) handleGetTeamMembers(c echo.Context) error {
 			FirstName:      member.FirstName,
 			LastName:       member.LastName,
 			Title:          member.Title,
-			Bio:            member.Bio,
+			Bio:            member.DetailedBiography,
 			LinkedinUrl:    member.LinkedinUrl,
 			IsAccountOwner: member.IsAccountOwner,
 			CreatedAt:      formatTime(member.CreatedAt),
@@ -153,7 +152,7 @@ func (h *Handler) handleGetTeamMember(c echo.Context) error {
 		FirstName:      member.FirstName,
 		LastName:       member.LastName,
 		Title:          member.Title,
-		Bio:            member.Bio,
+		Bio:            member.DetailedBiography,
 		LinkedinUrl:    member.LinkedinUrl,
 		IsAccountOwner: member.IsAccountOwner,
 		CreatedAt:      formatTime(member.CreatedAt),
@@ -214,7 +213,7 @@ func (h *Handler) handleUpdateTeamMember(c echo.Context) error {
 		FirstName:      member.FirstName,
 		LastName:       member.LastName,
 		Title:          member.Title,
-		Bio:            member.Bio,
+		Bio:            member.DetailedBiography,
 		LinkedinUrl:    member.LinkedinUrl,
 		IsAccountOwner: member.IsAccountOwner,
 		CreatedAt:      formatTime(member.CreatedAt),

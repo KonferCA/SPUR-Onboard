@@ -4,11 +4,10 @@ import { isAdmin } from '@/utils/permissions';
 export const Route = createFileRoute('/admin/_auth')({
     component: RouteComponent,
     beforeLoad: ({ context, location }) => {
-        if (
-            !context.auth ||
-            !context.auth.user ||
-            !isAdmin(context.auth.user.permissions)
-        ) {
+        const { auth } = context;
+        
+        // If auth is not ready or user is not logged in/admin, redirect to auth
+        if (!auth?.user || !isAdmin(auth.user.permissions)) {
             throw redirect({
                 to: '/auth',
                 search: {

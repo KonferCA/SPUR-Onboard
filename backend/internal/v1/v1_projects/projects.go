@@ -4,14 +4,9 @@ import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
-	"database/sql"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -52,17 +47,23 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 		return v1_common.Fail(c, 404, "Company not found", err)
 	}
 
-	var req CreateProjectRequest
-	if err := v1_common.BindandValidate(c, &req); err != nil {
-		return v1_common.Fail(c, 400, "Invalid request", err)
-	}
+	// NOTE: this is commented out because the project title and description
+	// can't be edit in the frontend so it shouldn't be a requirement to create a new project.
+	// var req CreateProjectRequest
+	// if err := v1_common.BindandValidate(c, &req); err != nil {
+	// 	return v1_common.Fail(c, 400, "Invalid request", err)
+	// }
+
+	// get count of projects owned by the user
+	count, err := h.server.GetQueries().GetProjectCountOwnedByCompany(c.Request().Context(), company.ID)
 
 	// Create project
 	now := time.Now().Unix()
-	description := req.Description
+	// For now the project description is just empty
+	description := ""
 	project, err := h.server.GetQueries().CreateProject(c.Request().Context(), db.CreateProjectParams{
 		CompanyID:   company.ID,
-		Title:       req.Title,
+		Title:       fmt.Sprintf("Project %d", count), // For now the project title is not editable in the frontend
 		Description: &description,
 		Status:      db.ProjectStatusDraft,
 		CreatedAt:   now,
@@ -187,380 +188,6 @@ func (h *Handler) handleGetProject(c echo.Context) error {
 }
 
 /*
- * handlePatchProjectAnswer updates an answer for a project question.
- *
- * Validation:
- * - Validates answer content against question rules
- * - Returns validation errors if content invalid
- *
- * Security:
- * - Verifies project belongs to user's company
- */
-func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
-	// Validate static parameters first
-	projectID := c.Param("id")
-	if projectID == "" {
-		return v1_common.Fail(c, http.StatusBadRequest, "Project ID is required", nil)
-	}
-
-	// Parse and validate request body
-	var req PatchAnswerRequest
-	if err := c.Bind(&req); err != nil {
-		return v1_common.Fail(c, 400, "Invalid request body", err)
-	}
-
-	// Get authenticated user
-	user, err := getUserFromContext(c)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
-	}
-
-	// Get the question for this answer to check validations
-	question, err := h.server.GetQueries().GetQuestionByAnswerID(c.Request().Context(), req.AnswerID)
-	if err != nil {
-		return v1_common.Fail(c, 404, "Question not found", err)
-	}
-
-	// Validate the answer content
-	if question.Validations != nil && *question.Validations != "" {
-		if !isValidAnswer(req.Content, *question.Validations) {
-			return c.JSON(http.StatusBadRequest, map[string]interface{}{
-				"validation_errors": []ValidationError{
-					{
-						Question: question.Question,
-						Message:  getValidationMessage(*question.Validations),
-					},
-				},
-			})
-		}
-	}
-
-	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
-	if err != nil {
-		return v1_common.Fail(c, 404, "Company not found", err)
-	}
-
-	// Get project and verify status
-	project, err := h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
-		ID:        projectID,
-		CompanyID: company.ID,
-	})
-	if err != nil {
-		return v1_common.Fail(c, 404, "Project not found", err)
-	}
-
-	// Only allow updates if project is in draft status
-	if project.Status != db.ProjectStatusDraft {
-		return v1_common.Fail(c, 400, "Project answers can only be updated while in draft status", nil)
-	}
-
-	// Update the answer
-	_, err = h.server.GetQueries().UpdateProjectAnswer(c.Request().Context(), db.UpdateProjectAnswerParams{
-		Answer:    req.Content,
-		ID:        req.AnswerID,
-		ProjectID: projectID,
-	})
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return v1_common.Fail(c, 404, "Answer not found", err)
-		}
-		return v1_common.Fail(c, 500, "Failed to update answer", err)
-	}
-
-	return c.JSON(200, map[string]string{
-		"message": "Answer updated successfully",
-	})
-}
-
-/*
- * handleGetProjectAnswers retrieves all answers for a project.
- *
- * Returns:
- * - Question ID and content
- * - Current answer text
- * - Question section
- *
- * Security:
- * - Verifies project belongs to user's company
- */
-func (h *Handler) handleGetProjectAnswers(c echo.Context) error {
-	user, err := getUserFromContext(c)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
-	}
-
-	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
-	if err != nil {
-		return v1_common.Fail(c, 404, "Company not found", err)
-	}
-
-	// Get project ID from URL
-	projectID := c.Param("id")
-	if projectID == "" {
-		return v1_common.Fail(c, 400, "Project ID is required", nil)
-	}
-
-	// Get project answers
-	answers, err := h.server.GetQueries().GetProjectAnswers(c.Request().Context(), projectID)
-	if err != nil {
-		return v1_common.Fail(c, 500, "Failed to get project answers", err)
-	}
-
-	// Verify project belongs to company
-	_, err = h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
-		ID:        projectID,
-		CompanyID: company.ID,
-	})
-	if err != nil {
-		return v1_common.Fail(c, 404, "Project not found", err)
-	}
-
-	// Convert to response format
-	response := make([]ProjectAnswerResponse, len(answers))
-	for i, a := range answers {
-		response[i] = ProjectAnswerResponse{
-			ID:         a.AnswerID,
-			QuestionID: a.QuestionID,
-			Question:   a.Question,
-			Answer:     a.Answer,
-			Section:    a.Section,
-		}
-	}
-
-	return c.JSON(200, map[string]interface{}{
-		"answers": response,
-	})
-}
-
-/*
- * handleUploadProjectDocument handles file uploads for a project.
- *
- * Flow:
- * 1. Validates file presence
- * 2. Verifies project ownership
- * 3. Uploads file to S3
- * 4. Creates document record in database
- * 5. Returns document details
- *
- * Cleanup:
- * - Deletes S3 file if database insert fails
- */
-func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
-	user, err := getUserFromContext(c)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
-	}
-
-	// Get file from request
-	file, err := c.FormFile("file")
-	if err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "No file provided", err)
-	}
-
-	// Get project ID from URL
-	projectID := c.Param("id")
-	if projectID == "" {
-		return v1_common.Fail(c, 400, "Project ID is required", nil)
-	}
-
-	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
-	if err != nil {
-		return v1_common.Fail(c, 404, "Company not found", err)
-	}
-
-	// Verify project belongs to company
-	_, err = h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
-		ID:        projectID,
-		CompanyID: company.ID,
-	})
-	if err != nil {
-		return v1_common.Fail(c, 404, "Project not found", err)
-	}
-
-	// Open the file
-	src, err := file.Open()
-	if err != nil {
-		return v1_common.Fail(c, 500, "Failed to open file", err)
-	}
-	defer src.Close()
-
-	// Read file content
-	fileContent, err := io.ReadAll(src)
-	if err != nil {
-		return v1_common.Fail(c, 500, "Failed to read file", err)
-	}
-
-	// Generate S3 key
-	fileExt := filepath.Ext(file.Filename)
-	s3Key := fmt.Sprintf("projects/%s/documents/%s%s", projectID, uuid.New().String(), fileExt)
-
-	// Upload to S3
-	fileURL, err := h.server.GetStorage().UploadFile(c.Request().Context(), s3Key, fileContent)
-	if err != nil {
-		return v1_common.Fail(c, 500, "Failed to upload file", err)
-	}
-
-	// Save document record in database
-	doc, err := h.server.GetQueries().CreateProjectDocument(c.Request().Context(), db.CreateProjectDocumentParams{
-		ProjectID: projectID,
-		Name:      c.FormValue("name"),
-		Url:       fileURL,
-		Section:   c.FormValue("section"),
-	})
-	if err != nil {
-		// Try to cleanup the uploaded file if database insert fails
-		_ = h.server.GetStorage().DeleteFile(c.Request().Context(), s3Key)
-		return v1_common.Fail(c, 500, "Failed to save document record", err)
-	}
-
-	return c.JSON(201, DocumentResponse{
-		ID:        doc.ID,
-		Name:      doc.Name,
-		URL:       doc.Url,
-		Section:   doc.Section,
-		CreatedAt: doc.CreatedAt,
-		UpdatedAt: doc.UpdatedAt,
-	})
-}
-
-/*
- * handleGetProjectDocuments retrieves all documents for a project.
- *
- * Returns:
- * - Document ID, name, URL
- * - Section assignment
- * - Creation/update timestamps
- *
- * Security:
- * - Verifies project belongs to user's company
- */
-func (h *Handler) handleGetProjectDocuments(c echo.Context) error {
-	user, err := getUserFromContext(c)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
-	}
-
-	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
-	if err != nil {
-		return v1_common.Fail(c, 404, "Company not found", err)
-	}
-
-	// Get project ID from URL
-	projectID := c.Param("id")
-	if projectID == "" {
-		return v1_common.Fail(c, 400, "Project ID is required", nil)
-	}
-
-	// Verify project belongs to company
-	_, err = h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
-		ID:        projectID,
-		CompanyID: company.ID,
-	})
-	if err != nil {
-		return v1_common.Fail(c, 404, "Project not found", err)
-	}
-
-	// Get documents for this project
-	docs, err := h.server.GetQueries().GetProjectDocuments(c.Request().Context(), projectID)
-	if err != nil {
-		return v1_common.Fail(c, 500, "Failed to get documents", err)
-	}
-
-	// Convert to response format
-	response := make([]DocumentResponse, len(docs))
-	for i, doc := range docs {
-		response[i] = DocumentResponse{
-			ID:        doc.ID,
-			Name:      doc.Name,
-			URL:       doc.Url,
-			Section:   doc.Section,
-			CreatedAt: doc.CreatedAt,
-			UpdatedAt: doc.UpdatedAt,
-		}
-	}
-
-	return c.JSON(200, map[string]interface{}{
-		"documents": response,
-	})
-}
-
-/*
- * handleDeleteProjectDocument removes a document from a project.
- *
- * Flow:
- * 1. Verifies document ownership
- * 2. Deletes file from S3
- * 3. Removes database record
- *
- * Security:
- * - Verifies document belongs to user's project
- */
-func (h *Handler) handleDeleteProjectDocument(c echo.Context) error {
-	user, err := getUserFromContext(c)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
-	}
-
-	// Get project ID and document ID from URL
-	projectID := c.Param("id")
-	documentID := c.Param("document_id")
-	if projectID == "" || documentID == "" {
-		return v1_common.Fail(c, 400, "Project ID and Document ID are required", nil)
-	}
-
-	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
-	if err != nil {
-		return v1_common.Fail(c, 404, "Company not found", nil)
-	}
-
-	// First get the document to get its S3 URL
-	doc, err := h.server.GetQueries().GetProjectDocument(c.Request().Context(), db.GetProjectDocumentParams{
-		ID:        documentID,
-		ProjectID: projectID,
-		CompanyID: company.ID,
-	})
-	if err != nil {
-		if err.Error() == "no rows in result set" {
-			return v1_common.Fail(c, 404, "Document not found", nil)
-		}
-		return v1_common.Fail(c, 500, "Failed to get document", nil)
-	}
-
-	// Delete from S3 first
-	s3Key := strings.TrimPrefix(doc.Url, "https://"+os.Getenv("AWS_S3_BUCKET")+".s3.us-east-1.amazonaws.com/")
-	err = h.server.GetStorage().DeleteFile(c.Request().Context(), s3Key)
-	if err != nil {
-		return v1_common.Fail(c, 500, "Failed to delete file from storage", nil)
-	}
-
-	// Then delete from database
-	deletedID, err := h.server.GetQueries().DeleteProjectDocument(c.Request().Context(), db.DeleteProjectDocumentParams{
-		ID:        documentID,
-		ProjectID: projectID,
-		CompanyID: company.ID,
-	})
-	if err != nil {
-		if err.Error() == "no rows in result set" {
-			return v1_common.Fail(c, 404, "Document not found or already deleted", nil)
-		}
-		return v1_common.Fail(c, 500, "Failed to delete document", nil)
-	}
-
-	if deletedID == "" {
-		return v1_common.Fail(c, 404, "Document not found or already deleted", nil)
-	}
-
-	return c.JSON(200, map[string]string{
-		"message": "Document deleted successfully",
-	})
-}
-
-/*
  * handleListCompanyProjects lists all projects for a company.
  * Similar to handleGetProjects but with different response format.
  *
@@ -658,53 +285,61 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusBadRequest, "Only draft projects can be submitted", nil)
 	}
 
-	// Get all questions and answers for this project
-	answers, err := h.server.GetQueries().GetProjectAnswers(c.Request().Context(), projectID)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get project answers", err)
-	}
-
 	// Get all questions
-	questions, err := h.server.GetQueries().GetProjectQuestions(c.Request().Context())
+	questions, err := h.server.GetQueries().GetQuestionsByProject(c.Request().Context(), db.GetQuestionsByProjectParams{
+		ProjectID: projectID,
+		OwnerID:   user.ID,
+	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get project questions", err)
 	}
 
 	var validationErrors []ValidationError
 
-	// Create a map of question IDs to answers for easy lookup
-	answerMap := make(map[string]string)
-	for _, answer := range answers {
-		answerMap[answer.QuestionID] = answer.Answer
-	}
-
 	// Validate each question
 	for _, question := range questions {
-		answer, exists := answerMap[question.ID]
-
 		// Check if required question is answered
-		if question.Required && (!exists || answer == "") {
-			validationErrors = append(validationErrors, ValidationError{
-				Question: question.Question,
-				Message:  "This question requires an answer",
-			})
-			continue
-		}
-
-		// Skip validation if answer is empty and question is not required
-		if !exists || answer == "" {
-			continue
-		}
-
-		// Validate answer against rules if validations exist
-		if question.Validations != nil && *question.Validations != "" {
-			if !isValidAnswer(answer, *question.Validations) {
-				validationErrors = append(validationErrors, ValidationError{
-					Question: question.Question,
-					Message:  getValidationMessage(*question.Validations),
-				})
+		if question.Required {
+			switch question.InputType {
+			case db.InputTypeEnumTextinput, db.InputTypeEnumTextarea:
+				answer := question.Answer
+				if answer == "" {
+					validationErrors = append(validationErrors, ValidationError{
+						Question: question.Question,
+						Message:  "This question requires an answer",
+					})
+					continue
+				}
+				// Validate answer against rules if validations exist
+				if question.Validations != nil {
+					if !isValidAnswer(answer, question.Validations) {
+						validationErrors = append(validationErrors, ValidationError{
+							Question: question.Question,
+							Message:  getValidationMessage(question.Validations),
+						})
+					}
+				}
+			case db.InputTypeEnumSelect, db.InputTypeEnumMultiselect:
+				if len(question.Choices) < 1 {
+					validationErrors = append(validationErrors, ValidationError{
+						Question: question.Question,
+						Message:  "This question requires an answer",
+					})
+					continue
+				}
+				if question.Validations != nil {
+					for _, answer := range question.Choices {
+						if !isValidAnswer(answer, question.Validations) {
+							validationErrors = append(validationErrors, ValidationError{
+								Question: question.Question,
+								Message:  getValidationMessage(question.Validations),
+							})
+						}
+					}
+				}
 			}
 		}
+
 	}
 
 	// If there are any validation errors, return them
@@ -753,12 +388,12 @@ func (h *Handler) handleCreateAnswer(c echo.Context) error {
 	}
 
 	if question.Validations != nil {
-		if !isValidAnswer(req.Content, *question.Validations) {
+		if !isValidAnswer(req.Content, question.Validations) {
 			return c.JSON(http.StatusBadRequest, map[string]interface{}{
 				"validation_errors": []ValidationError{
 					{
 						Question: question.Question,
-						Message:  getValidationMessage(*question.Validations),
+						Message:  getValidationMessage(question.Validations),
 					},
 				},
 			})
@@ -767,10 +402,9 @@ func (h *Handler) handleCreateAnswer(c echo.Context) error {
 
 	// Create the answer
 	answer, err := h.server.GetQueries().CreateProjectAnswer(c.Request().Context(), db.CreateProjectAnswerParams{
-		ProjectID:   projectID,
-		QuestionID:  req.QuestionID,
-		InputTypeID: question.InputTypeID,
-		Answer:      req.Content,
+		ProjectID:  projectID,
+		QuestionID: req.QuestionID,
+		Answer:     req.Content,
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create answer", err)

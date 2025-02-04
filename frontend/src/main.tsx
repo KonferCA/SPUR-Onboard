@@ -4,7 +4,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { WalletProvider } from '@suiet/wallet-kit';
 import '@suiet/wallet-kit/style.css';
 
-import { AuthProvider, useAuth } from '@/contexts';
+import { AuthProvider, NotificationProvider, useAuth } from '@/contexts';
 
 import { routeTree } from './routeTree.gen';
 
@@ -13,18 +13,25 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient();
 
-// Create router after auth is ready
+const router = createRouter({
+    routeTree,
+    context: {
+        auth: undefined,
+    },
+});
+
 function Router() {
     const auth = useAuth();
-
-    const router = createRouter({
-        routeTree,
-        context: {
-            auth,
-        },
-    });
-
-    return <RouterProvider router={router} />;
+    
+    if (auth.isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+            </div>
+        );
+    }
+    
+    return <RouterProvider router={router} context={{ auth }} />;
 }
 
 // Render the app
@@ -33,13 +40,15 @@ if (!rootElement.innerHTML) {
     const root = createRoot(rootElement);
     root.render(
         <StrictMode>
-            <QueryClientProvider client={queryClient}>
-                <WalletProvider>
-                    <AuthProvider>
-                        <Router />
-                    </AuthProvider>
-                </WalletProvider>
-            </QueryClientProvider>
+            <NotificationProvider>
+                <QueryClientProvider client={queryClient}>
+                    <WalletProvider>
+                        <AuthProvider>
+                            <Router />
+                        </AuthProvider>
+                    </WalletProvider>
+                </QueryClientProvider>
+            </NotificationProvider>
         </StrictMode>
     );
 }

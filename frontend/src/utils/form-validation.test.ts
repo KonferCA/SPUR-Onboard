@@ -8,12 +8,12 @@ describe('createZodSchema', () => {
     });
 
     it('should return an empty array when an empty string is provided', () => {
-        const result = createZodSchema('');
+        const result = createZodSchema([]);
         expect(result).toEqual([]);
     });
 
     it('should create a URL validation schema', () => {
-        const schemas = createZodSchema('url');
+        const schemas = createZodSchema(['url']);
         expect(schemas).toHaveLength(1);
 
         // Test valid URL
@@ -32,7 +32,7 @@ describe('createZodSchema', () => {
     });
 
     it('should handle multiple validation rules', () => {
-        const schemas = createZodSchema('url|url');
+        const schemas = createZodSchema(['url', 'url']);
         expect(schemas).toHaveLength(2);
 
         // Both schemas should be URL validators
@@ -44,13 +44,13 @@ describe('createZodSchema', () => {
     });
 
     it('should throw error for invalid validation type', () => {
-        expect(() => createZodSchema('invalidType')).toThrow(
+        expect(() => createZodSchema(['invalidType'])).toThrow(
             'Invalid validation type: invalidType'
         );
     });
 
     it('should throw error when one of multiple validations is invalid', () => {
-        expect(() => createZodSchema('url|invalidType')).toThrow(
+        expect(() => createZodSchema(['url', 'invalidType'])).toThrow(
             'Invalid validation type: invalidType'
         );
     });

@@ -27,7 +27,8 @@ type AuthRequest struct {
 
 type AuthResponse struct {
 	AccessToken string       `json:"access_token"` // jwt access token
-	User        UserResponse `json:"user"`         // user info
+	CompanyId   *string      `json:"company_id"`
+	User        UserResponse `json:"user"` // user info
 }
 
 type UserResponse struct {

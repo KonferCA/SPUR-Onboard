@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, {
+    createContext,
+    useContext,
+    useState,
+    useEffect,
+    useRef,
+    useCallback,
+} from 'react';
 import { refreshAccessToken, signout } from '@/services/auth';
 import type { User } from '@/types';
 import { snakeToCamel } from '@/utils/object';
@@ -26,55 +33,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [companyId, setCompanyId] = useState<string | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const intervalRef = useRef<number | null>(null);
 
-    useEffect(() => {
-        const verifyAuth = async () => {
-            try {
-                const response = await refreshAccessToken();
-                if (response) {
-                    console.log(response);
-                    setUser(snakeToCamel(response.user));
-                    setAccessToken(response.access_token);
-                }
-            } catch (error) {
-                console.error('Initial auth verification failed:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        verifyAuth();
-    }, []);
-
-    useEffect(() => {
-        if (!accessToken) return;
-
-        const REFRESH_INTERVAL = 1000 * 60 * 4; // 4 minutes (just under the 5-minute backend token expiry)
-        let refreshTimeout: NodeJS.Timeout | null = null;
-
-        const refreshToken = async () => {
-            try {
-                const response = await refreshAccessToken();
-                if (response) {
-                    setUser(response.user);
-                    setAccessToken(response.access_token);
-                }
-            } catch (error) {
-                console.error('Failed to refresh token:', error);
-                clearAuth();
-            }
-        };
-
-        refreshTimeout = setInterval(refreshToken, REFRESH_INTERVAL);
-
-        return () => {
-            if (refreshTimeout) {
-                clearInterval(refreshTimeout);
-            }
-        };
-    }, [accessToken]);
-
-    const setAuth = (
+    const setAuth = useCallback((
         newUser: User | null,
         token: string | null,
         newCompanyId: string | null = null
@@ -82,19 +43,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(newUser);
         setAccessToken(token);
         setCompanyId(newCompanyId);
-    };
+    }, []);
 
-    const clearAuth = async () => {
+    const clearAuth = useCallback(async () => {
         try {
             await signout();
-        } catch (error) {
-            console.error('Logout failed:', error);
         } finally {
             setUser(null);
             setAccessToken(null);
             setCompanyId(null);
+            if (intervalRef.current !== null) {
+                window.clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        const verifyAuth = async () => {
+            try {
+                const response = await refreshAccessToken();
+                if (response) {
+                    setUser(snakeToCamel(response.user));
+                    setAccessToken(response.accessToken);
+                    setCompanyId(response.companyId);
+
+                    // Set up token refresh interval
+                    if (intervalRef.current === null) {
+                        const REFRESH_INTERVAL = 1000 * 60 * 4; // 4 minutes
+                        intervalRef.current = window.setInterval(async () => {
+                            try {
+                                const response = await refreshAccessToken();
+                                if (response) {
+                                    setAccessToken(response.accessToken);
+                                }
+                            } catch {
+                                clearAuth();
+                            }
+                        }, REFRESH_INTERVAL);
+                    }
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        verifyAuth();
+
+        return () => {
+            if (intervalRef.current !== null) {
+                window.clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+        };
+    }, [clearAuth]);
 
     return (
         <AuthContext.Provider

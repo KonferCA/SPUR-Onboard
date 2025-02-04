@@ -2,7 +2,7 @@
 import { Button } from '@/components';
 import { useAuth } from '@/contexts';
 import { checkEmailVerifiedStatus } from '@/services/auth';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface VerifyEmailProps {
     email: string;
@@ -18,26 +18,30 @@ export function VerifyEmail({
     isResending,
 }: VerifyEmailProps) {
     const { user, accessToken } = useAuth();
+    const intervalRef = useRef<number | null>(null);
 
     useEffect(() => {
         if (user && user.emailVerified) return;
 
-        let id: number;
         if (accessToken) {
-            id = window.setInterval(async () => {
-                const verified = await checkEmailVerifiedStatus(accessToken);
-                if (verified) {
-                    onVerified();
-                }
-            }, 3000);
+            if (intervalRef.current === null) {
+                intervalRef.current = window.setInterval(async () => {
+                    const verified =
+                        await checkEmailVerifiedStatus(accessToken);
+                    if (verified) {
+                        onVerified();
+                    }
+                }, 3000);
+            }
         }
 
         return () => {
-            if (id !== undefined) {
-                window.clearInterval(id);
+            if (intervalRef.current !== null) {
+                window.clearInterval(intervalRef.current);
+                intervalRef.current = null;
             }
         };
-    }, []);
+    }, [accessToken]);
 
     return (
         <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md text-center">

@@ -6,28 +6,11 @@ import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
 
 import type { User, UserRole } from '@t';
-
-export enum Permission {
-    ViewAllProjects = 1,
-    ReviewProjects = 2,
-    ManageUsers = 4,
-    ManagePermissions = 8,
-    SubmitProject = 16,
-    CommentOnProjects = 32,
-    InvestInProjects = 64,
-    ManageDocuments = 128,
-    ManageInvestments = 256,
-    ManageTeam = 512,
-    IsAdmin = 1024,
-
-    // Roles
-    AdminRole = 1071,
-    StartupOwnerRole = 688,
-    InvestorRole = 97,
-}
+import { snakeToCamel } from '@/utils/object';
 
 export interface AuthResponse {
-    access_token: string;
+    accessToken: string;
+    companyId: string | null;
     user: User;
 }
 
@@ -62,7 +45,7 @@ export async function register(
     }
 
     const json = await res.json();
-    return json as RegisterReponse;
+    return snakeToCamel(json);
 }
 
 /**
@@ -93,7 +76,7 @@ export async function signin(
     }
 
     const json = await res.json();
-    return json as SigninResponse;
+    return snakeToCamel(json);
 }
 
 export async function refreshAccessToken(): Promise<AuthResponse> {
@@ -116,7 +99,7 @@ export async function refreshAccessToken(): Promise<AuthResponse> {
     }
 
     const json = await res.json();
-    return json.access_token;
+    return snakeToCamel(json);
 }
 
 /**
@@ -142,7 +125,7 @@ export async function checkEmailVerifiedStatus(
             Authorization: `Bearer ${accessToken}`,
         },
     });
-  
+
     const body = await res.json();
     return res.status === HttpStatusCode.OK && body.verified;
 }

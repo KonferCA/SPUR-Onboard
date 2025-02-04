@@ -150,6 +150,17 @@ func (h *Handler) handleRegister(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusCreated, "Registration complete but failed to sign in. Please sign in manually.", err)
 	}
 
+	var companyId *string = nil
+	company, err := q.GetCompanyByOwnerID(c.Request().Context(), newUser.ID)
+	if err != nil {
+		// just log the reason why it failed to fetch company id on login
+		logger.Warn(fmt.Sprintf("Error getting company on login: %s", err.Error()))
+	} else {
+		// do not return bad request on error because user might not have created a company yet
+		// in case the error is
+		companyId = &company.ID
+	}
+
 	// set the refresh token cookie
 	setRefreshTokenCookie(c, refreshToken)
 
@@ -157,6 +168,7 @@ func (h *Handler) handleRegister(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, AuthResponse{
 		AccessToken: accessToken,
+		CompanyId:   companyId,
 		User: UserResponse{
 			ID:            newUser.ID,
 			Email:         newUser.Email,
@@ -174,6 +186,8 @@ func (h *Handler) handleRegister(c echo.Context) error {
  * 4. Returns access token and user info
  */
 func (h *Handler) handleLogin(c echo.Context) error {
+	logger := middleware.GetLogger(c)
+
 	var req AuthRequest
 	if err := c.Bind(&req); err != nil {
 		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request format", err)
@@ -199,10 +213,22 @@ func (h *Handler) handleLogin(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to generate tokens", err)
 	}
 
+	var companyId *string = nil
+	company, err := queries.GetCompanyByOwnerID(c.Request().Context(), user.ID)
+	if err != nil {
+		// just log the reason why it failed to fetch company id on login
+		logger.Warn(fmt.Sprintf("Error getting company on login: %s", err.Error()))
+	} else {
+		// do not return bad request on error because user might not have created a company yet
+		// in case the error is
+		companyId = &company.ID
+	}
+
 	setRefreshTokenCookie(c, refreshToken)
 
 	return c.JSON(http.StatusOK, AuthResponse{
 		AccessToken: accessToken,
+		CompanyId:   companyId,
 		User: UserResponse{
 			ID:            user.ID,
 			FirstName:     user.FirstName,
@@ -346,6 +372,8 @@ it is essentially a passwordless login for the user given that the refresh token
 in the cookie is valid.
 */
 func (h *Handler) handleVerifyCookie(c echo.Context) error {
+	logger := middleware.GetLogger(c)
+
 	cookie, err := c.Cookie(COOKIE_REFRESH_TOKEN)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Missing refresh token cookie in request", err)
@@ -386,8 +414,20 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 		setRefreshTokenCookie(c, refreshToken)
 	}
 
+	var companyId *string = nil
+	company, err := h.server.GetQueries().GetCompanyByOwnerID(c.Request().Context(), user.ID)
+	if err != nil {
+		// just log the reason why it failed to fetch company id on login
+		logger.Warn(fmt.Sprintf("Error getting company on login: %s", err.Error()))
+	} else {
+		// do not return bad request on error because user might not have created a company yet
+		// in case the error is
+		companyId = &company.ID
+	}
+
 	return c.JSON(http.StatusOK, AuthResponse{
 		AccessToken: accessToken,
+		CompanyId:   companyId,
 		User: UserResponse{
 			ID:            user.ID,
 			FirstName:     user.FirstName,

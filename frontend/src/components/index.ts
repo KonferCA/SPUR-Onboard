@@ -4,8 +4,8 @@ export type { TextInputProps } from './TextInput';
 export { Dropdown } from './Dropdown';
 export type { DropdownOption, DropdownProps } from './Dropdown';
 
-export { FileUpload } from './FileUpload';
-export type { FileUploadProps } from './FileUpload';
+export { FileUpload, createUploadableFile } from './FileUpload';
+export type { FileUploadProps, UploadableFile } from './FileUpload';
 
 export { InfoCard } from './InforCard';
 export type { InfoCardProps } from './InforCard';
@@ -41,3 +41,6 @@ export { DateInput } from './DateInput';
 export type { DateInputProps } from './DateInput';
 
 export { ProgressSteps } from './ProgressSteps';
+
+export { CommentBubble } from './CommentBubble';
+export type { CommentBubbleProps } from './CommentBubble';

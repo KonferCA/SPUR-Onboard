@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { AuthForm } from '@/components/AuthForm';
 import { UserDetailsForm } from '@/components/UserDetailsForm';
 import { VerifyEmail } from '@/components/VerifyEmail';
-import { register, signin, createCompany, getCompany } from '@/services';
+import { register, signin, createCompany } from '@/services';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from '@tanstack/react-router';
 import type {
@@ -12,9 +12,10 @@ import type {
     CompanyFormErrors,
     RegistrationStep,
 } from '@/types/auth';
-import { Permission } from '@/services/auth';
 import { CompanyForm } from '@/components/CompanyForm/CompanyForm';
 import { CompanyInformation } from '@/types/company';
+import { isAdmin } from '@/utils/permissions';
+import { initialUserProfile } from '@/services/user';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
@@ -37,7 +38,7 @@ function AuthPage() {
     const [errors, setErrors] = useState<CompanyFormErrors>({});
 
     useEffect(() => {
-        if (user) {
+        if (user && companyId) {
             if (!user.emailVerified) {
                 setCurrentStep('verify-email');
             } else if (!user.firstName || !user.lastName) {
@@ -48,7 +49,7 @@ function AuthPage() {
                 handleRedirect();
             }
         }
-    }, [user]);
+    }, [user, companyId]);
 
     useEffect(() => {}, [authLoading]);
 
@@ -56,7 +57,7 @@ function AuthPage() {
         if (!user) return;
 
         const perms = user.permissions;
-        if (perms & Permission.IsAdmin) {
+        if (isAdmin(perms)) {
             navigate({ to: '/admin/dashboard', replace: true });
         } else {
             navigate({ to: '/user/dashboard', replace: true });
@@ -73,18 +74,17 @@ function AuthPage() {
                     formData.email,
                     formData.password
                 );
-                setAuth(regResp.user, regResp.access_token);
+                setAuth(regResp.user, regResp.accessToken);
                 setCurrentStep('verify-email');
             } else {
                 const signinResp = await signin(
                     formData.email,
                     formData.password
                 );
-                const company = await getCompany(signinResp.access_token);
                 setAuth(
                     signinResp.user,
-                    signinResp.access_token,
-                    company ? company.id : null
+                    signinResp.accessToken,
+                    signinResp.companyId
                 );
 
                 if (!signinResp.user.emailVerified) {
@@ -107,20 +107,29 @@ function AuthPage() {
     const handleUserDetailsSubmit = async (formData: UserDetailsData) => {
         setIsLoading(true);
         setErrors({});
-        
+
         try {
             if (!user) {
                 setErrors({ firstName: 'User session not found' });
                 return;
             }
-            
+
             if (!accessToken) {
                 setErrors({ firstName: 'Authentication token missing' });
                 return;
             }
-        
+
+            await initialUserProfile(accessToken, user.id, {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                title: formData.position,
+                bio: formData.bio,
+                linkedin: formData.linkedIn,
+            });
+
             user.firstName = formData.firstName;
             user.lastName = formData.lastName;
+
             setAuth(user, accessToken, companyId);
             setCurrentStep('company-creation');
         } catch (error: any) {
@@ -134,15 +143,18 @@ function AuthPage() {
                 });
             } else {
                 setErrors({
-                    firstName: 'An unexpected error occurred while updating your profile',
+                    firstName:
+                        'An unexpected error occurred while updating your profile',
                 });
             }
         } finally {
             setIsLoading(false);
-        } 
+        }
     };
 
-    const handleCompanyCreationSubmit = async (formData: CompanyInformation) => {
+    const handleCompanyCreationSubmit = async (
+        formData: CompanyInformation
+    ) => {
         setIsLoading(true);
         setErrors({});
 
@@ -151,7 +163,7 @@ function AuthPage() {
                 setErrors({ name: 'User session not found' });
                 return;
             }
-            
+
             if (!accessToken) {
                 setErrors({ name: 'Authentication token missing' });
                 return;
@@ -178,15 +190,14 @@ function AuthPage() {
             }
 
             const company = await createCompany(accessToken, formData);
-            
+
             setAuth(user, accessToken, company.id);
-            
+
             setCurrentStep('registration-complete');
-            
+
             setTimeout(() => {
                 handleRedirect();
             }, 1500);
-
         } catch (error: any) {
             console.error('Company creation error:', error);
             if (error.body) {
@@ -194,16 +205,16 @@ function AuthPage() {
                     setErrors(error.body);
                 } else {
                     setErrors({
-                        name: error.body?.message || 'Failed to create company'
+                        name: error.body?.message || 'Failed to create company',
                     });
                 }
             } else if (error.message) {
                 setErrors({
-                    name: error.message
+                    name: error.message,
                 });
             } else {
                 setErrors({
-                    name: 'An unexpected error occurred while creating your company'
+                    name: 'An unexpected error occurred while creating your company',
                 });
             }
         } finally {
