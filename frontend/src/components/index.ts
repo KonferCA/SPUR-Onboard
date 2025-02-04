@@ -44,3 +44,6 @@ export { ProgressSteps } from './ProgressSteps';
 
 export { CommentBubble } from './CommentBubble';
 export type { CommentBubbleProps } from './CommentBubble';
+
+export { FileDownload } from './FileDownload';
+export type { FileDownloadProps } from './FileDownload';
