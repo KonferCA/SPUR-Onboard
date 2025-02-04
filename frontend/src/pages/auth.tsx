@@ -38,7 +38,7 @@ function AuthPage() {
     const [errors, setErrors] = useState<CompanyFormErrors>({});
 
     useEffect(() => {
-        if (user && companyId) {
+        if (user) {
             if (!user.emailVerified) {
                 setCurrentStep('verify-email');
             } else if (!user.firstName || !user.lastName) {
