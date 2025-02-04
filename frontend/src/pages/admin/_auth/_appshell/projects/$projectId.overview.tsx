@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Stack } from '@layouts'
-import { FiFileText, FiMessageSquare, FiDollarSign, FiTrendingUp, FiGlobe, FiLinkedin, FiTwitter } from 'react-icons/fi'
+import { FiFileText, FiMessageSquare, FiDollarSign, FiTrendingUp, FiGlobe, FiLinkedin } from 'react-icons/fi'
 import { useEffect, useState } from 'react'
 import { CompanyResponse, getCompany } from '@/services/company'
 import { TeamMember } from '@/types'
@@ -8,9 +8,9 @@ import { getTeamMembers } from '@/services/teams'
 import { useAuth } from '@/contexts/AuthContext'
 import { getProject, getProjectComments, getProjectDocuments } from '@/services/projects'
 
-interface ProjectParams {
-  projectId: string
-}
+// interface ProjectParams {
+//   projectId: string
+// }
 
 interface ProjectStats {
   status: string;

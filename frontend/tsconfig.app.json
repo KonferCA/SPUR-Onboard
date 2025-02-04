@@ -38,5 +38,10 @@
         "noUncheckedSideEffectImports": true
     },
     
-    "include": ["src"]
+    "include": ["src"],
+    "exclude": [
+        "node_moddules",
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+    ]
 }
