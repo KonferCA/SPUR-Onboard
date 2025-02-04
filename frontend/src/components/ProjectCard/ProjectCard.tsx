@@ -30,7 +30,17 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                             Finish Submission
                         </Button>
                     )}
-                    {data.status !== 'draft' && <Button>View</Button>}
+                    {data.status !== 'draft' && (
+                        <Button
+                            onClick={() =>
+                                navigate({
+                                    to: `/user/project/${data.id}/view`,
+                                })
+                            }
+                        >
+                            View
+                        </Button>
+                    )}
                 </div>
             </div>
             <div className="h-[1px] bg-gray-300 my-4"></div>
