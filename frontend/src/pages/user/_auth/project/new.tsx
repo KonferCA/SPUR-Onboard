@@ -5,10 +5,8 @@ import {
     createProject,
     getProjectFormQuestions,
     ProjectDraft,
-    removeDocument,
     saveProjectDraft,
     submitProject,
-    uploadDocument,
 } from '@/services/project';
 import {
     GroupedProjectQuestions,
@@ -44,16 +42,6 @@ const questionGroupTitleSeparatorStyles = cva(
 );
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
-interface FileChange {
-    action: 'add' | 'remove';
-    file: UploadableFile;
-    metadata: {
-        questionId: string;
-        section: string;
-        subSection: string;
-    };
-}
-
 const NewProjectPage = () => {
     const navigate = useNavigate({ from: '/user/project/new' });
     const [currentProjectId, setCurrentProjectId] = useState('');
@@ -82,7 +70,6 @@ const NewProjectPage = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [currentStep, setCurrentStep] = useState<number>(0);
     const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
-    const fileChangesRef = useRef<Map<string, FileChange>>(new Map());
 
     const autosave = useDebounceFn(
         async () => {
@@ -95,43 +82,7 @@ const NewProjectPage = () => {
             );
             dirtyInputRef.current.clear();
 
-            // TODO: handle file changes
-            const fileChanges = Array.from(fileChangesRef.current.values());
-            fileChangesRef.current.clear();
-
             try {
-                // TODO: handle file changes
-                if (fileChanges.length > 0) {
-                    // Process file changes
-                    await Promise.all(
-                        fileChanges.map(async (change) => {
-                            if (
-                                change.action === 'remove' &&
-                                change.file.metadata?.id
-                            ) {
-                                await removeDocument(accessToken, {
-                                    projectId: currentProjectId,
-                                    documentId: change.file.metadata.id,
-                                });
-                            } else if (change.action === 'add') {
-                                const response = await uploadDocument(
-                                    accessToken,
-                                    {
-                                        projectId: currentProjectId,
-                                        file: change.file,
-                                        questionId: change.metadata.questionId,
-                                        name: change.file.name,
-                                        section: change.metadata.section,
-                                        subSection: change.metadata.subSection,
-                                    }
-                                );
-                                change.file.metadata = response;
-                                change.file.uploaded = true;
-                            }
-                        })
-                    );
-                }
-
                 console.log(dirtyInputsSnapshot);
                 if (dirtyInputsSnapshot.length > 0) {
                     await saveProjectDraft(
