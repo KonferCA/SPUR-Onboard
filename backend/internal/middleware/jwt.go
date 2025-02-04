@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -8,11 +9,26 @@ import (
 	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
+
 	"github.com/google/uuid"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 )
+
+var (
+	ErrNoUserInContext = errors.New("user not found in context")
+)
+
+// GetUserFromContext tries to get the user object from the context.
+// Returns an error if the user object is not found or is not the correct type.
+func GetUserFromContext(c echo.Context) (*db.User, error) {
+	user, ok := c.Get("user").(*db.User)
+	if !ok {
+		return nil, ErrNoUserInContext
+	}
+	return user, nil
+}
 
 // CompanyAccess creates a middleware that validates company ownership
 func CompanyAccess(dbPool *pgxpool.Pool) echo.MiddlewareFunc {

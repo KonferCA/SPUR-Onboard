@@ -13,6 +13,12 @@
     "coverage": "vitest run --coverage",
     "preview": "vite preview"
   },
+  "prettier": {
+      "trailingComma": "es5",
+      "tabWidth": 4,
+      "semi": true,
+      "singleQuote": true
+  },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@mysten/sui": "^1.20.0",

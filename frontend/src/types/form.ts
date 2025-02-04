@@ -1,5 +1,5 @@
 import type { UploadableFile } from '@/components';
-import { ZodString } from 'zod';
+import { ZodTypeAny } from 'zod';
 
 export type FormFieldType =
     | 'textinput'
@@ -29,7 +29,7 @@ export interface FormField {
         label: string;
         value: string;
     }>;
-    validations?: ZodString[];
+    validations?: ZodTypeAny[];
     value: FormFieldValue;
     invalid?: boolean;
 }

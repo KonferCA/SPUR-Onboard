@@ -13,7 +13,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog/log"
 )
 
 /*
@@ -41,8 +40,6 @@ func (h *Handler) handleUploadProjectDocument(c echo.Context) error {
 	if err := v1_common.BindandValidate(c, &req); err != nil {
 		return v1_common.Fail(c, 400, "Invalid request", err)
 	}
-
-	log.Debug().Any("req", req).Send()
 
 	form := c.Request().MultipartForm
 	var file *multipart.FileHeader

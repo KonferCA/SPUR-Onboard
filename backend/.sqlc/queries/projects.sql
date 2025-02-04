@@ -122,9 +122,13 @@ AND project_documents.project_id = $2
 AND projects.company_id = $3;
 
 -- name: ListCompanyProjects :many
-SELECT projects.* FROM projects
-WHERE company_id = $1
-ORDER BY created_at DESC; 
+SELECT p.*, COUNT(d.id) as document_count, COUNT(t.id) as team_member_count
+FROM projects p
+LEFT JOIN project_documents d ON d.project_id = p.id
+LEFT JOIN team_members t ON t.company_id = $1
+WHERE p.company_id = $1
+GROUP BY p.id
+ORDER BY p.created_at DESC;
 
 -- name: GetProjectQuestions :many
 WITH all_questions AS (
