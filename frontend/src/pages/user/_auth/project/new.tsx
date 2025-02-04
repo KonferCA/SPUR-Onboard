@@ -116,115 +116,105 @@ const NewProjectPage = () => {
             value,
         });
 
-        const newGroups = groupedQuestions.map((group, idx) => {
-            if (currentStep !== idx) return group;
-            return {
-                ...group,
-                subSections: group.subSections.map((subsection) => {
-                    return {
+        setGroupedQuestions(prevGroups => {
+            const newGroups = prevGroups.map((group, idx) => {
+                // ONLY process the current step
+                if (currentStep !== idx) return group;
+
+                return {
+                    ...group,
+                    subSections: group.subSections.map(subsection => ({
                         ...subsection,
-                        questions: subsection.questions.map((question) => {
-                            // For file inputs, we use the field key as the question ID
+                        questions: subsection.questions.map(question => {
+                            // Process file uploads separately from other field types
                             const isFileInput = question.inputFields.some(
-                                (f) => f.type === 'file' && f.key === questionId
+                                f => f.type === 'file' && f.key === inputFieldKey
                             );
 
-                            if (!isFileInput && question.id !== questionId)
-                                return question;
+                            if (isFileInput) {
+                                // Handle file upload case
+                                return {
+                                    ...question,
+                                    inputFields: question.inputFields.map(field => {
+                                        if (field.key !== inputFieldKey) return field;
+
+                                        const files = value as UploadableFile[];
+                                        
+                                        // If we're clearing files
+                                        if (files.length === 0) {
+                                            return {
+                                                ...field,
+                                                value: { ...field.value, value: [] }
+                                            };
+                                        }
+
+                                        // Handle file upload state
+                                        const uploadedFiles = files.filter(f => f.metadata?.id);
+                                        if (uploadedFiles.length > 0) {
+                                            dirtyInputRef.current.set(inputFieldKey, {
+                                                question_id: inputFieldKey,
+                                                answer: uploadedFiles[0].metadata?.id || '',
+                                            });
+                                            setTimeout(() => autosave(), 0);
+                                        }
+
+                                        return {
+                                            ...field,
+                                            value: { ...field.value, value: files }
+                                        };
+                                    })
+                                };
+                            }
+
+                            // Handle non-file fields
+                            if (question.id !== questionId) return question;
 
                             return {
                                 ...question,
-                                inputFields: question.inputFields.map(
-                                    (field) => {
-                                        if (field.key === inputFieldKey) {
-                                            switch (field.type) {
-                                                case 'file':
-                                                    // For files, only update if they have metadata (bc that means the upload is complete)
-                                                    const files =
-                                                        value as UploadableFile[];
-                                                    const uploadedFiles =
-                                                        files.filter(
-                                                            (f) =>
-                                                                f.metadata?.id
-                                                        );
-                                                    if (
-                                                        uploadedFiles.length > 0
-                                                    ) {
-                                                        dirtyInputRef.current.set(
-                                                            inputFieldKey,
-                                                            {
-                                                                question_id:
-                                                                    inputFieldKey,
-                                                                answer:
-                                                                    uploadedFiles[0]
-                                                                        .metadata
-                                                                        ?.id ||
-                                                                    '',
-                                                            }
-                                                        );
-                                                    }
-                                                    break;
-                                                case 'select':
-                                                case 'multiselect':
-                                                    const choices =
-                                                        value as DropdownOption[];
-                                                    dirtyInputRef.current.set(
-                                                        questionId,
-                                                        {
-                                                            question_id:
-                                                                questionId,
-                                                            answer: choices.map(
-                                                                (c) => c.value
-                                                            ),
-                                                        }
-                                                    );
-                                                    break;
+                                inputFields: question.inputFields.map(field => {
+                                    if (field.key !== inputFieldKey) return field;
 
-                                                case 'date':
-                                                    const date = value as Date;
-                                                    dirtyInputRef.current.set(
-                                                        questionId,
-                                                        {
-                                                            question_id:
-                                                                questionId,
-                                                            answer: date
-                                                                .toISOString()
-                                                                .split('T')[0],
-                                                        }
-                                                    );
-                                                    break;
+                                    let newValue = value;
+                                    switch (field.type) {
+                                        case 'select':
+                                        case 'multiselect':
+                                            const choices = value as DropdownOption[];
+                                            dirtyInputRef.current.set(questionId, {
+                                                question_id: questionId,
+                                                answer: choices.map(c => c.value),
+                                            });
+                                            break;
 
-                                                default:
-                                                    dirtyInputRef.current.set(
-                                                        questionId,
-                                                        {
-                                                            question_id:
-                                                                questionId,
-                                                            answer: value,
-                                                        }
-                                                    );
-                                                    break;
-                                            }
+                                        case 'date':
+                                            const date = value as Date;
+                                            dirtyInputRef.current.set(questionId, {
+                                                question_id: questionId,
+                                                answer: date.toISOString().split('T')[0],
+                                            });
+                                            break;
 
-                                            autosave();
-                                            return {
-                                                ...field,
-                                                value: {
-                                                    ...field.value,
-                                                    value: value,
-                                                },
-                                            };
-                                        }
-                                        return field;
+                                        default:
+                                            dirtyInputRef.current.set(questionId, {
+                                                question_id: questionId,
+                                                answer: value,
+                                            });
+                                            break;
                                     }
-                                ),
+
+                                    setTimeout(() => autosave(), 0);
+                                    return {
+                                        ...field,
+                                        value: { ...field.value, value: newValue }
+                                    };
+                                })
                             };
-                        }),
-                    };
-                }),
-            };
+                        })
+                    }))
+                };
+            });
+
+            return newGroups;
         });
-        setGroupedQuestions(newGroups);
     };
 
     const handleNextStep = () => {
