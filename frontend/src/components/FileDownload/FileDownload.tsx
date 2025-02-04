@@ -13,6 +13,7 @@ export const FileDownload: FC<FileDownloadProps> = ({ docs }) => {
                 <a
                     key={d.id}
                     href={d.url}
+                    download
                     target="_blank"
                     className="px-6 py-4 rounded-lg border border-gray-300 bg-gray-100"
                 >
