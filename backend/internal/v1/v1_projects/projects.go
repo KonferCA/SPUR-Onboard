@@ -305,7 +305,15 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 	var validationErrors []ValidationError
 
 	// Validate each question
-	for _, question := range questions {
+	for i, question := range questions {
+		// First two questions are the company name and date founded which are never filled
+		// by the user since they can't change through project form.
+		switch i {
+		case 0:
+			question.Answer = company.Name
+		case 1:
+			question.Answer = time.Unix(company.DateFounded, 0).Format("2006-01-02")
+		}
 		// Check if required question is answered
 		if question.Required {
 			switch question.InputType {
