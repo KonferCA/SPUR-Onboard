@@ -13,7 +13,7 @@ import {
     deleteTeamMember,
     uploadTeamMemberDocument,
 } from '@/services/teams';
-import { useAuth } from '@/contexts';
+import { useAuth, useNotification } from '@/contexts';
 
 export interface TeamMembersProps {
     initialValue: TeamMember[];
@@ -38,6 +38,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         useState<UploadableFile | null>(null);
 
     const { accessToken, companyId } = useAuth();
+    const notification = useNotification();
 
     const checkAllRequired = () => {
         return (
@@ -61,6 +62,11 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             return;
         }
 
+        const notificationId = notification.push({
+            message: 'Saving team member...',
+            level: 'info',
+            autoClose: false,
+        });
         try {
             const res = await addTeamMember(accessToken, {
                 companyId,
@@ -94,6 +100,15 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                 isLoading: false,
             });
 
+            setTimeout(() => {
+                notification.update(notificationId, {
+                    message: 'Team member saved',
+                    level: 'success',
+                    autoClose: true,
+                    duration: 1000,
+                });
+            }, 1000);
+
             setMembers((prev) =>
                 prev.map((m) => (m.id === originalId ? { ...member } : m))
             );
@@ -101,6 +116,12 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             console.error(e);
             // remove member from the list
             setMembers((prev) => prev.filter((m) => m.id != member.id));
+            notification.update(notificationId, {
+                message: 'Failed to save team member',
+                level: 'error',
+                autoClose: true,
+                duration: 2000,
+            });
         }
     };
 
@@ -143,12 +164,31 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             setMembers((prev) => [...prev, member]);
             return;
         }
+        const notificationId = notification.push({
+            message: 'Removing team member...',
+            level: 'info',
+            autoClose: false,
+        });
         try {
             await deleteTeamMember(accessToken, { companyId, member });
+            setTimeout(() => {
+                notification.update(notificationId, {
+                    message: 'Team member removed',
+                    level: 'success',
+                    autoClose: true,
+                    duration: 1000,
+                });
+            }, 1000);
         } catch (e) {
             console.error(e);
             // add the member that was removed
             setMembers((prev) => [...prev, member]);
+            notification.update(notificationId, {
+                message: 'Failed to remove team member',
+                level: 'error',
+                autoClose: true,
+                duration: 2000,
+            });
         }
     };
 
@@ -198,8 +238,8 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             </div>
 
             {/* Add Member Form */}
-            {!disabled && (
-                isAdding ? (
+            {!disabled &&
+                (isAdding ? (
                     <div className="bg-gray-50 rounded-lg p-4 space-y-4 border-2">
                         <div className="space-y-2">
                             <div className="flex items-center justify-center gap-2">
@@ -259,11 +299,14 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                                 </div>
                                 <div className="space-y-4">
                                     <TextInput
-                                        value={newMember.resumeExternalUrl || ''}
+                                        value={
+                                            newMember.resumeExternalUrl || ''
+                                        }
                                         onChange={(e) =>
                                             setNewMember((prev) => ({
                                                 ...prev,
-                                                resumeExternalUrl: e.target.value,
+                                                resumeExternalUrl:
+                                                    e.target.value,
                                             }))
                                         }
                                         placeholder="Provide a link or upload directly"
@@ -288,7 +331,9 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                                             </div>
                                             <button
                                                 type="button"
-                                                onClick={() => setResumeFile(null)}
+                                                onClick={() =>
+                                                    setResumeFile(null)
+                                                }
                                                 className="text-gray-400 hover:text-gray-600"
                                             >
                                                 <FiX />
@@ -365,9 +410,10 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                             <fieldset>
                                 <div className="flex justify-between items-center mb-1">
                                     <legend className="block text-md font-normal">
-                                        Is there a founder's agreement in place that
-                                        outlines roles, responsibilities, equity
-                                        split, and dispute resolution mechanisms?
+                                        Is there a founder's agreement in place
+                                        that outlines roles, responsibilities,
+                                        equity split, and dispute resolution
+                                        mechanisms?
                                     </legend>
                                 </div>
                                 <div className="space-y-4">
@@ -390,7 +436,9 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                                         limit={1}
                                         onFilesChange={(files) => {
                                             if (files.length) {
-                                                setFoundersAgreementFile(files[0]);
+                                                setFoundersAgreementFile(
+                                                    files[0]
+                                                );
                                             } else {
                                                 setFoundersAgreementFile(null);
                                             }
@@ -406,7 +454,9 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                                             <button
                                                 type="button"
                                                 onClick={() =>
-                                                    setFoundersAgreementFile(null)
+                                                    setFoundersAgreementFile(
+                                                        null
+                                                    )
                                                 }
                                                 className="text-gray-400 hover:text-gray-600"
                                             >
@@ -443,8 +493,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         <FiPlus />
                         Add member
                     </button>
-                )
-            )}
+                ))}
         </div>
     );
 };

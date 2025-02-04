@@ -1,7 +1,7 @@
 import { ExtendedProjectResponse } from '@/services/project';
 import { formatUnixTimestamp } from '@/utils/date';
 import { Badge, Button, Card } from '@components';
-import { ReactNode } from '@tanstack/react-router';
+import { ReactNode, useNavigate } from '@tanstack/react-router';
 import { FC } from 'react';
 
 export interface ProjectCardProps {
@@ -9,6 +9,7 @@ export interface ProjectCardProps {
 }
 
 export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
+    const navigate = useNavigate();
     return (
         <Card>
             <div className="flex justify-between items-center">
@@ -19,9 +20,27 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                     {/* TODO: add this in post MVP */}
                     {/* <Button variant="outline">Withdraw</Button> */}
                     {data.status === 'draft' && (
-                        <Button>Finish Submission</Button>
+                        <Button
+                            onClick={() =>
+                                navigate({
+                                    to: `/user/project/${data.id}/form`,
+                                })
+                            }
+                        >
+                            Finish Submission
+                        </Button>
                     )}
-                    {data.status !== 'draft' && <Button>View</Button>}
+                    {data.status !== 'draft' && (
+                        <Button
+                            onClick={() =>
+                                navigate({
+                                    to: `/user/project/${data.id}/view`,
+                                })
+                            }
+                        >
+                            View
+                        </Button>
+                    )}
                 </div>
             </div>
             <div className="h-[1px] bg-gray-300 my-4"></div>

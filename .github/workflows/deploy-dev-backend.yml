@@ -16,7 +16,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Create env file
         run: |
           cat << EOF > .env
@@ -27,6 +26,7 @@ jobs:
           AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}
           AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
           BACKEND_URL=${{ secrets.BACKEND_URL }}
+          FRONTEND_URL=${{ secrets.FRONTEND_URL }}
           DB_HOST=${{ secrets.DB_HOST }}
           DB_NAME=${{ secrets.DB_NAME }}
           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
@@ -42,17 +42,14 @@ jobs:
           POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
           RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
           EOF
-
       - name: Setup VPS fingerprint
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           echo "${{ secrets.VPS_IP }} ${{ secrets.VPS_FINGERPRINT }}" >> ~/.ssh/known_hosts
-
       - name: Setup Rsync
         uses: GuillaumeFalourd/setup-rsync@v1.2
-
       - name: Setup VPS File System Tree
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -64,15 +61,12 @@ jobs:
           envs: APP_ENV
           script: |
             mkdir -p "$HOME/$APP_ENV/migrations"
-
       - name: Upload .env
         run: |
           rsync -avz --progress .env ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_ENV }}/
-
       - name: Upload Migrations
         run: |
           rsync -avz --delete --progress .sqlc/migrations/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_ENV }}/migrations/
-
       - name: Boot Postgres and Run Migrations
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -133,16 +127,13 @@ jobs:
             # Run migrations up
             goose -dir "$HOME/$APP_ENV/migrations" postgres \
               "postgres://$DB_USER:$DB_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" up
-
       - name: Build Docker Image
         run: |
           docker build -t ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest .
           docker save -o image.tar ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest
-
       - name: Upload Docker Image
         run: |
           rsync -avz image.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_ENV }}/
-
       - name: Deploy Go App on VPS
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -177,7 +168,6 @@ jobs:
               "$APP_NAME-$APP_ENV:latest"
 
             echo "Done: $APP_ENV Deployment"
-
       - name: Post Deployment Clean Up on VPS
         uses: appleboy/ssh-action@v1.0.3
         env:

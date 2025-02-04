@@ -1,5 +1,6 @@
 import { getApiUrl, HttpStatusCode } from '@/utils';
 import { snakeToCamel } from '@/utils/object';
+import { ApiError } from '@/services/errors';
 
 export interface ProjectResponse {
     id: string;
@@ -78,7 +79,9 @@ export async function getProjectDocuments(
 
     const json = await res.json();
     return {
-        documents: (json.documents || []).map((doc: any) => snakeToCamel(doc) as DocumentResponse)
+        documents: (json.documents || []).map(
+            (doc: any) => snakeToCamel(doc) as DocumentResponse
+        ),
     };
 }
 
@@ -101,6 +104,41 @@ export async function getProjectComments(
 
     const json = await res.json();
     return {
-        comments: (json.comments || []).map((comment: any) => snakeToCamel(comment) as CommentResponse)
+        comments: (json.comments || []).map(
+            (comment: any) => snakeToCamel(comment) as CommentResponse
+        ),
     };
-} 
+}
+
+export enum ProjectStatusEnum {
+    Draft = 'draft',
+    Pending = 'pending',
+    Verified = 'verified',
+    Declined = 'declined',
+    Withdrawn = 'withdrawn',
+}
+
+export async function updateProjectStatus(
+    accessToken: string,
+    projectId: string,
+    status: ProjectStatusEnum
+): Promise<void> {
+    const url = getApiUrl(`/project/${projectId}/status`);
+    const res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+    });
+
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError(
+            'Failed to update project status',
+            res.status,
+            await res.json()
+        );
+    }
+}
+

@@ -2,13 +2,16 @@ package v1_projects
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 )
 
 /*
@@ -302,9 +305,77 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 	var validationErrors []ValidationError
 
 	// Validate each question
-	for _, question := range questions {
+	for i, question := range questions {
+		// First two questions are the company name and date founded which are never filled
+		// by the user since they can't change through project form.
+		switch i {
+		case 0:
+			question.Answer = company.Name
+		case 1:
+			question.Answer = time.Unix(company.DateFounded, 0).Format("2006-01-02")
+		}
 		// Check if required question is answered
 		if question.Required {
+			if question.ConditionType.Valid {
+				// Get the dependent question's answer
+				var dependentAnswer string
+				var dependentChoices []string
+
+				// Find the dependent question's answer
+				for _, q := range questions {
+					b := question.DependentQuestionID.Bytes
+					if q.ID == fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16]) {
+						dependentAnswer = q.Answer
+						dependentChoices = q.Choices
+						break
+					}
+				}
+
+				// Skip validation if condition is not met
+				shouldValidate := false
+
+				// Handle array answers (multiselect/select)
+				if len(dependentChoices) > 0 {
+					switch question.ConditionType.ConditionTypeEnum {
+					case db.ConditionTypeEnumEmpty:
+						shouldValidate = len(dependentChoices) == 0
+					case db.ConditionTypeEnumNotEmpty:
+						shouldValidate = len(dependentChoices) > 0
+					case db.ConditionTypeEnumEquals:
+						for _, choice := range dependentChoices {
+							if choice == *question.ConditionValue {
+								shouldValidate = true
+								break
+							}
+						}
+					case db.ConditionTypeEnumContains:
+						for _, choice := range dependentChoices {
+							if choice == *question.ConditionValue {
+								shouldValidate = true
+								break
+							}
+						}
+					}
+				} else {
+					// Handle single value answers
+					switch question.ConditionType.ConditionTypeEnum {
+					case db.ConditionTypeEnumEmpty:
+						shouldValidate = dependentAnswer == ""
+					case db.ConditionTypeEnumNotEmpty:
+						shouldValidate = dependentAnswer != ""
+					case db.ConditionTypeEnumEquals:
+						shouldValidate = dependentAnswer == *question.ConditionValue
+					case db.ConditionTypeEnumContains:
+						shouldValidate = strings.Contains(dependentAnswer, *question.ConditionValue)
+					}
+				}
+
+				// Skip validation if condition is not met
+				if !shouldValidate {
+					continue
+				}
+			}
+
 			switch question.InputType {
 			case db.InputTypeEnumTextinput, db.InputTypeEnumTextarea:
 				answer := question.Answer
@@ -416,4 +487,40 @@ func (h *Handler) handleCreateAnswer(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, answer)
+}
+
+func (h *Handler) handleUpdateProjectStatus(c echo.Context) error {
+	projectID := c.Param("id")
+	if _, err := uuid.Parse(projectID); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request. Invalid project id", err)
+	}
+
+	var req UpdateProjectStatusRequest
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
+	}
+
+	user, err := middleware.GetUserFromContext(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	queries := h.server.GetQueries()
+
+	company, err := queries.GetCompanyByOwnerID(c.Request().Context(), user.ID)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "User does not own any company", err)
+	}
+
+	project, err := queries.GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{ID: projectID, CompanyID: company.ID})
+	if err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Failed to find project to update status", err)
+	}
+
+	err = queries.UpdateProjectStatus(c.Request().Context(), db.UpdateProjectStatusParams{Status: req.Status, ID: project.ID})
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to update project status", err)
+	}
+
+	return v1_common.Success(c, http.StatusOK, "Project status updated")
 }
