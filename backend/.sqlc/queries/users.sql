@@ -38,3 +38,45 @@ SELECT
     NULLIF(updated_at, 0)::bigint as updated_at
 FROM users
 WHERE id = $1;
+
+-- name: ListUsers :many
+SELECT 
+    id,
+    COALESCE(first_name, '') as first_name,
+    COALESCE(last_name, '') as last_name,
+    email,
+    permissions,
+    email_verified,
+    created_at,
+    updated_at
+FROM users
+WHERE 
+    ($1::text IS NULL OR NULLIF($1, '')::int IS NULL OR permissions = NULLIF($1, '')::int) AND
+    ($2::text IS NULL OR 
+        (LOWER(email) LIKE '%' || LOWER($2) || '%' OR
+         LOWER(COALESCE(first_name, '')) LIKE '%' || LOWER($2) || '%' OR
+         LOWER(COALESCE(last_name, '')) LIKE '%' || LOWER($2) || '%'))
+ORDER BY 
+    CASE WHEN $3 = 'asc' THEN created_at END ASC,
+    CASE WHEN $3 = 'desc' OR $3 IS NULL THEN created_at END DESC
+LIMIT $4 OFFSET $5;
+
+-- name: CountUsers :one
+SELECT COUNT(*)
+FROM users
+WHERE 
+    ($1::text IS NULL OR NULLIF($1, '')::int IS NULL OR permissions = NULLIF($1, '')::int) AND
+    ($2::text IS NULL OR 
+        (LOWER(email) LIKE '%' || LOWER($2) || '%' OR
+         LOWER(COALESCE(first_name, '')) LIKE '%' || LOWER($2) || '%' OR
+         LOWER(COALESCE(last_name, '')) LIKE '%' || LOWER($2) || '%'));
+
+-- name: UpdateUserRole :exec
+UPDATE users
+SET permissions = $2
+WHERE id = $1;
+
+-- name: UpdateUsersRole :exec
+UPDATE users
+SET permissions = $2
+WHERE id = ANY($1::text[]);

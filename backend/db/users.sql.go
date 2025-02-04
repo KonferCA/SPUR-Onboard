@@ -9,6 +9,29 @@ import (
 	"context"
 )
 
+const countUsers = `-- name: CountUsers :one
+SELECT COUNT(*)
+FROM users
+WHERE 
+    ($1::text IS NULL OR NULLIF($1, '')::int IS NULL OR permissions = NULLIF($1, '')::int) AND
+    ($2::text IS NULL OR 
+        (LOWER(email) LIKE '%' || LOWER($2) || '%' OR
+         LOWER(COALESCE(first_name, '')) LIKE '%' || LOWER($2) || '%' OR
+         LOWER(COALESCE(last_name, '')) LIKE '%' || LOWER($2) || '%'))
+`
+
+type CountUsersParams struct {
+	Column1 string `json:"column_1"`
+	Column2 string `json:"column_2"`
+}
+
+func (q *Queries) CountUsers(ctx context.Context, arg CountUsersParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countUsers, arg.Column1, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, first_name, last_name, bio, title, linkedin, email, password, permissions, email_verified, created_at, updated_at, token_salt FROM users WHERE email = $1 LIMIT 1
 `
@@ -113,6 +136,83 @@ func (q *Queries) GetUserEmailVerifiedStatusByEmail(ctx context.Context, email s
 	return email_verified, err
 }
 
+const listUsers = `-- name: ListUsers :many
+SELECT 
+    id,
+    COALESCE(first_name, '') as first_name,
+    COALESCE(last_name, '') as last_name,
+    email,
+    permissions,
+    email_verified,
+    created_at,
+    updated_at
+FROM users
+WHERE 
+    ($1::text IS NULL OR NULLIF($1, '')::int IS NULL OR permissions = NULLIF($1, '')::int) AND
+    ($2::text IS NULL OR 
+        (LOWER(email) LIKE '%' || LOWER($2) || '%' OR
+         LOWER(COALESCE(first_name, '')) LIKE '%' || LOWER($2) || '%' OR
+         LOWER(COALESCE(last_name, '')) LIKE '%' || LOWER($2) || '%'))
+ORDER BY 
+    CASE WHEN $3 = 'asc' THEN created_at END ASC,
+    CASE WHEN $3 = 'desc' OR $3 IS NULL THEN created_at END DESC
+LIMIT $4 OFFSET $5
+`
+
+type ListUsersParams struct {
+	Column1 string      `json:"column_1"`
+	Column2 string      `json:"column_2"`
+	Column3 interface{} `json:"column_3"`
+	Limit   int32       `json:"limit"`
+	Offset  int32       `json:"offset"`
+}
+
+type ListUsersRow struct {
+	ID            string `json:"id"`
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
+	Email         string `json:"email"`
+	Permissions   int32  `json:"permissions"`
+	EmailVerified bool   `json:"email_verified"`
+	CreatedAt     int64  `json:"created_at"`
+	UpdatedAt     int64  `json:"updated_at"`
+}
+
+func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error) {
+	rows, err := q.db.Query(ctx, listUsers,
+		arg.Column1,
+		arg.Column2,
+		arg.Column3,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUsersRow
+	for rows.Next() {
+		var i ListUsersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.LastName,
+			&i.Email,
+			&i.Permissions,
+			&i.EmailVerified,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const newUser = `-- name: NewUser :one
 INSERT INTO users
 (email, password, permissions)
@@ -185,6 +285,38 @@ type UpdateUserEmailVerifiedStatusParams struct {
 
 func (q *Queries) UpdateUserEmailVerifiedStatus(ctx context.Context, arg UpdateUserEmailVerifiedStatusParams) error {
 	_, err := q.db.Exec(ctx, updateUserEmailVerifiedStatus, arg.EmailVerified, arg.ID)
+	return err
+}
+
+const updateUserRole = `-- name: UpdateUserRole :exec
+UPDATE users
+SET permissions = $2
+WHERE id = $1
+`
+
+type UpdateUserRoleParams struct {
+	ID          string `json:"id"`
+	Permissions int32  `json:"permissions"`
+}
+
+func (q *Queries) UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) error {
+	_, err := q.db.Exec(ctx, updateUserRole, arg.ID, arg.Permissions)
+	return err
+}
+
+const updateUsersRole = `-- name: UpdateUsersRole :exec
+UPDATE users
+SET permissions = $2
+WHERE id = ANY($1::text[])
+`
+
+type UpdateUsersRoleParams struct {
+	Column1     []string `json:"column_1"`
+	Permissions int32    `json:"permissions"`
+}
+
+func (q *Queries) UpdateUsersRole(ctx context.Context, arg UpdateUsersRoleParams) error {
+	_, err := q.db.Exec(ctx, updateUsersRole, arg.Column1, arg.Permissions)
 	return err
 }
 
