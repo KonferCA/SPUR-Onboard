@@ -210,24 +210,29 @@ func (h *Handler) handleListCompanyProjects(c echo.Context) error {
 	// Get all projects for this company
 	projects, err := h.server.GetQueries().ListCompanyProjects(c.Request().Context(), company.ID)
 	if err != nil {
-		return v1_common.Fail(c, 500, "Failed to fetch projects", nil)
+		return v1_common.Fail(c, 500, "Failed to fetch projects", err)
 	}
 
 	// Convert to response format
-	response := make([]ProjectResponse, len(projects))
+	response := make([]ExtendedProjectResponse, len(projects))
 	for i, project := range projects {
 		description := ""
 		if project.Description != nil {
 			description = *project.Description
 		}
 
-		response[i] = ProjectResponse{
-			ID:          project.ID,
-			Title:       project.Title,
-			Description: description,
-			Status:      project.Status,
-			CreatedAt:   project.CreatedAt,
-			UpdatedAt:   project.UpdatedAt,
+		response[i] = ExtendedProjectResponse{
+			ProjectResponse: ProjectResponse{
+				ID:          project.ID,
+				Title:       project.Title,
+				Description: description,
+				Status:      project.Status,
+				CreatedAt:   project.CreatedAt,
+				UpdatedAt:   project.UpdatedAt,
+			},
+			CompanyName:     company.Name,
+			DocumentCount:   project.DocumentCount,
+			TeamMemberCount: project.TeamMemberCount,
 		}
 	}
 

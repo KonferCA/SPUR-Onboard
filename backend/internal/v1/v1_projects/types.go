@@ -23,6 +23,13 @@ type ProjectResponse struct {
 	UpdatedAt   int64            `json:"updated_at"`
 }
 
+type ExtendedProjectResponse struct {
+	ProjectResponse
+	CompanyName     string `json:"company_name"`
+	DocumentCount   int64  `json:"document_count"`
+	TeamMemberCount int64  `json:"team_member_count"`
+}
+
 type ProjectAnswerResponse struct {
 	ID         string `json:"id"`
 	QuestionID string `json:"question_id"`

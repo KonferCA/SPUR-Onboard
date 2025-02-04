@@ -21,6 +21,12 @@ export interface ProjectResponse {
     updatedAt: number;
 }
 
+export interface ExtendedProjectResponse extends ProjectResponse {
+    companyName: string;
+    documentCount: number;
+    teamMemberCount: number;
+}
+
 export interface ConditionType {
     conditionTypeEnum: string;
     valid: boolean;
@@ -124,7 +130,6 @@ export async function getProjectFormQuestions(
     }
     const data = await response.json();
     return snakeToCamel(data);
-
 }
 
 // Transform backend response to frontend format
@@ -149,7 +154,7 @@ export async function createProject(
     accessToken: string
 ): Promise<ProjectResponse> {
     const url = getApiUrl('/project/new');
-  
+
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -171,6 +176,25 @@ export async function createProject(
     const json = await response.json();
 
     return snakeToCamel(json);
+}
+
+/*
+ * List company's projects' metadata
+ */
+export async function listProjects(accessToken: string) {
+    const url = getApiUrl('/project/list');
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+    const body = await res.json();
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to list projects', res.status, body);
+    }
+
+    return snakeToCamel(body.projects) as ExtendedProjectResponse[];
 }
 
 export async function getProjects(accessToken: string): Promise<Project[]> {
@@ -219,7 +243,7 @@ export async function getProjectDetails(
             errorData || {}
         );
     }
-  
+
     const data = await response.json();
     return transformProject(data);
 }

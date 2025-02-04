@@ -20,7 +20,7 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	// Static routes - require project submission permission
 	projectSubmitGroup := projects.Group("", middleware.Auth(s.GetDB(), permissions.PermSubmitProject))
 	projectSubmitGroup.POST("/new", h.handleCreateProject)
-	projectSubmitGroup.GET("", h.handleListCompanyProjects)
+	projectSubmitGroup.GET("/list", h.handleListCompanyProjects)
 	projectSubmitGroup.POST("/:id/draft", h.handleSaveProjectDraft)
 
 	// Questions route - viewable by anyone with project access

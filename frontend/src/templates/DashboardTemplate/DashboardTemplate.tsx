@@ -79,7 +79,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
             <div className="h-16" />
 
             {/* main content area */}
-            <div className="w-full max-w-[1440px] mx-auto flex flex-1">
+            <div className="w-full min-h-[calc(100vh_-_4rem)] max-w-[1440px] mx-auto flex flex-1">
                 {/* sidebar */}
                 {customSidebar || (
                     <div className="w-64 bg-white border-r border-gray-200">
@@ -106,7 +106,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                 )}
 
                 {/* main content */}
-                <main className="flex-1 p-6">{children}</main>
+                <main className="flex-1 p-6 w-full h-full">{children}</main>
             </div>
         </PageLayout>
     );
