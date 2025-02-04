@@ -24,12 +24,17 @@ export const DateInput: React.FC<DateInputProps> = ({
 }) => {
     const formatDate = (date?: Date) => {
         if (!date) return '';
-        return date.toISOString().split('T')[0];
+        try {
+            return date.toISOString().split('T')[0];
+        } catch (e) {}
+        return '';
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const date = new Date(e.target.value);
-        onChange(date);
+        try {
+            const date = new Date(e.target.value);
+            onChange(date);
+        } catch (e) {}
     };
 
     return (
@@ -59,11 +64,8 @@ export const DateInput: React.FC<DateInputProps> = ({
                     } text-base`}
                 />
             </div>
-            {error && (
-                <p className="mt-1 text-sm text-red-500">
-                    {error}
-                </p>
-            )}
+            {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
         </div>
     );
 };
+
