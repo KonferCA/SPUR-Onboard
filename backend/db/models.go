@@ -298,6 +298,7 @@ type ProjectQuestion struct {
 	Disabled            bool                  `json:"disabled"`
 	CreatedAt           int64                 `json:"created_at"`
 	UpdatedAt           int64                 `json:"updated_at"`
+	QuestionKey         *string               `json:"question_key"`
 }
 
 type TeamMember struct {
