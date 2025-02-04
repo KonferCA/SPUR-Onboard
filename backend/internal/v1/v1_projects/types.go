@@ -136,3 +136,7 @@ type ProjectDraftContent struct {
 type SaveProjectDraftRequest struct {
 	Draft []ProjectDraftContent `json:"draft" validate:"required,dive"`
 }
+
+type UpdateProjectStatusRequest struct {
+	Status db.ProjectStatus `json:"status" validate:"required,oneof=draft pending verified declined withdrawn"`
+}

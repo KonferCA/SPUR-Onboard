@@ -30,6 +30,9 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	projects.GET("/:id", h.handleGetProject)
 	projectSubmitGroup.POST("/:id/submit", h.handleSubmitProject)
 
+	// Update project status
+	projects.PUT("/:id/status", h.handleUpdateProjectStatus)
+
 	// Project answers - require project submission permission
 	answers := projectSubmitGroup.Group("/:id/answers")
 	answers.GET("", h.handleGetProjectAnswers)
