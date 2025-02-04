@@ -45,6 +45,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                                 : ''
                         }
                         required={field.required}
+                        disabled={field.disabled}
                     />
                 );
 
@@ -63,6 +64,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                                 ? 'This input has invalid content'
                                 : ''
                         }
+                        disabled={field.disabled}
                     />
                 );
 
@@ -116,6 +118,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     <DateInput
                         value={field.value.value}
                         onChange={(v) => onChange(question.id, field.key, v)}
+                        disabled={field.disabled}
                     />
                 );
 

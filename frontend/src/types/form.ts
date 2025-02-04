@@ -32,6 +32,7 @@ export interface FormField {
     validations?: ZodTypeAny[];
     value: FormFieldValue;
     invalid?: boolean;
+    disabled?: boolean;
 }
 
 export interface FormSection {

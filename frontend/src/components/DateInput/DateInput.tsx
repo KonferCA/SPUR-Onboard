@@ -10,6 +10,7 @@ export interface DateInputProps {
     name?: string;
     max?: Date;
     min?: Date;
+    disabled?: boolean;
 }
 
 export const DateInput: React.FC<DateInputProps> = ({
@@ -21,15 +22,21 @@ export const DateInput: React.FC<DateInputProps> = ({
     error,
     max,
     min,
+    disabled,
 }) => {
     const formatDate = (date?: Date) => {
         if (!date) return '';
-        return date.toISOString().split('T')[0];
+        try {
+            return date.toISOString().split('T')[0];
+        } catch (e) {}
+        return '';
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const date = new Date(e.target.value);
-        onChange(date);
+        try {
+            const date = new Date(e.target.value);
+            onChange(date);
+        } catch (e) {}
     };
 
     return (
@@ -57,13 +64,11 @@ export const DateInput: React.FC<DateInputProps> = ({
                     } rounded-lg text-gray-900 focus:outline-none focus:ring-2 ${
                         error ? 'focus:ring-red-500' : 'focus:ring-blue-500'
                     } text-base`}
+                    disabled={disabled}
                 />
             </div>
-            {error && (
-                <p className="mt-1 text-sm text-red-500">
-                    {error}
-                </p>
-            )}
+            {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
         </div>
     );
 };
+

@@ -4,6 +4,7 @@ import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -78,6 +79,17 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 			return v1_common.Fail(c, http.StatusBadRequest, "Missing company to get project questions", err)
 		}
 		return v1_common.Fail(c, http.StatusBadRequest, "Failed to get questions (2)", err)
+	}
+
+	if projectID != "" {
+		// this only applies when the project questions are fetched for a specific project
+		// aka a project that belongs to an existing company
+		if arr, ok := questions.([]db.GetQuestionsByProjectRow); ok {
+			// first question is the company name
+			arr[0].Answer = company.Name
+			// second question is the date founded
+			arr[1].Answer = time.Unix(company.DateFounded, 0).Format("2006-01-02")
+		}
 	}
 
 	teamMembers, err = q.ListTeamMembers(c.Request().Context(), company.ID)
