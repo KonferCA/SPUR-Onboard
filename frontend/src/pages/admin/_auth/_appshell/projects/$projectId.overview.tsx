@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { Stack } from '@layouts'
 import { FiFileText, FiMessageSquare, FiDollarSign, FiTrendingUp, FiGlobe, FiLinkedin, FiTwitter } from 'react-icons/fi'
 import { useEffect, useState } from 'react'
@@ -212,9 +212,12 @@ function RouteComponent() {
       {/* Header */}
       <div className="flex items-center w-full justify-between">
         <h1 className="text-2xl font-bold">Project overview</h1>
-        <button className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800">
+        <Link 
+          to={`/admin/projects/${projectId}/review`}
+          className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800"
+        >
           View project
-        </button>
+        </Link>
       </div>
 
       {/* Main Layout */}
