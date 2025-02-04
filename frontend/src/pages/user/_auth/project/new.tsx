@@ -304,6 +304,10 @@ const NewProjectPage = () => {
                 questions: subsection.questions.map((question) => ({
                     ...question,
                     inputFields: question.inputFields.map((field) => {
+                        if (field.disabled) {
+                            return field;
+                        }
+
                         const key = `${question.id}_${field.key}`;
 
                         // Skip file and team input types

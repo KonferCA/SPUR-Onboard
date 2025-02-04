@@ -121,6 +121,7 @@ export function groupProjectQuestions(
                           )
                         : undefined,
                     value: {},
+                    disabled: q.disabled,
                 };
 
                 switch (inputField.type) {
