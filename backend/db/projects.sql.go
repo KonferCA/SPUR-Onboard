@@ -372,8 +372,9 @@ func (q *Queries) GetProjectByID(ctx context.Context, arg GetProjectByIDParams) 
 }
 
 const getProjectComment = `-- name: GetProjectComment :one
-SELECT id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at FROM project_comments
-WHERE id = $1 AND project_id = $2
+SELECT pc.id, pc.project_id, pc.target_id, pc.comment, pc.commenter_id, pc.resolved, pc.created_at, pc.updated_at, u.first_name as commenter_first_name, u.last_name as commenter_last_name FROM project_comments pc
+JOIN users u ON u.id = pc.commenter_id
+WHERE pc.id = $1 AND pc.project_id = $2
 LIMIT 1
 `
 
@@ -382,9 +383,22 @@ type GetProjectCommentParams struct {
 	ProjectID string `json:"project_id"`
 }
 
-func (q *Queries) GetProjectComment(ctx context.Context, arg GetProjectCommentParams) (ProjectComment, error) {
+type GetProjectCommentRow struct {
+	ID                 string  `json:"id"`
+	ProjectID          string  `json:"project_id"`
+	TargetID           string  `json:"target_id"`
+	Comment            string  `json:"comment"`
+	CommenterID        string  `json:"commenter_id"`
+	Resolved           bool    `json:"resolved"`
+	CreatedAt          int64   `json:"created_at"`
+	UpdatedAt          int64   `json:"updated_at"`
+	CommenterFirstName *string `json:"commenter_first_name"`
+	CommenterLastName  *string `json:"commenter_last_name"`
+}
+
+func (q *Queries) GetProjectComment(ctx context.Context, arg GetProjectCommentParams) (GetProjectCommentRow, error) {
 	row := q.db.QueryRow(ctx, getProjectComment, arg.ID, arg.ProjectID)
-	var i ProjectComment
+	var i GetProjectCommentRow
 	err := row.Scan(
 		&i.ID,
 		&i.ProjectID,
@@ -394,25 +408,41 @@ func (q *Queries) GetProjectComment(ctx context.Context, arg GetProjectCommentPa
 		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CommenterFirstName,
+		&i.CommenterLastName,
 	)
 	return i, err
 }
 
 const getProjectComments = `-- name: GetProjectComments :many
-SELECT id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at FROM project_comments
-WHERE project_id = $1
-ORDER BY created_at DESC
+SELECT pc.id, pc.project_id, pc.target_id, pc.comment, pc.commenter_id, pc.resolved, pc.created_at, pc.updated_at, u.first_name as commenter_first_name, u.last_name as commenter_last_name FROM project_comments pc
+JOIN users u ON u.id = pc.commenter_id
+WHERE pc.project_id = $1
+ORDER BY pc.created_at DESC
 `
 
-func (q *Queries) GetProjectComments(ctx context.Context, projectID string) ([]ProjectComment, error) {
+type GetProjectCommentsRow struct {
+	ID                 string  `json:"id"`
+	ProjectID          string  `json:"project_id"`
+	TargetID           string  `json:"target_id"`
+	Comment            string  `json:"comment"`
+	CommenterID        string  `json:"commenter_id"`
+	Resolved           bool    `json:"resolved"`
+	CreatedAt          int64   `json:"created_at"`
+	UpdatedAt          int64   `json:"updated_at"`
+	CommenterFirstName *string `json:"commenter_first_name"`
+	CommenterLastName  *string `json:"commenter_last_name"`
+}
+
+func (q *Queries) GetProjectComments(ctx context.Context, projectID string) ([]GetProjectCommentsRow, error) {
 	rows, err := q.db.Query(ctx, getProjectComments, projectID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ProjectComment
+	var items []GetProjectCommentsRow
 	for rows.Next() {
-		var i ProjectComment
+		var i GetProjectCommentsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ProjectID,
@@ -422,6 +452,8 @@ func (q *Queries) GetProjectComments(ctx context.Context, projectID string) ([]P
 			&i.Resolved,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.CommenterFirstName,
+			&i.CommenterLastName,
 		); err != nil {
 			return nil, err
 		}

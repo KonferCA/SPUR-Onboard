@@ -41,3 +41,6 @@ export { DateInput } from './DateInput';
 export type { DateInputProps } from './DateInput';
 
 export { ProgressSteps } from './ProgressSteps';
+
+export { CommentBubble } from './CommentBubble';
+export type { CommentBubbleProps } from './CommentBubble';

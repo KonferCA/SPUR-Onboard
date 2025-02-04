@@ -224,13 +224,15 @@ INSERT INTO project_answers (
 ) RETURNING *;
 
 -- name: GetProjectComments :many
-SELECT * FROM project_comments
-WHERE project_id = $1
-ORDER BY created_at DESC;
+SELECT pc.*, u.first_name as commenter_first_name, u.last_name as commenter_last_name FROM project_comments pc
+JOIN users u ON u.id = pc.commenter_id
+WHERE pc.project_id = $1
+ORDER BY pc.created_at DESC;
 
 -- name: GetProjectComment :one
-SELECT * FROM project_comments
-WHERE id = $1 AND project_id = $2
+SELECT pc.*, u.first_name as commenter_first_name, u.last_name as commenter_last_name FROM project_comments pc
+JOIN users u ON u.id = pc.commenter_id
+WHERE pc.id = $1 AND pc.project_id = $2
 LIMIT 1;
 
 -- name: CreateProjectComment :one
