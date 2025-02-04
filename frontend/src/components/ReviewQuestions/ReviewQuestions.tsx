@@ -16,16 +16,19 @@ interface ReviewQuestionsProps {
     question: Question;
     comments: Comment[];
     onCreateComment: (comment: string, targetId: string) => void;
+    disableCommentCreation?: boolean;
 }
 
 export const ReviewQuestions: FC<ReviewQuestionsProps> = ({
     question,
     comments,
     onCreateComment,
+    disableCommentCreation,
 }) => {
     return question.inputFields.map((field) => {
         return (
             <ReviewQuestionInput
+                disableCommentCreation={disableCommentCreation}
                 key={field.key}
                 field={field}
                 comments={comments}
@@ -39,12 +42,14 @@ interface ReviewQuestionInputProps {
     field: FormField;
     comments: Comment[];
     onCreateComment: (comment: string, targetId: string) => void;
+    disableCommentCreation?: boolean;
 }
 
 const ReviewQuestionInput: FC<ReviewQuestionInputProps> = ({
     field,
     comments,
     onCreateComment,
+    disableCommentCreation,
 }) => {
     const [showCreateComment, setShowCreateComment] = useState(false);
     const renderInput = (field: FormField) => {
@@ -124,15 +129,17 @@ const ReviewQuestionInput: FC<ReviewQuestionInputProps> = ({
                     </span>
                 </div>
                 <div className="space-y-4">{renderInput(field)}</div>
-                <button
-                    type="button"
-                    onClick={() => {
-                        setShowCreateComment(true);
-                    }}
-                    className="absolute top-0 right-0 -translate-y-1/2 -translate-x-1/2 bg-gray-100 border-gray-300 border  rounded-lg p-2 invisible group-hover:visible"
-                >
-                    <BiSolidCommentAdd className="h-6 w-6" />
-                </button>
+                {!disableCommentCreation && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setShowCreateComment(true);
+                        }}
+                        className="absolute top-0 right-0 -translate-y-1/2 -translate-x-1/2 bg-gray-100 border-gray-300 border  rounded-lg p-2 invisible group-hover:visible"
+                    >
+                        <BiSolidCommentAdd className="h-6 w-6" />
+                    </button>
+                )}
                 {showCreateComment && (
                     <CommentCreate
                         className="absolute top-0 right-0 z-50"
