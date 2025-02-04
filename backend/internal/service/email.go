@@ -20,7 +20,7 @@ The function requires the BACKEND_URL env to work.
 It is important to call this function in a go routine to no block.
 */
 func SendVerficationEmail(ctx context.Context, to string, token string) error {
-	url := fmt.Sprintf("%s/api/v1/auth/verify-email?token=%s", os.Getenv("BACKEND_URL"), token)
+	url := fmt.Sprintf("%s/api/v1/auth/verify-email?token=%s", os.Getenv("FRONTEND_URL"), token)
 	buf := bytes.Buffer{}
 	err := views.VerificationEmail(url).Render(ctx, &buf)
 	if err != nil {
@@ -28,8 +28,7 @@ func SendVerficationEmail(ctx context.Context, to string, token string) error {
 	}
 
 	// Use the delivery email address but keep the original recipient in the email body
-	emailBody := fmt.Sprintf("Original recipient: %s\n\n%s", to, buf.String())
-	return SendEmail(ctx, "Verify Your Email", os.Getenv("NOREPLY_EMAIL"), []string{DELIVERY_EMAIL}, emailBody)
+	return SendEmail(ctx, "Verify Your Email", os.Getenv("NOREPLY_EMAIL"), []string{to}, buf.String())
 }
 
 /*
@@ -43,15 +42,11 @@ func SendEmail(ctx context.Context, subject string, from string, to []string, ht
 	}
 
 	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
-		to = []string{"delivered@resend.dev"}
+		to = []string{DELIVERY_EMAIL}
 	}
 
 	apiKey := os.Getenv("RESEND_API_KEY")
 	client := resend.NewClient(apiKey)
-
-	if os.Getenv("APP_ENV") != "production" {
-		to = []string{DELIVERY_EMAIL}
-	}
 
 	params := &resend.SendEmailRequest{
 		From:    from,
