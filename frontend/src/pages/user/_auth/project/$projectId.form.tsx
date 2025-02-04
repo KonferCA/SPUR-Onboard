@@ -1,6 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { Button, DropdownOption, UploadableFile } from '@components';
+import { IoMdArrowRoundBack } from 'react-icons/io';
 import {
     getProjectFormQuestions,
     ProjectDraft,
@@ -495,7 +496,20 @@ function ProjectFormPage() {
 
     return (
         <div>
-            <nav className="h-24 bg-gray-800"></nav>
+            <nav className="h-24 border-b border-gray-300">
+                <ul className="flex items-center pl-4 h-full">
+                    <li>
+                        <Link to="/user/dashboard">
+                            <div className="flex items-center gap-2">
+                                <span>
+                                    <IoMdArrowRoundBack />
+                                </span>
+                                <span>Back to dashboard</span>
+                            </div>
+                        </Link>
+                    </li>
+                </ul>
+            </nav>
             {isSaving && (
                 <div className="fixed left-0 right-0 top-0 z-10">
                     <p className="text-center py-2 bg-gray-200">
