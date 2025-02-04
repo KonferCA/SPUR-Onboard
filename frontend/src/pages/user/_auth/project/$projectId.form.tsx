@@ -64,10 +64,9 @@ function ProjectFormPage() {
             return data;
         },
         enabled: !!currentProjectId,
-        // if this is not set  to infity, data is refetched on window focus
-        // aka, when the mouse re-enters the browser window... which is dumb
-        // and causes a lot of data transfer that is not needed.
-        staleTime: Infinity,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false,
+        refetchOnMount: true,
     });
     const [groupedQuestions, setGroupedQuestions] = useState<
         GroupedProjectQuestions[]

@@ -51,11 +51,9 @@ function RouteComponent() {
             return data;
         },
         enabled: !!accessToken && !!projectId,
-        // if this is not set  to infity, data is refetched on window focus
-        // aka, when the mouse re-enters the browser window... which is dumb
-        // and causes a lot of data transfer that is not needed.
-        staleTime: Infinity,
         refetchOnWindowFocus: false,
+        refetchOnReconnect: true,
+        refetchOnMount: true,
     });
     const { data: commentsData, isLoading: loadingComments } = useQuery({
         queryKey: ['project_review_comments', accessToken, projectId],
@@ -65,8 +63,9 @@ function RouteComponent() {
             return data;
         },
         enabled: !!accessToken && !!projectId,
-        staleTime: Infinity,
         refetchOnWindowFocus: false,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
     });
     const [groupedQuestions, setGroupedQuestions] = useState<
         GroupedProjectQuestions[]
