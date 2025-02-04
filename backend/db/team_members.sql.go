@@ -243,3 +243,28 @@ func (q *Queries) UpdateTeamMember(ctx context.Context, arg UpdateTeamMemberPara
 	)
 	return i, err
 }
+
+const updateTeamMemberDocuments = `-- name: UpdateTeamMemberDocuments :exec
+UPDATE team_members
+SET
+    resume_internal_url = $1,
+    founders_agreement_internal_url = $2
+WHERE id = $3 AND company_id = $4
+`
+
+type UpdateTeamMemberDocumentsParams struct {
+	ResumeInternalUrl            *string `json:"resume_internal_url"`
+	FoundersAgreementInternalUrl *string `json:"founders_agreement_internal_url"`
+	ID                           string  `json:"id"`
+	CompanyID                    string  `json:"company_id"`
+}
+
+func (q *Queries) UpdateTeamMemberDocuments(ctx context.Context, arg UpdateTeamMemberDocumentsParams) error {
+	_, err := q.db.Exec(ctx, updateTeamMemberDocuments,
+		arg.ResumeInternalUrl,
+		arg.FoundersAgreementInternalUrl,
+		arg.ID,
+		arg.CompanyID,
+	)
+	return err
+}

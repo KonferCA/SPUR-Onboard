@@ -39,6 +39,7 @@ export interface FileUploadProps {
     subSection?: string;
     accessToken?: string;
     enableAutosave?: boolean;
+    limit?: number;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
@@ -54,6 +55,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
     subSection,
     accessToken,
     enableAutosave = false,
+    limit = Infinity,
 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [uploadedFiles, setUploadedFiles] = useState<UploadableFile[]>(initialFiles);
@@ -155,6 +157,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
     };
 
     const handleFiles = (files: File[]) => {
+        if (files.length > limit) {
+            // truncate file list
+            files = files.slice(0, limit);
+        }
+
         // check file types
         const validFiles = files.filter((file) =>
             ['application/pdf', 'image/png', 'image/jpeg'].includes(file.type)
