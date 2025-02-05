@@ -29,7 +29,7 @@ export const Route = createFileRoute('/admin/_auth/_appshell/dashboard')({
 function RouteComponent() {
     const { accessToken } = useAuth();
     const [projects, setProjects] = useState<Project[]>([]);
-    const [company, setCompany] = useState<CompanyResponse | null>(null);
+    const [_, setCompany] = useState<CompanyResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
