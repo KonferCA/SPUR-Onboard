@@ -511,7 +511,7 @@ function ProjectFormPage() {
 
     return (
         <div>
-            <nav className="h-24 border-b border-gray-300">
+            <nav className="fixed top-0 left-0 right-0 z-50 bg-white h-24 border-b border-gray-300">
                 <ul className="flex items-center pl-4 h-full">
                     <li>
                         <Link to="/user/dashboard">
@@ -525,6 +525,7 @@ function ProjectFormPage() {
                     </li>
                 </ul>
             </nav>
+            <div className="h-24"></div>
             <SectionedLayout
                 asideTitle="Submit a project"
                 linkContainerClassnames="top-36"
