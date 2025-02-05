@@ -262,7 +262,7 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
     });
 
     const handleRowClick = (projectId: string) => {
-        navigate({ to: `/admin/projects/${projectId}` });
+        navigate({ to: `/admin/projects/${projectId}/overview` });
     };
 
     return (
