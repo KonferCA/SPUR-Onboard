@@ -7,6 +7,10 @@ import { TeamMember } from '@/types'
 import { getTeamMembers } from '@/services/teams'
 import { useAuth } from '@/contexts/AuthContext'
 import { getProject, getProjectComments, getProjectDocuments } from '@/services/projects'
+import { useWallet } from '@suiet/wallet-kit'
+import { Transaction } from '@mysten/sui/transactions'
+import { SuiClient } from '@mysten/sui/client'
+import { Dialog } from '@headlessui/react'
 
 // interface ProjectParams {
 //   projectId: string
@@ -24,6 +28,99 @@ interface ProjectHistory {
   icon: React.ReactNode;
 }
 
+interface FundingModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (amount: string) => Promise<void>;
+  isLoading: boolean;
+}
+
+function FundingModal({ isOpen, onClose, onSubmit, isLoading }: FundingModalProps) {
+  const [amount, setAmount] = useState('');
+  const [error, setError] = useState('');
+  
+  // SPURCOIN conversion rate (we need to fetch this once the coin, uhh, exists.)
+  const SPURCOIN_TO_CAD = 69.0; 
+  const estimatedSPUR = amount ? (parseFloat(amount) / SPURCOIN_TO_CAD).toFixed(2) : '0';
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amount || isNaN(parseFloat(amount))) {
+      setError('Please enter a valid amount');
+      return;
+    }
+    try {
+      // Convert to smallest SPURCOIN unit
+      const spurAmount = parseFloat(estimatedSPUR);
+      // 9 decimals for SPURCOIN
+      const smallestUnit = Math.floor(spurAmount * 1_000_000_000).toString();
+      await onSubmit(smallestUnit);
+      onClose();
+    } catch (error) {
+      setError('Failed to process transaction');
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <Dialog.Panel className="mx-auto max-w-sm rounded-lg bg-white p-6">
+          <Dialog.Title className="text-lg font-medium mb-4">Fund Project</Dialog.Title>
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Amount (CAD)
+                </label>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => {
+                    setAmount(e.target.value);
+                    setError('');
+                  }}
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  placeholder="Enter amount in CAD"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Estimated SPURCOIN: {estimatedSPUR} SPUR
+
+                </p>
+                <p className="mt-1 text-xs text-gray-400">
+                  1 SPUR ≈ ${SPURCOIN_TO_CAD} CAD
+                </p>
+              </div>
+
+              {error && (
+                <p className="text-sm text-red-600">{error}</p>
+              )}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800 disabled:bg-gray-400"
+                >
+                  {isLoading ? 'Processing...' : 'Confirm'}
+                </button>
+              </div>
+            </div>
+          </form>
+        </Dialog.Panel>
+      </div>
+    </Dialog>
+  );
+}
+
 export const Route = createFileRoute('/admin/_auth/_appshell/projects/$projectId/overview')({
   component: RouteComponent,
 })
@@ -31,11 +128,68 @@ export const Route = createFileRoute('/admin/_auth/_appshell/projects/$projectId
 function RouteComponent() {
   const { projectId } = Route.useParams()
   const { accessToken } = useAuth()
+  const wallet = useWallet()
   const [company, setCompany] = useState<CompanyResponse | null>(null)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [projectStats, setProjectStats] = useState<ProjectStats | null>(null)
   const [projectHistory, setProjectHistory] = useState<ProjectHistory[]>([])
   const [loading, setLoading] = useState(true)
+  const [isSendingFunds, setIsSendingFunds] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleFundProject = async (amount: string) => {
+    if (!wallet.connected) {
+      alert('Please connect your wallet first')
+      return
+    }
+
+    try {
+      setIsSendingFunds(true)
+
+      const client = new SuiClient({ url: 'https://fullnode.testnet.sui.io:443' });
+      const coins = await client.getCoins({
+        owner: wallet.account?.address || '',
+        coinType: '0x341290ce77d8cdd37c0ea13807e1cd6f4070a42c286adfc5340f438b7e8a1684::spurcoin::SPURCOIN'
+      });
+
+      if (!coins.data || coins.data.length === 0) {
+        alert('No SPUR coins found in wallet');
+        return;
+      }
+
+      const coinToUse = coins.data[0];
+      const tx = new Transaction();
+      tx.setGasBudget(100000000);
+
+      // amount is now in MIST (smallest unit)
+      const splitCoinTx = tx.splitCoins(
+        tx.object(coinToUse.coinObjectId),
+        [tx.pure.u64(amount)]
+      );
+
+      tx.transferObjects(
+        [splitCoinTx],
+        tx.pure.address('0x2b3e5cd101c75ee3828d85f798c426cba145554431c49898f26e01d6f17bcbfc')
+      );
+
+      if (wallet.account?.address) {
+        tx.setSender(wallet.account.address);
+      }
+
+      const resData = await wallet.signAndExecuteTransaction({
+        transaction: tx
+      });
+
+      console.log('Transaction successful:', resData)
+      alert('Funding successful!')
+
+    } catch (error) {
+      console.error('Transaction failed:', error)
+      alert('Failed to send funds. Please try again.')
+    } finally {
+      setIsSendingFunds(false)
+    }
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -212,13 +366,39 @@ function RouteComponent() {
       {/* Header */}
       <div className="flex items-center w-full justify-between">
         <h1 className="text-2xl font-bold">Project overview</h1>
-        <Link 
-          to={`/admin/projects/${projectId}/review`}
-          className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800"
-        >
-          View project
-        </Link>
+        <div className="flex gap-4">
+          {!wallet.connected ? (
+            <button
+              onClick={() => wallet.select('Suiet')}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 flex items-center gap-2"
+            >z
+              Connect Wallet
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              disabled={isSendingFunds}
+              className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <FiDollarSign className="w-4 h-4" />
+              {isSendingFunds ? 'Sending...' : 'Fund Project'}
+            </button>
+          )}
+          <Link 
+            to={`/admin/projects/${projectId}/review`}
+            className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800"
+          >
+            View project
+          </Link>
+        </div>
       </div>
+
+      <FundingModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleFundProject}
+        isLoading={isSendingFunds}
+      />
 
       {/* Main Layout */}
       <div className="flex gap-6">
