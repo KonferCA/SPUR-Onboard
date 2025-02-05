@@ -548,7 +548,7 @@ func (q *Queries) GetProjectDocuments(ctx context.Context, projectID string) ([]
 }
 
 const getProjectQuestion = `-- name: GetProjectQuestion :one
-SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, condition_type, condition_value, dependent_question_id, validations, question_group_id, input_type, options, required, placeholder, description, disabled, created_at, updated_at FROM project_questions
+SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, condition_type, condition_value, dependent_question_id, validations, question_group_id, input_type, options, required, placeholder, description, disabled, created_at, updated_at, question_key FROM project_questions
 WHERE id = $1
 LIMIT 1
 `
@@ -577,6 +577,7 @@ func (q *Queries) GetProjectQuestion(ctx context.Context, id string) (ProjectQue
 		&i.Disabled,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.QuestionKey,
 	)
 	return i, err
 }
@@ -712,7 +713,7 @@ func (q *Queries) GetProjectsByCompanyID(ctx context.Context, companyID string) 
 }
 
 const getQuestionByAnswerID = `-- name: GetQuestionByAnswerID :one
-SELECT q.id, q.question, q.section, q.sub_section, q.section_order, q.sub_section_order, q.question_order, q.condition_type, q.condition_value, q.dependent_question_id, q.validations, q.question_group_id, q.input_type, q.options, q.required, q.placeholder, q.description, q.disabled, q.created_at, q.updated_at FROM project_questions q
+SELECT q.id, q.question, q.section, q.sub_section, q.section_order, q.sub_section_order, q.question_order, q.condition_type, q.condition_value, q.dependent_question_id, q.validations, q.question_group_id, q.input_type, q.options, q.required, q.placeholder, q.description, q.disabled, q.created_at, q.updated_at, q.question_key FROM project_questions q
 JOIN project_answers a ON a.question_id = q.id
 WHERE a.id = $1
 `
@@ -741,6 +742,7 @@ func (q *Queries) GetQuestionByAnswerID(ctx context.Context, id string) (Project
 		&i.Disabled,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.QuestionKey,
 	)
 	return i, err
 }
