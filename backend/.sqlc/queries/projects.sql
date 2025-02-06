@@ -285,5 +285,5 @@ FROM projects p
 LEFT JOIN project_documents d ON d.project_id = p.id
 LEFT JOIN team_members t ON t.company_id = p.company_id
 LEFT JOIN companies c on c.id = p.company_id
-GROUP BY p.id
+GROUP BY p.id, c.name
 ORDER BY p.created_at DESC;
