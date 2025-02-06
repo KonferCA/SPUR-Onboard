@@ -17,6 +17,7 @@ import { SectionedLayout } from '@/templates';
 import { cva } from 'class-variance-authority';
 import { sanitizeHtmlId } from '@/utils/html';
 import { QuestionInputs } from '@/components/QuestionInputs/QuestionInputs';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { useQuery } from '@tanstack/react-query';
 import { scrollToTop } from '@/utils';
 import { useDebounceFn } from '@/hooks';
@@ -75,6 +76,7 @@ function ProjectFormPage() {
     const [currentStep, setCurrentStep] = useState<number>(0);
     const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
     const notification = useNotification();
+    const [showSubmitModal, setShowSubmitModal] = useState(false);
 
     const autosave = useDebounceFn(
         async () => {
@@ -492,19 +494,32 @@ function ProjectFormPage() {
         });
 
         if (valid) {
-            try {
-                if (!accessToken || !currentProjectId) return;
-                await submitProject(accessToken, currentProjectId);
-                // replace to not let them go back, it causes the creation of a new project
-                navigate({ to: '/user/dashboard', replace: true });
-            } catch (e) {
-                console.error(e);
-            }
+            // try {
+            //     if (!accessToken || !currentProjectId) return;
+            //     await submitProject(accessToken, currentProjectId);
+            //     // replace to not let them go back, it causes the creation of a new project
+            //     navigate({ to: '/user/dashboard', replace: true });
+            // } catch (e) {
+            //     console.error(e);
+            // }
+            setShowSubmitModal(true);
         } else {
             // update the group questions so that it refreshes the ui
             setGroupedQuestions((prev) => [...prev]);
         }
     };
+
+    const handleSubmitConfirm = async () => {
+        try {
+            if (!accessToken || !currentProjectId) return;
+            await submitProject(accessToken, currentProjectId);
+
+            // replace to not let them go back, it causes the creation of a new project
+            navigate({ to: '/user/dashboard', replace: true });
+        } catch (e) {
+            console.error(e);
+        }
+    }
 
     // TODO: make a better loading screen
     if (groupedQuestions.length < 1 || loadingQuestions) return null;
@@ -650,6 +665,22 @@ function ProjectFormPage() {
                     </form>
                 </div>
             </SectionedLayout>
+
+            <ConfirmationModal
+                isOpen={showSubmitModal}
+                onClose={() => setShowSubmitModal(false)}
+                primaryAction={handleSubmitConfirm}
+                title="Submit Application?"
+                primaryActionText="Yes, submit it"
+            >
+                <div className="space-y-4">
+                    <p>Have you double-checked everything in this project?</p>
+                    <p>
+                        Once submitted, you won't be able to make changes until the application
+                        is either approved or sent back for review.
+                    </p>
+                </div>
+            </ConfirmationModal>
         </div>
     );
 }
