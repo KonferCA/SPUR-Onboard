@@ -5,6 +5,9 @@ import { SettingsPage } from '@/templates/SettingsPage/SettingsPage'
 import { FiCopy } from 'react-icons/fi'
 import { WalletConnectButton } from '@/components/wallet/WalletConnectButton'
 import { useWallet } from '@suiet/wallet-kit'
+import { useAuth } from '@/contexts'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { getCompany, updateCompany } from '@/services'
 
 export const Route = createFileRoute('/user/_auth/_appshell/settings/wallet')({
   component: WalletSettings,
@@ -13,6 +16,40 @@ export const Route = createFileRoute('/user/_auth/_appshell/settings/wallet')({
 function WalletSettings() {
   const [error, setError] = useState<string | null>(null)
   const { connected, address, disconnect } = useWallet()
+  const { accessToken } = useAuth()
+  const queryClient = useQueryClient()
+
+  // Fetch company data
+  const { data: company } = useQuery({
+    queryKey: ['company'],
+    queryFn: () => {
+      if (!accessToken) throw new Error('No access token')
+      return getCompany(accessToken)
+    },
+    enabled: !!accessToken,
+  })
+
+  // Update company mutation
+  const { mutate: updateWallet, isLoading: isUpdating } = useMutation({
+    mutationFn: async () => {
+      if (!accessToken) throw new Error('No access token')
+      if (!address) throw new Error('No wallet address')
+      return updateCompany(accessToken, {
+        wallet_address: address || ''
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company'] })
+      setError(null)
+    },
+    onError: (err) => {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('Failed to update wallet address')
+      }
+    },
+  })
 
   const handleCopyAddress = () => {
     if (address) {
@@ -23,10 +60,23 @@ function WalletSettings() {
   const handleDisconnectWallet = async () => {
     try {
       await disconnect()
+      // Clear wallet address from company when disconnecting
+      if (accessToken) {
+        await updateCompany(accessToken, { wallet_address: '' })
+        queryClient.invalidateQueries({ queryKey: ['company'] })
+      }
     } catch (err) {
       setError('Failed to disconnect wallet')
     }
   }
+
+  const handleSaveWallet = async () => {
+    if (connected && address) {
+      updateWallet()
+    }
+  }
+
+  const isWalletSaved = company?.wallet_address === address
 
   return (
     <SettingsPage title="Wallet" error={error}>
@@ -60,13 +110,24 @@ function WalletSettings() {
                   </div>
                 </div>
               </div>
-              <Button
-                variant="secondary"
-                onClick={handleDisconnectWallet}
-                className="w-full"
-              >
-                Disconnect Wallet
-              </Button>
+              <div className="space-y-3">
+                {!isWalletSaved && (
+                  <Button
+                    onClick={handleSaveWallet}
+                    disabled={isUpdating}
+                    className="w-full"
+                  >
+                    {isUpdating ? 'Saving...' : 'Save Wallet Address'}
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  onClick={handleDisconnectWallet}
+                  className="w-full"
+                >
+                  Disconnect Wallet
+                </Button>
+              </div>
             </div>
           </div>
         )}
