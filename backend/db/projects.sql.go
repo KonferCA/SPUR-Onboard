@@ -855,6 +855,60 @@ func (q *Queries) GetQuestionsByProject(ctx context.Context, arg GetQuestionsByP
 	return items, nil
 }
 
+const listAllProjects = `-- name: ListAllProjects :many
+SELECT p.id, p.company_id, p.title, p.description, p.status, p.created_at, p.updated_at, c.name as company_name, COUNT(d.id) as document_count, COUNT(t.id) as team_member_count
+FROM projects p
+LEFT JOIN project_documents d ON d.project_id = p.id
+LEFT JOIN team_members t ON t.company_id = p.company_id
+LEFT JOIN companies c on c.id = p.company_id
+GROUP BY p.id
+ORDER BY p.created_at DESC
+`
+
+type ListAllProjectsRow struct {
+	ID              string        `json:"id"`
+	CompanyID       string        `json:"company_id"`
+	Title           string        `json:"title"`
+	Description     *string       `json:"description"`
+	Status          ProjectStatus `json:"status"`
+	CreatedAt       int64         `json:"created_at"`
+	UpdatedAt       int64         `json:"updated_at"`
+	CompanyName     *string       `json:"company_name"`
+	DocumentCount   int64         `json:"document_count"`
+	TeamMemberCount int64         `json:"team_member_count"`
+}
+
+func (q *Queries) ListAllProjects(ctx context.Context) ([]ListAllProjectsRow, error) {
+	rows, err := q.db.Query(ctx, listAllProjects)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAllProjectsRow
+	for rows.Next() {
+		var i ListAllProjectsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CompanyID,
+			&i.Title,
+			&i.Description,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.CompanyName,
+			&i.DocumentCount,
+			&i.TeamMemberCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listCompanyProjects = `-- name: ListCompanyProjects :many
 SELECT p.id, p.company_id, p.title, p.description, p.status, p.created_at, p.updated_at, COUNT(d.id) as document_count, COUNT(t.id) as team_member_count
 FROM projects p

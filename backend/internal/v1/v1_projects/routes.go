@@ -21,6 +21,7 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	projectSubmitGroup := projects.Group("", middleware.Auth(s.GetDB(), permissions.PermSubmitProject))
 	projectSubmitGroup.POST("/new", h.handleCreateProject)
 	projectSubmitGroup.GET("/list", h.handleListCompanyProjects)
+	projectSubmitGroup.GET("/list/all", h.handleListAllProjects, middleware.Auth(s.GetDB(), permissions.PermAdmin))
 	projectSubmitGroup.POST("/:id/draft", h.handleSaveProjectDraft)
 
 	// Questions route - viewable by anyone with project access

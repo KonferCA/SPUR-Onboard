@@ -197,6 +197,22 @@ export async function listProjects(accessToken: string) {
     return snakeToCamel(body.projects) as ExtendedProjectResponse[];
 }
 
+export async function listProjectsAll(accessToken: string) {
+    const url = getApiUrl('/project/list/all');
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+    const body = await res.json();
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to list projects', res.status, body);
+    }
+
+    return snakeToCamel(body.projects) as ExtendedProjectResponse[];
+}
+
 export async function getProjects(accessToken: string): Promise<Project[]> {
     const url = getApiUrl('/projects').replace(/([^:]\/)\/+/g, '$1');
 
