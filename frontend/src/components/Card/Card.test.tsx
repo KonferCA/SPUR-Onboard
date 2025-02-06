@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { Card } from '@/components';
 
 describe('Test Card Component', () => {
-    it('should render the given text', () => {
+    it('should render the content in card', () => {
         render(
             <Card>
                 <div>
