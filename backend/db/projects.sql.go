@@ -876,6 +876,108 @@ func (q *Queries) GetQuestionsByProject(ctx context.Context, arg GetQuestionsByP
 	return items, nil
 }
 
+const getQuestionsByProjectAsAdmin = `-- name: GetQuestionsByProjectAsAdmin :many
+WITH project_owner_check AS (
+   SELECT p.id 
+   FROM projects p
+   JOIN companies c ON p.company_id = c.id 
+   WHERE p.id = $1
+)
+SELECT 
+    pq.id,
+    pq.question,
+    pq.section,
+    pq.sub_section,
+    pq.section_order,
+    pq.sub_section_order,
+    pq.question_order,
+    pq.input_type,
+    pq.options,
+    pq.required,
+    pq.validations,
+    pq.condition_type,
+    pq.condition_value,
+    pq.dependent_question_id,
+    pq.question_group_id,
+    pq.placeholder,
+    pq.description,
+    pq.disabled,
+    COALESCE(pa.answer, '') AS answer,
+    COALESCE(pa.choices, ARRAY[]::text[]) as choices
+FROM project_questions pq
+LEFT JOIN project_answers pa ON pa.question_id = pq.id 
+    AND pa.project_id = $1
+WHERE EXISTS (SELECT 1 FROM project_owner_check)
+ORDER BY
+    pq.section_order,
+    pq.sub_section_order,
+    pq.question_order
+`
+
+type GetQuestionsByProjectAsAdminRow struct {
+	ID                  string                `json:"id"`
+	Question            string                `json:"question"`
+	Section             string                `json:"section"`
+	SubSection          string                `json:"sub_section"`
+	SectionOrder        int32                 `json:"section_order"`
+	SubSectionOrder     int32                 `json:"sub_section_order"`
+	QuestionOrder       int32                 `json:"question_order"`
+	InputType           InputTypeEnum         `json:"input_type"`
+	Options             []string              `json:"options"`
+	Required            bool                  `json:"required"`
+	Validations         []string              `json:"validations"`
+	ConditionType       NullConditionTypeEnum `json:"condition_type"`
+	ConditionValue      *string               `json:"condition_value"`
+	DependentQuestionID pgtype.UUID           `json:"dependent_question_id"`
+	QuestionGroupID     pgtype.UUID           `json:"question_group_id"`
+	Placeholder         *string               `json:"placeholder"`
+	Description         *string               `json:"description"`
+	Disabled            bool                  `json:"disabled"`
+	Answer              string                `json:"answer"`
+	Choices             []string              `json:"choices"`
+}
+
+func (q *Queries) GetQuestionsByProjectAsAdmin(ctx context.Context, projectID string) ([]GetQuestionsByProjectAsAdminRow, error) {
+	rows, err := q.db.Query(ctx, getQuestionsByProjectAsAdmin, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetQuestionsByProjectAsAdminRow
+	for rows.Next() {
+		var i GetQuestionsByProjectAsAdminRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Question,
+			&i.Section,
+			&i.SubSection,
+			&i.SectionOrder,
+			&i.SubSectionOrder,
+			&i.QuestionOrder,
+			&i.InputType,
+			&i.Options,
+			&i.Required,
+			&i.Validations,
+			&i.ConditionType,
+			&i.ConditionValue,
+			&i.DependentQuestionID,
+			&i.QuestionGroupID,
+			&i.Placeholder,
+			&i.Description,
+			&i.Disabled,
+			&i.Answer,
+			&i.Choices,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAllProjects = `-- name: ListAllProjects :many
 SELECT p.id, p.company_id, p.title, p.description, p.status, p.created_at, p.updated_at, c.name as company_name, COUNT(d.id) as document_count, COUNT(t.id) as team_member_count
 FROM projects p

@@ -204,6 +204,43 @@ ORDER BY
     pq.sub_section_order,
     pq.question_order;
 
+-- name: GetQuestionsByProjectAsAdmin :many
+WITH project_owner_check AS (
+   SELECT p.id 
+   FROM projects p
+   JOIN companies c ON p.company_id = c.id 
+   WHERE p.id = $1
+)
+SELECT 
+    pq.id,
+    pq.question,
+    pq.section,
+    pq.sub_section,
+    pq.section_order,
+    pq.sub_section_order,
+    pq.question_order,
+    pq.input_type,
+    pq.options,
+    pq.required,
+    pq.validations,
+    pq.condition_type,
+    pq.condition_value,
+    pq.dependent_question_id,
+    pq.question_group_id,
+    pq.placeholder,
+    pq.description,
+    pq.disabled,
+    COALESCE(pa.answer, '') AS answer,
+    COALESCE(pa.choices, ARRAY[]::text[]) as choices
+FROM project_questions pq
+LEFT JOIN project_answers pa ON pa.question_id = pq.id 
+    AND pa.project_id = $1
+WHERE EXISTS (SELECT 1 FROM project_owner_check)
+ORDER BY
+    pq.section_order,
+    pq.sub_section_order,
+    pq.question_order;
+
 -- name: UpdateProjectStatus :exec
 UPDATE projects 
 SET 
