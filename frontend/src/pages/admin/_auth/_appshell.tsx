@@ -10,7 +10,7 @@ const adminMenuItems = [
     { label: 'Projects', path: '/admin/projects', icon: <FiFolder /> },
     { label: 'Resources', path: '/admin/resources', icon: <FiBook /> },
     { label: 'Users', path: '/admin/users', icon: <FiUsers /> },
-    { label: 'Settings', path: '/admin/settings', icon: <FiSettings /> },
+    { label: 'Settings', path: '/admin/settings/permissions', icon: <FiSettings /> },
 ];
 
 function RouteComponent() {

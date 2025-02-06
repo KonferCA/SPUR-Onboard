@@ -1,5 +1,5 @@
 // import { FiFolder, FiBook, FiStar, FiUser } from 'react-icons/fi';
-import { FiFolder } from 'react-icons/fi';
+import { FiFolder, FiSettings } from 'react-icons/fi';
 import { DashboardTemplate } from '@templates';
 import { createFileRoute, Outlet, Link } from '@tanstack/react-router';
 import { useLocation } from '@tanstack/react-router';
@@ -11,9 +11,11 @@ export const Route = createFileRoute('/user/_auth/_appshell')({
 
 const userMenuItems = [
     { label: 'My Projects', path: '/user/dashboard', icon: <FiFolder /> },
+    { label: 'Settings', path: '/user/settings', icon: <FiSettings /> },
     // { label: 'Resources', path: '/resources', icon: <FiBook /> },
     // { label: 'Favorites', path: '/favorites', icon: <FiStar /> },
     // { label: 'Profile', path: '/profile', icon: <FiUser /> },
+
 ];
 
 // const userNavTabs = [
