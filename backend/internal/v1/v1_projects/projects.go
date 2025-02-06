@@ -2,7 +2,6 @@ package v1_projects
 
 import (
 	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
@@ -540,19 +539,9 @@ func (h *Handler) handleUpdateProjectStatus(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
 	}
 
-	user, err := middleware.GetUserFromContext(c)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
-	}
-
 	queries := h.server.GetQueries()
 
-	company, err := queries.GetCompanyByOwnerID(c.Request().Context(), user.ID)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusBadRequest, "User does not own any company", err)
-	}
-
-	project, err := queries.GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{ID: projectID, CompanyID: company.ID})
+	project, err := queries.GetProjectByIDAsAdmin(c.Request().Context(), projectID)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusBadRequest, "Failed to find project to update status", err)
 	}
