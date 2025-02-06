@@ -18,6 +18,11 @@ INSERT INTO projects (
     $1, $2, $3, $4, $5, $6
 ) RETURNING *; 
 
+-- name: GetProjectByIDAsAdmin :one
+SELECT * FROM projects
+WHERE id = $1
+LIMIT 1;
+
 -- name: GetProjectsByCompanyID :many
 SELECT * FROM projects 
 WHERE company_id = $1 

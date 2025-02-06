@@ -165,11 +165,16 @@ func (h *Handler) handleGetProject(c echo.Context) error {
 		return v1_common.Fail(c, 400, "Project ID is required", nil)
 	}
 
-	// Get project (with company ID check for security)
-	project, err := h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
-		ID:        projectID,
-		CompanyID: company.ID,
-	})
+	var project db.Project
+	if isAdmin {
+		project, err = h.server.GetQueries().GetProjectByIDAsAdmin(c.Request().Context(), projectID)
+	} else {
+		// Get project (with company ID check for security)
+		project, err = h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
+			ID:        projectID,
+			CompanyID: company.ID,
+		})
+	}
 	if err != nil {
 		return v1_common.Fail(c, 404, "Project not found", err)
 	}

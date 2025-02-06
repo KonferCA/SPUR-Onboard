@@ -371,6 +371,27 @@ func (q *Queries) GetProjectByID(ctx context.Context, arg GetProjectByIDParams) 
 	return i, err
 }
 
+const getProjectByIDAsAdmin = `-- name: GetProjectByIDAsAdmin :one
+SELECT id, company_id, title, description, status, created_at, updated_at FROM projects
+WHERE id = $1
+LIMIT 1
+`
+
+func (q *Queries) GetProjectByIDAsAdmin(ctx context.Context, id string) (Project, error) {
+	row := q.db.QueryRow(ctx, getProjectByIDAsAdmin, id)
+	var i Project
+	err := row.Scan(
+		&i.ID,
+		&i.CompanyID,
+		&i.Title,
+		&i.Description,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getProjectComment = `-- name: GetProjectComment :one
 SELECT pc.id, pc.project_id, pc.target_id, pc.comment, pc.commenter_id, pc.resolved, pc.created_at, pc.updated_at, u.first_name as commenter_first_name, u.last_name as commenter_last_name FROM project_comments pc
 JOIN users u ON u.id = pc.commenter_id
