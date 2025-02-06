@@ -94,6 +94,11 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 			arr[0].Answer = company.Name
 			// second question is the date founded
 			arr[1].Answer = time.Unix(company.DateFounded, 0).Format("2006-01-02")
+		} else if arr, ok := questions.([]db.GetQuestionsByProjectAsAdminRow); ok {
+			// first question is the company name
+			arr[0].Answer = company.Name
+			// second question is the date founded
+			arr[1].Answer = time.Unix(company.DateFounded, 0).Format("2006-01-02")
 		}
 	}
 

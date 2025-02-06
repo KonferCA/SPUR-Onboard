@@ -18,6 +18,8 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	// projects := g.Group("/project")
 
 	g.GET("/project/list/all", h.handleListAllProjects, middleware.Auth(s.GetDB(), permissions.PermAdmin))
+	// Update project status
+	g.PUT("/project/:id/status", h.handleUpdateProjectStatus, middleware.Auth(s.GetDB(), permissions.PermAdmin))
 
 	// Static routes - require project submission permission
 	projectSubmitGroup := projects.Group("", middleware.Auth(s.GetDB(), permissions.PermSubmitProject))
@@ -31,9 +33,6 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	// Dynamic :id routes
 	projects.GET("/:id", h.handleGetProject)
 	projectSubmitGroup.POST("/:id/submit", h.handleSubmitProject)
-
-	// Update project status
-	projects.PUT("/:id/status", h.handleUpdateProjectStatus)
 
 	// Project answers - require project submission permission
 	answers := projectSubmitGroup.Group("/:id/answers")
