@@ -48,7 +48,7 @@ export function UserDetailsForm({
             <ProgressSteps currentStep={1} />
             
             <h2 className="text-2xl font-semibold text-center mb-2">
-                Welcome to SPUR + Konfer
+                Onboard by SPUR
             </h2>
 
             <p className="text-gray-600 text-center mb-6">
