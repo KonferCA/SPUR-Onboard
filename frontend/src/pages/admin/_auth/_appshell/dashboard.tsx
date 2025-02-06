@@ -2,12 +2,15 @@ import { createFileRoute } from '@tanstack/react-router';
 import { ProjectsTable } from '@/components/tables/ProjectsTable';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
-import { listProjects } from '@/services/project';
+import { listProjectsAll } from '@/services/project';
 import { getCompany } from '@/services/company';
 import type { ExtendedProjectResponse, Project } from '@/services/project';
 import type { CompanyResponse } from '@/services/company';
 
-const transformToProject = (project: ExtendedProjectResponse, company: CompanyResponse | null): Project => ({
+const transformToProject = (
+    project: ExtendedProjectResponse,
+    company: CompanyResponse | null
+): Project => ({
     id: project.id,
     company_id: '',
     title: project.title,
@@ -17,9 +20,11 @@ const transformToProject = (project: ExtendedProjectResponse, company: CompanyRe
     updated_at: new Date(project.updatedAt * 1000).toISOString(),
     industry: null,
     company_stage: company?.stages?.join(', ') || null,
-    founded_date: company?.date_founded ? company.date_founded.toString() : null,
+    founded_date: company?.date_founded
+        ? company.date_founded.toString()
+        : null,
     documents: [],
-    sections: []
+    sections: [],
 });
 
 export const Route = createFileRoute('/admin/_auth/_appshell/dashboard')({
@@ -41,13 +46,15 @@ function RouteComponent() {
                 const companyData = await getCompany(accessToken);
                 setCompany(companyData);
 
-                const projectList = await listProjects(accessToken);
-                const transformedProjects = projectList.map(project => 
+                const projectList = await listProjectsAll(accessToken);
+                const transformedProjects = projectList.map((project) =>
                     transformToProject(project, companyData)
                 );
                 setProjects(transformedProjects);
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to fetch data');
+                setError(
+                    err instanceof Error ? err.message : 'Failed to fetch data'
+                );
             } finally {
                 setLoading(false);
             }
@@ -70,9 +77,7 @@ function RouteComponent() {
 
     return (
         <div className="px-4 sm:px-6 lg:px-8">
-            <ProjectsTable 
-                data={projects} 
-            />
+            <ProjectsTable data={projects} />
 
             {error && (
                 <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-md">

@@ -278,3 +278,12 @@ SET
     updated_at = extract(epoch from now())
 WHERE id = $1 AND project_id = $2
 RETURNING *; 
+
+-- name: ListAllProjects :many
+SELECT p.*, c.name as company_name, COUNT(d.id) as document_count, COUNT(t.id) as team_member_count
+FROM projects p
+LEFT JOIN project_documents d ON d.project_id = p.id
+LEFT JOIN team_members t ON t.company_id = p.company_id
+LEFT JOIN companies c on c.id = p.company_id
+GROUP BY p.id, c.name
+ORDER BY p.created_at DESC;
