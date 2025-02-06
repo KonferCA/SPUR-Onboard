@@ -40,7 +40,7 @@ function FundingModal({ isOpen, onClose, onSubmit, isLoading }: FundingModalProp
   const [error, setError] = useState('');
   
   // SPURCOIN conversion rate (we need to fetch this once the coin, uhh, exists.)
-  const SPURCOIN_TO_CAD = 69.0; 
+  const SPURCOIN_TO_CAD = 1.5; 
   const estimatedSPUR = amount ? (parseFloat(amount) / SPURCOIN_TO_CAD).toFixed(2) : '0';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,10 +143,6 @@ function RouteComponent() {
       return
     }
 
-    if (!company?.wallet_address) {
-      alert('Company has not set up their wallet address')
-      return
-    }
     try {
       setIsSendingFunds(true)
 
@@ -173,7 +169,7 @@ function RouteComponent() {
 
       tx.transferObjects(
         [splitCoinTx],
-        tx.pure.address(company.wallet_address)
+        tx.pure.address(company?.wallet_address || '')
       );
 
       if (wallet.account?.address) {
@@ -381,7 +377,8 @@ function RouteComponent() {
           ) : (
             <button
               onClick={() => setIsModalOpen(true)}
-              disabled={isSendingFunds}
+              disabled={isSendingFunds || !company.wallet_address}
+              title={!company.wallet_address ? "Company hasn't set up their wallet address" : ""}
               className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <FiDollarSign className="w-4 h-4" />
