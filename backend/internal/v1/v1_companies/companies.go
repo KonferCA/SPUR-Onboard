@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
@@ -218,6 +219,33 @@ func (h *Handler) handleGetCompany(c echo.Context) error {
 	}
 
 	company, err := h.server.GetQueries().GetCompanyByOwnerID(c.Request().Context(), user.ID)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get company")
+		return v1_common.NewNotFoundError("company")
+	}
+
+	return c.JSON(http.StatusOK, CompanyResponse{
+		ID:            company.ID,
+		OwnerID:       company.OwnerID,
+		Name:          company.Name,
+		Description:   company.Description,
+		DateFounded:   company.DateFounded,
+		Stages:        company.Stages,
+		Website:       company.Website,
+		WalletAddress: company.WalletAddress,
+		LinkedinURL:   company.LinkedinUrl,
+		CreatedAt:     company.CreatedAt,
+		UpdatedAt:     company.UpdatedAt,
+	})
+}
+
+func (h *Handler) handleGetCompanyByProject(c echo.Context) error {
+	projectID := c.Param("id")
+	if _, err := uuid.Parse(projectID); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid project id", err)
+	}
+
+	company, err := h.server.GetQueries().GetCompanyByProjectID(c.Request().Context(), projectID)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get company")
 		return v1_common.NewNotFoundError("company")

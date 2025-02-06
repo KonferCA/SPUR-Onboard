@@ -71,6 +71,31 @@ export async function getCompany(
     return json as CompanyResponse;
 }
 
+export async function getCompanyByProjectId(
+    token: string,
+    projectId: string
+): Promise<CompanyResponse | null> {
+    const url = getApiUrl(`/project/${projectId}/company`);
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+    });
+
+    if (res.status === HttpStatusCode.NOT_FOUND) {
+        return null;
+    }
+
+    const json = await res.json();
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to get company', res.status, json);
+    }
+    return json as CompanyResponse;
+}
+
 export async function updateCompany(
     token: string,
     data: Partial<CompanyInformation>
@@ -85,7 +110,9 @@ export async function updateCompany(
         ...(data.stage && { stages: data.stage.map((s) => s.value) }),
         ...(data.website && { website: data.website }),
         ...(data.linkedin && { linkedin_url: data.linkedin }),
-        ...(data.wallet_address !== undefined && { wallet_address: data.wallet_address }),
+        ...(data.wallet_address !== undefined && {
+            wallet_address: data.wallet_address,
+        }),
     };
 
     const res = await fetch(url, {

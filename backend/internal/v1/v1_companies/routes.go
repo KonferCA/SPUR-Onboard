@@ -33,7 +33,7 @@ func SetupCompanyRoutes(e *echo.Group, s interfaces.CoreServer) {
 
 	// Setup all the routes for getting a single company
 	// Auth: Admins only
-	companies.GET("/company/:id", h.handleGetCompany,
+	companies.GET("/project/:id/company", h.handleGetCompanyByProject,
 		middleware.Auth(s.GetDB(), permissions.PermViewAllProjects),
 	)
 
