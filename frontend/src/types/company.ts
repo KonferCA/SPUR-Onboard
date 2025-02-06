@@ -14,6 +14,7 @@ export interface CompanyInformation {
     stage: DropdownOption[];
     website?: string;
     linkedin?: string;
+    wallet_address?: string;
 }
 
 export interface CompanyFormErrors {
@@ -32,6 +33,7 @@ export interface CreateCompanyRequest {
     stages: string[];
     website?: string;
     linkedin_url?: string;
+    wallet_address?: string;
 }
 
 export interface CompanyResponse {

@@ -85,6 +85,7 @@ export async function updateCompany(
         ...(data.stage && { stages: data.stage.map((s) => s.value) }),
         ...(data.website && { website: data.website }),
         ...(data.linkedin && { linkedin_url: data.linkedin }),
+        ...(data.wallet_address !== undefined && { wallet_address: data.wallet_address }),
     };
 
     const res = await fetch(url, {

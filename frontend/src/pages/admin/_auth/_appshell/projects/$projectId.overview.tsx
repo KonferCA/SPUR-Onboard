@@ -143,6 +143,10 @@ function RouteComponent() {
       return
     }
 
+    if (!company?.wallet_address) {
+      alert('Company has not set up their wallet address')
+      return
+    }
     try {
       setIsSendingFunds(true)
 
@@ -169,7 +173,7 @@ function RouteComponent() {
 
       tx.transferObjects(
         [splitCoinTx],
-        tx.pure.address('0x2b3e5cd101c75ee3828d85f798c426cba145554431c49898f26e01d6f17bcbfc')
+        tx.pure.address(company.wallet_address)
       );
 
       if (wallet.account?.address) {
