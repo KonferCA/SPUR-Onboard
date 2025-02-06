@@ -82,21 +82,6 @@ const ReviewQuestionInput: FC<ReviewQuestionInputProps> = ({
                 return null;
 
             case 'file':
-                field.value.files = [
-                    createUploadableFile(new File([], 'name'), {
-                        id: 'ksdjlasjd',
-                        projectId: 'dkajsd',
-                        questionId: 'daskjdlasj',
-                        section: 'askdj',
-                        subSection: 'daskjd',
-                        name: 'File 1',
-                        url: 'https://juancwu.dev',
-                        mimeType: 'kdjasldj',
-                        size: 0,
-                        createdAt: 0,
-                        updatedAt: 0,
-                    }),
-                ];
                 if (Array.isArray(field.value.files)) {
                     return (
                         <FileDownload
