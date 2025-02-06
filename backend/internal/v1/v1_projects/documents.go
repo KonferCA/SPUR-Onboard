@@ -2,6 +2,7 @@ package v1_projects
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
 	"io"
@@ -138,25 +139,30 @@ func (h *Handler) handleGetProjectDocuments(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
-	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
-	if err != nil {
-		return v1_common.Fail(c, 404, "Company not found", err)
-	}
-
 	// Get project ID from URL
 	projectID := c.Param("id")
 	if projectID == "" {
 		return v1_common.Fail(c, 400, "Project ID is required", nil)
 	}
 
-	// Verify project belongs to company
-	_, err = h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
-		ID:        projectID,
-		CompanyID: company.ID,
-	})
-	if err != nil {
-		return v1_common.Fail(c, 404, "Project not found", err)
+	// Check if user is admin
+	isAdmin := permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermViewAllProjects)
+
+	if !isAdmin {
+		// Get company owned by user
+		company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
+		if err != nil {
+			return v1_common.Fail(c, 404, "Company not found", err)
+		}
+
+		// Verify project belongs to company
+		_, err = h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
+			ID:        projectID,
+			CompanyID: company.ID,
+		})
+		if err != nil {
+			return v1_common.Fail(c, 404, "Project not found", err)
+		}
 	}
 
 	// Get documents for this project
