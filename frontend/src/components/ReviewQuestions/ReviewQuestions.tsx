@@ -1,6 +1,5 @@
 import {
     CommentBubble,
-    createUploadableFile,
     DropdownOption,
     FileDownload,
     TeamMembers,
