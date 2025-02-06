@@ -122,6 +122,31 @@ func (q *Queries) GetCompanyByOwnerID(ctx context.Context, ownerID string) (Comp
 	return i, err
 }
 
+const getCompanyByProjectID = `-- name: GetCompanyByProjectID :one
+SELECT c.id, c.owner_id, c.name, c.description, c.date_founded, c.stages, c.website, c.wallet_address, c.linkedin_url, c.created_at, c.updated_at FROM projects p
+JOIN companies c ON c.id = p.company_id
+WHERE p.id = $1
+`
+
+func (q *Queries) GetCompanyByProjectID(ctx context.Context, id string) (Company, error) {
+	row := q.db.QueryRow(ctx, getCompanyByProjectID, id)
+	var i Company
+	err := row.Scan(
+		&i.ID,
+		&i.OwnerID,
+		&i.Name,
+		&i.Description,
+		&i.DateFounded,
+		&i.Stages,
+		&i.Website,
+		&i.WalletAddress,
+		&i.LinkedinUrl,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getCompanyWithAuth = `-- name: GetCompanyWithAuth :one
 SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at FROM companies 
 WHERE (owner_id = $1 OR $2 = 'admin') AND id = $3

@@ -47,3 +47,8 @@ ORDER BY created_at DESC;
 -- name: GetCompanyWithAuth :one
 SELECT * FROM companies 
 WHERE (owner_id = $1 OR $2 = 'admin') AND id = $3;
+
+-- name: GetCompanyByProjectID :one
+SELECT c.* FROM projects p
+JOIN companies c ON c.id = p.company_id
+WHERE p.id = $1;

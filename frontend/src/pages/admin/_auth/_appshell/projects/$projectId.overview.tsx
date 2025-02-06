@@ -2,7 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { Stack } from '@layouts'
 import { FiFileText, FiMessageSquare, FiDollarSign, FiTrendingUp, FiGlobe, FiLinkedin } from 'react-icons/fi'
 import { useEffect, useState } from 'react'
-import { CompanyResponse, getCompany } from '@/services/company'
+import { CompanyResponse, getCompanyByProjectId } from '@/services/company'
 import { TeamMember } from '@/types'
 import { getTeamMembers } from '@/services/teams'
 import { useAuth } from '@/contexts/AuthContext'
@@ -199,7 +199,7 @@ function RouteComponent() {
         // First fetch project and company data since we need the company ID
         const [projectData, companyData] = await Promise.all([
           getProject(accessToken, projectId),
-          getCompany(accessToken)
+          getCompanyByProjectId(accessToken, projectId)
         ])
 
         if (!companyData) {
