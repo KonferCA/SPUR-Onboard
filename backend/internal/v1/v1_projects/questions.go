@@ -2,6 +2,7 @@ package v1_projects
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"net/http"
 	"time"
@@ -47,11 +48,15 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 			return v1_common.Fail(c, http.StatusInternalServerError, "Internal Server Error", err)
 		}
 
-		// Get all questions from database for the given project
-		questions, err = q.GetQuestionsByProject(c.Request().Context(), db.GetQuestionsByProjectParams{
-			ProjectID: projectID,
-			OwnerID:   user.ID,
-		})
+		if permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermViewAllProjects) {
+			questions, err = q.GetQuestionsByProjectAsAdmin(c.Request().Context(), projectID)
+		} else {
+			// Get all questions from database for the given project
+			questions, err = q.GetQuestionsByProject(c.Request().Context(), db.GetQuestionsByProjectParams{
+				ProjectID: projectID,
+				OwnerID:   user.ID,
+			})
+		}
 		if err != nil {
 			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
 		}
