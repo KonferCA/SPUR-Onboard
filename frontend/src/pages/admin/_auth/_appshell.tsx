@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
-import { FiFolder, FiBook, FiUsers, FiSettings } from 'react-icons/fi';
+import { FiFolder, FiSettings } from 'react-icons/fi';
 import { DashboardTemplate } from '@templates';
 
 export const Route = createFileRoute('/admin/_auth/_appshell')({
@@ -7,10 +7,14 @@ export const Route = createFileRoute('/admin/_auth/_appshell')({
 });
 
 const adminMenuItems = [
-    { label: 'Projects', path: '/admin/projects', icon: <FiFolder /> },
-    { label: 'Resources', path: '/admin/resources', icon: <FiBook /> },
-    { label: 'Users', path: '/admin/users', icon: <FiUsers /> },
-    { label: 'Settings', path: '/admin/settings/permissions', icon: <FiSettings /> },
+    { label: 'Projects', path: '/admin/dashboard', icon: <FiFolder /> },
+    // { label: 'Resources', path: '/admin/resources', icon: <FiBook /> },
+    // { label: 'Users', path: '/admin/users', icon: <FiUsers /> },
+    {
+        label: 'Settings',
+        path: '/admin/settings/permissions',
+        icon: <FiSettings />,
+    },
 ];
 
 function RouteComponent() {
@@ -35,4 +39,5 @@ function RouteComponent() {
             <Outlet />
         </DashboardTemplate>
     );
-} 
+}
+
