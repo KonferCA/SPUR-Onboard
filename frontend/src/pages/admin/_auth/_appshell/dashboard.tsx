@@ -3,7 +3,6 @@ import { ProjectsTable } from '@/components/tables/ProjectsTable';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { listProjectsAll } from '@/services/project';
-import { getCompany } from '@/services/company';
 import type { ExtendedProjectResponse, Project } from '@/services/project';
 import type { CompanyResponse } from '@/services/company';
 
@@ -34,7 +33,7 @@ export const Route = createFileRoute('/admin/_auth/_appshell/dashboard')({
 function RouteComponent() {
     const { accessToken } = useAuth();
     const [projects, setProjects] = useState<Project[]>([]);
-    const [_, setCompany] = useState<CompanyResponse | null>(null);
+    // const [_, setCompany] = useState<CompanyResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -43,12 +42,9 @@ function RouteComponent() {
             if (!accessToken) return;
 
             try {
-                const companyData = await getCompany(accessToken);
-                setCompany(companyData);
-
                 const projectList = await listProjectsAll(accessToken);
                 const transformedProjects = projectList.map((project) =>
-                    transformToProject(project, companyData)
+                    transformToProject(project, null)
                 );
                 setProjects(transformedProjects);
             } catch (err) {
