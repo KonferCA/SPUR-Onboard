@@ -15,7 +15,6 @@ const userMenuItems = [
     // { label: 'Resources', path: '/resources', icon: <FiBook /> },
     // { label: 'Favorites', path: '/favorites', icon: <FiStar /> },
     // { label: 'Profile', path: '/profile', icon: <FiUser /> },
-
 ];
 
 // const userNavTabs = [
@@ -32,6 +31,19 @@ function RouteComponent() {
     const SettingsSidebar = isSettingsPage ? (
         <div className="w-64 bg-white border-r border-gray-200">
             <div className="p-6">
+                <h2 className="text-lg font-medium text-gray-900 mb-4">
+                    Projects
+                </h2>
+                <nav className="space-y-1">
+                    <Link
+                        to="/user/dashboard"
+                        className={` flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 `}
+                    >
+                        <FiFolder />
+                        Projects
+                    </Link>
+                </nav>
+                <div className="h-4"></div>
                 <h2 className="text-lg font-medium text-gray-900 mb-4">
                     Settings
                 </h2>
