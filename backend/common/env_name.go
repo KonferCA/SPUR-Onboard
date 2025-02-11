@@ -1,7 +1,9 @@
 package common
 
 /*
+ *
  * The different environments the application can run in.
+ *
  */
 const (
 	PRODUCTION_ENV = "production"
