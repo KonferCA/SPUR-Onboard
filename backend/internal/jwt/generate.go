@@ -7,13 +7,33 @@ import (
 	golangJWT "github.com/golang-jwt/jwt/v5"
 )
 
+/*
+ *
+ * The different types of tokens that can be generated.
+ *
+ * ACCESS_TOKEN_TYPE is used for authenticating the user.
+ * REFRESH_TOKEN_TYPE is used to refresh the access token.
+ * VERIFY_EMAIL_TOKEN_TYPE is used to verify the user's email.
+ *
+ */
 const (
 	ACCESS_TOKEN_TYPE       = "access_token"
 	REFRESH_TOKEN_TYPE      = "refresh_token"
 	VERIFY_EMAIL_TOKEN_TYPE = "verify_email_token"
 )
 
-// Generates JWT tokens for the given user. Returns the access token, refresh token and error (nil if no error)
+/*
+ *
+ * @desc GenerateWithSalt generates a new access and refresh token for the given user id.
+ *       The salt is used to generate the token.
+ *       The access token expires in 10 minutes and the refresh token expires in 7 days.
+ *
+ * @param userID: the user id.
+ * @param salt: the salt used to generate the token.
+ *
+ * @returns accessToken, refreshToken, error
+ *
+ */
 func GenerateWithSalt(userID string, salt []byte) (string, string, error) {
 	accessToken, err := generateTokenWithSalt(userID, ACCESS_TOKEN_TYPE, time.Now().Add(10*time.Minute), salt)
 	if err != nil {
@@ -29,10 +49,17 @@ func GenerateWithSalt(userID string, salt []byte) (string, string, error) {
 }
 
 /*
-GenerateVerifyEmailToken generates a new token for verifying someones email.
-This method uses a different jwt secret defined by JWT_SECRET_VERIFY_EMAIL
-to separate authentication related jwt with this one.
-*/
+ *
+ * @desc GenerateAccessToken generates a new access token for the given user id.
+ *       The access token expires in 10 minutes.
+ *
+ * @param email: the user's email.
+ * @param id: the user's id.
+ * @param exp: the expiration time of the token.
+ *
+ * @returns accessToken, error
+ *
+ */
 func GenerateVerifyEmailToken(email string, id string, exp time.Time) (string, error) {
 	claims := VerifyEmailJWTClaims{
 		Email:     email,
@@ -44,11 +71,24 @@ func GenerateVerifyEmailToken(email string, id string, exp time.Time) (string, e
 		},
 	}
 
+	// generate a new token with the claims
 	token := golangJWT.NewWithClaims(golangJWT.SigningMethodHS256, claims)
 	return token.SignedString([]byte(os.Getenv("JWT_SECRET_VERIFY_EMAIL")))
 }
 
-// Private helper method to generate a token with user's salt
+/*
+ *
+ * @desc generateTokenWithSalt generates a new token for the given user id, token type, and expiration time.
+ *       The salt is used to generate the token.
+ *
+ * @param userID: the user id.
+ * @param tokenType: the type of token.
+ * @param exp: the expiration time of the token.
+ * @param salt: the salt used to generate the token.
+ *
+ * @returns token, error
+ *
+ */
 func generateTokenWithSalt(userID string, tokenType string, exp time.Time, salt []byte) (string, error) {
 	claims := JWTClaims{
 		UserID:    userID,
@@ -60,6 +100,7 @@ func generateTokenWithSalt(userID string, tokenType string, exp time.Time, salt 
 	}
 
 	token := golangJWT.NewWithClaims(golangJWT.SigningMethodHS256, claims)
+
 	// combine base secret with user's salt
 	secret := append([]byte(os.Getenv("JWT_SECRET")), salt...)
 	return token.SignedString(secret)
