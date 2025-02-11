@@ -10,27 +10,42 @@ import (
 )
 
 /*
-CORS is a wrapper middleware for the echo.CORS middleware.
-The added feature of this wrapper is that it checks the app environment
-and chooses the right configs to set. This allows a cleaner view
-where the CORS middleware is declared.
-
-Example:
-
-	e := echo.New()
-	e.Use(CORS())
-*/
+ * @desc This function is a wrapper middleware for the echo.CORS middleware.
+ *       The added feature of this wrapper is that it checks the app environment and chooses the right configs to set.
+ *       This allows a cleaner view where the CORS middleware is declared.
+ *
+ * @params nil
+ *
+ * @returns echo.MiddlewareFunc
+ *
+ * @example
+ *         e := echo.New()
+ *         e.Use(CORS())
+ *
+ */
 func CORS() echo.MiddlewareFunc {
 	config := getCORSConfigByEnv()
 	m := em.CORSWithConfig(config)
 	return m
 }
 
+/*
+ * @desc This function returns the CORS configuration based on the app environment.
+ *       The configuration is set based on the environment variables.
+ *
+ * @params nil
+ *
+ * @returns em.CORSConfig
+ *
+ * @example
+ *         config := getCORSConfigByEnv()
+ */
 func getCORSConfigByEnv() em.CORSConfig {
 	appEnv := os.Getenv("APP_ENV")
 	fe_url := os.Getenv("FRONTEND_URL")
 
 	switch appEnv {
+	// development and test environments have the same configuration
 	case common.DEVELOPMENT_ENV, common.TEST_ENV:
 		return em.CORSConfig{
 			AllowOrigins: []string{
@@ -57,6 +72,7 @@ func getCORSConfigByEnv() em.CORSConfig {
 			AllowCredentials: true,
 			MaxAge:           300,
 		}
+	// staging and preview environments have the same configuration
 	case common.STAGING_ENV:
 		return em.CORSConfig{
 			AllowOrigins: []string{
