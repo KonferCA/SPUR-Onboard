@@ -2,8 +2,10 @@
 import { FiFolder, FiSettings } from 'react-icons/fi';
 import { DashboardTemplate } from '@templates';
 import { createFileRoute, Outlet, Link } from '@tanstack/react-router';
-import { useLocation } from '@tanstack/react-router';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import { SETTINGS_ROUTES } from '@/constants/settings';
+import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
 
 export const Route = createFileRoute('/user/_auth/_appshell')({
     component: RouteComponent,
@@ -24,8 +26,58 @@ const userMenuItems = [
 
 function RouteComponent() {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { user, clearAuth } = useAuth();
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    const handleLogout = async () => {
+        await clearAuth();
+        navigate({ to: '/auth' });
+    };
 
     const isSettingsPage = location.pathname.includes('/settings');
+
+    const userActions = (
+        <div className="relative">
+            <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none"
+            >
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                    <span className="text-gray-600 font-medium">
+                        {user?.firstName?.[0]?.toUpperCase() || 'U'}
+                    </span>
+                </div>
+                <svg
+                    className={`w-4 h-4 transition-transform ${
+                        isDropdownOpen ? 'transform rotate-180' : ''
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 9l6 6 6-6" // TIL: this is called a chevron
+                    />
+                </svg>
+            </button>
+
+            {/* Dropdown menu */}
+            {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-lg border border-gray-200">
+                    <button
+                        onClick={handleLogout}
+                        className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    >
+                        Logout
+                    </button>
+                </div>
+            )}
+        </div>
+    );
 
     // Settings sidebar
     const SettingsSidebar = isSettingsPage ? (
@@ -69,15 +121,6 @@ function RouteComponent() {
             </div>
         </div>
     ) : null;
-
-    const userActions = (
-        <div className="relative">
-            <button className="p-2 text-gray-600 hover:text-gray-900 rounded-full">
-                <span className="sr-only">User menu</span>
-                <div className="w-8 h-8 bg-gray-200 rounded-full" />
-            </button>
-        </div>
-    );
 
     return (
         <DashboardTemplate
