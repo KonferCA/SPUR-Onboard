@@ -71,7 +71,7 @@ function RouteComponent() {
                                 navigate({ to: '/user/project/new' })
                             }
                         >
-                            Submit Project
+                            Create a New Project
                         </Button>
                     </div>
                 </nav>
