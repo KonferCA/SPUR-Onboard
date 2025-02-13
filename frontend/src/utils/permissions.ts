@@ -3,20 +3,17 @@
  */
 export const Permissions = {
     // Project Permissions
-    PermSubmitProject: 1 << 0,        // Startup: submit projects for review
-    PermManageTeam: 1 << 1,           // Startup: manage team members
-    PermViewAllProjects: 1 << 2,      // Admin/Investor: view all projects
-    PermCommentOnProjects: 1 << 3,    // All: comment on projects
-    PermInvestInProjects: 1 << 4,     // Investor: invest in projects
-    PermReviewProjects: 1 << 5,       // Admin: review/approve/decline projects
-    PermManageDocuments: 1 << 6,      // Startup: manage project documents
-    PermManageInvestments: 1 << 7,    // Admin: manage investments
-    
-    // Admin permissions
-    PermManageUsers: 1 << 28,         // Admin: manage user accounts
-    PermManagePermissions: 1 << 29,   // Admin: modify user permissions
-    PermManageSystem: 1 << 30,        // Admin: system management
-    PermAdmin: 1 << 31,               // Admin: special bit to identify admins
+    PermViewAllProjects: 1 << 0,      // Admin: view all projects (and companies?)
+    PermReviewProjects: 1 << 1,       // Admin: review/approve/decline projects
+    PermManageUsers: 1 << 2,          // Admin: manage user accounts
+    PermManagePermissions: 1 << 3,    // Admin: modify user permissions
+    PermSubmitProject: 1 << 4,        // Startup: submit projects for review
+    PermCommentOnProjects: 1 << 5,    // All: comment on projects
+    PermInvestInProjects: 1 << 6,     // Investor: invest in projects
+    PermManageDocuments: 1 << 7,      // Startup: manage project documents
+    PermManageInvestments: 1 << 8,    // Admin: manage investments
+    PermManageTeam: 1 << 9,          // Startup: manage team members
+    PermIsAdmin: 1 << 10,            // Special bit to identify admins
 } as const;
 
 /**
@@ -41,7 +38,7 @@ export function hasAnyPermission(userPermissions: number, ...requiredPermissions
  */
 export function isAdmin(userPermissions: number): boolean {
     // For admin, we just need to check the admin bit lol
-    return (userPermissions & Permissions.PermAdmin) === Permissions.PermAdmin;
+    return (userPermissions & Permissions.PermIsAdmin) === Permissions.PermIsAdmin;
 }
 
 /**

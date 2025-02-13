@@ -22,9 +22,11 @@ const (
 // Role-based permission sets
 const (
     PermAdmin = PermIsAdmin | PermViewAllProjects | PermReviewProjects | 
-                PermManageUsers | PermManagePermissions | PermCommentOnProjects
+                PermManageUsers | PermManagePermissions | PermCommentOnProjects |
+                PermManageInvestments
 
-    PermStartupOwner = PermSubmitProject | PermCommentOnProjects | PermManageDocuments | PermManageTeam
+    PermStartupOwner = PermSubmitProject | PermCommentOnProjects | PermManageDocuments | 
+                      PermManageTeam
 
     PermInvestor = PermViewAllProjects | PermCommentOnProjects | PermInvestInProjects
 
