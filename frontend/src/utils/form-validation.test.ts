@@ -3,17 +3,17 @@ import { createZodSchema } from '@/utils/form-validation';
 
 describe('createZodSchema', () => {
     it('should return an empty array when no validation string is provided', () => {
-        const result = createZodSchema();
+        const result = createZodSchema('textinput');
         expect(result).toEqual([]);
     });
 
     it('should return an empty array when an empty string is provided', () => {
-        const result = createZodSchema([]);
+        const result = createZodSchema('textinput', []);
         expect(result).toEqual([]);
     });
 
     it('should create a URL validation schema', () => {
-        const schemas = createZodSchema(['url']);
+        const schemas = createZodSchema('textinput', ['url']);
         expect(schemas).toHaveLength(1);
 
         // Test valid URL
@@ -27,12 +27,12 @@ describe('createZodSchema', () => {
         expect(invalidValidationResult).toBeDefined();
         expect(invalidValidationResult.success).toBe(false);
         expect(invalidValidationResult.error?.errors[0].message).toBe(
-            'Invalid url'
+            'Invalid URL'
         );
     });
 
     it('should handle multiple validation rules', () => {
-        const schemas = createZodSchema(['url', 'url']);
+        const schemas = createZodSchema('textinput', ['url', 'url']);
         expect(schemas).toHaveLength(2);
 
         // Both schemas should be URL validators
@@ -44,14 +44,14 @@ describe('createZodSchema', () => {
     });
 
     it('should throw error for invalid validation type', () => {
-        expect(() => createZodSchema(['invalidType'])).toThrow(
+        expect(() => createZodSchema('textinput', ['invalidType'])).toThrow(
             'Invalid validation type: invalidType'
         );
     });
 
     it('should throw error when one of multiple validations is invalid', () => {
-        expect(() => createZodSchema(['url', 'invalidType'])).toThrow(
-            'Invalid validation type: invalidType'
-        );
+        expect(() =>
+            createZodSchema('textinput', ['url', 'invalidType'])
+        ).toThrow('Invalid validation type: invalidType');
     });
 });
