@@ -8,11 +8,6 @@ export const SETTINGS_ROUTES: SettingsRoute[] = [
         icon: <FiUser className="w-4 h-4" />,
     },
     {
-        path: '/user/settings/company',
-        label: 'Company Profile',
-        icon: <FiBriefcase className="w-4 h-4" />,
-    },
-    {
         path: '/user/settings/wallet',
         label: 'Wallet',
         icon: <FiCreditCard className="w-4 h-4" />,
