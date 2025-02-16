@@ -30,12 +30,25 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                 level: 'success',
             });
             window.location.reload();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to withdraw project:', error);
-            push({
-                message: 'Failed to withdraw project',
-                level: 'error',
-            });
+            
+            if (error?.response?.status === 401) {
+                push({
+                    message: 'Your session has expired. Please sign in again.',
+                    level: 'error',
+                });
+            } else if (error?.response?.status === 403) {
+                push({
+                    message: 'You do not have permission to withdraw this project.',
+                    level: 'error',
+                });
+            } else {
+                push({
+                    message: 'Unable to withdraw your project. Please try again or contact support if the issue persists.',
+                    level: 'error',
+                });
+            }
         } finally {
             setIsWithdrawing(false);
             setShowWithdrawModal(false);
