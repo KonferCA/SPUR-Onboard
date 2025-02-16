@@ -15,6 +15,7 @@ export interface User {
     email: string;
     emailVerified: boolean;
     permissions: number;
+    profilePictureUrl?: string | null;
 }
 
 export interface AuthFormData {

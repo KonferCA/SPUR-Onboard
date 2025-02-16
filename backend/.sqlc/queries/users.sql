@@ -34,6 +34,7 @@ SELECT
     COALESCE(title, '') as title,
     COALESCE(bio, '') as bio,
     COALESCE(linkedin, '') as linkedin,
+    profile_picture_url,
     COALESCE(created_at, EXTRACT(EPOCH FROM NOW())::bigint) as created_at,
     NULLIF(updated_at, 0)::bigint as updated_at
 FROM users
@@ -80,3 +81,8 @@ WHERE id = $1;
 UPDATE users
 SET permissions = $2
 WHERE id = ANY($1::uuid[]);
+
+-- name: UpdateUserProfilePicture :exec
+UPDATE users
+SET profile_picture_url = $1
+WHERE id = $2;

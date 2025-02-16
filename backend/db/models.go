@@ -337,19 +337,20 @@ type Transaction struct {
 }
 
 type User struct {
-	ID            string  `json:"id"`
-	FirstName     *string `json:"first_name"`
-	LastName      *string `json:"last_name"`
-	Bio           *string `json:"bio"`
-	Title         *string `json:"title"`
-	Linkedin      *string `json:"linkedin"`
-	Email         string  `json:"email"`
-	Password      string  `json:"password"`
-	Permissions   int32   `json:"permissions"`
-	EmailVerified bool    `json:"email_verified"`
-	CreatedAt     int64   `json:"created_at"`
-	UpdatedAt     int64   `json:"updated_at"`
-	TokenSalt     []byte  `json:"token_salt"`
+	ID                string  `json:"id"`
+	FirstName         *string `json:"first_name"`
+	LastName          *string `json:"last_name"`
+	Bio               *string `json:"bio"`
+	Title             *string `json:"title"`
+	Linkedin          *string `json:"linkedin"`
+	Email             string  `json:"email"`
+	Password          string  `json:"password"`
+	Permissions       int32   `json:"permissions"`
+	EmailVerified     bool    `json:"email_verified"`
+	CreatedAt         int64   `json:"created_at"`
+	UpdatedAt         int64   `json:"updated_at"`
+	TokenSalt         []byte  `json:"token_salt"`
+	ProfilePictureUrl *string `json:"profile_picture_url"`
 }
 
 type VerifyEmailToken struct {
