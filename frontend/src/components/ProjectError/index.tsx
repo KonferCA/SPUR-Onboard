@@ -1,2 +1,2 @@
 export { ProjectError } from './ProjectError';
-export type { ProjectErrorProps } from './ProjectError';
+export type { ProjectErrorProps, ValidationError } from './ProjectError';
