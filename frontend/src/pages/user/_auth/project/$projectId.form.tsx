@@ -26,6 +26,7 @@ import { getSampleAnswer } from '@/utils/sampleData';
 import { useNavigate } from '@tanstack/react-router';
 import { ValidationError, ProjectError } from '@/components/ProjectError';
 import { RecommendedFields } from '@/components/RecommendedFields';
+import { AutosaveIndicator } from '@/components/AutoSaveIndicator';
 
 export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
     component: ProjectFormPage,
@@ -88,10 +89,10 @@ function ProjectFormPage() {
         refetchOnWindowFocus: false,
         refetchOnMount: true,
     });
+
     const [groupedQuestions, setGroupedQuestions] = useState<
         GroupedProjectQuestions[]
     >([]);
-
     const [currentStep, setCurrentStep] = useState<number>(0);
     const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
     const notification = useNotification();
@@ -104,6 +105,7 @@ function ProjectFormPage() {
         questionText: string;
         inputType: string;
     }>>([]);
+    const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
 
     const autosave = useDebounceFn(
         async () => {
@@ -115,43 +117,24 @@ function ProjectFormPage() {
             );
             dirtyInputRef.current.clear();
 
-            let notificationId = '';
             try {
                 if (dirtyInputsSnapshot.length > 0) {
-                    notificationId = notification.push({
-                        message: 'Saving answers...',
-                        level: 'info',
-                        autoClose: false,
-                    });
+                    setAutosaveStatus('saving');
                     await saveProjectDraft(
                         accessToken,
                         currentProjectId,
                         dirtyInputsSnapshot
                     );
-                    setTimeout(() => {
-                        notification.update(notificationId, {
-                            message: 'Answers saved!',
-                            level: 'success',
-                            autoClose: true,
-                            duration: 1000,
-                        });
-                    }, 1000);
+                    setAutosaveStatus('success');
                 }
             } catch (e) {
                 console.error(e);
-                if (notificationId) {
-                    notification.update(notificationId, {
-                        message: 'Failed to save answers',
-                        level: 'error',
-                        autoClose: true,
-                        duration: 3000,
-                    });
-                }
+                setAutosaveStatus('error');
             }
         },
         1500,
         [currentProjectId, accessToken, companyId]
-    );
+    );    
 
     const handleChange = (
         questionId: string,
@@ -614,6 +597,8 @@ function ProjectFormPage() {
 
     return (
         <div>
+            <AutosaveIndicator status={autosaveStatus} />
+            
             <nav className="fixed top-0 left-0 right-0 z-50 bg-white h-24 border-b border-gray-300">
                 <ul className="flex items-center pl-4 h-full">
                     <li>
