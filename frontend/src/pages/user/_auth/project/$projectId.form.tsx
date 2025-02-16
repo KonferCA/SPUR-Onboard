@@ -126,6 +126,54 @@ function ProjectFormPage() {
         [currentProjectId, accessToken, companyId]
     );
 
+    useEffect(() => {
+        const handleKeyDown = async (event: KeyboardEvent) => {
+            if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+                event.preventDefault(); // Prevent browser's save dialog
+                if (!currentProjectId || !accessToken || !companyId) return;
+                
+                const dirtyInputsSnapshot: ProjectDraft[] = Array.from(dirtyInputRef.current.values());
+                if (dirtyInputsSnapshot.length === 0) {
+                    notification.push({
+                        message: 'No changes to save',
+                        level: 'info',
+                        autoClose: true,
+                        duration: 2000,
+                    });
+                    return;
+                }
+
+                const notificationId = notification.push({
+                    message: 'Manually saving answers...',
+                    level: 'info',
+                    autoClose: false,
+                });
+
+                try {
+                    await saveProjectDraft(accessToken, currentProjectId, dirtyInputsSnapshot);
+                    dirtyInputRef.current.clear();
+                    notification.update(notificationId, {
+                        message: 'Answers saved successfully!',
+                        level: 'success',
+                        autoClose: true,
+                        duration: 2000,
+                    });
+                } catch (error) {
+                    console.error(error);
+                    notification.update(notificationId, {
+                        message: 'Failed to save answers',
+                        level: 'error',
+                        autoClose: true,
+                        duration: 3000,
+                    });
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [accessToken, companyId, currentProjectId]);
+
     const handleChange = (
         questionId: string,
         inputFieldKey: string,
