@@ -641,7 +641,7 @@ function ProjectFormPage() {
             <div className="h-24"></div>
 
             <SectionedLayout
-                asideTitle="Submit a project"
+                asideTitle={groupedQuestions[currentStep]?.section ?? ''}
                 linkContainerClassnames="top-36"
                 links={asideLinks}
             >

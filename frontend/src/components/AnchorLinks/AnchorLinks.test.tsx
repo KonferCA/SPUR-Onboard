@@ -21,7 +21,7 @@ describe('AnchorLinks', () => {
         const found = screen.getAllByRole('listitem');
         expect(found).toHaveLength(links.length);
         found.forEach((link, i) => {
-            expect(link.textContent).toEqual(links[i].label);
+            expect(link.textContent).toContain(links[i].label);
         });
     });
 

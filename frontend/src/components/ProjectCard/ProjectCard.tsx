@@ -27,7 +27,7 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                                 })
                             }
                         >
-                            Finish Submission
+                            Edit Draft Project
                         </Button>
                     )}
                     {data.status !== 'draft' && (
