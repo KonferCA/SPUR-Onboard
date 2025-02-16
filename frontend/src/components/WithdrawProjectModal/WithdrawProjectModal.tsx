@@ -38,7 +38,7 @@ export function WithdrawProjectModal({
 
                     <div className="p-4">
                         <p className="text-gray-600">
-                            Your application will be withdrawn for consideration of funding and you will no longer be able to make any changes.
+                            Your application will be withdrawn from consideration for funding and you will no longer be able to make any changes.
                         </p>
 
                         <div className="mt-6 flex justify-end gap-3">
