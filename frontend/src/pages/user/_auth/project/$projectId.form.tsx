@@ -24,6 +24,8 @@ import { useDebounceFn } from '@/hooks';
 import { useAuth, useNotification } from '@/contexts';
 import { getSampleAnswer } from '@/utils/sampleData';
 import { useNavigate } from '@tanstack/react-router';
+import { ValidationError, ProjectError } from '@/components/ProjectError';
+import { RecommendedFields } from '@/components/RecommendedFields';
 
 export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
     component: ProjectFormPage,
@@ -46,6 +48,23 @@ const questionGroupTitleSeparatorStyles = cva(
     'my-4 bg-gray-400 w-full h-[2px]'
 );
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
+
+const isEmptyValue = (value: any, type: string): boolean => {
+    if (value === null || value === undefined) return true;
+
+    switch (type) {
+        case 'textinput':
+        case 'textarea':
+            return value.trim() === '';
+        case 'select':
+        case 'multiselect':
+            return value.length === 0;
+        case 'date':
+            return value === '';
+        default:
+            return false;
+    }
+};
 
 function ProjectFormPage() {
     const { projectId: currentProjectId } = Route.useParams();
@@ -77,6 +96,14 @@ function ProjectFormPage() {
     const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
     const notification = useNotification();
     const [showSubmitModal, setShowSubmitModal] = useState(false);
+    const [showRecommendedModal, setShowRecommendedModal] = useState(false);
+    const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+    const [recommendedFields, setRecommendedFields] = useState<Array<{
+        section: string;
+        subsection: string;
+        questionText: string;
+        inputType: string;
+    }>>([]);
 
     const autosave = useDebounceFn(
         async () => {
@@ -425,10 +452,13 @@ function ProjectFormPage() {
     };
 
     const handleSubmit = async () => {
-        // validate all the questions
-        const valid = groupedQuestions.every((group) => {
-            return group.subSections.every((subsection) => {
-                return subsection.questions.every((question) => {
+        const invalidQuestions: ValidationError[] = [];
+        
+        let isValid = true;
+        
+        groupedQuestions.forEach((group) => {            
+            group.subSections.forEach((subsection) => {
+                subsection.questions.forEach((question) => {
                     // if question is dependent on previous and it should be rendered
                     // then we check the answer of this input
                     if (
@@ -436,25 +466,24 @@ function ProjectFormPage() {
                         question.conditionType.valid &&
                         !shouldRenderQuestion(question, subsection.questions)
                     ) {
-                        return true;
+                        return;
                     }
-
-                    return question.inputFields.every((input) => {
-                        let valid = true;
-
-                        // reset invalid state
+    
+                    question.inputFields.forEach((input) => {
+                        let fieldValid = true;
+    
                         input.invalid = false;
-
-                        if (!input.required && !input.value.value) return true;
-
+    
+                        if (!input.required && !input.value.value) return;
+    
                         switch (input.type) {
                             case 'date':
                             case 'textarea':
                             case 'textinput':
                                 if (!input.value.value) {
-                                    valid = false;
+                                    fieldValid = false;
                                 } else if (input.validations) {
-                                    valid = input.validations.every(
+                                    fieldValid = input.validations.every(
                                         (validation) =>
                                             validation.safeParse(
                                                 input.value.value
@@ -468,11 +497,10 @@ function ProjectFormPage() {
                                     !Array.isArray(input.value.value) ||
                                     !input.value.value.length
                                 ) {
-                                    return false;
+                                    fieldValid = false;
                                 } else if (input.validations) {
-                                    const values = input.value
-                                        .value as string[];
-                                    valid = values.every((v) =>
+                                    const values = input.value.value as string[];
+                                    fieldValid = values.every((v) =>
                                         input.validations?.every(
                                             (validation) =>
                                                 validation.safeParse(v).success
@@ -480,31 +508,81 @@ function ProjectFormPage() {
                                     );
                                 }
                                 break;
-
+                            // Note: Not needed since the component will always be populated with the person that owns the project
+                            // case 'team':
+                            //     if (!Array.isArray(input.value.value) || input.value.value.length === 0) {
+                            //         fieldValid = false;
+                            //     }
+                            //     break;
                             default:
                                 break;
                         }
+    
+                        input.invalid = !fieldValid;
+    
+                        if (!fieldValid) {
+                            invalidQuestions.push({
+                                section: group.section,
+                                subsection: subsection.name,
+                                questionText: question.question,
+                                inputType: input.type,
+                                required: input.required ?? false,
+                                value: input.value.value,
+                                reason: !input.value.value ? 'Missing required value' : 'Failed validation'
+                            });
 
-                        input.invalid = !valid;
-
-                        return valid;
+                            isValid = false;
+                        }
                     });
                 });
             });
         });
+    
+        if (isValid) {
+            setValidationErrors([]);
 
-        if (valid) {
-            // try {
-            //     if (!accessToken || !currentProjectId) return;
-            //     await submitProject(accessToken, currentProjectId);
-            //     // replace to not let them go back, it causes the creation of a new project
-            //     navigate({ to: '/user/dashboard', replace: true });
-            // } catch (e) {
-            //     console.error(e);
-            // }
-            setShowSubmitModal(true);
+            const recommended: Array<{
+                section: string;
+                subsection: string;
+                questionText: string;
+                inputType: string;
+            }> = [];
+
+            groupedQuestions.forEach((group) => {
+                group.subSections.forEach((subsection) => {
+                    subsection.questions.forEach((question) => {
+                        if (
+                            question.conditionType &&
+                            question.conditionType.valid &&
+                            !shouldRenderQuestion(question, subsection.questions)
+                        ) {
+                            return;
+                        }
+
+                        question.inputFields.forEach((input) => {
+                            if (input.required) return;
+                            
+                            if (isEmptyValue(input.value.value, input.type)) {
+                                recommended.push({
+                                    section: group.section,
+                                    subsection: subsection.name,
+                                    questionText: question.question,
+                                    inputType: input.type
+                                });
+                            }
+                        });
+                    });
+                });
+            });
+
+            if (recommended.length > 0) {
+                setRecommendedFields(recommended);
+                setShowRecommendedModal(true);
+            } else {
+                setShowSubmitModal(true);
+            }
         } else {
-            // update the group questions so that it refreshes the ui
+            setValidationErrors(invalidQuestions);
             setGroupedQuestions((prev) => [...prev]);
         }
     };
@@ -520,6 +598,22 @@ function ProjectFormPage() {
             console.error(e);
         }
     }
+
+    const handleErrorClick = (section: string, subsectionId: string) => {
+        const sectionIndex = groupedQuestions.findIndex(group => group.section === section);
+
+        if (sectionIndex !== -1) {
+            setCurrentStep(sectionIndex);
+
+            setTimeout(() => {
+                const element = document.getElementById(subsectionId);
+                
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, 100);
+        }
+    };
 
     // TODO: make a better loading screen
     if (groupedQuestions.length < 1 || loadingQuestions) return null;
@@ -543,7 +637,9 @@ function ProjectFormPage() {
                     </li>
                 </ul>
             </nav>
+
             <div className="h-24"></div>
+
             <SectionedLayout
                 asideTitle="Submit a project"
                 linkContainerClassnames="top-36"
@@ -571,17 +667,28 @@ function ProjectFormPage() {
                                 ))}
                             </ul>
                         </nav>
+
+                        <div className="flex justify-center mt-8">
+                            <Button
+                                variant="outline"
+                                type="button"
+                                onClick={handleFillSampleData}
+                            >
+                                Fill with Sample Data
+                            </Button>
+                        </div>
                     </div>
+
                     <div className="flex justify-end px-4 py-2">
-                        <Button
-                            variant="outline"
-                            type="button"
-                            onClick={handleFillSampleData}
-                        >
-                            Fill with Sample Data
-                        </Button>
+                        {validationErrors.length > 0 && (
+                            <ProjectError 
+                                errors={validationErrors} 
+                                onErrorClick={handleErrorClick} 
+                            />
+                        )}                    
                     </div>
-                    <form className="space-y-12 lg:max-w-3xl mx-auto mt-12">
+
+                    <form className="space-y-12 lg:max-w-3xl mx-auto mt-2">
                         {groupedQuestions[currentStep].subSections.map(
                             (subsection) => (
                                 <div
@@ -638,6 +745,7 @@ function ProjectFormPage() {
                                 </div>
                             )
                         )}
+
                         <div className="pb-32 flex gap-8">
                             <Button
                                 variant="outline"
@@ -648,6 +756,7 @@ function ProjectFormPage() {
                             >
                                 Back
                             </Button>
+                             
                             <Button
                                 liquid
                                 type="button"
@@ -665,6 +774,22 @@ function ProjectFormPage() {
                     </form>
                 </div>
             </SectionedLayout>
+
+            <ConfirmationModal
+                isOpen={showRecommendedModal}
+                onClose={() => setShowRecommendedModal(false)}
+                primaryAction={() => setShowSubmitModal(true)}
+                title="Recommended Fields"
+                primaryActionText="Continue"
+            >
+                <RecommendedFields
+                    fields={recommendedFields}
+                    onFieldClick={(section, subsection) => {
+                        handleErrorClick(section, subsection);
+                        setShowRecommendedModal(false);
+                    }}
+                /> 
+            </ConfirmationModal>
 
             <ConfirmationModal
                 isOpen={showSubmitModal}
