@@ -9,6 +9,47 @@ import {
 import { Question } from '@/config/forms';
 import { FormField } from '@/types';
 import { FC } from 'react';
+import { cva } from 'class-variance-authority';
+
+const legendStyles = cva("block text-md font-normal", {
+    variants: {
+        hasError: {
+            true: "text-red-600",
+            false: "text-gray-900",
+        }
+    },
+    defaultVariants: {
+        hasError: false,
+    }
+});
+
+const requiredIndicatorStyles = cva("ml-1", {
+    variants: {
+        hasError: {
+            true: "text-red-500",
+            false: "text-gray-500",
+        }
+    },
+    defaultVariants: {
+        hasError: false,
+    }
+});
+
+const requiredTextStyles = cva("text-sm", {
+    variants: {
+        hasError: {
+            true: "text-red-500",
+            false: "text-gray-500"
+        }
+    },
+    defaultVariants: {
+        hasError: false
+    }
+});
+
+const fieldsetStyles = cva("space-y-4");
+
+const headerContainerStyles = cva("flex justify-between items-center mb-1");
 
 interface QuestionInputsProps {
     question: Question;
@@ -29,7 +70,51 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     onChange,
     fileUploadProps,
 }) => {
+    const hasInvalidField = question.inputFields.some((field) => field.invalid);
+    const isQuestionRequired = question.inputFields.some((field) => field.required);
+
+    const getErrorMessage = (field: FormField): string => {
+        if (!field.invalid) return '';
+
+        if (!field.value.value) {
+            switch (field.type) {
+                case 'textinput':
+                    return 'Please enter a value';
+                case 'textarea':
+                    return 'Please provide a description';
+                case 'multiselect':
+                    return 'Please select at least one option';
+                case 'select':
+                    return 'Please select an option';
+                case 'date':
+                    return 'Please select a date';
+                default:
+                    return 'This field is required';
+            }
+        }
+
+        if (field.validations) {
+            switch (field.type) {
+                case 'textinput':
+                    return 'Please enter a valid value';
+                case 'textarea':
+                    return 'The text provided is not valid';
+                case 'multiselect':
+                case 'select':
+                    return 'One or more selected options are not valid';
+                case 'date':
+                    return 'Please select a valid date';
+                default:
+                    return 'The provided value is not valid';
+            }
+        }
+
+        return 'This field is required';
+    };
+
     const renderInput = (field: FormField) => {
+        const errorMessage = getErrorMessage(field);
+
         switch (field.type) {
             case 'textinput':
                 return (
@@ -39,11 +124,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         onChange={(e) =>
                             onChange(question.id, field.key, e.target.value)
                         }
-                        error={
-                            field.invalid
-                                ? 'This input has invalid content'
-                                : ''
-                        }
+                        error={errorMessage}
                         required={field.required}
                         disabled={field.disabled}
                     />
@@ -59,11 +140,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         }
                         required={field.required}
                         rows={field.rows || 4}
-                        error={
-                            field.invalid
-                                ? 'This input has invalid content'
-                                : ''
-                        }
+                        error={errorMessage}
                         disabled={field.disabled}
                     />
                 );
@@ -105,6 +182,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                             )
                         }
                         multiple={field.type === 'multiselect'}
+                        error={errorMessage}
                     />
                 );
 
@@ -119,6 +197,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         value={field.value.value}
                         onChange={(v) => onChange(question.id, field.key, v)}
                         disabled={field.disabled}
+                        error={errorMessage}
                     />
                 );
 
@@ -128,13 +207,20 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     };
 
     return (
-        <fieldset>
-            <div className="flex justify-between items-center mb-1">
-                <legend className="block text-md font-normal">
+        <fieldset className={fieldsetStyles()}>
+            <div className={headerContainerStyles()}>
+                <legend className={legendStyles({ hasError: hasInvalidField })}>
                     {question.question}
+                    {isQuestionRequired && (
+                        <span className={requiredIndicatorStyles({ hasError: hasInvalidField })}>
+                            *
+                        </span>
+                    )}
                 </legend>
-                {question.required && (
-                    <span className="text-sm text-gray-500">Required</span>
+                {isQuestionRequired && (
+                    <span className={requiredTextStyles({ hasError: hasInvalidField })}>
+                        Required
+                    </span>
                 )}
             </div>
             <div className="space-y-4">
