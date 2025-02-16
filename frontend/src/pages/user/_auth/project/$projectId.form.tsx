@@ -508,12 +508,6 @@ function ProjectFormPage() {
                                     );
                                 }
                                 break;
-                            // Note: Not needed since the component will always be populated with the person that owns the project
-                            // case 'team':
-                            //     if (!Array.isArray(input.value.value) || input.value.value.length === 0) {
-                            //         fieldValid = false;
-                            //     }
-                            //     break;
                             default:
                                 break;
                         }
