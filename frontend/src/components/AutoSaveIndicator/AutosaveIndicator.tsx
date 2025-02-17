@@ -2,18 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { cva } from 'class-variance-authority';
 
 const indicatorStyles = cva(
-    'fixed top-0 left-0 right-0 transition-all duration-300 flex items-center justify-center py-1 text-sm font-medium z-[100]',
+    'fixed left-0 right-0 transition-all duration-300 flex items-center justify-center py-1 text-sm font-medium z-40 border-b',
     {
         variants: {
             status: {
+                idle: 'bg-gray-50 text-gray-600',
                 saving: 'bg-blue-50 text-blue-700',
                 success: 'bg-green-50 text-green-700',
-                error: 'bg-red-50 text-red-700',
-                hidden: 'bg-transparent -translate-y-full'
+                error: 'bg-red-50 text-red-700'
             }
         },
         defaultVariants: {
-            status: 'hidden'
+            status: 'idle'
         }
     }
 );
@@ -31,33 +31,35 @@ export const AutosaveIndicator: React.FC<AutosaveIndicatorProps> = ({
 
     useEffect(() => {
         let timeout: NodeJS.Timeout;
+
         if (status === 'success') {
             setShowSuccess(true);
             timeout = setTimeout(() => {
                 setShowSuccess(false);
             }, 2000);
         }
+
         return () => {
             if (timeout) clearTimeout(timeout);
         };
     }, [status]);
 
     const indicatorStatus = 
-        status === 'idle' ? 'hidden' :
         status === 'saving' ? 'saving' :
         status === 'error' ? 'error' :
-        showSuccess ? 'success' : 'hidden';
+        showSuccess ? 'success' : 'idle';
 
     const defaultMessages = {
+        idle: 'Your answers will be autosaved as you complete your application',
         saving: 'Autosaving...',
         success: 'All changes saved',
         error: 'Failed to save changes'
     };
 
-    const displayMessage = message || defaultMessages[status as keyof typeof defaultMessages] || '';
+    const displayMessage = message || defaultMessages[indicatorStatus];
 
     return (
-        <div className={indicatorStyles({ status: indicatorStatus })}>
+        <div style={{ top: '96px' }} className={indicatorStyles({ status: indicatorStatus })}>
             <div className="flex items-center gap-2">
                 {status === 'saving' && (
                     <div className="w-4 h-4 relative">
