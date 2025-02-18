@@ -31,7 +31,6 @@ import { Route as UserAuthProjectProjectIdViewImport } from './pages/user/_auth/
 import { Route as UserAuthProjectProjectIdFormImport } from './pages/user/_auth/project/$projectId.form'
 import { Route as UserAuthAppshellSettingsWalletImport } from './pages/user/_auth/_appshell/settings.wallet'
 import { Route as UserAuthAppshellSettingsProfileImport } from './pages/user/_auth/_appshell/settings.profile'
-import { Route as UserAuthAppshellSettingsCompanyImport } from './pages/user/_auth/_appshell/settings.company'
 import { Route as AdminAuthProjectsProjectIdReviewImport } from './pages/admin/_auth/projects/$projectId.review'
 import { Route as AdminAuthAppshellSettingsPermissionsImport } from './pages/admin/_auth/_appshell/settings/permissions'
 import { Route as AdminAuthAppshellProjectsProjectIdOverviewImport } from './pages/admin/_auth/_appshell/projects/$projectId.overview'
@@ -164,13 +163,6 @@ const UserAuthAppshellSettingsProfileRoute =
   UserAuthAppshellSettingsProfileImport.update({
     id: '/profile',
     path: '/profile',
-    getParentRoute: () => UserAuthAppshellSettingsRoute,
-  } as any)
-
-const UserAuthAppshellSettingsCompanyRoute =
-  UserAuthAppshellSettingsCompanyImport.update({
-    id: '/company',
-    path: '/company',
     getParentRoute: () => UserAuthAppshellSettingsRoute,
   } as any)
 
@@ -325,13 +317,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuthProjectsProjectIdReviewImport
       parentRoute: typeof AdminAuthImport
     }
-    '/user/_auth/_appshell/settings/company': {
-      id: '/user/_auth/_appshell/settings/company'
-      path: '/company'
-      fullPath: '/user/settings/company'
-      preLoaderRoute: typeof UserAuthAppshellSettingsCompanyImport
-      parentRoute: typeof UserAuthAppshellSettingsImport
-    }
     '/user/_auth/_appshell/settings/profile': {
       id: '/user/_auth/_appshell/settings/profile'
       path: '/profile'
@@ -435,14 +420,12 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface UserAuthAppshellSettingsRouteChildren {
-  UserAuthAppshellSettingsCompanyRoute: typeof UserAuthAppshellSettingsCompanyRoute
   UserAuthAppshellSettingsProfileRoute: typeof UserAuthAppshellSettingsProfileRoute
   UserAuthAppshellSettingsWalletRoute: typeof UserAuthAppshellSettingsWalletRoute
 }
 
 const UserAuthAppshellSettingsRouteChildren: UserAuthAppshellSettingsRouteChildren =
   {
-    UserAuthAppshellSettingsCompanyRoute: UserAuthAppshellSettingsCompanyRoute,
     UserAuthAppshellSettingsProfileRoute: UserAuthAppshellSettingsProfileRoute,
     UserAuthAppshellSettingsWalletRoute: UserAuthAppshellSettingsWalletRoute,
   }
@@ -511,7 +494,6 @@ export interface FileRoutesByFullPath {
   '/user/project/new': typeof UserAuthProjectNewRoute
   '/admin/settings/permissions': typeof AdminAuthAppshellSettingsPermissionsRoute
   '/admin/projects/$projectId/review': typeof AdminAuthProjectsProjectIdReviewRoute
-  '/user/settings/company': typeof UserAuthAppshellSettingsCompanyRoute
   '/user/settings/profile': typeof UserAuthAppshellSettingsProfileRoute
   '/user/settings/wallet': typeof UserAuthAppshellSettingsWalletRoute
   '/user/project/$projectId/form': typeof UserAuthProjectProjectIdFormRoute
@@ -533,7 +515,6 @@ export interface FileRoutesByTo {
   '/user/project/new': typeof UserAuthProjectNewRoute
   '/admin/settings/permissions': typeof AdminAuthAppshellSettingsPermissionsRoute
   '/admin/projects/$projectId/review': typeof AdminAuthProjectsProjectIdReviewRoute
-  '/user/settings/company': typeof UserAuthAppshellSettingsCompanyRoute
   '/user/settings/profile': typeof UserAuthAppshellSettingsProfileRoute
   '/user/settings/wallet': typeof UserAuthAppshellSettingsWalletRoute
   '/user/project/$projectId/form': typeof UserAuthProjectProjectIdFormRoute
@@ -562,7 +543,6 @@ export interface FileRoutesById {
   '/user/_auth/project/new': typeof UserAuthProjectNewRoute
   '/admin/_auth/_appshell/settings/permissions': typeof AdminAuthAppshellSettingsPermissionsRoute
   '/admin/_auth/projects/$projectId/review': typeof AdminAuthProjectsProjectIdReviewRoute
-  '/user/_auth/_appshell/settings/company': typeof UserAuthAppshellSettingsCompanyRoute
   '/user/_auth/_appshell/settings/profile': typeof UserAuthAppshellSettingsProfileRoute
   '/user/_auth/_appshell/settings/wallet': typeof UserAuthAppshellSettingsWalletRoute
   '/user/_auth/project/$projectId/form': typeof UserAuthProjectProjectIdFormRoute
@@ -588,7 +568,6 @@ export interface FileRouteTypes {
     | '/user/project/new'
     | '/admin/settings/permissions'
     | '/admin/projects/$projectId/review'
-    | '/user/settings/company'
     | '/user/settings/profile'
     | '/user/settings/wallet'
     | '/user/project/$projectId/form'
@@ -609,7 +588,6 @@ export interface FileRouteTypes {
     | '/user/project/new'
     | '/admin/settings/permissions'
     | '/admin/projects/$projectId/review'
-    | '/user/settings/company'
     | '/user/settings/profile'
     | '/user/settings/wallet'
     | '/user/project/$projectId/form'
@@ -636,7 +614,6 @@ export interface FileRouteTypes {
     | '/user/_auth/project/new'
     | '/admin/_auth/_appshell/settings/permissions'
     | '/admin/_auth/projects/$projectId/review'
-    | '/user/_auth/_appshell/settings/company'
     | '/user/_auth/_appshell/settings/profile'
     | '/user/_auth/_appshell/settings/wallet'
     | '/user/_auth/project/$projectId/form'
@@ -759,7 +736,6 @@ export const routeTree = rootRoute
       "filePath": "user/_auth/_appshell/settings.tsx",
       "parent": "/user/_auth/_appshell",
       "children": [
-        "/user/_auth/_appshell/settings/company",
         "/user/_auth/_appshell/settings/profile",
         "/user/_auth/_appshell/settings/wallet"
       ]
@@ -775,10 +751,6 @@ export const routeTree = rootRoute
     "/admin/_auth/projects/$projectId/review": {
       "filePath": "admin/_auth/projects/$projectId.review.tsx",
       "parent": "/admin/_auth"
-    },
-    "/user/_auth/_appshell/settings/company": {
-      "filePath": "user/_auth/_appshell/settings.company.tsx",
-      "parent": "/user/_auth/_appshell/settings"
     },
     "/user/_auth/_appshell/settings/profile": {
       "filePath": "user/_auth/_appshell/settings.profile.tsx",
