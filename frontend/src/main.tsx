@@ -10,12 +10,13 @@ import { routeTree } from './routeTree.gen';
 
 import './index.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { NotFound } from '@components';
 
 const queryClient = new QueryClient();
 
 function Router() {
     const auth = useAuth();
-    
+
     if (auth.isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -30,8 +31,9 @@ function Router() {
         context: {
             auth,
         },
+        defaultNotFoundComponent: NotFound,
     });
-    
+
     return <RouterProvider router={router} context={{ auth }} />;
 }
 
