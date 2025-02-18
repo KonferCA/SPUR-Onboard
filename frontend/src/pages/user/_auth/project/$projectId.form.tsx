@@ -162,7 +162,7 @@ function ProjectFormPage() {
         } finally {
             setIsSaving(false);
         }
-    }, [accessToken, companyId, currentProjectId, isSaving]);
+    }, [accessToken, companyId, currentProjectId, isSaving, dirtyInputRef, saveProjectDraft, setAutosaveStatus]);
 
     // use the keyboard shortcut hook
     useKeyboardShortcut(
