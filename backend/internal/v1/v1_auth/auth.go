@@ -139,48 +139,42 @@ func (h *Handler) handleRegister(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", err)
 	}
 
-	// Get the full user after creation
-	fullUser, err := q.GetUserByID(ctx, newUser.ID)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "", err)
-	}
-
 	// send verification email using goroutine to not block
 	// at this point, the user has successfully been created
 	// so sending the verification email now is safe.
-	go sendEmailVerification(fullUser.ID, fullUser.Email, h.server.GetQueries())
+	go sendEmailVerification(newUser.ID, newUser.Email, h.server.GetQueries())
 
 	// generate new access and refresh tokens
-	accessToken, refreshToken, err := jwt.GenerateWithSalt(fullUser.ID, fullUser.TokenSalt)
+	accessToken, refreshToken, err := jwt.GenerateWithSalt(newUser.ID, newUser.TokenSalt)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusCreated, "Registration complete but failed to sign in. Please sign in manually.", err)
 	}
 
 	var companyId *string = nil
-	company, err := q.GetCompanyByOwnerID(c.Request().Context(), fullUser.ID)
+	company, err := q.GetCompanyByOwnerID(c.Request().Context(), newUser.ID)
 	if err != nil {
 		// just log the reason why it failed to fetch company id on login
 		logger.Warn(fmt.Sprintf("Error getting company on login: %s", err.Error()))
-	} else {
-		// do not return bad request on error because user might not have created a company yet
-		// in case the error is
+	}
+
+	if company != nil {
 		companyId = &company.ID
 	}
 
 	// set the refresh token cookie
 	setRefreshTokenCookie(c, refreshToken)
 
-	logger.Info(fmt.Sprintf("New user created with email: %s", fullUser.Email))
+	logger.Info(fmt.Sprintf("New user created with email: %s", newUser.Email))
 
 	return c.JSON(http.StatusCreated, AuthResponse{
 		AccessToken: accessToken,
 		CompanyId:   companyId,
 		User: UserResponse{
-			ID:                fullUser.ID,
-			Email:             fullUser.Email,
-			EmailVerified:     fullUser.EmailVerified,
-			Permissions:       uint32(fullUser.Permissions),
-			ProfilePictureUrl: fullUser.ProfilePictureUrl,
+			ID:                newUser.ID,
+			Email:             newUser.Email,
+			EmailVerified:     newUser.EmailVerified,
+			Permissions:       uint32(newUser.Permissions),
+			ProfilePictureUrl: newUser.ProfilePictureUrl,
 		},
 	})
 }
