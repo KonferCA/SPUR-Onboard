@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiX, FiPlus } from 'react-icons/fi';
 import {
     Button,
@@ -14,6 +14,7 @@ import {
     uploadTeamMemberDocument,
 } from '@/services/teams';
 import { useAuth, useNotification } from '@/contexts';
+import { getUserProfile } from '@/services/user';
 
 export interface TeamMembersProps {
     initialValue: TeamMember[];
@@ -30,15 +31,82 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
 }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [newMember, setNewMember] = useState<Partial<LocalTeamMember>>({});
-    const [members, setMembers] = useState<LocalTeamMember[]>(
-        initialValue.map((v) => ({ ...v, isLoading: false }))
-    );
+    const [members, setMembers] = useState<LocalTeamMember[]>([]);
     const [resumeFile, setResumeFile] = useState<UploadableFile | null>(null);
-    const [foundersAgreementFile, setFoundersAgreementFile] =
-        useState<UploadableFile | null>(null);
+    const [foundersAgreementFile, setFoundersAgreementFile] = useState<UploadableFile | null>(null);
 
-    const { accessToken, companyId } = useAuth();
+    const { accessToken, companyId, user } = useAuth();
     const notification = useNotification();
+
+    useEffect(() => {
+        const initializeMembers = async () => {
+            if (user && accessToken) {
+                try {
+                    const userProfile = await getUserProfile(accessToken, user.id);
+                    
+                    const accountOwner: LocalTeamMember = {
+                        id: user.id,
+                        firstName: user.firstName || user.email.split('@')[0],
+                        lastName: user.lastName || '',
+                        title: userProfile.title || 'Account Owner',
+                        detailedBiography: userProfile.bio || '',
+                        linkedin: userProfile.linkedin_url || '',
+                        resumeExternalUrl: '',
+                        resumeInternalUrl: '',
+                        personalWebsite: '',
+                        introduction: '',
+                        commitmentType: 'Full-time',
+                        industryExperience: '',
+                        previousWork: '',
+                        founderAgreementExternalUrl: '',
+                        founderAgreementInternalUrl: '',
+                        isAccountOwner: true,
+                        isLoading: false,
+                        created_at: Date.now(),
+                    };
+
+                    const otherMembers = initialValue
+                        .filter(member => !member.isAccountOwner)
+                        .map(member => ({ ...member, isLoading: false }));
+
+                    setMembers([accountOwner, ...otherMembers]);
+                } catch (error) {
+                    notification.push({
+                        message: 'Failed to fetch owner profile',
+                        level: 'error',
+                        autoClose: true,
+                        duration: 2000,
+                    });
+
+                    // still add the account owner even if profile fetch fails, but with minimal info
+                    const accountOwner: LocalTeamMember = {
+                        id: user.id,
+                        firstName: user.firstName || user.email.split('@')[0],
+                        lastName: user.lastName || '',
+                        title: 'Account Owner',
+                        detailedBiography: '',
+                        linkedin: '',
+                        resumeExternalUrl: '',
+                        resumeInternalUrl: '',
+                        personalWebsite: '',
+                        introduction: '',
+                        commitmentType: 'Full-time',
+                        industryExperience: '',
+                        previousWork: '',
+                        founderAgreementExternalUrl: '',
+                        founderAgreementInternalUrl: '',
+                        isAccountOwner: true,
+                        isLoading: false,
+                        created_at: Date.now(),
+                    };
+
+                    setMembers([accountOwner, ...initialValue.map(member => ({ ...member, isLoading: false }))]);
+                }
+            }
+        };
+
+        initializeMembers();
+    }, [user, accessToken, initialValue]);
 
     const checkAllRequired = () => {
         return (
@@ -193,6 +261,8 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
     };
 
     const handleRemove = (member: LocalTeamMember) => {
+        if (member.isAccountOwner) return;
+
         // optimistic removal
         setMembers((prev) => prev.filter((m) => m.id != member.id));
         removeFromDatabase(member);
@@ -219,12 +289,17 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                             </div>
                             <div className="text-sm text-gray-500 truncate">
                                 {member.title}
+                                {member.isAccountOwner && (
+                                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                                        Account Owner
+                                    </span>
+                                )}
                             </div>
                         </div>
 
                         {/* Actions */}
                         <div className="flex items-center gap-2 flex-shrink-0">
-                            {!member.isLoading && !disabled && (
+                            {!member.isLoading && !disabled && !member.isAccountOwner && (
                                 <button
                                     onClick={() => handleRemove(member)}
                                     className="p-1 text-gray-400 hover:text-red-500"
