@@ -45,17 +45,17 @@ cd path/to/your/clone/backend
 > Air (auto-reload backend)
 
 ```console
-go install github.com/air-verse/air@1.61.1
+go install github.com/air-verse/air@v1.61.1
 ```
 
 > SQLc (generate type-safe code from SQL queries)
 ```console
-go install github.com/sqlc-dev/sqlc/cmd/sqlc@1.27.0
+go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0
 ```
 
 > Goose (SQL migration management tool)
 ```console
-go install github.com/pressly/goose/v3/cmd/goose@3.22.1
+go install github.com/pressly/goose/v3/cmd/goose@v3.22.1
 ```
 
 #### 🍺 Homebrew quick start
