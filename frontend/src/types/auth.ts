@@ -1,3 +1,5 @@
+import { SocialLink } from './form';
+
 export type RegistrationStep =
     | 'login-register'
     | 'verify-email'
@@ -22,12 +24,31 @@ export interface AuthFormData {
     password: string;
 }
 
+export enum SocialPlatform {
+    LinkedIn = 'linkedin',
+    Instagram = 'instagram',
+    Facebook = 'facebook',
+    BlueSky = 'bluesky',
+    X = 'x',
+    Discord = 'discord',
+    CustomUrl = 'custom_url',
+}
+
+export interface UserSocial {
+    id: string;
+    platform: SocialPlatform;
+    urlOrHandle: string;
+    userId: string;
+    createdAt: number;
+    updatedAt: number;
+}
+
 export interface UserDetailsData {
     firstName: string;
     lastName: string;
     position: string;
     bio: string;
-    linkedIn: string;
+    socials: SocialLink[];
 }
 
 export interface FormErrors {
@@ -68,4 +89,3 @@ export interface CompanyFormErrors extends FormErrors {
     website?: string;
     linkedin?: string;
 }
-
