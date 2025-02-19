@@ -27,6 +27,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { ValidationError, ProjectError } from '@/components/ProjectError';
 import { RecommendedFields } from '@/components/RecommendedFields';
 import { AutosaveIndicator } from '@/components/AutoSaveIndicator';
+import { CollapsibleSection } from '@/components/CollapsibleSection';
 
 export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
     component: ProjectFormPage,
@@ -44,10 +45,6 @@ const stepItemStyles = cva(
 );
 
 const questionGroupContainerStyles = cva('');
-const questionGroupTitleStyles = cva('font-bold align-left text-xl');
-const questionGroupTitleSeparatorStyles = cva(
-    'my-4 bg-gray-400 w-full h-[2px]'
-);
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
 const isEmptyValue = (value: any, type: string): boolean => {
@@ -95,7 +92,6 @@ function ProjectFormPage() {
     >([]);
     const [currentStep, setCurrentStep] = useState<number>(0);
     const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
-    const notification = useNotification();
     const [showSubmitModal, setShowSubmitModal] = useState(false);
     const [showRecommendedModal, setShowRecommendedModal] = useState(false);
     const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
@@ -678,52 +674,33 @@ function ProjectFormPage() {
                                     key={subsection.name}
                                     className={questionGroupContainerStyles()}
                                 >
-                                    <div>
-                                        <h1
-                                            className={questionGroupTitleStyles()}
-                                        >
-                                            {subsection.name}
-                                        </h1>
-                                    </div>
-                                    <div
-                                        className={questionGroupTitleSeparatorStyles()}
-                                    ></div>
-                                    <div
-                                        className={questionGroupQuestionsContainerStyles()}
+                                    <CollapsibleSection 
+                                        title={subsection.name}
                                     >
-                                        {subsection.questions.map((q) =>
-                                            shouldRenderQuestion(
-                                                q,
-                                                subsection.questions
-                                            ) ? (
-                                                <QuestionInputs
-                                                    key={q.id}
-                                                    question={q}
-                                                    onChange={handleChange}
-                                                    fileUploadProps={
-                                                        accessToken
-                                                            ? {
-                                                                  projectId:
-                                                                      currentProjectId,
-                                                                  questionId:
-                                                                      q.id,
-                                                                  section:
-                                                                      groupedQuestions[
-                                                                          currentStep
-                                                                      ].section,
-                                                                  subSection:
-                                                                      subsection.name,
-                                                                  accessToken:
-                                                                      accessToken,
-                                                                  enableAutosave:
-                                                                      true,
-                                                              }
-                                                            : undefined
-                                                    }
-                                                />
-                                            ) : null
-                                        )}
-                                    </div>
+                                        <div className={questionGroupQuestionsContainerStyles()}>
+                                            {subsection.questions.map((q) =>
+                                                shouldRenderQuestion(q, subsection.questions) ? (
+                                                    <QuestionInputs
+                                                        key={q.id}
+                                                        question={q}
+                                                        onChange={handleChange}
+                                                        fileUploadProps={
+                                                            accessToken
+                                                                ? {
+                                                                    projectId: currentProjectId,
+                                                                    questionId: q.id,
+                                                                    section: groupedQuestions[currentStep].section,
+                                                                    subSection: subsection.name,
+                                                                    accessToken: accessToken,
+                                                                    enableAutosave: true,
+                                                                }
+                                                                : undefined
+                                                        }
+                                                    />
+                                                ) : null
+                                            )}
+                                        </div>
+                                    </CollapsibleSection>
                                 </div>
                             )
                         )}
