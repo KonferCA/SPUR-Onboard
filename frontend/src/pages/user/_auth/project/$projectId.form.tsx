@@ -680,9 +680,6 @@ function ProjectFormPage() {
                                 >
                                     <CollapsibleSection 
                                         title={subsection.name}
-                                        onViewedChange={(viewed) => {
-                                            console.log(`Section ${subsection.name} viewed: ${viewed}`);
-                                        }}
                                     >
                                         <div className={questionGroupQuestionsContainerStyles()}>
                                             {subsection.questions.map((q) =>
