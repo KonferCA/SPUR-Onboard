@@ -33,7 +33,7 @@ func (q *Queries) CountUsers(ctx context.Context, arg CountUsersParams) (int64, 
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, first_name, last_name, bio, title, linkedin, email, password, permissions, email_verified, created_at, updated_at, token_salt FROM users WHERE email = $1 LIMIT 1
+SELECT id, first_name, last_name, bio, title, linkedin, email, password, permissions, email_verified, created_at, updated_at, token_salt, profile_picture_url FROM users WHERE email = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -53,12 +53,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.TokenSalt,
+		&i.ProfilePictureUrl,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, first_name, last_name, bio, title, linkedin, email, password, permissions, email_verified, created_at, updated_at, token_salt
+SELECT id, first_name, last_name, bio, title, linkedin, email, password, permissions, email_verified, created_at, updated_at, token_salt, profile_picture_url
 FROM users 
 WHERE id = $1
 `
@@ -80,6 +81,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.TokenSalt,
+		&i.ProfilePictureUrl,
 	)
 	return i, err
 }
@@ -92,6 +94,7 @@ SELECT
     COALESCE(title, '') as title,
     COALESCE(bio, '') as bio,
     COALESCE(linkedin, '') as linkedin,
+    profile_picture_url,
     COALESCE(created_at, EXTRACT(EPOCH FROM NOW())::bigint) as created_at,
     NULLIF(updated_at, 0)::bigint as updated_at
 FROM users
@@ -99,14 +102,15 @@ WHERE id = $1
 `
 
 type GetUserDetailsRow struct {
-	ID        string `json:"id"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Title     string `json:"title"`
-	Bio       string `json:"bio"`
-	Linkedin  string `json:"linkedin"`
-	CreatedAt int64  `json:"created_at"`
-	UpdatedAt int64  `json:"updated_at"`
+	ID                string  `json:"id"`
+	FirstName         string  `json:"first_name"`
+	LastName          string  `json:"last_name"`
+	Title             string  `json:"title"`
+	Bio               string  `json:"bio"`
+	Linkedin          string  `json:"linkedin"`
+	ProfilePictureUrl *string `json:"profile_picture_url"`
+	CreatedAt         int64   `json:"created_at"`
+	UpdatedAt         int64   `json:"updated_at"`
 }
 
 func (q *Queries) GetUserDetails(ctx context.Context, id string) (GetUserDetailsRow, error) {
@@ -119,6 +123,7 @@ func (q *Queries) GetUserDetails(ctx context.Context, id string) (GetUserDetails
 		&i.Title,
 		&i.Bio,
 		&i.Linkedin,
+		&i.ProfilePictureUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -217,7 +222,21 @@ const newUser = `-- name: NewUser :one
 INSERT INTO users
 (email, password, permissions)
 VALUES
-($1, $2, $3) RETURNING id, email, email_verified, permissions, token_salt
+($1, $2, $3)
+RETURNING 
+    id,
+    email,
+    email_verified,
+    permissions,
+    token_salt,
+    COALESCE(first_name, '') as first_name,
+    COALESCE(last_name, '') as last_name,
+    COALESCE(title, '') as title,
+    COALESCE(bio, '') as bio,
+    COALESCE(linkedin, '') as linkedin,
+    profile_picture_url,
+    COALESCE(created_at, EXTRACT(EPOCH FROM NOW())::bigint) as created_at,
+    NULLIF(updated_at, 0)::bigint as updated_at
 `
 
 type NewUserParams struct {
@@ -227,11 +246,19 @@ type NewUserParams struct {
 }
 
 type NewUserRow struct {
-	ID            string `json:"id"`
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
-	Permissions   int32  `json:"permissions"`
-	TokenSalt     []byte `json:"token_salt"`
+	ID                string  `json:"id"`
+	Email             string  `json:"email"`
+	EmailVerified     bool    `json:"email_verified"`
+	Permissions       int32   `json:"permissions"`
+	TokenSalt         []byte  `json:"token_salt"`
+	FirstName         string  `json:"first_name"`
+	LastName          string  `json:"last_name"`
+	Title             string  `json:"title"`
+	Bio               string  `json:"bio"`
+	Linkedin          string  `json:"linkedin"`
+	ProfilePictureUrl *string `json:"profile_picture_url"`
+	CreatedAt         int64   `json:"created_at"`
+	UpdatedAt         int64   `json:"updated_at"`
 }
 
 func (q *Queries) NewUser(ctx context.Context, arg NewUserParams) (NewUserRow, error) {
@@ -243,6 +270,14 @@ func (q *Queries) NewUser(ctx context.Context, arg NewUserParams) (NewUserRow, e
 		&i.EmailVerified,
 		&i.Permissions,
 		&i.TokenSalt,
+		&i.FirstName,
+		&i.LastName,
+		&i.Title,
+		&i.Bio,
+		&i.Linkedin,
+		&i.ProfilePictureUrl,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -285,6 +320,22 @@ type UpdateUserEmailVerifiedStatusParams struct {
 
 func (q *Queries) UpdateUserEmailVerifiedStatus(ctx context.Context, arg UpdateUserEmailVerifiedStatusParams) error {
 	_, err := q.db.Exec(ctx, updateUserEmailVerifiedStatus, arg.EmailVerified, arg.ID)
+	return err
+}
+
+const updateUserProfilePicture = `-- name: UpdateUserProfilePicture :exec
+UPDATE users
+SET profile_picture_url = $1
+WHERE id = $2
+`
+
+type UpdateUserProfilePictureParams struct {
+	ProfilePictureUrl *string `json:"profile_picture_url"`
+	ID                string  `json:"id"`
+}
+
+func (q *Queries) UpdateUserProfilePicture(ctx context.Context, arg UpdateUserProfilePictureParams) error {
+	_, err := q.db.Exec(ctx, updateUserProfilePicture, arg.ProfilePictureUrl, arg.ID)
 	return err
 }
 

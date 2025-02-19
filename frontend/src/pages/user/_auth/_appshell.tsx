@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from '@tanstack/react-router';
 import { SETTINGS_ROUTES } from '@/constants/settings';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
+import { ProfilePicture } from '@/components/ProfilePicture/ProfilePicture';
 
 export const Route = createFileRoute('/user/_auth/_appshell')({
     component: RouteComponent,
@@ -43,11 +44,11 @@ function RouteComponent() {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none"
             >
-                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                    <span className="text-gray-600 font-medium">
-                        {user?.firstName?.[0]?.toUpperCase() || 'U'}
-                    </span>
-                </div>
+                <ProfilePicture
+                    url={user?.profilePictureUrl}
+                    initials={`${user?.firstName?.[0] || ''}${user?.lastName?.[0] || 'U'}`}
+                    size="sm"
+                />
                 <svg
                     className={`w-4 h-4 transition-transform ${
                         isDropdownOpen ? 'transform rotate-180' : ''
