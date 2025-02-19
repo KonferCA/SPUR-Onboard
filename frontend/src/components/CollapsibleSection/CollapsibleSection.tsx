@@ -25,7 +25,10 @@ export const CollapsibleSection = ({ title, children, onViewedChange }: Collapsi
                     className="flex items-center justify-between mb-2 cursor-pointer group"
                     onClick={handleClick}
                 >
-                    <h1 className="font-bold text-xl">{title}</h1>
+                    <h1 className="font-bold text-xl align-left">
+                        {title}
+                    </h1>
+
                     <motion.div 
                         className="text-gray-500 group-hover:text-gray-700"
                         initial={{ rotate: 0 }}
@@ -36,7 +39,7 @@ export const CollapsibleSection = ({ title, children, onViewedChange }: Collapsi
                     </motion.div>
                 </div>
                 
-                <div className="bg-gray-400 w-full h-[2px] mb-6" />
+                <div className="my-4 bg-gray-400 w-full h-[2px]" />
             </div>
 
             <AnimatePresence>
