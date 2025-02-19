@@ -1,3 +1,4 @@
+import { randomId } from '@/utils/random';
 import { useMemo } from 'react';
 
 /**
@@ -20,8 +21,5 @@ import { useMemo } from 'react';
  * }
  */
 export function useRandomId(prefix: string = '') {
-    return useMemo(() => {
-        const randomPart = Math.random().toString(36).substring(2, 10);
-        return `${prefix}${randomPart}`;
-    }, [prefix]);
+    return useMemo(() => randomId(prefix), [prefix]);
 }
