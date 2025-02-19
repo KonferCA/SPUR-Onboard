@@ -13,7 +13,21 @@ SELECT EXISTS(SELECT 1 FROM users WHERE email = $1);
 INSERT INTO users
 (email, password, permissions)
 VALUES
-($1, $2, $3) RETURNING id, email, email_verified, permissions, token_salt;
+($1, $2, $3)
+RETURNING 
+    id,
+    email,
+    email_verified,
+    permissions,
+    token_salt,
+    COALESCE(first_name, '') as first_name,
+    COALESCE(last_name, '') as last_name,
+    COALESCE(title, '') as title,
+    COALESCE(bio, '') as bio,
+    COALESCE(linkedin, '') as linkedin,
+    profile_picture_url,
+    COALESCE(created_at, EXTRACT(EPOCH FROM NOW())::bigint) as created_at,
+    NULLIF(updated_at, 0)::bigint as updated_at;
 
 -- name: GetUserByEmail :one
 SELECT * FROM users WHERE email = $1 LIMIT 1; 
@@ -34,6 +48,7 @@ SELECT
     COALESCE(title, '') as title,
     COALESCE(bio, '') as bio,
     COALESCE(linkedin, '') as linkedin,
+    profile_picture_url,
     COALESCE(created_at, EXTRACT(EPOCH FROM NOW())::bigint) as created_at,
     NULLIF(updated_at, 0)::bigint as updated_at
 FROM users
@@ -80,3 +95,8 @@ WHERE id = $1;
 UPDATE users
 SET permissions = $2
 WHERE id = ANY($1::uuid[]);
+
+-- name: UpdateUserProfilePicture :exec
+UPDATE users
+SET profile_picture_url = $1
+WHERE id = $2;
