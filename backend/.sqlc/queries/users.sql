@@ -39,6 +39,9 @@ SELECT
 FROM users
 WHERE id = $1;
 
+-- name: GetUserSocialsByUserID :many
+SELECT * FROM user_socials WHERE user_id = $1;
+
 -- name: ListUsers :many
 SELECT 
     id,

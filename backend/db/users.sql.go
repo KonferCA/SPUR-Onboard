@@ -136,6 +136,37 @@ func (q *Queries) GetUserEmailVerifiedStatusByEmail(ctx context.Context, email s
 	return email_verified, err
 }
 
+const getUserSocialsByUserID = `-- name: GetUserSocialsByUserID :many
+SELECT id, platform, url_or_handle, user_id, created_at, updated_at FROM user_socials WHERE user_id = $1
+`
+
+func (q *Queries) GetUserSocialsByUserID(ctx context.Context, userID string) ([]UserSocial, error) {
+	rows, err := q.db.Query(ctx, getUserSocialsByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UserSocial
+	for rows.Next() {
+		var i UserSocial
+		if err := rows.Scan(
+			&i.ID,
+			&i.Platform,
+			&i.UrlOrHandle,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUsers = `-- name: ListUsers :many
 SELECT 
     id,
