@@ -60,6 +60,11 @@ func (h *Handler) handleGetUserDetails(c echo.Context) error {
 		updatedAt = &formatted
 	}
 
+	socials, err := q.GetUserSocialsByUserID(c.Request().Context(), userID)
+	if err != nil && !db.IsNoRowsErr(err) {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get user socials", err)
+	}
+
 	return c.JSON(http.StatusOK, UserDetailsResponse{
 		ID:        details.ID,
 		FirstName: details.FirstName,
@@ -67,6 +72,7 @@ func (h *Handler) handleGetUserDetails(c echo.Context) error {
 		Title:     details.Title,
 		Bio:       details.Bio,
 		LinkedIn:  details.Linkedin,
+		Socials:   socials,
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
 	})
@@ -165,9 +171,9 @@ func (h *Handler) handleListUsers(c echo.Context) error {
 			Email:         user.Email,
 			Role:          role,
 			Permissions:   uint32(user.Permissions),
-			DateJoined:    dateJoined,  // string!! in RFC3339 format
+			DateJoined:    dateJoined, // string!! in RFC3339 format
 			EmailVerified: user.EmailVerified,
-			UpdatedAt:     lastUpdated,  // *string!!!!! in RFC3339 format
+			UpdatedAt:     lastUpdated, // *string!!!!! in RFC3339 format
 		})
 	}
 
