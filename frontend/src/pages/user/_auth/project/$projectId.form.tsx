@@ -45,10 +45,6 @@ const stepItemStyles = cva(
 );
 
 const questionGroupContainerStyles = cva('');
-const questionGroupTitleStyles = cva('font-bold align-left text-xl');
-const questionGroupTitleSeparatorStyles = cva(
-    'my-4 bg-gray-400 w-full h-[2px]'
-);
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
 const isEmptyValue = (value: any, type: string): boolean => {
