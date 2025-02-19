@@ -5,17 +5,15 @@ import { BiChevronUp } from 'react-icons/bi';
 export interface CollapsibleSectionProps {
     title: string;
     children: React.ReactNode;
-    onViewedChange?: (viewed: boolean) => void;
 }
 
-export const CollapsibleSection = ({ title, children, onViewedChange }: CollapsibleSectionProps) => {
+export const CollapsibleSection = ({ title, children }: CollapsibleSectionProps) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     const handleClick = () => {
         const newValue = !isCollapsed;
                
         setIsCollapsed(newValue);
-        onViewedChange?.(newValue);
     };
 
     return (
