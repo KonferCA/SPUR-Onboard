@@ -16,6 +16,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { cva } from 'class-variance-authority';
 import { useEffect, useState } from 'react';
 import { IoMdArrowRoundBack } from 'react-icons/io';
+import { CollapsibleSection } from '@/components/CollapsibleSection';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -29,10 +30,6 @@ const stepItemStyles = cva(
 );
 
 const questionGroupContainerStyles = cva('');
-const questionGroupTitleStyles = cva('font-bold align-left text-xl');
-const questionGroupTitleSeparatorStyles = cva(
-    'my-4 bg-gray-400 w-full h-[2px]'
-);
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
 export const Route = createFileRoute('/admin/_auth/projects/$projectId/review')(
@@ -241,61 +238,54 @@ function RouteComponent() {
                                     key={subsection.name}
                                     className={questionGroupContainerStyles()}
                                 >
-                                    <div>
-                                        <h1
-                                            className={questionGroupTitleStyles()}
-                                        >
-                                            {subsection.name}
-                                        </h1>
-                                    </div>
-                                    <div
-                                        className={questionGroupTitleSeparatorStyles()}
-                                    ></div>
-                                    <div
-                                        className={questionGroupQuestionsContainerStyles()}
+                                    <CollapsibleSection 
+                                        title={subsection.name}
                                     >
-                                        {subsection.questions.map((q) =>
-                                            shouldRenderQuestion(
-                                                q,
-                                                subsection.questions
-                                            ) ? (
-                                                <ReviewQuestions
-                                                    key={q.id}
-                                                    question={q}
-                                                    onCreateComment={async (
-                                                        comment,
-                                                        targetId
-                                                    ) => {
-                                                        if (!accessToken)
-                                                            return;
-                                                        await createProjectComment(
-                                                            accessToken,
-                                                            projectId,
-                                                            {
-                                                                comment,
-                                                                targetId,
-                                                            }
-                                                        );
-                                                        queryClient.invalidateQueries(
-                                                            {
-                                                                queryKey: [
-                                                                    'project_review_comments',
-                                                                    accessToken,
-                                                                    projectId,
-                                                                ],
-                                                            }
-                                                        );
-                                                    }}
-                                                    comments={
-                                                        commentsData || []
-                                                    }
-                                                />
-                                            ) : null
-                                        )}
-                                    </div>
+                                        <div className={questionGroupQuestionsContainerStyles()}>
+                                            {subsection.questions.map((q) =>
+                                                shouldRenderQuestion(
+                                                    q,
+                                                    subsection.questions
+                                                ) ? (
+                                                    <ReviewQuestions
+                                                        key={q.id}
+                                                        question={q}
+                                                        onCreateComment={async (
+                                                            comment,
+                                                            targetId
+                                                        ) => {
+                                                            if (!accessToken)
+                                                                return;
+                                                            await createProjectComment(
+                                                                accessToken,
+                                                                projectId,
+                                                                {
+                                                                    comment,
+                                                                    targetId,
+                                                                }
+                                                            );
+                                                            queryClient.invalidateQueries(
+                                                                {
+                                                                    queryKey: [
+                                                                        'project_review_comments',
+                                                                        accessToken,
+                                                                        projectId,
+                                                                    ],
+                                                                }
+                                                            );
+                                                        }}
+                                                        comments={
+                                                            commentsData || []
+                                                        }
+                                                    />
+                                                ) : null
+                                            )}
+                                        </div>
+                                    </CollapsibleSection>
                                 </div>
                             )
                         )}
+                        
                         <div className="pb-32 flex gap-8">
                             <Button
                                 variant="outline"
