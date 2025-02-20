@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ProjectCard } from '@/components';
 import { ExtendedProjectResponse } from '@/services/project';
 import * as router from '@tanstack/react-router';
+import { AuthProvider, NotificationProvider } from '@/contexts';
 
 // Mock the router hook cuz testing its an after thought for tanstack router.
 vi.mock('@tanstack/react-router', async () => {
@@ -12,6 +13,17 @@ vi.mock('@tanstack/react-router', async () => {
         useNavigate: vi.fn(() => vi.fn()),
     };
 });
+
+// Create a wrapper component that provides both contexts
+const renderWithProviders = (ui: React.ReactNode) => {
+    return render(
+        <NotificationProvider>
+            <AuthProvider>
+                {ui}
+            </AuthProvider>
+        </NotificationProvider>
+    );
+};
 
 describe('Test ProjectCard Component', () => {
     let projectData: ExtendedProjectResponse;
@@ -36,7 +48,7 @@ describe('Test ProjectCard Component', () => {
     });
 
     it('should render project information correctly', () => {
-        render(<ProjectCard data={projectData} />);
+        renderWithProviders(<ProjectCard data={projectData} />);
 
         expect(screen.getByText(projectData.title)).toBeInTheDocument();
         expect(screen.getByText(projectData.companyName)).toBeInTheDocument();
@@ -51,7 +63,7 @@ describe('Test ProjectCard Component', () => {
     it('should render "View" button for non-draft projects', () => {
         projectData!.status = 'pending';
 
-        render(<ProjectCard data={projectData} />);
+        renderWithProviders(<ProjectCard data={projectData} />);
 
         const viewButton = screen.getByText('View');
         expect(viewButton).toBeInTheDocument();
@@ -62,10 +74,10 @@ describe('Test ProjectCard Component', () => {
         });
     });
 
-    it('should render "Finish Submission" button for draft projects', () => {
-        render(<ProjectCard data={projectData} />);
+    it('should render "Edit Draft Project" button for draft projects', () => {
+        renderWithProviders(<ProjectCard data={projectData} />);
 
-        const submitButton = screen.getByText('Finish Submission');
+        const submitButton = screen.getByText('Edit Draft Project');
         expect(submitButton).toBeInTheDocument();
 
         fireEvent.click(submitButton);
@@ -85,7 +97,7 @@ describe('Test ProjectCard Component', () => {
     // });
 
     it('should display project status badge', () => {
-        render(<ProjectCard data={projectData} />);
+        renderWithProviders(<ProjectCard data={projectData} />);
 
         const statusBadge = screen.getByText(projectData.status);
         expect(statusBadge).toBeInTheDocument();
