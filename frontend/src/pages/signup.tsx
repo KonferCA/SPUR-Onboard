@@ -5,6 +5,9 @@ export const Route = createFileRoute('/signup')({
     beforeLoad: () => {
         throw redirect({
             to: '/auth',
+            search: {
+                form: 'register',
+            },
         });
     },
 });
