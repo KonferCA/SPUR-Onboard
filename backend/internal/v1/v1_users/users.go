@@ -4,6 +4,7 @@ import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -24,7 +25,17 @@ func (h *Handler) handleUpdateUserDetails(c echo.Context) error {
 
 	q := h.server.GetQueries()
 
-	err := q.UpdateUserDetails(c.Request().Context(), db.UpdateUserDetailsParams{
+	// Start a transaction
+	tx, err := h.server.GetDB().Begin(c.Request().Context())
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to start transaction", err)
+	}
+	defer tx.Rollback(context.Background()) // using background context since if the request is cancelled, we want the transaction to still rollback changes.
+
+	qtx := q.WithTx(tx)
+
+	// Update user details
+	err = qtx.UpdateUserDetails(c.Request().Context(), db.UpdateUserDetailsParams{
 		FirstName: &req.FirstName,
 		LastName:  &req.LastName,
 		Title:     &req.Title,
@@ -33,7 +44,61 @@ func (h *Handler) handleUpdateUserDetails(c echo.Context) error {
 		ID:        userID,
 	})
 	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Oops something went wrong (2)", err)
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to update user details", err)
+	}
+
+	// NOTE: the socials part of this function should become obsolete once OAuth is implemented in M3
+	// which will be the official way to connect a social account since ownership can be verified.
+
+	// Only process socials if they were included in the request
+	if req.Socials != nil && len(req.Socials) > 0 {
+		// Get existing socials
+		existingSocials, err := qtx.GetUserSocialsByUserID(c.Request().Context(), userID)
+		if err != nil && !db.IsNoRowsErr(err) {
+			return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get existing socials", err)
+		}
+
+		// Create maps for efficient lookup
+		existingMap := make(map[string]db.UserSocial)
+		for _, social := range existingSocials {
+			key := string(social.Platform) + social.UrlOrHandle
+			existingMap[key] = social
+		}
+
+		newMap := make(map[string]UserSocial)
+		for _, social := range req.Socials {
+			key := string(social.Platform) + social.UrlOrHandle
+			newMap[key] = social
+		}
+
+		// Delete socials that are no longer present
+		for key, existing := range existingMap {
+			if _, exists := newMap[key]; !exists {
+				err := qtx.DeleteUserSocial(c.Request().Context(), existing.ID)
+				if err != nil {
+					return v1_common.Fail(c, http.StatusInternalServerError, "Failed to delete social link", err)
+				}
+			}
+		}
+
+		// Add new socials
+		for key, new := range newMap {
+			if _, exists := existingMap[key]; !exists {
+				_, err := qtx.CreateUserSocial(c.Request().Context(), db.CreateUserSocialParams{
+					Platform:    db.SocialPlatformEnum(new.Platform),
+					UrlOrHandle: new.UrlOrHandle,
+					UserID:      userID,
+				})
+				if err != nil {
+					return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create social link", err)
+				}
+			}
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit(c.Request().Context()); err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to commit transaction", err)
 	}
 
 	return v1_common.Success(c, http.StatusOK, "User details saved")

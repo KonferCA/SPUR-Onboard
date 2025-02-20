@@ -15,12 +15,13 @@ type UserSocial struct {
 }
 
 type UpdateUserDetailsRequest struct {
-	FirstName string       `json:"firstName" validate:"required"`
-	LastName  string       `json:"lastName" validate:"required"`
-	Title     string       `json:"title" validate:"required"`
-	Bio       string       `json:"bio" validate:"required"`
-	LinkedIn  string       `json:"linkedin" validate:"required,url"`
-	Socials   []UserSocial `json:"socials" validate:"omitnil,omitempty,dive"`
+	FirstName string `json:"firstName" validate:"required"`
+	LastName  string `json:"lastName" validate:"required"`
+	Title     string `json:"title" validate:"required"`
+	Bio       string `json:"bio" validate:"required"`
+	// DEPRECATED: This field will me removed later but is here to keep old versions functioning
+	LinkedIn string       `json:"linkedin" validate:"omitnil,omitempty,url"`
+	Socials  []UserSocial `json:"socials" validate:"omitnil,omitempty,dive"`
 }
 
 type UserDetailsResponse struct {
