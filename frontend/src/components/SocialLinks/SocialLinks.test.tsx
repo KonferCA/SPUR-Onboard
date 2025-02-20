@@ -209,7 +209,31 @@ describe('SocialLinks', () => {
                 {
                     id: 'test-id',
                     platform: SocialPlatform.Discord,
-                    urlOrHandle: 'testuser',
+                    urlOrHandle: '@testuser',
+                },
+            ]);
+        });
+
+        it('adds valid social link with https:// prefix for URL-based platforms', () => {
+            render(<SocialLinks {...defaultProps} />);
+
+            // Open LinkedIn modal
+            fireEvent.click(
+                screen.getByTestId(`social-icon-${SocialPlatform.LinkedIn}`)
+            );
+
+            // Enter valid URL
+            const input = screen.getByTestId('social-input');
+            fireEvent.change(input, { target: { value: 'www.linkedin.com/in/test' } });
+
+            // Confirm
+            fireEvent.click(screen.getByTestId('confirm-button'));
+
+            expect(mockOnChange).toHaveBeenCalledWith([
+                {
+                    id: 'test-id',
+                    platform: SocialPlatform.LinkedIn,
+                    urlOrHandle: 'https://www.linkedin.com/in/test',
                 },
             ]);
         });
