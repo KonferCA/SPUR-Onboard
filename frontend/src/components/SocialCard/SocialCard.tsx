@@ -23,17 +23,17 @@ export const SocialCard: FC<SocialCardProps> = ({
     const [logoSrc, altText] = useMemo(() => {
         switch (platform) {
             case SocialPlatform.Discord:
-                return [DiscordLogoSVG, 'Discord Logo'];
+                return [DiscordLogoSVG, 'Discord'];
             case SocialPlatform.BlueSky:
-                return [BlueskyLogoSVG, 'Bluesky Logo'];
+                return [BlueskyLogoSVG, 'Bluesky'];
             case SocialPlatform.X:
-                return [XLogoSVG, 'X Logo'];
+                return [XLogoSVG, 'X'];
             case SocialPlatform.Instagram:
-                return [InstagramLogoSVG, 'Instagram Logo'];
+                return [InstagramLogoSVG, 'Instagram'];
             case SocialPlatform.Facebook:
-                return [FacebookLogoSVG, 'Facebook Logo'];
+                return [FacebookLogoSVG, 'Facebook'];
             case SocialPlatform.LinkedIn:
-                return [LinkedInLogoSVG, 'LinkedIn Logo'];
+                return [LinkedInLogoSVG, 'LinkedIn'];
             default:
                 break;
         }
@@ -76,15 +76,14 @@ export const SocialCard: FC<SocialCardProps> = ({
             <div className="flex justify-end">
                 <button
                     type="button"
-                    aria-label="Remove social"
-                    className="p-1 rounded-md transition hover:bg-gray-100"
+                    aria-label={`remove ${altText} social`}
                     onClick={() =>
                         onRemove
                             ? onRemove({ platform, urlOrHandle, id })
                             : null
                     }
                 >
-                    <RxCross2 className="h-4 w-4 text-red-500" />
+                    <RxCross2 className="h-4 w-4 text-red-500 transition hover:text-red-700" />
                 </button>
             </div>
             <div className="flex items-center justify-center">{Icon}</div>

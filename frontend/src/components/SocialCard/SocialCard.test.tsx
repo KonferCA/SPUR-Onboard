@@ -26,7 +26,7 @@ describe('SocialCard', () => {
         const data = createTestData(SocialPlatform.Discord, 'username#1234');
         render(<SocialCard data={data} />);
 
-        expect(screen.getByAltText('Discord Logo')).toBeInTheDocument();
+        expect(screen.getByAltText('Discord')).toBeInTheDocument();
         expect(screen.getByText('username#1234')).toBeInTheDocument();
     });
 
@@ -37,7 +37,7 @@ describe('SocialCard', () => {
         );
         render(<SocialCard data={data} />);
 
-        expect(screen.getByAltText('Bluesky Logo')).toBeInTheDocument();
+        expect(screen.getByAltText('Bluesky')).toBeInTheDocument();
         expect(screen.getByText('handle')).toBeInTheDocument();
     });
 
@@ -48,7 +48,7 @@ describe('SocialCard', () => {
         );
         render(<SocialCard data={data} />);
 
-        expect(screen.getByAltText('Facebook Logo')).toBeInTheDocument();
+        expect(screen.getByAltText('Facebook')).toBeInTheDocument();
         expect(screen.getByText('username')).toBeInTheDocument();
     });
 
@@ -59,7 +59,7 @@ describe('SocialCard', () => {
         );
         render(<SocialCard data={data} />);
 
-        expect(screen.getByAltText('LinkedIn Logo')).toBeInTheDocument();
+        expect(screen.getByAltText('LinkedIn')).toBeInTheDocument();
         expect(screen.getByText('username')).toBeInTheDocument();
     });
 
@@ -67,7 +67,7 @@ describe('SocialCard', () => {
         const data = createTestData(SocialPlatform.X, '@username');
         render(<SocialCard data={data} />);
 
-        expect(screen.getByAltText('X Logo')).toBeInTheDocument();
+        expect(screen.getByAltText('X')).toBeInTheDocument();
         expect(screen.getByText('@username')).toBeInTheDocument();
     });
 
@@ -75,7 +75,7 @@ describe('SocialCard', () => {
         const data = createTestData(SocialPlatform.Instagram, '@username');
         render(<SocialCard data={data} />);
 
-        expect(screen.getByAltText('Instagram Logo')).toBeInTheDocument();
+        expect(screen.getByAltText('Instagram')).toBeInTheDocument();
         expect(screen.getByText('@username')).toBeInTheDocument();
     });
 
@@ -116,7 +116,7 @@ describe('SocialCard', () => {
         render(<SocialCard data={data} onRemove={mockOnRemove} />);
 
         const removeButton = screen.getByRole('button', {
-            name: /remove social/i,
+            name: 'remove Discord social',
         });
         fireEvent.click(removeButton);
 
@@ -129,7 +129,7 @@ describe('SocialCard', () => {
         render(<SocialCard data={data} />);
 
         const removeButton = screen.getByRole('button', {
-            name: /remove social/i,
+            name: 'remove Discord social',
         });
 
         // Should not throw error
