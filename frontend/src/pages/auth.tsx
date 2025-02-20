@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { AuthForm } from '@/components/AuthForm';
 import { UserDetailsForm } from '@/components/UserDetailsForm';
 import { VerifyEmail } from '@/components/VerifyEmail';
-import { register, signin, createCompany } from '@/services';
+import { register, signin } from '@/services';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from '@tanstack/react-router';
 import type {
@@ -12,8 +12,6 @@ import type {
     CompanyFormErrors,
     RegistrationStep,
 } from '@/types/auth';
-import { CompanyForm } from '@/components/CompanyForm/CompanyForm';
-import { CompanyInformation } from '@/types/company';
 import { isAdmin } from '@/utils/permissions';
 import { initialUserProfile } from '@/services/user';
 
@@ -43,8 +41,6 @@ function AuthPage() {
                 setCurrentStep('verify-email');
             } else if (!user.firstName || !user.lastName) {
                 setCurrentStep('form-details');
-            } else if (!companyId) {
-                setCurrentStep('company-creation');
             } else {
                 handleRedirect();
             }
@@ -74,7 +70,7 @@ function AuthPage() {
                     formData.email,
                     formData.password
                 );
-                setAuth(regResp.user, regResp.accessToken);
+                setAuth(regResp.user, regResp.accessToken, regResp.companyId);
                 setCurrentStep('verify-email');
             } else {
                 const signinResp = await signin(
@@ -131,7 +127,10 @@ function AuthPage() {
             user.lastName = formData.lastName;
 
             setAuth(user, accessToken, companyId);
-            setCurrentStep('company-creation');
+            setCurrentStep('registration-complete');
+            setTimeout(() => {
+                handleRedirect();
+            }, 1000);
         } catch (error: any) {
             if (error.body) {
                 setErrors({
@@ -145,76 +144,6 @@ function AuthPage() {
                 setErrors({
                     firstName:
                         'An unexpected error occurred while updating your profile',
-                });
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleCompanyCreationSubmit = async (
-        formData: CompanyInformation
-    ) => {
-        setIsLoading(true);
-        setErrors({});
-
-        try {
-            if (!user) {
-                setErrors({ name: 'User session not found' });
-                return;
-            }
-
-            if (!accessToken) {
-                setErrors({ name: 'Authentication token missing' });
-                return;
-            }
-
-            if (!formData.name?.trim()) {
-                setErrors({ name: 'Company name is required' });
-                return;
-            }
-
-            if (!formData.dateFounded) {
-                setErrors({ dateFounded: 'Date founded is required' });
-                return;
-            }
-
-            if (!formData.stage || formData.stage.length === 0) {
-                setErrors({ stage: 'Company stage is required' });
-                return;
-            }
-
-            if (!formData.linkedin?.trim()) {
-                setErrors({ linkedin: 'LinkedIn URL is required' });
-                return;
-            }
-
-            const company = await createCompany(accessToken, formData);
-
-            setAuth(user, accessToken, company.id);
-
-            setCurrentStep('registration-complete');
-
-            setTimeout(() => {
-                handleRedirect();
-            }, 1500);
-        } catch (error: any) {
-            console.error('Company creation error:', error);
-            if (error.body) {
-                if (typeof error.body === 'object' && error.body !== null) {
-                    setErrors(error.body);
-                } else {
-                    setErrors({
-                        name: error.body?.message || 'Failed to create company',
-                    });
-                }
-            } else if (error.message) {
-                setErrors({
-                    name: error.message,
-                });
-            } else {
-                setErrors({
-                    name: 'An unexpected error occurred while creating your company',
                 });
             }
         } finally {
@@ -283,15 +212,6 @@ function AuthPage() {
                                   }
                                 : undefined
                         }
-                    />
-                );
-
-            case 'company-creation':
-                return (
-                    <CompanyForm
-                        onSubmit={handleCompanyCreationSubmit}
-                        isLoading={isLoading}
-                        errors={errors}
                     />
                 );
 
