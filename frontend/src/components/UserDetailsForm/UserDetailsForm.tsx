@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { Button, TextInput, TextArea, ProgressSteps } from '@/components';
 import type { UserDetailsFormProps, UserDetailsData } from '@/types/auth';
 
-const LINKEDIN_REGEX = /^(https?:\/\/)?([\w]+\.)?linkedin\.com\/(pub|in|profile)\/([-a-zA-Z0-9]+)\/?$/;
+const LINKEDIN_REGEX =
+    /^(https?:\/\/)?([\w]+\.)?linkedin\.com\/(pub|in|profile)\/([-a-zA-Z0-9]+)\/?$/;
 
-export function UserDetailsForm({ 
-    onSubmit, 
-    isLoading, 
+export function UserDetailsForm({
+    onSubmit,
+    isLoading,
     errors,
-    initialData 
+    initialData,
 }: UserDetailsFormProps) {
     const [formData, setFormData] = useState<UserDetailsData>({
         firstName: initialData?.firstName || '',
@@ -21,7 +22,9 @@ export function UserDetailsForm({
     const [isValid, setIsValid] = useState(false);
 
     useEffect(() => {
-        const hasAllFields = Object.values(formData).every(value => value.trim());
+        const hasAllFields = Object.values(formData).every((value) =>
+            value.trim()
+        );
         const isLinkedInValid = LINKEDIN_REGEX.test(formData.linkedIn);
         setIsValid(hasAllFields && isLinkedInValid);
     }, [formData]);
@@ -37,7 +40,7 @@ export function UserDetailsForm({
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
             [name]: value,
         }));
@@ -46,7 +49,7 @@ export function UserDetailsForm({
     return (
         <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
             <ProgressSteps currentStep={1} />
-            
+
             <h2 className="text-2xl font-semibold text-center mb-2">
                 Onboard by SPUR
             </h2>
@@ -54,7 +57,7 @@ export function UserDetailsForm({
             <p className="text-gray-600 text-center mb-6">
                 To begin your application, please enter your details.
             </p>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <TextInput
@@ -115,7 +118,7 @@ export function UserDetailsForm({
                         variant="primary"
                         disabled={isLoading || !isValid}
                     >
-                        {isLoading ? 'Saving Profile...' : 'Continue to Company Details'}
+                        {isLoading ? 'Saving Profile...' : 'Save Profile'}
                     </Button>
                 </div>
 
@@ -134,3 +137,4 @@ export function UserDetailsForm({
         </div>
     );
 }
+
