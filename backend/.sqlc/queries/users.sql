@@ -83,3 +83,15 @@ WHERE id = $1;
 UPDATE users
 SET permissions = $2
 WHERE id = ANY($1::uuid[]);
+
+-- name: CreateUserSocial :one
+INSERT INTO user_socials (
+    platform,
+    url_or_handle,
+    user_id
+) VALUES (
+    $1, $2, $3
+) RETURNING *;
+
+-- name: DeleteUserSocial :exec
+DELETE FROM user_socials WHERE id = $1;
