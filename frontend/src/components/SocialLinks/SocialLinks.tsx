@@ -72,6 +72,26 @@ export const SocialLinks: React.FC<SocialLinksProps> = ({
         return '';
     };
 
+    const getSocialPrefixByPlatform = () => {
+        let prefix = '';
+        switch (currentSocialPlatform) {
+            case SocialPlatform.Discord:
+            case SocialPlatform.X:
+            case SocialPlatform.Instagram:
+            case SocialPlatform.BlueSky:
+                prefix = '@';
+                break;
+            case SocialPlatform.LinkedIn:
+            case SocialPlatform.Facebook:
+            case SocialPlatform.CustomUrl:
+                prefix = 'https://';
+                break;
+            default:
+                break;
+        }
+        return prefix;
+    };
+
     const handleConfirmSocial = () => {
         if (!currentSocialPlatform) return;
         const isValid = validateSocialLink({
@@ -84,7 +104,7 @@ export const SocialLinks: React.FC<SocialLinksProps> = ({
                 {
                     id: randomId(),
                     platform: currentSocialPlatform,
-                    urlOrHandle,
+                    urlOrHandle: getSocialPrefixByPlatform() + urlOrHandle,
                 },
             ]);
             handleCloseAddSocialModal();
@@ -209,26 +229,6 @@ export const SocialLinks: React.FC<SocialLinksProps> = ({
                 break;
         }
         return placeholder;
-    };
-
-    const getSocialPrefixByPlatform = () => {
-        let prefix = '';
-        switch (currentSocialPlatform) {
-            case SocialPlatform.Discord:
-            case SocialPlatform.X:
-            case SocialPlatform.Instagram:
-            case SocialPlatform.BlueSky:
-                prefix = '@';
-                break;
-            case SocialPlatform.LinkedIn:
-            case SocialPlatform.Facebook:
-            case SocialPlatform.CustomUrl:
-                prefix = 'https://';
-                break;
-            default:
-                break;
-        }
-        return prefix;
     };
 
     return (
