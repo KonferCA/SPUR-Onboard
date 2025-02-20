@@ -101,3 +101,63 @@ export function getSocialInputLabel(platform: SocialPlatform | null): string {
     }
     return label;
 }
+
+export function getModalTitle(platform: SocialPlatform | null): string {
+    let title = '';
+    switch (platform) {
+        case SocialPlatform.Discord:
+            title = 'Add your Discord Username';
+            break;
+        case SocialPlatform.X:
+            title = 'Add your X Handle';
+            break;
+        case SocialPlatform.Instagram:
+            title = 'Add your Instagram Profile';
+            break;
+        case SocialPlatform.Facebook:
+            title = 'Add your Facebook Profile';
+            break;
+        case SocialPlatform.BlueSky:
+            title = 'Add your Bluesky Handle';
+            break;
+        case SocialPlatform.LinkedIn:
+            title = 'Add your LinkedIn Profile';
+            break;
+        case SocialPlatform.CustomUrl:
+            title = 'Add your custom url';
+            break;
+        default:
+            break;
+    }
+    return title;
+}
+
+export function getModelDescription(platform: SocialPlatform | null): string {
+    let description = '';
+    switch (platform) {
+        case SocialPlatform.Discord:
+            description = 'Include your Discord username below';
+            break;
+        case SocialPlatform.X:
+            description = 'Include your X (formerly Twitter) handle below';
+            break;
+        case SocialPlatform.Instagram:
+            description = 'Include your Instagram username below';
+            break;
+        case SocialPlatform.Facebook:
+            description = 'Include your Facebook profile URL';
+            break;
+        case SocialPlatform.BlueSky:
+            description = 'Include your Bluesky handle below';
+            break;
+        case SocialPlatform.LinkedIn:
+            description = 'Include your LinkedIn profile URL below';
+            break;
+        case SocialPlatform.CustomUrl:
+            description = 'Include your custom URL below';
+            break;
+        default:
+            break;
+    }
+    return description;
+}

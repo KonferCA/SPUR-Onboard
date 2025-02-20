@@ -7,6 +7,8 @@ import { validateSocialLink } from '@/utils/form-validation';
 import { randomId } from '@/utils/random';
 import {
     getErrorMsg,
+    getModalTitle,
+    getModelDescription,
     getSocialInputLabel,
     getSocialInputPlaceholder,
     getSocialPrefix,
@@ -78,66 +80,6 @@ export const SocialLinks: React.FC<SocialLinksProps> = ({
         }
     };
 
-    const getModalTitleByPlatform = () => {
-        let title = '';
-        switch (currentSocialPlatform) {
-            case SocialPlatform.Discord:
-                title = 'Add your Discord Username';
-                break;
-            case SocialPlatform.X:
-                title = 'Add your X Handle';
-                break;
-            case SocialPlatform.Instagram:
-                title = 'Add your Instagram Profile';
-                break;
-            case SocialPlatform.Facebook:
-                title = 'Add your Facebook Profile';
-                break;
-            case SocialPlatform.BlueSky:
-                title = 'Add your Bluesky Handle';
-                break;
-            case SocialPlatform.LinkedIn:
-                title = 'Add your LinkedIn Profile';
-                break;
-            case SocialPlatform.CustomUrl:
-                title = 'Add your custom url';
-                break;
-            default:
-                break;
-        }
-        return title;
-    };
-
-    const getModalDescriptionByPlatform = () => {
-        let description = '';
-        switch (currentSocialPlatform) {
-            case SocialPlatform.Discord:
-                description = 'Include your Discord username below';
-                break;
-            case SocialPlatform.X:
-                description = 'Include your X (formerly Twitter) handle below';
-                break;
-            case SocialPlatform.Instagram:
-                description = 'Include your Instagram username below';
-                break;
-            case SocialPlatform.Facebook:
-                description = 'Include your Facebook profile URL';
-                break;
-            case SocialPlatform.BlueSky:
-                description = 'Include your Bluesky handle below';
-                break;
-            case SocialPlatform.LinkedIn:
-                description = 'Include your LinkedIn profile URL below';
-                break;
-            case SocialPlatform.CustomUrl:
-                description = 'Include your custom URL below';
-                break;
-            default:
-                break;
-        }
-        return description;
-    };
-
     return (
         <div className="">
             <div className="flex items-center justify-between">
@@ -172,8 +114,8 @@ export const SocialLinks: React.FC<SocialLinksProps> = ({
                 </div>
             </div>
             <ConfirmationModal
-                title={getModalTitleByPlatform()}
-                description={getModalDescriptionByPlatform()}
+                title={getModalTitle(currentSocialPlatform)}
+                description={getModelDescription(currentSocialPlatform)}
                 isOpen={isAddSocialModalOpen && currentSocialPlatform !== null}
                 onClose={handleCloseAddSocialModal}
                 primaryAction={handleConfirmSocial}
