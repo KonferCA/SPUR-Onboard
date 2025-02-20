@@ -157,7 +157,7 @@ func (h *Handler) handleRegister(c echo.Context) error {
 		logger.Warn(fmt.Sprintf("Error getting company on login: %s", err.Error()))
 	}
 
-	if company != nil {
+	if company.ID != "" {
 		companyId = &company.ID
 	}
 
