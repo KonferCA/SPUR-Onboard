@@ -21,7 +21,7 @@ import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { useQuery } from '@tanstack/react-query';
 import { scrollToTop } from '@/utils';
 import { useDebounceFn } from '@/hooks';
-import { useAuth, useNotification } from '@/contexts';
+import { useAuth } from '@/contexts';
 import { getSampleAnswer } from '@/utils/sampleData';
 import { useNavigate } from '@tanstack/react-router';
 import { ValidationError, ProjectError } from '@/components/ProjectError';
