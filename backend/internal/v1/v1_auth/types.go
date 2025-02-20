@@ -32,10 +32,11 @@ type AuthResponse struct {
 }
 
 type UserResponse struct {
-	ID            string  `json:"id"`
-	FirstName     *string `json:"first_name"`
-	LastName      *string `json:"last_name"`
-	Email         string  `json:"email"`
-	EmailVerified bool    `json:"email_verified"`
-	Permissions   uint32  `json:"permissions"`
+	ID                string  `json:"id"`
+	FirstName         *string `json:"first_name"`
+	LastName          *string `json:"last_name"`
+	Email             string  `json:"email"`
+	EmailVerified     bool    `json:"email_verified"`
+	Permissions       uint32  `json:"permissions"`
+	ProfilePictureUrl *string `json:"profile_picture_url"`
 }
