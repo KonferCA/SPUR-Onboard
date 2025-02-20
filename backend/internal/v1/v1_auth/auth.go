@@ -155,9 +155,9 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	if err != nil {
 		// just log the reason why it failed to fetch company id on login
 		logger.Warn(fmt.Sprintf("Error getting company on login: %s", err.Error()))
-	} else {
-		// do not return bad request on error because user might not have created a company yet
-		// in case the error is
+	}
+
+	if company != nil {
 		companyId = &company.ID
 	}
 
@@ -170,10 +170,11 @@ func (h *Handler) handleRegister(c echo.Context) error {
 		AccessToken: accessToken,
 		CompanyId:   companyId,
 		User: UserResponse{
-			ID:            newUser.ID,
-			Email:         newUser.Email,
-			EmailVerified: newUser.EmailVerified,
-			Permissions:   uint32(newUser.Permissions),
+			ID:                newUser.ID,
+			Email:             newUser.Email,
+			EmailVerified:     newUser.EmailVerified,
+			Permissions:       uint32(newUser.Permissions),
+			ProfilePictureUrl: newUser.ProfilePictureUrl,
 		},
 	})
 }
@@ -230,12 +231,13 @@ func (h *Handler) handleLogin(c echo.Context) error {
 		AccessToken: accessToken,
 		CompanyId:   companyId,
 		User: UserResponse{
-			ID:            user.ID,
-			FirstName:     user.FirstName,
-			LastName:      user.LastName,
-			Email:         user.Email,
-			EmailVerified: user.EmailVerified,
-			Permissions:   uint32(user.Permissions),
+			ID:                user.ID,
+			FirstName:         user.FirstName,
+			LastName:          user.LastName,
+			Email:             user.Email,
+			EmailVerified:     user.EmailVerified,
+			Permissions:       uint32(user.Permissions),
+			ProfilePictureUrl: user.ProfilePictureUrl,
 		},
 	})
 }
@@ -429,12 +431,13 @@ func (h *Handler) handleVerifyCookie(c echo.Context) error {
 		AccessToken: accessToken,
 		CompanyId:   companyId,
 		User: UserResponse{
-			ID:            user.ID,
-			FirstName:     user.FirstName,
-			LastName:      user.LastName,
-			Email:         user.Email,
-			EmailVerified: user.EmailVerified,
-			Permissions:   uint32(user.Permissions),
+			ID:                user.ID,
+			FirstName:         user.FirstName,
+			LastName:          user.LastName,
+			Email:             user.Email,
+			EmailVerified:     user.EmailVerified,
+			Permissions:       uint32(user.Permissions),
+			ProfilePictureUrl: user.ProfilePictureUrl,
 		},
 	})
 }

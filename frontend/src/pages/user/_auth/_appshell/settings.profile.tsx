@@ -8,6 +8,7 @@ import { getUserProfile, updateUserProfile } from '@/services';
 import { profileValidationSchema } from '@/types/user';
 import type { UpdateProfileRequest } from '@/types/user';
 import { useAuth } from '@/contexts/AuthContext';
+import { ProfilePictureUpload } from '@/components/ProfilePictureUpload/ProfilePictureUpload';
 
 export const Route = createFileRoute('/user/_auth/_appshell/settings/profile')({
     component: ProfileSettings,
@@ -88,58 +89,64 @@ function ProfileSettings() {
 
     return (
         <SettingsPage title="Personal Profile" error={error}>
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-4">
-                    <TextInput
-                        name="first_name"
-                        label="First name"
-                        defaultValue={profile?.first_name}
-                        required
-                    />
-                    <TextInput
-                        name="last_name"
-                        label="Last name"
-                        defaultValue={profile?.last_name}
-                        required
-                    />
-                    <TextInput
-                        name="email"
-                        label="Email"
-                        defaultValue={user.email}
-                        disabled
-                    />
-                    <TextInput
-                        name="title"
-                        label="Position/Title"
-                        defaultValue={profile?.title}
-                        required
-                    />
-                    <TextArea
-                        name="bio"
-                        label="Brief Biography"
-                        defaultValue={profile?.bio}
-                        required
-                        rows={4}
-                    />
-                    <TextInput
-                        name="linkedin_url"
-                        label="LinkedIn Profile URL"
-                        defaultValue={profile?.linkedin_url}
-                        placeholder="https://linkedin.com/in/your-profile"
-                        type="url"
-                        required
-                    />
+            <div>
+                <div className="mb-8">
+                    <ProfilePictureUpload />
                 </div>
+                
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-4">
+                        <TextInput
+                            name="first_name"
+                            label="First name"
+                            defaultValue={profile?.first_name}
+                            required
+                        />
+                        <TextInput
+                            name="last_name"
+                            label="Last name"
+                            defaultValue={profile?.last_name}
+                            required
+                        />
+                        <TextInput
+                            name="email"
+                            label="Email"
+                            defaultValue={user.email}
+                            disabled
+                        />
+                        <TextInput
+                            name="title"
+                            label="Position/Title"
+                            defaultValue={profile?.title}
+                            required
+                        />
+                        <TextArea
+                            name="bio"
+                            label="Brief Biography"
+                            defaultValue={profile?.bio}
+                            required
+                            rows={4}
+                        />
+                        <TextInput
+                            name="linkedin_url"
+                            label="LinkedIn Profile URL"
+                            defaultValue={profile?.linkedin_url}
+                            placeholder="https://linkedin.com/in/your-profile"
+                            type="url"
+                            required
+                        />
+                    </div>
 
-                <Button
-                    type="submit"
-                    variant="primary"
-                    liquid
-                    isLoading={isUpdating}
-                >
-                    {isEmptyProfile ? 'Complete Profile' : 'Save Changes'}
-                </Button>
-            </form>
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        liquid
+                        isLoading={isUpdating}
+                    >
+                        {isEmptyProfile ? 'Complete Profile' : 'Save Changes'}
+                    </Button>
+                </form>
+            </div>
         </SettingsPage>
     );
 }

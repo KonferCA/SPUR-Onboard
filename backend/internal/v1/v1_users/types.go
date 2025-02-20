@@ -32,6 +32,7 @@ type UserDetailsResponse struct {
 	Bio       string          `json:"bio"`
 	LinkedIn  string          `json:"linkedin_url"`
 	Socials   []db.UserSocial `json:"socials"`
+  ProfilePictureUrl *string `json:"profile_picture_url"`
 	CreatedAt string          `json:"created_at"`
 	UpdatedAt *string         `json:"updated_at,omitempty"`
 }
@@ -68,4 +69,8 @@ type UpdateUserRoleRequest struct {
 type UpdateUsersRoleRequest struct {
 	UserIDs []string `json:"user_ids" validate:"required,min=1,dive,required"`
 	Role    string   `json:"role" validate:"required,oneof=admin investor regular"`
+}
+
+type UploadProfilePictureResponse struct {
+	URL string `json:"url"`
 }

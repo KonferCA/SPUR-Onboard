@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Button, DropdownOption, UploadableFile } from '@components';
 import { IoMdArrowRoundBack } from 'react-icons/io';
 import {
@@ -27,6 +27,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { ValidationError, ProjectError } from '@/components/ProjectError';
 import { RecommendedFields } from '@/components/RecommendedFields';
 import { AutosaveIndicator } from '@/components/AutoSaveIndicator';
+import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
+import { CollapsibleSection } from '@/components/CollapsibleSection';
 
 export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
     component: ProjectFormPage,
@@ -44,10 +46,6 @@ const stepItemStyles = cva(
 );
 
 const questionGroupContainerStyles = cva('');
-const questionGroupTitleStyles = cva('font-bold align-left text-xl');
-const questionGroupTitleSeparatorStyles = cva(
-    'my-4 bg-gray-400 w-full h-[2px]'
-);
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
 const isEmptyValue = (value: any, type: string): boolean => {
@@ -95,7 +93,6 @@ function ProjectFormPage() {
     >([]);
     const [currentStep, setCurrentStep] = useState<number>(0);
     const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
-    const notification = useNotification();
     const [showSubmitModal, setShowSubmitModal] = useState(false);
     const [showRecommendedModal, setShowRecommendedModal] = useState(false);
     const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
@@ -106,10 +103,11 @@ function ProjectFormPage() {
         inputType: string;
     }>>([]);
     const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+    const [isSaving, setIsSaving] = useState(false);
 
     const autosave = useDebounceFn(
         async () => {
-            if (!currentProjectId || !accessToken || !companyId) return;
+            if (!currentProjectId || !accessToken || !companyId || isSaving) return;
 
             // Find all dirty inputs and create params while clearing dirty flags
             const dirtyInputsSnapshot: ProjectDraft[] = Array.from(
@@ -117,12 +115,11 @@ function ProjectFormPage() {
             );
             dirtyInputRef.current.clear();
 
+            setIsSaving(true);
             try {
                 if (dirtyInputsSnapshot.length > 0) {
                     setAutosaveStatus('saving');
-
                     await new Promise(resolve => setTimeout(resolve, 300));
-
                     await saveProjectDraft(
                         accessToken,
                         currentProjectId,
@@ -133,11 +130,42 @@ function ProjectFormPage() {
             } catch (e) {
                 console.error(e);
                 setAutosaveStatus('error');
+            } finally {
+                setIsSaving(false);
             }
         },
         1500,
-        [currentProjectId, accessToken, companyId]
+        [currentProjectId, accessToken, companyId, isSaving]
     );    
+
+    const handleManualSave = useCallback(async () => {
+        if (!currentProjectId || !accessToken || !companyId || isSaving) return;
+        
+        const dirtyInputsSnapshot: ProjectDraft[] = Array.from(dirtyInputRef.current.values());
+        if (dirtyInputsSnapshot.length === 0) {
+            return; // nothing to save
+        }
+
+        setIsSaving(true);
+        setAutosaveStatus('saving');
+        try {
+            await saveProjectDraft(accessToken, currentProjectId, dirtyInputsSnapshot);
+            dirtyInputRef.current.clear();
+            setAutosaveStatus('success');
+        } catch (error) {
+            console.error(error);
+            setAutosaveStatus('error');
+        } finally {
+            setIsSaving(false);
+        }
+    }, [accessToken, companyId, currentProjectId, isSaving, dirtyInputRef, saveProjectDraft, setAutosaveStatus]);
+
+    // use the keyboard shortcut hook
+    useKeyboardShortcut(
+        { key: 's', ctrlKey: true },
+        handleManualSave,
+        [handleManualSave]
+    );
 
     const handleChange = (
         questionId: string,
@@ -678,52 +706,33 @@ function ProjectFormPage() {
                                     key={subsection.name}
                                     className={questionGroupContainerStyles()}
                                 >
-                                    <div>
-                                        <h1
-                                            className={questionGroupTitleStyles()}
-                                        >
-                                            {subsection.name}
-                                        </h1>
-                                    </div>
-                                    <div
-                                        className={questionGroupTitleSeparatorStyles()}
-                                    ></div>
-                                    <div
-                                        className={questionGroupQuestionsContainerStyles()}
+                                    <CollapsibleSection 
+                                        title={subsection.name}
                                     >
-                                        {subsection.questions.map((q) =>
-                                            shouldRenderQuestion(
-                                                q,
-                                                subsection.questions
-                                            ) ? (
-                                                <QuestionInputs
-                                                    key={q.id}
-                                                    question={q}
-                                                    onChange={handleChange}
-                                                    fileUploadProps={
-                                                        accessToken
-                                                            ? {
-                                                                  projectId:
-                                                                      currentProjectId,
-                                                                  questionId:
-                                                                      q.id,
-                                                                  section:
-                                                                      groupedQuestions[
-                                                                          currentStep
-                                                                      ].section,
-                                                                  subSection:
-                                                                      subsection.name,
-                                                                  accessToken:
-                                                                      accessToken,
-                                                                  enableAutosave:
-                                                                      true,
-                                                              }
-                                                            : undefined
-                                                    }
-                                                />
-                                            ) : null
-                                        )}
-                                    </div>
+                                        <div className={questionGroupQuestionsContainerStyles()}>
+                                            {subsection.questions.map((q) =>
+                                                shouldRenderQuestion(q, subsection.questions) ? (
+                                                    <QuestionInputs
+                                                        key={q.id}
+                                                        question={q}
+                                                        onChange={handleChange}
+                                                        fileUploadProps={
+                                                            accessToken
+                                                                ? {
+                                                                    projectId: currentProjectId,
+                                                                    questionId: q.id,
+                                                                    section: groupedQuestions[currentStep].section,
+                                                                    subSection: subsection.name,
+                                                                    accessToken: accessToken,
+                                                                    enableAutosave: true,
+                                                                }
+                                                                : undefined
+                                                        }
+                                                    />
+                                                ) : null
+                                            )}
+                                        </div>
+                                    </CollapsibleSection>
                                 </div>
                             )
                         )}

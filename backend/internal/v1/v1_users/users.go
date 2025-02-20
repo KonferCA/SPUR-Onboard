@@ -2,13 +2,18 @@ package v1_users
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"context"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
+	"path/filepath"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -137,6 +142,7 @@ func (h *Handler) handleGetUserDetails(c echo.Context) error {
 		Title:     details.Title,
 		Bio:       details.Bio,
 		LinkedIn:  details.Linkedin,
+    ProfilePictureUrl: details.ProfilePictureUrl,
 		Socials:   socials,
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
@@ -311,4 +317,97 @@ func (h *Handler) handleUpdateUsersRole(c echo.Context) error {
 	}
 
 	return v1_common.Success(c, http.StatusOK, "User roles updated successfully")
+}
+
+func (h *Handler) handleUploadProfilePicture(c echo.Context) error {
+	userID := c.Param("id")
+	if userID == "" {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request, missing user id", nil)
+	}
+
+	// Get authenticated user from context
+	authUser, err := middleware.GetUserFromContext(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	// Only allow users to update their own profile picture
+	if authUser.ID != userID {
+		return v1_common.Fail(c, http.StatusForbidden, "Cannot update another user's profile picture", nil)
+	}
+
+	// Get the uploaded file
+	form := c.Request().MultipartForm
+	var file *multipart.FileHeader
+	for _, files := range form.File {
+		file = files[0]
+		break
+	}
+
+	// Open the file
+	src, err := file.Open()
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to open file", err)
+	}
+	defer src.Close()
+
+	// Read file content
+	fileContent, err := io.ReadAll(src)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to read file", err)
+	}
+
+	// Generate S3 key
+	fileExt := filepath.Ext(file.Filename)
+	s3Key := fmt.Sprintf("users/%s/profile-picture/%s%s", userID, uuid.New().String(), fileExt)
+
+	// Upload to S3
+	fileURL, err := h.server.GetStorage().UploadFile(c.Request().Context(), s3Key, fileContent)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to upload file", err)
+	}
+
+	// Update user's profile picture URL in database
+	err = h.server.GetQueries().UpdateUserProfilePicture(c.Request().Context(), db.UpdateUserProfilePictureParams{
+		ProfilePictureUrl: &fileURL,
+		ID:               userID,
+	})
+	if err != nil {
+		// Try to cleanup the uploaded file if database update fails
+		_ = h.server.GetStorage().DeleteFile(c.Request().Context(), s3Key)
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to update profile picture", err)
+	}
+
+	return c.JSON(http.StatusOK, UploadProfilePictureResponse{
+		URL: fileURL,
+	})
+}
+
+func (h *Handler) handleRemoveProfilePicture(c echo.Context) error {
+	userID := c.Param("id")
+	if userID == "" {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request, missing user id", nil)
+	}
+
+	// Get authenticated user from context
+	authUser, err := middleware.GetUserFromContext(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	// Only allow users to remove their own profile picture
+	if authUser.ID != userID {
+		return v1_common.Fail(c, http.StatusForbidden, "Cannot remove another user's profile picture", nil)
+	}
+
+	// Update user's profile picture URL in database to null
+	err = h.server.GetQueries().UpdateUserProfilePicture(c.Request().Context(), db.UpdateUserProfilePictureParams{
+		ProfilePictureUrl: nil,
+		ID:               userID,
+	})
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to remove profile picture", err)
+	}
+
+	return v1_common.Success(c, http.StatusOK, "Profile picture removed successfully")
 }
