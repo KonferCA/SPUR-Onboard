@@ -3,10 +3,7 @@ interface ProgressStepsProps {
 }
 
 export const ProgressSteps = ({ currentStep }: ProgressStepsProps) => {
-    const steps = [
-        { number: 1, label: 'Basic Details', id: 'basic-details' },
-        { number: 2, label: 'Company Details', id: 'company-details' }
-    ];
+    const steps = [{ number: 1, label: 'Basic Details', id: 'basic-details' }];
 
     return (
         <div className="w-full mb-5">
@@ -14,10 +11,13 @@ export const ProgressSteps = ({ currentStep }: ProgressStepsProps) => {
                 {steps.map((step) => {
                     const isActive = step.number === currentStep;
                     const isPast = step.number < currentStep;
-                    
+
                     return (
-                        <div key={step.id} className="flex items-center space-x-3">
-                            <div 
+                        <div
+                            key={step.id}
+                            className="flex items-center space-x-3"
+                        >
+                            <div
                                 className={`
                                     w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
                                     ${isActive ? 'bg-black text-white text-sm' : isPast ? 'bg-gray-400 text-white text-sm' : 'bg-gray-400 text-white text-sm'}
@@ -25,7 +25,7 @@ export const ProgressSteps = ({ currentStep }: ProgressStepsProps) => {
                             >
                                 {step.number}
                             </div>
-                            <span 
+                            <span
                                 className={`
                                     text-lg
                                     ${isActive ? 'text-black text-sm' : 'text-gray-400 text-sm'}
@@ -40,3 +40,4 @@ export const ProgressSteps = ({ currentStep }: ProgressStepsProps) => {
         </div>
     );
 };
+
