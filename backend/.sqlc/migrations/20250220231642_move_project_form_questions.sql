@@ -54,15 +54,15 @@ UPDATE project_questions
     FROM ranked
     WHERE project_questions.id = ranked.id;
 
--- 7. Set the order for company pitch to be second in section
+-- 7. Set the order for Bookkeeping to second in section
 UPDATE project_questions
     SET sub_section_order = 1
-    WHERE section = 'The Basics' AND sub_section = 'Company Pitch';
+    WHERE section = 'The Basics' AND sub_section = 'Bookkeeping';
 
--- 8. Set the order for Bookkeeping to third in section
+-- 8. Set the order for company pitch to be third in section
 UPDATE project_questions
     SET sub_section_order = 2
-    WHERE section = 'The Basics' AND sub_section = 'Bookkeeping'
+    WHERE section = 'The Basics' AND sub_section = 'Company Pitch';
 
 -- +goose StatementEnd
 
