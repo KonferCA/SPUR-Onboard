@@ -34,11 +34,11 @@ export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
 });
 
 const stepItemStyles = cva(
-    'text-lg relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2 font-semibold',
+    'text-lg relative transition text-gray-400 hover:text-button hover:cursor-pointer py-2',
     {
         variants: {
             active: {
-                true: ['text-button hover:text-gray-700'],
+                true: ['font-semibold text-button-default hover:text-button-default'],
             },
         },
     }
@@ -633,7 +633,7 @@ function ProjectFormPage() {
                                             >
                                                 <span>{group.section}</span>
                                                 {currentStep === idx && (
-                                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-button" />
+                                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-button-default" />
                                                 )}
                                             </li>
                                         ))}
