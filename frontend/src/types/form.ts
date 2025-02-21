@@ -33,6 +33,7 @@ export interface FormField {
     value: FormFieldValue;
     invalid?: boolean;
     disabled?: boolean;
+    props?: any;
 }
 
 export interface FormSection {
