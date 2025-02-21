@@ -29,6 +29,7 @@ import { RecommendedFields } from '@/components/RecommendedFields';
 import { AutosaveIndicator } from '@/components/AutoSaveIndicator';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
+import { AppEnv } from '@/constants/env';
 
 export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
     component: ProjectFormPage,
@@ -95,19 +96,26 @@ function ProjectFormPage() {
     const dirtyInputRef = useRef<Map<string, ProjectDraft>>(new Map());
     const [showSubmitModal, setShowSubmitModal] = useState(false);
     const [showRecommendedModal, setShowRecommendedModal] = useState(false);
-    const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
-    const [recommendedFields, setRecommendedFields] = useState<Array<{
-        section: string;
-        subsection: string;
-        questionText: string;
-        inputType: string;
-    }>>([]);
-    const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+    const [validationErrors, setValidationErrors] = useState<ValidationError[]>(
+        []
+    );
+    const [recommendedFields, setRecommendedFields] = useState<
+        Array<{
+            section: string;
+            subsection: string;
+            questionText: string;
+            inputType: string;
+        }>
+    >([]);
+    const [autosaveStatus, setAutosaveStatus] = useState<
+        'idle' | 'saving' | 'success' | 'error'
+    >('idle');
     const [isSaving, setIsSaving] = useState(false);
 
     const autosave = useDebounceFn(
         async () => {
-            if (!currentProjectId || !accessToken || !companyId || isSaving) return;
+            if (!currentProjectId || !accessToken || !companyId || isSaving)
+                return;
 
             // Find all dirty inputs and create params while clearing dirty flags
             const dirtyInputsSnapshot: ProjectDraft[] = Array.from(
@@ -119,7 +127,7 @@ function ProjectFormPage() {
             try {
                 if (dirtyInputsSnapshot.length > 0) {
                     setAutosaveStatus('saving');
-                    await new Promise(resolve => setTimeout(resolve, 300));
+                    await new Promise((resolve) => setTimeout(resolve, 300));
                     await saveProjectDraft(
                         accessToken,
                         currentProjectId,
@@ -136,12 +144,14 @@ function ProjectFormPage() {
         },
         1500,
         [currentProjectId, accessToken, companyId, isSaving]
-    );    
+    );
 
     const handleManualSave = useCallback(async () => {
         if (!currentProjectId || !accessToken || !companyId || isSaving) return;
-        
-        const dirtyInputsSnapshot: ProjectDraft[] = Array.from(dirtyInputRef.current.values());
+
+        const dirtyInputsSnapshot: ProjectDraft[] = Array.from(
+            dirtyInputRef.current.values()
+        );
         if (dirtyInputsSnapshot.length === 0) {
             return; // nothing to save
         }
@@ -149,7 +159,11 @@ function ProjectFormPage() {
         setIsSaving(true);
         setAutosaveStatus('saving');
         try {
-            await saveProjectDraft(accessToken, currentProjectId, dirtyInputsSnapshot);
+            await saveProjectDraft(
+                accessToken,
+                currentProjectId,
+                dirtyInputsSnapshot
+            );
             dirtyInputRef.current.clear();
             setAutosaveStatus('success');
         } catch (error) {
@@ -158,14 +172,20 @@ function ProjectFormPage() {
         } finally {
             setIsSaving(false);
         }
-    }, [accessToken, companyId, currentProjectId, isSaving, dirtyInputRef, saveProjectDraft, setAutosaveStatus]);
+    }, [
+        accessToken,
+        companyId,
+        currentProjectId,
+        isSaving,
+        dirtyInputRef,
+        saveProjectDraft,
+        setAutosaveStatus,
+    ]);
 
     // use the keyboard shortcut hook
-    useKeyboardShortcut(
-        { key: 's', ctrlKey: true },
+    useKeyboardShortcut({ key: 's', ctrlKey: true }, handleManualSave, [
         handleManualSave,
-        [handleManualSave]
-    );
+    ]);
 
     const handleChange = (
         questionId: string,
@@ -467,10 +487,10 @@ function ProjectFormPage() {
 
     const handleSubmit = async () => {
         const invalidQuestions: ValidationError[] = [];
-        
+
         let isValid = true;
-        
-        groupedQuestions.forEach((group) => {            
+
+        groupedQuestions.forEach((group) => {
             group.subSections.forEach((subsection) => {
                 subsection.questions.forEach((question) => {
                     // if question is dependent on previous and it should be rendered
@@ -482,14 +502,14 @@ function ProjectFormPage() {
                     ) {
                         return;
                     }
-    
+
                     question.inputFields.forEach((input) => {
                         let fieldValid = true;
-    
+
                         input.invalid = false;
-    
+
                         if (!input.required && !input.value.value) return;
-    
+
                         switch (input.type) {
                             case 'date':
                             case 'textarea':
@@ -513,7 +533,8 @@ function ProjectFormPage() {
                                 ) {
                                     fieldValid = false;
                                 } else if (input.validations) {
-                                    const values = input.value.value as string[];
+                                    const values = input.value
+                                        .value as string[];
                                     fieldValid = values.every((v) =>
                                         input.validations?.every(
                                             (validation) =>
@@ -525,9 +546,9 @@ function ProjectFormPage() {
                             default:
                                 break;
                         }
-    
+
                         input.invalid = !fieldValid;
-    
+
                         if (!fieldValid) {
                             invalidQuestions.push({
                                 section: group.section,
@@ -536,7 +557,9 @@ function ProjectFormPage() {
                                 inputType: input.type,
                                 required: input.required ?? false,
                                 value: input.value.value,
-                                reason: !input.value.value ? 'Missing required value' : 'Failed validation'
+                                reason: !input.value.value
+                                    ? 'Missing required value'
+                                    : 'Failed validation',
                             });
 
                             isValid = false;
@@ -545,7 +568,7 @@ function ProjectFormPage() {
                 });
             });
         });
-    
+
         if (isValid) {
             setValidationErrors([]);
 
@@ -562,20 +585,23 @@ function ProjectFormPage() {
                         if (
                             question.conditionType &&
                             question.conditionType.valid &&
-                            !shouldRenderQuestion(question, subsection.questions)
+                            !shouldRenderQuestion(
+                                question,
+                                subsection.questions
+                            )
                         ) {
                             return;
                         }
 
                         question.inputFields.forEach((input) => {
                             if (input.required) return;
-                            
+
                             if (isEmptyValue(input.value.value, input.type)) {
                                 recommended.push({
                                     section: group.section,
                                     subsection: subsection.name,
                                     questionText: question.question,
-                                    inputType: input.type
+                                    inputType: input.type,
                                 });
                             }
                         });
@@ -605,17 +631,19 @@ function ProjectFormPage() {
         } catch (e) {
             console.error(e);
         }
-    }
+    };
 
     const handleErrorClick = (section: string, subsectionId: string) => {
-        const sectionIndex = groupedQuestions.findIndex(group => group.section === section);
+        const sectionIndex = groupedQuestions.findIndex(
+            (group) => group.section === section
+        );
 
         if (sectionIndex !== -1) {
             setCurrentStep(sectionIndex);
 
             setTimeout(() => {
                 const element = document.getElementById(subsectionId);
-                
+
                 if (element) {
                     element.scrollIntoView({ behavior: 'smooth' });
                 }
@@ -678,24 +706,27 @@ function ProjectFormPage() {
                             </ul>
                         </nav>
 
-                        <div className="flex justify-center mt-8">
-                            <Button
-                                variant="outline"
-                                type="button"
-                                onClick={handleFillSampleData}
-                            >
-                                Fill with Sample Data
-                            </Button>
-                        </div>
+                        {import.meta.env.VITE_APP_ENV ===
+                            AppEnv.Development && (
+                            <div className="flex justify-center mt-8">
+                                <Button
+                                    variant="outline"
+                                    type="button"
+                                    onClick={handleFillSampleData}
+                                >
+                                    Fill with Sample Data
+                                </Button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex justify-end px-4 py-2">
                         {validationErrors.length > 0 && (
-                            <ProjectError 
-                                errors={validationErrors} 
-                                onErrorClick={handleErrorClick} 
+                            <ProjectError
+                                errors={validationErrors}
+                                onErrorClick={handleErrorClick}
                             />
-                        )}                    
+                        )}
                     </div>
 
                     <form className="space-y-12 lg:max-w-3xl mx-auto mt-2">
@@ -706,12 +737,15 @@ function ProjectFormPage() {
                                     key={subsection.name}
                                     className={questionGroupContainerStyles()}
                                 >
-                                    <CollapsibleSection 
-                                        title={subsection.name}
-                                    >
-                                        <div className={questionGroupQuestionsContainerStyles()}>
+                                    <CollapsibleSection title={subsection.name}>
+                                        <div
+                                            className={questionGroupQuestionsContainerStyles()}
+                                        >
                                             {subsection.questions.map((q) =>
-                                                shouldRenderQuestion(q, subsection.questions) ? (
+                                                shouldRenderQuestion(
+                                                    q,
+                                                    subsection.questions
+                                                ) ? (
                                                     <QuestionInputs
                                                         key={q.id}
                                                         question={q}
@@ -719,13 +753,22 @@ function ProjectFormPage() {
                                                         fileUploadProps={
                                                             accessToken
                                                                 ? {
-                                                                    projectId: currentProjectId,
-                                                                    questionId: q.id,
-                                                                    section: groupedQuestions[currentStep].section,
-                                                                    subSection: subsection.name,
-                                                                    accessToken: accessToken,
-                                                                    enableAutosave: true,
-                                                                }
+                                                                      projectId:
+                                                                          currentProjectId,
+                                                                      questionId:
+                                                                          q.id,
+                                                                      section:
+                                                                          groupedQuestions[
+                                                                              currentStep
+                                                                          ]
+                                                                              .section,
+                                                                      subSection:
+                                                                          subsection.name,
+                                                                      accessToken:
+                                                                          accessToken,
+                                                                      enableAutosave:
+                                                                          true,
+                                                                  }
                                                                 : undefined
                                                         }
                                                     />
@@ -747,7 +790,7 @@ function ProjectFormPage() {
                             >
                                 Back
                             </Button>
-                             
+
                             <Button
                                 liquid
                                 type="button"
@@ -779,7 +822,7 @@ function ProjectFormPage() {
                         handleErrorClick(section, subsection);
                         setShowRecommendedModal(false);
                     }}
-                /> 
+                />
             </ConfirmationModal>
 
             <ConfirmationModal
@@ -792,8 +835,9 @@ function ProjectFormPage() {
                 <div className="space-y-4">
                     <p>Have you double-checked everything in this project?</p>
                     <p>
-                        Once submitted, you won't be able to make changes until the application
-                        is either approved or sent back for review.
+                        Once submitted, you won't be able to make changes until
+                        the application is either approved or sent back for
+                        review.
                     </p>
                 </div>
             </ConfirmationModal>
