@@ -2,14 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { cva } from 'class-variance-authority';
 
 const indicatorStyles = cva(
-    'fixed left-0 right-0 transition-all duration-300 flex items-center justify-center py-1 text-sm font-medium z-40 border-b',
+    'w-full transition-all duration-300 flex items-center justify-center py-1 text-sm font-medium border-b',
     {
         variants: {
             status: {
-                idle: 'bg-gray-50 text-gray-600',
-                saving: 'bg-blue-50 text-blue-700',
-                success: 'bg-green-50 text-green-700',
-                error: 'bg-red-50 text-red-700'
+                idle: 'bg-gray-50 text-gray-600 border-gray-200',
+                saving: 'bg-blue-50 text-blue-700 border-blue-100',
+                success: 'bg-green-50 text-green-700 border-green-100',
+                error: 'bg-red-50 text-red-700 border-red-100'
             }
         },
         defaultVariants: {
@@ -21,24 +21,24 @@ const indicatorStyles = cva(
 export interface AutosaveIndicatorProps {
     status: 'idle' | 'saving' | 'success' | 'error';
     message?: string;
+    className?: string;
 }
 
 export const AutosaveIndicator: React.FC<AutosaveIndicatorProps> = ({ 
     status,
-    message
+    message,
+    className = ''
 }) => {
     const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
         let timeout: NodeJS.Timeout;
-
         if (status === 'success') {
             setShowSuccess(true);
             timeout = setTimeout(() => {
                 setShowSuccess(false);
             }, 2000);
         }
-
         return () => {
             if (timeout) clearTimeout(timeout);
         };
@@ -59,7 +59,7 @@ export const AutosaveIndicator: React.FC<AutosaveIndicatorProps> = ({
     const displayMessage = message || defaultMessages[indicatorStatus];
 
     return (
-        <div style={{ top: '96px' }} className={indicatorStyles({ status: indicatorStatus })}>
+        <div className={indicatorStyles({ status: indicatorStatus, className })}>
             <div className="flex items-center gap-2">
                 {status === 'saving' && (
                     <div className="w-4 h-4 relative">

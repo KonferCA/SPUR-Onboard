@@ -7,6 +7,7 @@ export interface ConfirmationModalProps {
     isOpen: boolean;
     onClose: () => void;
     title?: string;
+    description?: string;
     children: React.ReactNode;
     primaryAction: () => void;
     primaryActionText?: string;
@@ -20,6 +21,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     isOpen,
     onClose,
     title,
+    description,
     children,
     primaryAction,
     primaryActionText = 'Confirm',
@@ -40,7 +42,10 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-black/25" aria-hidden="true" />
+                    <div
+                        className="fixed inset-0 bg-black/25"
+                        aria-hidden="true"
+                    />
                 </Transition.Child>
 
                 <div className="fixed inset-0 overflow-y-auto">
@@ -57,17 +62,23 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                             <Dialog.Panel className="relative w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left shadow-xl transition-all">
                                 {showCloseButton && (
                                     <button
-                                    onClick={onClose}
-                                    className="absolute right-4 top-4 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+                                        onClick={onClose}
+                                        className="absolute right-6 top-6 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
                                     >
-                                    <IoMdClose className="h-5 w-5" />
+                                        <IoMdClose className="h-5 w-5" />
                                     </button>
                                 )}
 
                                 {title && (
                                     <Dialog.Title className="text-2xl font-bold text-gray-900">
-                                    {title}
+                                        {title}
                                     </Dialog.Title>
+                                )}
+
+                                {description && (
+                                    <Dialog.Description>
+                                        {description}
+                                    </Dialog.Description>
                                 )}
 
                                 <div className="mt-4 text-base text-gray-600">
