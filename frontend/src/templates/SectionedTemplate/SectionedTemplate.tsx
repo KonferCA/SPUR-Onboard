@@ -6,10 +6,6 @@ import { twMerge } from 'tailwind-merge';
 export interface SectionedLayoutProps {
     children?: ReactNode;
     /*
-     * asideTitle is the bolded title that goes before the links on the side
-     */
-    asideTitle: string;
-    /*
      * asideDetails is an area in between the title and the links. This area is for any
      * custom jsx that the page would like to render in that area.
      */
@@ -28,7 +24,6 @@ export interface SectionedLayoutProps {
 export const SectionedLayout: FC<SectionedLayoutProps> = ({
     children,
     links,
-    asideTitle,
     asideDetails = null,
     linkContainerClassnames,
 }) => {
@@ -41,10 +36,10 @@ export const SectionedLayout: FC<SectionedLayoutProps> = ({
                     linkContainerClassnames
                 )}
             >
-                <h1 className="text-lg font-bold">{asideTitle}</h1>
                 {asideDetails}
                 <div className="h-4"></div>
-                <AnchorLinks links={links} />
+                {/* TODO: Update anchor links to work better - currently offsets badly */}
+                <AnchorLinks links={links} /> 
             </nav>
             <div data-testid="sectione-layout-main" className="pt-12 px-64">
                 {children}
