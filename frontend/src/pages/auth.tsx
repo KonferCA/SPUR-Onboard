@@ -32,7 +32,7 @@ function AuthPage() {
 
     const [mode, setMode] = useState<'login' | 'register'>(() => {
         if (
-            searchParams.form &&
+            !searchParams.form &&
             searchParams.form !== 'login' &&
             searchParams.form !== 'register'
         ) {
