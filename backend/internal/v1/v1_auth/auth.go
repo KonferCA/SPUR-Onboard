@@ -114,7 +114,13 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
 	defer cancel()
 
-	q := h.server.GetQueries()
+	tx, err := h.server.GetDB().Begin(ctx)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to begin transaction", err)
+	}
+	defer tx.Rollback(context.Background())
+
+	q := h.server.GetQueries().WithTx(tx)
 
 	exists, err := q.UserExistsByEmail(ctx, reqBody.Email)
 	if err != nil {
@@ -139,10 +145,25 @@ func (h *Handler) handleRegister(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "", err)
 	}
 
-	// send verification email using goroutine to not block
-	// at this point, the user has successfully been created
-	// so sending the verification email now is safe.
-	go sendEmailVerification(newUser.ID, newUser.Email, h.server.GetQueries())
+	// create a company upon registration
+	company, err := q.CreateCompany(ctx, db.CreateCompanyParams{
+		OwnerID:       newUser.ID,
+		Name:          newUser.ID + "_group",
+		WalletAddress: nil,
+		LinkedinUrl:   "",
+		Description:   nil,
+		DateFounded:   time.Now().Unix(),
+		Website:       nil,
+		Stages:        []string{},
+	})
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create group for new user.", err)
+	}
+
+	// Commit changes
+	if err := tx.Commit(ctx); err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to commit changes for new user and group", err)
+	}
 
 	// generate new access and refresh tokens
 	accessToken, refreshToken, err := jwt.GenerateWithSalt(newUser.ID, newUser.TokenSalt)
@@ -150,25 +171,19 @@ func (h *Handler) handleRegister(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusCreated, "Registration complete but failed to sign in. Please sign in manually.", err)
 	}
 
-	var companyId *string = nil
-	company, err := q.GetCompanyByOwnerID(c.Request().Context(), newUser.ID)
-	if err != nil {
-		// just log the reason why it failed to fetch company id on login
-		logger.Warn(fmt.Sprintf("Error getting company on login: %s", err.Error()))
-	}
-
-	if company.ID != "" {
-		companyId = &company.ID
-	}
-
 	// set the refresh token cookie
 	setRefreshTokenCookie(c, refreshToken)
 
 	logger.Info(fmt.Sprintf("New user created with email: %s", newUser.Email))
 
+	// send verification email using goroutine to not block
+	// at this point, the user has successfully been created
+	// so sending the verification email now is safe.
+	go sendEmailVerification(newUser.ID, newUser.Email, h.server.GetQueries())
+
 	return c.JSON(http.StatusCreated, AuthResponse{
 		AccessToken: accessToken,
-		CompanyId:   companyId,
+		CompanyId:   &company.ID,
 		User: UserResponse{
 			ID:                newUser.ID,
 			Email:             newUser.Email,

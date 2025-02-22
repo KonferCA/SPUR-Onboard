@@ -13,6 +13,12 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './pages/__root'
+import { Route as SignupImport } from './pages/signup'
+import { Route as SignoutImport } from './pages/signout'
+import { Route as SigninImport } from './pages/signin'
+import { Route as RegisterImport } from './pages/register'
+import { Route as LogoutImport } from './pages/logout'
+import { Route as LoginImport } from './pages/login'
 import { Route as AuthImport } from './pages/auth'
 import { Route as IndexImport } from './pages/index'
 import { Route as UserIndexImport } from './pages/user/index'
@@ -52,6 +58,42 @@ const UserRoute = UserImport.update({
 const AdminRoute = AdminImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SignupRoute = SignupImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SignoutRoute = SignoutImport.update({
+  id: '/signout',
+  path: '/signout',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SigninRoute = SigninImport.update({
+  id: '/signin',
+  path: '/signin',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const RegisterRoute = RegisterImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const LogoutRoute = LogoutImport.update({
+  id: '/logout',
+  path: '/logout',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const LoginRoute = LoginImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -210,6 +252,48 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthImport
+      parentRoute: typeof rootRoute
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginImport
+      parentRoute: typeof rootRoute
+    }
+    '/logout': {
+      id: '/logout'
+      path: '/logout'
+      fullPath: '/logout'
+      preLoaderRoute: typeof LogoutImport
+      parentRoute: typeof rootRoute
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterImport
+      parentRoute: typeof rootRoute
+    }
+    '/signin': {
+      id: '/signin'
+      path: '/signin'
+      fullPath: '/signin'
+      preLoaderRoute: typeof SigninImport
+      parentRoute: typeof rootRoute
+    }
+    '/signout': {
+      id: '/signout'
+      path: '/signout'
+      fullPath: '/signout'
+      preLoaderRoute: typeof SignoutImport
+      parentRoute: typeof rootRoute
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupImport
       parentRoute: typeof rootRoute
     }
     '/admin': {
@@ -483,6 +567,12 @@ const UserRouteWithChildren = UserRoute._addFileChildren(UserRouteChildren)
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/login': typeof LoginRoute
+  '/logout': typeof LogoutRoute
+  '/register': typeof RegisterRoute
+  '/signin': typeof SigninRoute
+  '/signout': typeof SignoutRoute
+  '/signup': typeof SignupRoute
   '/admin': typeof AdminAuthAppshellRouteWithChildren
   '/user': typeof UserAuthAppshellRouteWithChildren
   '/admin/': typeof AdminIndexRoute
@@ -506,6 +596,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/login': typeof LoginRoute
+  '/logout': typeof LogoutRoute
+  '/register': typeof RegisterRoute
+  '/signin': typeof SigninRoute
+  '/signout': typeof SignoutRoute
+  '/signup': typeof SignupRoute
   '/admin': typeof AdminAuthAppshellRouteWithChildren
   '/user': typeof UserAuthAppshellRouteWithChildren
   '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute
@@ -528,6 +624,12 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/login': typeof LoginRoute
+  '/logout': typeof LogoutRoute
+  '/register': typeof RegisterRoute
+  '/signin': typeof SigninRoute
+  '/signout': typeof SignoutRoute
+  '/signup': typeof SignupRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin/_auth': typeof AdminAuthRouteWithChildren
   '/user': typeof UserRouteWithChildren
@@ -557,6 +659,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/login'
+    | '/logout'
+    | '/register'
+    | '/signin'
+    | '/signout'
+    | '/signup'
     | '/admin'
     | '/user'
     | '/admin/'
@@ -579,6 +687,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/login'
+    | '/logout'
+    | '/register'
+    | '/signin'
+    | '/signout'
+    | '/signup'
     | '/admin'
     | '/user'
     | '/admin/dashboard'
@@ -599,6 +713,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/login'
+    | '/logout'
+    | '/register'
+    | '/signin'
+    | '/signout'
+    | '/signup'
     | '/admin'
     | '/admin/_auth'
     | '/user'
@@ -627,6 +747,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  LoginRoute: typeof LoginRoute
+  LogoutRoute: typeof LogoutRoute
+  RegisterRoute: typeof RegisterRoute
+  SigninRoute: typeof SigninRoute
+  SignoutRoute: typeof SignoutRoute
+  SignupRoute: typeof SignupRoute
   AdminRoute: typeof AdminRouteWithChildren
   UserRoute: typeof UserRouteWithChildren
 }
@@ -634,6 +760,12 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  LoginRoute: LoginRoute,
+  LogoutRoute: LogoutRoute,
+  RegisterRoute: RegisterRoute,
+  SigninRoute: SigninRoute,
+  SignoutRoute: SignoutRoute,
+  SignupRoute: SignupRoute,
   AdminRoute: AdminRouteWithChildren,
   UserRoute: UserRouteWithChildren,
 }
@@ -650,6 +782,12 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/auth",
+        "/login",
+        "/logout",
+        "/register",
+        "/signin",
+        "/signout",
+        "/signup",
         "/admin",
         "/user"
       ]
@@ -659,6 +797,24 @@ export const routeTree = rootRoute
     },
     "/auth": {
       "filePath": "auth.tsx"
+    },
+    "/login": {
+      "filePath": "login.tsx"
+    },
+    "/logout": {
+      "filePath": "logout.tsx"
+    },
+    "/register": {
+      "filePath": "register.tsx"
+    },
+    "/signin": {
+      "filePath": "signin.tsx"
+    },
+    "/signout": {
+      "filePath": "signout.tsx"
+    },
+    "/signup": {
+      "filePath": "signup.tsx"
     },
     "/admin": {
       "filePath": "admin",

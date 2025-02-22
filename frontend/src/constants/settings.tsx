@@ -1,4 +1,4 @@
-import { FiUser, FiBriefcase, FiCreditCard } from 'react-icons/fi';
+import { FiUser, FiCreditCard } from 'react-icons/fi';
 import type { SettingsRoute } from '@/types/settings';
 
 export const SETTINGS_ROUTES: SettingsRoute[] = [
