@@ -65,13 +65,15 @@ export const SocialLinks: React.FC<SocialLinksProps> = ({
             urlOrHandle,
         });
         if (isValid) {
+            const prefix = getSocialPrefix(currentSocialPlatform);
             onChange([
                 ...value,
                 {
                     id: randomId(),
                     platform: currentSocialPlatform,
-                    urlOrHandle:
-                        getSocialPrefix(currentSocialPlatform) + urlOrHandle,
+                    urlOrHandle: urlOrHandle.startsWith(prefix)
+                        ? urlOrHandle
+                        : getSocialPrefix(currentSocialPlatform) + urlOrHandle,
                 },
             ]);
             handleCloseAddSocialModal();
