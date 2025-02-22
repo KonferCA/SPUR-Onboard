@@ -43,9 +43,17 @@ STATIC_DIR="$PUBLIC_ROOT/$APP_NAME/$APP_ENV"
 
 
 # check that all the required variables are set
-for var in APP_ENV APP_NAME SITE_URL; do
-    [ -z "${!var}" ] && { echo "Error: $var is not set"; exit 1; }
-done
+check_env() {
+    if [ -z "$1" ]; then
+        echo "Error: $1 is not set"
+        exit 1
+    fi
+}
+
+# Check each variable
+check_env "$APP_ENV"
+check_env "$APP_NAME"
+check_env "$SITE_URL"
 
 # define a log function to easily log messages
 log() {
