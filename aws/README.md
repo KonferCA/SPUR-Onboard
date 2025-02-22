@@ -53,9 +53,10 @@ sudo ./launchscript.sh
 1. Get the SSL certificate and private key from Cloudflare
 2. Upload the certificate and private key using `scp`, the same method to upload the `launchscript.sh` file
 3. SSH into the server
-4. Move the uploaded certificate and private key files
+4. Move the uploaded certificate and private key files + securing the files
     - `sudo mv /path/to/cert /etc/ssl/${APP_NAME}/${APP_ENV}/cert.pem`
     - `sudo mv /path/to/pk /etc/ssl/${APP_NAME}/${APP_ENV}/key.pem`
+    - Make sure that the files are owned by `root` and the permissions are `rw-r--r--` for both files. If it is not, update ownership and permissions.
 5. Enable the site by creating a symlink
     - `sudo ln -s /etc/nginx/sites-available/${APP_NAME}-${APP_ENV} /etc/nginx/sites-enabled/${APP_NAME}-${APP_ENV}`
 6. Test the configuration
