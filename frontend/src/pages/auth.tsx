@@ -5,7 +5,7 @@ import { UserDetailsForm } from '@/components/UserDetailsForm';
 import { VerifyEmail } from '@/components/VerifyEmail';
 import { register, signin, createCompany } from '@/services';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import type {
     AuthFormData,
     UserDetailsData,
@@ -19,6 +19,7 @@ import { initialUserProfile } from '@/services/user';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
+    const searchParams = useSearch({ from: '/auth' });
     const {
         user,
         accessToken,
@@ -31,7 +32,16 @@ function AuthPage() {
     const [currentStep, setCurrentStep] =
         useState<RegistrationStep>('login-register');
 
-    const [mode, setMode] = useState<'login' | 'register'>('login');
+    const [mode, setMode] = useState<'login' | 'register'>(() => {
+        if (
+            searchParams.form &&
+            searchParams.form !== 'login' &&
+            searchParams.form !== 'register'
+        ) {
+            return 'login';
+        }
+        return searchParams.form;
+    });
     const [isLoading, setIsLoading] = useState(false);
     const [isResendingVerification, setIsResendingVerification] =
         useState(false);

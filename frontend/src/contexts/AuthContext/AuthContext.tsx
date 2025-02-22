@@ -20,7 +20,7 @@ export interface AuthState {
         token: string | null,
         companyId?: string | null
     ) => void;
-    clearAuth: () => void;
+    clearAuth: () => Promise<void>;
     setUser: (user: User | null) => void;
     setAccessToken: (token: string | null) => void;
     setCompanyId: (companyId: string | null) => void;
