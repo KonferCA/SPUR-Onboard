@@ -246,3 +246,7 @@ log "Disable default site Nginx configuration"
 # can be done via user ubuntu instead of running 'sudo'
 log "Change static directory ownership"
 chown -R ubuntu:ubuntu $PUBLIC_ROOT
+
+# Install utilities to connect to a PostgreSQL server
+log "Installing utilities for postgres"
+apt install -y postgresql-client
