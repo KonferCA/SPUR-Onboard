@@ -60,7 +60,7 @@ log() {
     if [ -z "$1" ]; then
         echo "Error: Log message is required"
         return 1
-    }
+    fi
 
     local message="$1"
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
