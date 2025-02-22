@@ -148,7 +148,14 @@ systemctl start nginx
 log "Make static files directory"
 mkdir -p $STATIC_DIR
 log "Setup Nginx site file"
-echo "limit_req_zone \$binary_remote_addr zone=two:10m rate=10r/s;
+echo "
+# Rate limiting zone definition
+limit_req_zone \$binary_remote_addr zone=two:10m rate=10r/s;
+
+# SSL session settings
+ssl_session_cache shared:SSL:10m;
+ssl_session_timeout 10m;
+ssl_session_tickets off;
 
 server {
     listen 443 ssl;
@@ -171,29 +178,62 @@ server {
     # frontend
     location / {
         try_files \$uri \$uri/ /index.html;
+
+        # security headers
         add_header X-Frame-Options \"SAMEORIGIN\";
         add_header X-XSS-Protection \"1; mode=block\";
         add_header X-Content-Type-Options \"nosniff\";
+        add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;
+        add_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;
+        add_header Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';\" always;
     }
 
-
     # backend
-    location /api/v1 {
+    location /api {
+        # rate limiting
         limit_req zone=two burst=20 nodelay;
         limit_req_status 444;
+        
+        # proxy settings
         proxy_pass http://127.0.0.1:6969;
+        proxy_http_version 1.1;
+        proxy_cache_bypass \$http_upgrade;
+        
+        # proxy headers
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_set_header X-App-Name nk-staging;
+        
+        # proxy timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
     }
 
     # deny access to hidden files
     location ~ /\. {
         deny all;
+        access_log off;
+        log_not_found off;
     }
-}" > /etc/nginx/sites-available/$APP_NAME-$APP_ENV # override old site nginx settings
+
+    # Disable methods
+    if (\$request_method !~ ^(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)$) {
+        return 444;
+    }
+}
+
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name $SITE_URL; 
+    return 301 https://\$server_name\$request_uri;
+}
+" > /etc/nginx/sites-available/$APP_NAME-$APP_ENV # override old site nginx settings
 
 # Make the SSL directory to store the certificate and private key
 log "Make SSL directory"
