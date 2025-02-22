@@ -42,11 +42,10 @@ PUBLIC_ROOT=/etc/public
 STATIC_DIR="$PUBLIC_ROOT/$APP_NAME/$APP_ENV"
 
 
-# check if APP_ENV is defined or not
-if [ -z "${APP_ENV}"  ]; then
-    echo "APP_ENV is not set. Common values include 'development', 'staging', and 'production'"
-    exit 1
-fi
+# check that all the required variables are set
+for var in APP_ENV APP_NAME SITE_URL; do
+    [ -z "${!var}" ] && { echo "Error: $var is not set"; exit 1; }
+done
 
 # intialize launch script log file
 touch $LOG_FILE
