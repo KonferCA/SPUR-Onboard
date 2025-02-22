@@ -58,3 +58,10 @@ export { FileDownload } from './FileDownload';
 export type { FileDownloadProps } from './FileDownload';
 
 export { NotFound } from './NotFound/NotFound';
+
+export { type SocialCardProps, SocialCard } from './SocialCard';
+
+export {
+    type SocialIconButtonProps,
+    SocialIconButton,
+} from './SocialIconButton';

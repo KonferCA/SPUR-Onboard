@@ -1,5 +1,21 @@
 import { FormFieldType } from '@/types';
+import { SocialPlatform, UserSocial } from '@/types/auth';
 import zod from 'zod';
+
+const LINKEDIN_PROFILE_URL_REGEX =
+    /^(https?:\/\/)?([\w]+\.)?linkedin\.com\/(pub|in|profile)\/([-a-zA-Z0-9]+)\/?$/;
+// Refer to: https://www.facebook.com/help/105399436216001/
+const FACEBOOK_PROFILE_URL_REGEX =
+    /^(https?:\/\/)?(www\.)?facebook\.com\/[a-zA-Z0-9\.]{5,}$/;
+const INSTAGRAM_USERNAME_REGEX = /^@?[a-zA-Z0-9\._]+$/;
+// Refer to: https://help.x.com/en/managing-your-account/x-username-rules
+const X_USERNAME_REGEX = /^@?[a-zA-Z0-9_]{4,15}$/;
+const BLUESKY_USERNAME_REGEX = /^@?([a-zA-Z\-]{3,})\..+\..+$/;
+// Refer to: https://support.discord.com/hc/en-us/articles/12620128861463-New-Usernames-Display-Names
+const DISCORD_USERNAME_REGEX =
+    /^@?([a-z0-9\._]{2,32}$)|([a-zA-Z0-9\._]{2,32}#\d{4}$)/;
+const URL_REGEX =
+    /^(https?:\/\/)?(www\.)?\w+\.\w{1,6}([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/;
 
 /*
  * Creates an array of ZodSchema that can be used to validate an input
@@ -76,4 +92,30 @@ export function createZodSchema(
     }
 
     return schemas;
+}
+
+/*
+ * validateSocialLink validates the user social url or handle using regex.
+ * Validations from this function are not 100%, but they at least ensure
+ * the user inputted url/handle matches a valid url/handle for a given social platform.
+ */
+export function validateSocialLink(
+    social: Pick<UserSocial, 'platform' | 'urlOrHandle'>
+): boolean {
+    switch (social.platform) {
+        case SocialPlatform.LinkedIn:
+            return LINKEDIN_PROFILE_URL_REGEX.test(social.urlOrHandle);
+        case SocialPlatform.Instagram:
+            return INSTAGRAM_USERNAME_REGEX.test(social.urlOrHandle);
+        case SocialPlatform.X:
+            return X_USERNAME_REGEX.test(social.urlOrHandle);
+        case SocialPlatform.Facebook:
+            return FACEBOOK_PROFILE_URL_REGEX.test(social.urlOrHandle);
+        case SocialPlatform.BlueSky:
+            return BLUESKY_USERNAME_REGEX.test(social.urlOrHandle);
+        case SocialPlatform.Discord:
+            return DISCORD_USERNAME_REGEX.test(social.urlOrHandle);
+        default:
+            return URL_REGEX.test(social.urlOrHandle);
+    }
 }

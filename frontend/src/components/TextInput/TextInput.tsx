@@ -1,5 +1,10 @@
 import { forwardRef } from 'react';
-import { Field, Label, Input } from '@headlessui/react';
+import { Field, Label, Input, Description } from '@headlessui/react';
+import {
+    getDescriptionStyles,
+    getInputStyles,
+    getPrefixStyles,
+} from './TextInput.styles';
 
 export interface TextInputProps
     extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -8,6 +13,7 @@ export interface TextInputProps
     description?: string;
     value?: string;
     required?: boolean;
+    prefix?: string;
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     rows?: number;
 }
@@ -18,6 +24,7 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
             label,
             error,
             description,
+            prefix,
             className = '',
             value,
             required,
@@ -30,16 +37,6 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
         const inputProps = onChange
             ? { value, onChange }
             : { defaultValue: value };
-
-        const sharedClassNames = `
-            w-full px-4 py-3
-            bg-white 
-            border border-gray-300 
-            rounded-md
-            focus:outline-none focus:ring-2 focus:ring-blue-500
-            data-[invalid]:border-red-500
-            ${className}
-        `;
 
         return (
             <div className="w-full">
@@ -56,20 +53,31 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
                             )}
                         </div>
                     )}
-
-                    <Input
-                        ref={ref as any}
-                        className={sharedClassNames}
-                        invalid={!!error}
-                        required={required}
-                        {...inputProps}
-                        {...props}
-                    />
+                    <div className="flex">
+                        {prefix && (
+                            <div className={getPrefixStyles()}>{prefix}</div>
+                        )}
+                        <Input
+                            ref={ref as any}
+                            className={getInputStyles({
+                                className,
+                                prefix: !!prefix,
+                                error: !!error,
+                            })}
+                            invalid={!!error}
+                            required={required}
+                            {...inputProps}
+                            {...props}
+                        />
+                    </div>
+                    {(description || error) && (
+                        <Description
+                            className={getDescriptionStyles({ error: !!error })}
+                        >
+                            {error || description}
+                        </Description>
+                    )}
                 </Field>
-                {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
-                {description && (
-                    <p className="mt-1 text-sm text-gray-500">{description}</p>
-                )}
             </div>
         );
     }

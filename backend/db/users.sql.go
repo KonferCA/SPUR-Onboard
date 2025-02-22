@@ -32,6 +32,45 @@ func (q *Queries) CountUsers(ctx context.Context, arg CountUsersParams) (int64, 
 	return count, err
 }
 
+const createUserSocial = `-- name: CreateUserSocial :one
+INSERT INTO user_socials (
+    platform,
+    url_or_handle,
+    user_id
+) VALUES (
+    $1, $2, $3
+) RETURNING id, platform, url_or_handle, user_id, created_at, updated_at
+`
+
+type CreateUserSocialParams struct {
+	Platform    SocialPlatformEnum `json:"platform"`
+	UrlOrHandle string             `json:"url_or_handle"`
+	UserID      string             `json:"user_id"`
+}
+
+func (q *Queries) CreateUserSocial(ctx context.Context, arg CreateUserSocialParams) (UserSocial, error) {
+	row := q.db.QueryRow(ctx, createUserSocial, arg.Platform, arg.UrlOrHandle, arg.UserID)
+	var i UserSocial
+	err := row.Scan(
+		&i.ID,
+		&i.Platform,
+		&i.UrlOrHandle,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const deleteUserSocial = `-- name: DeleteUserSocial :exec
+DELETE FROM user_socials WHERE id = $1
+`
+
+func (q *Queries) DeleteUserSocial(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, deleteUserSocial, id)
+	return err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, first_name, last_name, bio, title, linkedin, email, password, permissions, email_verified, created_at, updated_at, token_salt, profile_picture_url FROM users WHERE email = $1 LIMIT 1
 `
@@ -139,6 +178,37 @@ func (q *Queries) GetUserEmailVerifiedStatusByEmail(ctx context.Context, email s
 	var email_verified bool
 	err := row.Scan(&email_verified)
 	return email_verified, err
+}
+
+const getUserSocialsByUserID = `-- name: GetUserSocialsByUserID :many
+SELECT id, platform, url_or_handle, user_id, created_at, updated_at FROM user_socials WHERE user_id = $1
+`
+
+func (q *Queries) GetUserSocialsByUserID(ctx context.Context, userID string) ([]UserSocial, error) {
+	rows, err := q.db.Query(ctx, getUserSocialsByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UserSocial
+	for rows.Next() {
+		var i UserSocial
+		if err := rows.Scan(
+			&i.ID,
+			&i.Platform,
+			&i.UrlOrHandle,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listUsers = `-- name: ListUsers :many

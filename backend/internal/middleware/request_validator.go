@@ -52,6 +52,7 @@ func NewRequestValidator() *CustomValidator {
 	v.RegisterValidation("wallet_address", validateWalletAddress)
 	v.RegisterValidation("linkedin_url", validateLinkedInURL)
 	v.RegisterValidation("project_status", validateProjectStatus)
+	v.RegisterValidation("social_platform", validateSocialPlatform)
 
 	return &CustomValidator{validator: v}
 }
@@ -82,7 +83,7 @@ func validatePermissions(fl validator.FieldLevel) bool {
 
 	if field.Kind() == reflect.Uint32 {
 		perms := uint32(field.Uint())
-		
+
 		// Get all valid permission bits dynamically
 		validPermissionsMask := permissions.GetAllPermissionBits()
 
@@ -163,6 +164,25 @@ func validateProjectStatus(fl validator.FieldLevel) bool {
 		ps := db.ProjectStatus(field.String())
 
 		return ps.Valid()
+	}
+
+	return false
+}
+
+/*
+validateSocialPlatform validates one or a slice social platform(s) based on the
+enum type db.SocialPlatformEnum.
+*/
+func validateSocialPlatform(fl validator.FieldLevel) bool {
+	field := fl.Field()
+	if field.Type() == reflect.TypeOf(db.SocialPlatformEnum("")) {
+		platform := field.Interface().(db.SocialPlatformEnum)
+		return platform.Valid()
+	}
+
+	if field.Kind() == reflect.String {
+		platform := db.SocialPlatformEnum(field.String())
+		return platform.Valid()
 	}
 
 	return false

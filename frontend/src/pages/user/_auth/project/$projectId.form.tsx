@@ -22,11 +22,11 @@ import { useQuery } from '@tanstack/react-query';
 import { scrollToTop } from '@/utils';
 import { useDebounceFn } from '@/hooks';
 import { useAuth } from '@/contexts';
-import { getSampleAnswer } from '@/utils/sampleData';
+// import { getSampleAnswer } from '@/utils/sampleData';
 import { useNavigate } from '@tanstack/react-router';
 import { ValidationError, ProjectError } from '@/components/ProjectError';
 import { RecommendedFields } from '@/components/RecommendedFields';
-import { AutosaveIndicator } from '@/components/AutoSaveIndicator';
+import { AutosaveIndicator } from '@/components/AutosaveIndicator';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
 
@@ -35,13 +35,13 @@ export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
 });
 
 const stepItemStyles = cva(
-    'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
+    'text-lg relative transition text-gray-400 hover:text-button-default hover:cursor-pointer py-2',
     {
         variants: {
             active: {
-                true: ['text-gray-700 hover:text-gray-700'],
-            },
-        },
+                true: 'font-semibold !text-button-default',
+            }
+        }
     }
 );
 
@@ -341,51 +341,52 @@ function ProjectFormPage() {
         }, 120);
     };
 
-    const handleFillSampleData = () => {
-        const newGroups = groupedQuestions.map((group) => ({
-            ...group,
-            subSections: group.subSections.map((subsection) => ({
-                ...subsection,
-                questions: subsection.questions.map((question) => ({
-                    ...question,
-                    inputFields: question.inputFields.map((field) => {
-                        if (field.disabled) {
-                            return field;
-                        }
+    // For filling sample data - uncomment out if needed
+    // const handleFillSampleData = () => {
+    //     const newGroups = groupedQuestions.map((group) => ({
+    //         ...group,
+    //         subSections: group.subSections.map((subsection) => ({
+    //             ...subsection,
+    //             questions: subsection.questions.map((question) => ({
+    //                 ...question,
+    //                 inputFields: question.inputFields.map((field) => {
+    //                     if (field.disabled) {
+    //                         return field;
+    //                     }
 
-                        const key = `${question.id}_${field.key}`;
+    //                     const key = `${question.id}_${field.key}`;
 
-                        // Skip file and team input types
-                        if (field.type === 'file' || field.type === 'team') {
-                            return field;
-                        }
+    //                     // Skip file and team input types
+    //                     if (field.type === 'file' || field.type === 'team') {
+    //                         return field;
+    //                     }
 
-                        const sampleValue = getSampleAnswer(
-                            question.question,
-                            field.type
-                        );
+    //                     const sampleValue = getSampleAnswer(
+    //                         question.question,
+    //                         field.type
+    //                     );
 
-                        // Add to dirty inputs for saving
-                        dirtyInputRef.current.set(key, {
-                            question_id: question.id,
-                            answer: sampleValue,
-                        });
+    //                     // Add to dirty inputs for saving
+    //                     dirtyInputRef.current.set(key, {
+    //                         question_id: question.id,
+    //                         answer: sampleValue,
+    //                     });
 
-                        return {
-                            ...field,
-                            value: {
-                                ...field.value,
-                                value: sampleValue,
-                            },
-                        };
-                    }),
-                })),
-            })),
-        }));
+    //                     return {
+    //                         ...field,
+    //                         value: {
+    //                             ...field.value,
+    //                             value: sampleValue,
+    //                         },
+    //                     };
+    //                 }),
+    //             })),
+    //         })),
+    //     }));
 
-        setGroupedQuestions(newGroups);
-        autosave();
-    };
+    //     setGroupedQuestions(newGroups);
+    //     autosave();
+    // };
 
     useEffect(() => {
         if (questionData) {
@@ -627,58 +628,65 @@ function ProjectFormPage() {
     if (groupedQuestions.length < 1 || loadingQuestions) return null;
 
     return (
-        <div>
-            <nav className="fixed top-0 left-0 right-0 z-50 bg-white h-24 border-b border-gray-300">
-                <ul className="flex items-center pl-4 h-full">
-                    <li>
+        <div className="min-h-screen bg-gray-50">
+            <div className="fixed top-0 left-0 right-0 z-50">
+                <nav className="bg-white h-16 border-b border-gray-200">
+                    <div className="h-full px-4 flex items-center">
                         <Link
                             to="/user/dashboard"
-                            className="transition p-2 inline-block rounded-lg hover:bg-gray-100"
+                            className="transition p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2"
                         >
-                            <div className="flex items-center gap-2">
-                                <span>
-                                    <IoMdArrowRoundBack />
-                                </span>
-                                <span>Back to dashboard</span>
-                            </div>
+                            <IoMdArrowRoundBack />
+                            <span> Back to dashboard </span>
                         </Link>
-                    </li>
-                </ul>
-            </nav>
+                    </div>
+                </nav>
 
-            <AutosaveIndicator status={autosaveStatus} />
+                <AutosaveIndicator status={autosaveStatus} />
 
-            <div className="h-24"></div>
+                <div className="bg-white border-b border-gray-200">
+                    <div className="relative">
+                        <div className="flex items-center py-4">
+                            <div className="absolute left-0">
+                                <h1 className="text-lg font-semibold text-gray-900 pl-6">
+                                    {groupedQuestions[currentStep]?.section}
+                                </h1>
+                            </div>
+                            
+                            <div className="flex-1 flex justify-center">
+                                <nav className="relative">
+                                    <ul className="flex items-center space-x-8">
+                                        {groupedQuestions.map((group, idx) => (
+                                            <li
+                                                key={`step_${group.section}`}
+                                                className={stepItemStyles({
+                                                    active: currentStep === idx,
+                                                })}
+                                                onClick={() => setCurrentStep(idx)}
+                                            >
+                                                <span>{group.section}</span>
+                                                {currentStep === idx && (
+                                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-button-default" />
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    
+                                    <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gray-200" />
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            <SectionedLayout
-                asideTitle={groupedQuestions[currentStep]?.section ?? ''}
-                linkContainerClassnames="top-36"
-                links={asideLinks}
-            >
-                <div>
+            <div className="pt-[144px]">
+                <SectionedLayout
+                    links={asideLinks}
+                    linkContainerClassnames="top-48"
+                >
                     <div>
-                        <nav>
-                            <ul className="flex gap-4 items-center justify-center">
-                                {groupedQuestions.map((group, idx) => (
-                                    <li
-                                        key={`step_${group.section}`}
-                                        className={stepItemStyles({
-                                            active: currentStep === idx,
-                                        })}
-                                        onClick={() => {
-                                            setCurrentStep(idx);
-                                        }}
-                                    >
-                                        <span>{group.section}</span>
-                                        {currentStep === idx ? (
-                                            <div className="absolute bottom-0 h-[2px] bg-gray-700 w-full"></div>
-                                        ) : null}
-                                    </li>
-                                ))}
-                            </ul>
-                        </nav>
-
-                        <div className="flex justify-center mt-8">
+                        {/* <div className="flex justify-center mt-8">
                             <Button
                                 variant="outline"
                                 type="button"
@@ -686,85 +694,85 @@ function ProjectFormPage() {
                             >
                                 Fill with Sample Data
                             </Button>
+                        </div> */}
+
+                        <div className="flex justify-end px-4 py-2">
+                            {validationErrors.length > 0 && (
+                                <ProjectError 
+                                    errors={validationErrors} 
+                                    onErrorClick={handleErrorClick} 
+                                />
+                            )}                    
                         </div>
-                    </div>
 
-                    <div className="flex justify-end px-4 py-2">
-                        {validationErrors.length > 0 && (
-                            <ProjectError 
-                                errors={validationErrors} 
-                                onErrorClick={handleErrorClick} 
-                            />
-                        )}                    
-                    </div>
-
-                    <form className="space-y-12 lg:max-w-3xl mx-auto mt-2">
-                        {groupedQuestions[currentStep].subSections.map(
-                            (subsection) => (
-                                <div
-                                    id={sanitizeHtmlId(subsection.name)}
-                                    key={subsection.name}
-                                    className={questionGroupContainerStyles()}
-                                >
-                                    <CollapsibleSection 
-                                        title={subsection.name}
+                        <form className="space-y-12 lg:max-w-3xl mx-auto">
+                            {groupedQuestions[currentStep].subSections.map(
+                                (subsection) => (
+                                    <div
+                                        id={sanitizeHtmlId(subsection.name)}
+                                        key={subsection.name}
+                                        className={questionGroupContainerStyles()}
                                     >
-                                        <div className={questionGroupQuestionsContainerStyles()}>
-                                            {subsection.questions.map((q) =>
-                                                shouldRenderQuestion(q, subsection.questions) ? (
-                                                    <QuestionInputs
-                                                        key={q.id}
-                                                        question={q}
-                                                        onChange={handleChange}
-                                                        fileUploadProps={
-                                                            accessToken
-                                                                ? {
-                                                                    projectId: currentProjectId,
-                                                                    questionId: q.id,
-                                                                    section: groupedQuestions[currentStep].section,
-                                                                    subSection: subsection.name,
-                                                                    accessToken: accessToken,
-                                                                    enableAutosave: true,
-                                                                }
-                                                                : undefined
-                                                        }
-                                                    />
-                                                ) : null
-                                            )}
-                                        </div>
-                                    </CollapsibleSection>
-                                </div>
-                            )
-                        )}
+                                        <CollapsibleSection 
+                                            title={subsection.name}
+                                        >
+                                            <div className={questionGroupQuestionsContainerStyles()}>
+                                                {subsection.questions.map((q) =>
+                                                    shouldRenderQuestion(q, subsection.questions) ? (
+                                                        <QuestionInputs
+                                                            key={q.id}
+                                                            question={q}
+                                                            onChange={handleChange}
+                                                            fileUploadProps={
+                                                                accessToken
+                                                                    ? {
+                                                                        projectId: currentProjectId,
+                                                                        questionId: q.id,
+                                                                        section: groupedQuestions[currentStep].section,
+                                                                        subSection: subsection.name,
+                                                                        accessToken: accessToken,
+                                                                        enableAutosave: true,
+                                                                    }
+                                                                    : undefined
+                                                            }
+                                                        />
+                                                    ) : null
+                                                )}
+                                            </div>
+                                        </CollapsibleSection>
+                                    </div>
+                                )
+                            )}
 
-                        <div className="pb-32 flex gap-8">
-                            <Button
-                                variant="outline"
-                                liquid
-                                type="button"
-                                disabled={currentStep === 0}
-                                onClick={handleBackStep}
-                            >
-                                Back
-                            </Button>
-                             
-                            <Button
-                                liquid
-                                type="button"
-                                onClick={
-                                    currentStep < groupedQuestions.length - 1
-                                        ? handleNextStep
-                                        : handleSubmit
-                                }
-                            >
-                                {currentStep < groupedQuestions.length - 1
-                                    ? 'Continue'
-                                    : 'Submit'}
-                            </Button>
-                        </div>
-                    </form>
-                </div>
-            </SectionedLayout>
+                            <div className="pb-32 flex gap-8">
+                                <Button
+                                    variant="outline"
+                                    liquid
+                                    type="button"
+                                    disabled={currentStep === 0}
+                                    onClick={handleBackStep}
+                                >
+                                    Back
+                                </Button>
+                                
+                                <Button
+                                    liquid
+                                    type="button"
+                                    onClick={
+                                        currentStep < groupedQuestions.length - 1
+                                            ? handleNextStep
+                                            : handleSubmit
+                                    }
+                                >
+                                    {currentStep < groupedQuestions.length - 1
+                                        ? 'Continue'
+                                        : 'Submit'}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </SectionedLayout>
+            </div>
 
             <ConfirmationModal
                 isOpen={showRecommendedModal}

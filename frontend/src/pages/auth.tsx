@@ -134,7 +134,7 @@ function AuthPage() {
                 lastName: formData.lastName,
                 title: formData.position,
                 bio: formData.bio,
-                linkedin: formData.linkedIn,
+                socials: formData.socials,
             });
 
             user.firstName = formData.firstName;
