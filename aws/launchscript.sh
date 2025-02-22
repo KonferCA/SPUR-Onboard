@@ -47,82 +47,99 @@ for var in APP_ENV APP_NAME SITE_URL; do
     [ -z "${!var}" ] && { echo "Error: $var is not set"; exit 1; }
 done
 
-# intialize launch script log file
-touch $LOG_FILE
+# define a log function to easily log messages
+log() {
+    if [ -z "$1" ]; then
+        echo "Error: Log message is required"
+        return 1
+    }
+
+    local message="$1"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+
+    # Create log file if it doesn't exist
+    touch "$LOG_FILE" 2>/dev/null || {
+        echo "Error: Cannot create log file"
+        return 1
+    }
+
+    # Write to log file
+    echo "[$timestamp] $message" >> "$LOG_FILE"
+}
 
 # update packages
-echo "update packages >> apt update -y" >> $LOG_FILE
+log "update packages >> apt update -y"
 apt update -y
 
 
 # donwload go
-echo "download go >> wget $GO_DOWNLOAD_URL" >> $LOG_FILE
+log "download go >> wget $GO_DOWNLOAD_URL"
 apt install -y wget
 wget $GO_DOWNLOAD_URL
 
 # install go
-echo "remove old go installation" >> $LOG_FILE
+log "remove old go installation"
 rm -rf $GOROOT
 
-echo "unpack go tar file" >> $LOG_FILE
+log "unpack go tar file"
 tar -xzf $GO_PKG_NAME
 
-echo "move extracted go files to /usr/local" >> $LOG_FILE
+log "move extracted go files to /usr/local"
 mv go $USR_LOCAL_PATH
 
 # clean up
-echo "remove downloaded go tar file" >> $LOG_FILE
+log "remove downloaded go tar file"
 rm -f $GO_PKG_NAME
 
-echo "add GOROOT, GOPATH and PATH exports to /home/ubuntu/.bashrc" >> $LOG_FILE
+log "add GOROOT, GOPATH and PATH exports to /home/ubuntu/.bashrc"
 echo "export GOROOT=$GOROOT" >> /home/ubuntu/.bashrc
 echo "export GOPATH=$GOPATH" >> /home/ubuntu/.bashrc
 echo "export PATH=\$PATH:$GOROOT/bin:$GOPATH/bin" >> /home/ubuntu/.bashrc
 
-echo "Make directory for go instllations at /opt/go" >> $LOG_FILE
+log "Make directory for go instllations at /opt/go"
 mkdir -p $GOPATH
 
-echo "Install goose for migrations" >> $LOG_FILE
+log "Install goose for migrations"
 GOPATH=$GOPATH $GOROOT/bin/go install github.com/pressly/goose/v3/cmd/goose@v3.22.1
 
 # add docker's official gpg key:
-echo "install docker build dependency tools" >> $LOG_FILE
+log "install docker build dependency tools"
 apt install -y ca-certificates curl
-echo "install docker repository gpg key" >> $LOG_FILE
+log "install docker repository gpg key"
 install -m 0755 -d /etc/apt/keyrings
-echo "download docker .asc file" >> $LOG_FILE
+log "download docker .asc file"
 curl -fssl https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-echo "chmod /etc/apt/keyrings/docker.asc" >> $LOG_FILE
+log "chmod /etc/apt/keyrings/docker.asc"
 chmod a+r /etc/apt/keyrings/docker.asc
 
 # add the repository to apt sources:
-echo "add repository to apt sources" >> $LOG_FILE
+log "add repository to apt sources"
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
   $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
   tee /etc/apt/sources.list.d/docker.list > /dev/null
-echo "update packages after adding docker repository to apt sources" >> $LOG_FILE
+log "update packages after adding docker repository to apt sources"
 apt update -y
 
 # install docker
-echo "install docker" >> $LOG_FILE
+log "install docker"
 apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # add ubuntu user to docker group
-echo "add ubuntu user to docker group" >> $LOG_FILE
+log "add ubuntu user to docker group"
 usermod -aG docker ubuntu
 
 # install nginx
-echo "install nginx" >> $LOG_FILE
+log "install nginx"
 apt install -y nginx
-echo "enable nginx" >> $LOG_FILE
+log "enable nginx"
 systemctl enable nginx
-echo "start nginx" >> $LOG_FILE
+log "start nginx"
 systemctl start nginx
 
-echo "Make static files directory" >> $LOG_FILE
+log "Make static files directory"
 mkdir -p $STATIC_DIR
-echo "Setup Nginx site file" >> $LOG_FILE
+log "Setup Nginx site file"
 echo "limit_req_zone \$binary_remote_addr zone=two:10m rate=10r/s;
 
 server {
@@ -171,10 +188,10 @@ server {
 }" > /etc/nginx/sites-available/$APP_NAME-$APP_ENV # override old site nginx settings
 
 # Make the SSL directory to store the certificate and private key
-echo "Make SSL directory" >> $LOG_FILE
+log "Make SSL directory"
 mkdir -p "/etc/ssl/${APP_NAME}/${APP_ENV}"
 
 # The ownership is changed so that for any future changes
 # can be done via user ubuntu instead of running 'sudo'
-echo "Change static directory ownership" >> $LOG_FILE
+log "Change static directory ownership"
 chown -R ubuntu:ubuntu $PUBLIC_DIR
