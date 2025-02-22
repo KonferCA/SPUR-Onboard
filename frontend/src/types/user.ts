@@ -30,12 +30,17 @@ export interface UpdateProfileRequest {
     linkedin_url?: string;
 }
 
+export interface UserSocialRequest {
+    platform: string;
+    urlOrHandle: string;
+}
+
 export interface InitialProfileRequest {
     firstName: string;
     lastName: string;
     title: string;
     bio: string;
-    linkedin: string;
+    socials: UserSocialRequest[];
 }
 
 export interface ProfileResponse extends UserProfile {}
@@ -48,4 +53,3 @@ export const profileValidationSchema = z.object({
     bio: z.string().min(10, 'Bio must be at least 10 characters'),
     linkedin_url: z.string().url('Invalid LinkedIn URL').optional().nullable(),
 });
-
