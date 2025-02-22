@@ -6,7 +6,7 @@ Use an instance template or create a new instance with Ubuntu 24.04LTS.
 
 ## 2. Run `launchscript.sh`
 
-> > You should SSH into the instance to verify that it is working correctly.
+> You should SSH into the instance to verify that it is working correctly.
 
 Use `scp` to copy the script to the instance.
 
@@ -48,7 +48,7 @@ sudo ./launchscript.sh
 
 ## 3. Setup SSL & Enable Site
 
-> > This section assumes that DNS has been configured and it has been populated.
+> This section assumes that DNS has been configured and it has been populated.
 
 1. Get the SSL certificate and private key from Cloudflare
 2. Upload the certificate and private key using `scp`, the same method to upload the `launchscript.sh` file
