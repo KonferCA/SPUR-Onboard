@@ -199,6 +199,9 @@ server {
 log "Make SSL directory"
 mkdir -p "/etc/ssl/${APP_NAME}/${APP_ENV}"
 
+log "Disable default site Nginx configuration"
+[ -L "/etc/nginx/sites-enabled/default" ] && rm "/etc/nginx/sites-enabled/default"
+
 # The ownership is changed so that for any future changes
 # can be done via user ubuntu instead of running 'sudo'
 log "Change static directory ownership"
