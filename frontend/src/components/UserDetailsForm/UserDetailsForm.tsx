@@ -1,11 +1,5 @@
 import { useState } from 'react';
-import {
-    Button,
-    TextInput,
-    TextArea,
-    ProgressSteps,
-    SocialLinks,
-} from '@/components';
+import { Button, TextInput, TextArea, SocialLinks } from '@/components';
 import type { UserDetailsFormProps, UserDetailsData } from '@/types/auth';
 import { validateSocialLink } from '@/utils/form-validation';
 import { SocialLink } from '@/types';
@@ -67,8 +61,6 @@ export function UserDetailsForm({
 
     return (
         <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
-            <ProgressSteps currentStep={1} />
-
             <h2 className="text-2xl font-semibold text-center mb-2">
                 Onboard by SPUR
             </h2>
@@ -133,9 +125,7 @@ export function UserDetailsForm({
                         variant="primary"
                         disabled={isLoading}
                     >
-                        {isLoading
-                            ? 'Saving Profile...'
-                            : 'Continue to Company Details'}
+                        {isLoading ? 'Saving Profile...' : 'Save Profile'}
                     </Button>
                 </div>
 
@@ -154,3 +144,4 @@ export function UserDetailsForm({
         </div>
     );
 }
+

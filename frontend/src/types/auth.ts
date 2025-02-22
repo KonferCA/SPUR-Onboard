@@ -5,7 +5,6 @@ export type RegistrationStep =
     | 'verify-email'
     | 'signing-in'
     | 'form-details'
-    | 'company-creation'
     | 'registration-complete';
 
 export type UserRole = 'startup_owner' | 'admin' | 'investor';
