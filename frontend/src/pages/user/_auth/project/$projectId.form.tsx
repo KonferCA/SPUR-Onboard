@@ -22,11 +22,11 @@ import { useQuery } from '@tanstack/react-query';
 import { scrollToTop } from '@/utils';
 import { useDebounceFn } from '@/hooks';
 import { useAuth } from '@/contexts';
-import { getSampleAnswer } from '@/utils/sampleData';
+// import { getSampleAnswer } from '@/utils/sampleData';
 import { useNavigate } from '@tanstack/react-router';
 import { ValidationError, ProjectError } from '@/components/ProjectError';
 import { RecommendedFields } from '@/components/RecommendedFields';
-import { AutosaveIndicator } from '@/components/AutoSaveIndicator';
+import { AutosaveIndicator } from '@/components/AutosaveIndicator';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
 
 export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
@@ -34,13 +34,13 @@ export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
 });
 
 const stepItemStyles = cva(
-    'text-lg relative transition text-gray-400 hover:text-button hover:cursor-pointer py-2',
+    'text-lg relative transition text-gray-400 hover:text-button-default hover:cursor-pointer py-2',
     {
         variants: {
             active: {
-                true: ['font-semibold text-button-default hover:text-button-default'],
-            },
-        },
+                true: 'font-semibold !text-button-default',
+            }
+        }
     }
 );
 
@@ -309,51 +309,52 @@ function ProjectFormPage() {
         }, 120);
     };
 
-    const handleFillSampleData = () => {
-        const newGroups = groupedQuestions.map((group) => ({
-            ...group,
-            subSections: group.subSections.map((subsection) => ({
-                ...subsection,
-                questions: subsection.questions.map((question) => ({
-                    ...question,
-                    inputFields: question.inputFields.map((field) => {
-                        if (field.disabled) {
-                            return field;
-                        }
+    // For filling sample data - uncomment out if needed
+    // const handleFillSampleData = () => {
+    //     const newGroups = groupedQuestions.map((group) => ({
+    //         ...group,
+    //         subSections: group.subSections.map((subsection) => ({
+    //             ...subsection,
+    //             questions: subsection.questions.map((question) => ({
+    //                 ...question,
+    //                 inputFields: question.inputFields.map((field) => {
+    //                     if (field.disabled) {
+    //                         return field;
+    //                     }
 
-                        const key = `${question.id}_${field.key}`;
+    //                     const key = `${question.id}_${field.key}`;
 
-                        // Skip file and team input types
-                        if (field.type === 'file' || field.type === 'team') {
-                            return field;
-                        }
+    //                     // Skip file and team input types
+    //                     if (field.type === 'file' || field.type === 'team') {
+    //                         return field;
+    //                     }
 
-                        const sampleValue = getSampleAnswer(
-                            question.question,
-                            field.type
-                        );
+    //                     const sampleValue = getSampleAnswer(
+    //                         question.question,
+    //                         field.type
+    //                     );
 
-                        // Add to dirty inputs for saving
-                        dirtyInputRef.current.set(key, {
-                            question_id: question.id,
-                            answer: sampleValue,
-                        });
+    //                     // Add to dirty inputs for saving
+    //                     dirtyInputRef.current.set(key, {
+    //                         question_id: question.id,
+    //                         answer: sampleValue,
+    //                     });
 
-                        return {
-                            ...field,
-                            value: {
-                                ...field.value,
-                                value: sampleValue,
-                            },
-                        };
-                    }),
-                })),
-            })),
-        }));
+    //                     return {
+    //                         ...field,
+    //                         value: {
+    //                             ...field.value,
+    //                             value: sampleValue,
+    //                         },
+    //                     };
+    //                 }),
+    //             })),
+    //         })),
+    //     }));
 
-        setGroupedQuestions(newGroups);
-        autosave();
-    };
+    //     setGroupedQuestions(newGroups);
+    //     autosave();
+    // };
 
     useEffect(() => {
         if (questionData) {
