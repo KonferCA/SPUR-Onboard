@@ -158,7 +158,7 @@ ssl_session_timeout 10m;
 ssl_session_tickets off;
 
 server {
-    listen 443 ssl;
+    listen 443 ssl http2;
     server_name $SITE_URL;
 
     ssl_certificate /etc/ssl/$APP_NAME/$APP_ENV/cert.pem;
@@ -183,9 +183,6 @@ server {
         add_header X-Frame-Options \"SAMEORIGIN\";
         add_header X-XSS-Protection \"1; mode=block\";
         add_header X-Content-Type-Options \"nosniff\";
-        add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;
-        add_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;
-        add_header Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';\" always;
     }
 
     # backend
@@ -206,7 +203,8 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-App-Name nk-staging;
+        proxy_set_header X-App-Name $APP_NAME;
+        proxy_set_header X-App-Env $APP_ENV;
         
         # proxy timeouts
         proxy_connect_timeout 60s;
