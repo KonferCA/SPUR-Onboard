@@ -1,0 +1,58 @@
+name: Deploy Frontend to AWS - Preview
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'frontend/**'
+jobs:
+  build-and-deploy-frontend:
+    runs-on: ubuntu-latest
+    environment: preview_aws
+    defaults:
+      run:
+        shell: bash
+        working-directory: frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup VPS fingerprint
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan "${{ secrets.VPS_IP }}" > ~/.ssh/known_hosts
+      - name: Setup Rsync
+        uses: GuillaumeFalourd/setup-rsync@v1.2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build environment
+        run: |
+          cat << EOF > .env
+          VITE_API_URL=${{ secrets.BACKEND_URL }}/api/v1
+          VITE_APP_ENV=${{ secrets.APP_ENV }}
+          EOF
+      - name: Build
+        run: pnpm build
+      - name: Deploy to server
+        run: |
+          rsync -avz --progress dist/* "${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:${{ secrets.STATIC_FILES_DIR }}/${{ secrets.APP_NAME }}/${{ secrets.APP_ENV }}"
