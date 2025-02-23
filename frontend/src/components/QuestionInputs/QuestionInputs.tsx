@@ -11,45 +11,45 @@ import { FormField } from '@/types';
 import { FC } from 'react';
 import { cva } from 'class-variance-authority';
 
-const legendStyles = cva("block text-md font-normal", {
+const legendStyles = cva('block text-md font-normal', {
     variants: {
         hasError: {
-            true: "text-red-600",
-            false: "text-gray-900",
-        }
+            true: 'text-red-600',
+            false: 'text-gray-900',
+        },
     },
     defaultVariants: {
         hasError: false,
-    }
+    },
 });
 
-const requiredIndicatorStyles = cva("ml-1", {
+const requiredIndicatorStyles = cva('ml-1', {
     variants: {
         hasError: {
-            true: "text-red-500",
-            false: "text-gray-500",
-        }
+            true: 'text-red-500',
+            false: 'text-gray-500',
+        },
     },
     defaultVariants: {
         hasError: false,
-    }
+    },
 });
 
-const requiredTextStyles = cva("text-sm", {
+const requiredTextStyles = cva('text-sm', {
     variants: {
         hasError: {
-            true: "text-red-500",
-            false: "text-gray-500"
-        }
+            true: 'text-red-500',
+            false: 'text-gray-500',
+        },
     },
     defaultVariants: {
-        hasError: false
-    }
+        hasError: false,
+    },
 });
 
-const fieldsetStyles = cva("space-y-4");
+const fieldsetStyles = cva('space-y-4');
 
-const headerContainerStyles = cva("flex justify-between items-center mb-1");
+const headerContainerStyles = cva('flex justify-between items-center mb-1');
 
 interface QuestionInputsProps {
     question: Question;
@@ -71,7 +71,9 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     fileUploadProps,
 }) => {
     const hasInvalidField = question.inputFields.some((field) => field.invalid);
-    const isQuestionRequired = question.inputFields.some((field) => field.required);
+    const isQuestionRequired = question.inputFields.some(
+        (field) => field.required
+    );
 
     const getErrorMessage = (field: FormField): string => {
         if (!field.invalid) return '';
@@ -127,6 +129,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         error={errorMessage}
                         required={field.required}
                         disabled={field.disabled}
+                        {...field.props}
                     />
                 );
 
@@ -142,6 +145,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         rows={field.rows || 4}
                         error={errorMessage}
                         disabled={field.disabled}
+                        {...field.props}
                     />
                 );
 
@@ -154,6 +158,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                             ...fileUploadProps,
                             questionId: field.key,
                         })}
+                        {...field.props}
                     />
                 );
 
@@ -183,12 +188,16 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         }
                         multiple={field.type === 'multiselect'}
                         error={errorMessage}
+                        {...field.props}
                     />
                 );
 
             case 'team':
                 return (
-                    <TeamMembers initialValue={field.value.teamMembers || []} />
+                    <TeamMembers
+                        initialValue={field.value.teamMembers || []}
+                        {...field.props}
+                    />
                 );
 
             case 'date':
@@ -198,6 +207,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         onChange={(v) => onChange(question.id, field.key, v)}
                         disabled={field.disabled}
                         error={errorMessage}
+                        {...field.props}
                     />
                 );
 
@@ -212,13 +222,21 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                 <legend className={legendStyles({ hasError: hasInvalidField })}>
                     {question.question}
                     {isQuestionRequired && (
-                        <span className={requiredIndicatorStyles({ hasError: hasInvalidField })}>
+                        <span
+                            className={requiredIndicatorStyles({
+                                hasError: hasInvalidField,
+                            })}
+                        >
                             *
                         </span>
                     )}
                 </legend>
                 {isQuestionRequired && (
-                    <span className={requiredTextStyles({ hasError: hasInvalidField })}>
+                    <span
+                        className={requiredTextStyles({
+                            hasError: hasInvalidField,
+                        })}
+                    >
                         Required
                     </span>
                 )}

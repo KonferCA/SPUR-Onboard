@@ -138,24 +138,7 @@ ORDER BY p.created_at DESC;
 -- name: GetProjectQuestions :many
 WITH all_questions AS (
     SELECT 
-        pq.id,
-        pq.question,
-        pq.section,
-        pq.sub_section,
-        pq.section_order,
-        pq.sub_section_order,
-        pq.question_order,
-        pq.input_type,
-        pq.options,
-        pq.required,
-        pq.validations,
-        pq.condition_type,
-        pq.condition_value,
-        pq.dependent_question_id,
-        pq.question_group_id,
-        pq.placeholder,
-        pq.description,
-        pq.disabled,
+        pq.*,
         '' AS answer, -- these are here to match the query output when fetching QA for a project
         ARRAY[]::text[] as choices -- same here
     FROM project_questions pq
@@ -175,24 +158,7 @@ WITH project_owner_check AS (
    AND c.owner_id = $2
 )
 SELECT 
-    pq.id,
-    pq.question,
-    pq.section,
-    pq.sub_section,
-    pq.section_order,
-    pq.sub_section_order,
-    pq.question_order,
-    pq.input_type,
-    pq.options,
-    pq.required,
-    pq.validations,
-    pq.condition_type,
-    pq.condition_value,
-    pq.dependent_question_id,
-    pq.question_group_id,
-    pq.placeholder,
-    pq.description,
-    pq.disabled,
+    pq.*,
     COALESCE(pa.answer, '') AS answer,
     COALESCE(pa.choices, ARRAY[]::text[]) as choices
 FROM project_questions pq
@@ -212,24 +178,7 @@ WITH project_owner_check AS (
    WHERE p.id = $1
 )
 SELECT 
-    pq.id,
-    pq.question,
-    pq.section,
-    pq.sub_section,
-    pq.section_order,
-    pq.sub_section_order,
-    pq.question_order,
-    pq.input_type,
-    pq.options,
-    pq.required,
-    pq.validations,
-    pq.condition_type,
-    pq.condition_value,
-    pq.dependent_question_id,
-    pq.question_group_id,
-    pq.placeholder,
-    pq.description,
-    pq.disabled,
+    pq.*,
     COALESCE(pa.answer, '') AS answer,
     COALESCE(pa.choices, ARRAY[]::text[]) as choices
 FROM project_questions pq

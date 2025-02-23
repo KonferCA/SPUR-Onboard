@@ -372,6 +372,16 @@ type ProjectQuestion struct {
 	CreatedAt           int64                 `json:"created_at"`
 	UpdatedAt           int64                 `json:"updated_at"`
 	QuestionKey         *string               `json:"question_key"`
+	InputProps          []byte                `json:"input_props"`
+}
+
+type ProjectQuestions20250220Backup struct {
+	ID              string `json:"id"`
+	Section         string `json:"section"`
+	SubSection      string `json:"sub_section"`
+	SectionOrder    int32  `json:"section_order"`
+	SubSectionOrder int32  `json:"sub_section_order"`
+	QuestionOrder   int32  `json:"question_order"`
 }
 
 type TeamMember struct {

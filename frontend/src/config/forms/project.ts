@@ -124,6 +124,15 @@ export function groupProjectQuestions(
                     disabled: q.disabled,
                 };
 
+                if (typeof q.inputProps === 'string') {
+                    const decoded = window.atob(q.inputProps);
+                    try {
+                        inputField.props = JSON.parse(decoded);
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }
+
                 switch (inputField.type) {
                     case 'file':
                         inputField.value.files =
