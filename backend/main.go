@@ -38,4 +38,5 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Str("PORT", port).Msg("failed to bind server to start accepting connections.")
 	}
+
 }
