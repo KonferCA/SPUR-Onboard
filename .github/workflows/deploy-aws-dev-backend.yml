@@ -47,9 +47,14 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          echo "${{ secrets.VPS_IP }} ${{ secrets.VPS_FINGERPRINT }}" >> ~/.ssh/known_hosts
+          ssh-keyscan "${{ secrets.VPS_IP }}" > ~/.ssh/known_hosts
       - name: Setup Rsync
         uses: GuillaumeFalourd/setup-rsync@v1.2
+      - name: Build Docker Image
+        run: |
+          groups
+          docker build -t ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest .
+          docker save -o image.tar ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest
       - name: Setup VPS File System Tree
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -68,6 +73,9 @@ jobs:
       - name: Upload Migrations
         run: |
           rsync -avz --delete --progress .sqlc/migrations/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/${{ secrets.APP_ENV }}/migrations/
+      - name: Upload Docker Image
+        run: |
+          rsync -avz image.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/${{ secrets.APP_ENV }}/
       - name: Run Migrations
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -85,22 +93,9 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           envs: DB_NAME,DB_PASSWORD,DB_PORT,DB_SSLMODE,DB_USER,DB_HOST,APP_NAME,APP_ENV
           script: |
-            cd "$HOME/$APP_NAME/$APP_ENV"
-
-            # Force the version to the latest actual migration
-            goose -dir "$HOME/$APP_NAME/$APP_ENV/migrations" postgres \
-              "postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" force 20241219000000
-
             # Run migrations up
-            goose -dir "$HOME/$APP_NAME/$APP_ENV/migrations" postgres \
+            /opt/go/bin/goose -dir "$HOME/$APP_NAME/$APP_ENV/migrations" postgres \
               "postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" up
-      - name: Build Docker Image
-        run: |
-          docker build -t ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest .
-          docker save -o image.tar ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest
-      - name: Upload Docker Image
-        run: |
-          rsync -avz image.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/${{ secrets.APP_ENV }}/
       - name: Deploy Go App on VPS
         uses: appleboy/ssh-action@v1.0.3
         env:
