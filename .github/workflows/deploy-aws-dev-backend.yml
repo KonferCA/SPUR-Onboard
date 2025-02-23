@@ -1,0 +1,144 @@
+name: Deploy Backend to AWS - Dev
+on:
+  workflow_dispatch:
+  push:
+    branches: ['main']
+    paths:
+      - 'backend/**'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev_aws
+    defaults:
+      run:
+        shell: bash
+        working-directory: backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Create env file
+        run: |
+          cat << EOF > .env
+          APP_ENV=${{ secrets.APP_ENV }}
+          APP_NAME=${{ secrets.APP_NAME }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          BACKEND_URL=${{ secrets.BACKEND_URL }}
+          FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_SSLMODE=${{ secrets.DB_SSLMODE }}
+          DB_USER=${{ secrets.DB_USER }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_SECRET_VERIFY_EMAIL=${{ secrets.JWT_SECRET_VERIFY_EMAIL }}
+          NOREPLY_EMAIL=${{ secrets.NOREPLY_EMAIL }}
+          PORT=${{ secrets.PORT }}
+          POSTGRES_USER=${{ secrets.DB_USER }}
+          POSTGRES_DB=${{ secrets.DB_NAME }}
+          POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
+          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+          EOF
+      - name: Setup VPS fingerprint
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.VPS_IP }} ${{ secrets.VPS_FINGERPRINT }}" >> ~/.ssh/known_hosts
+      - name: Setup Rsync
+        uses: GuillaumeFalourd/setup-rsync@v1.2
+      - name: Setup VPS File System Tree
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          APP_ENV: ${{ secrets.APP_ENV }}
+          APP_NAME: ${{ secrets.APP_NAME }}
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          envs: APP_ENV,APP_NAME
+          script: |
+            mkdir -p "$HOME/$APP_NAME/$APP_ENV/migrations"
+      - name: Upload .env
+        run: |
+          rsync -avz --progress .env ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/${{ secrets.APP_ENV }}/
+      - name: Upload Migrations
+        run: |
+          rsync -avz --delete --progress .sqlc/migrations/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/${{ secrets.APP_ENV }}/migrations/
+      - name: Run Migrations
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          APP_NAME: ${{ secrets.APP_NAME }}
+          APP_ENV: ${{ secrets.APP_ENV }}
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          envs: DB_NAME,DB_PASSWORD,DB_PORT,DB_SSLMODE,DB_USER,DB_HOST,APP_NAME,APP_ENV
+          script: |
+            cd "$HOME/$APP_NAME/$APP_ENV"
+
+            # Force the version to the latest actual migration
+            goose -dir "$HOME/$APP_NAME/$APP_ENV/migrations" postgres \
+              "postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" force 20241219000000
+
+            # Run migrations up
+            goose -dir "$HOME/$APP_NAME/$APP_ENV/migrations" postgres \
+              "postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" up
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest .
+          docker save -o image.tar ${{ secrets.APP_NAME }}-${{ secrets.APP_ENV }}:latest
+      - name: Upload Docker Image
+        run: |
+          rsync -avz image.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/${{ secrets.APP_ENV }}/
+      - name: Deploy Go App on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          APP_NAME: ${{ secrets.APP_NAME }}
+          APP_ENV: ${{ secrets.APP_ENV }}
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          envs: APP_NAME,APP_ENV
+          script: |
+            cd "$HOME/$APP_NAME/$APP_ENV"
+
+            echo "Stopping and removing existing container if present..."
+            CONTAINER="$APP_NAME-$APP_ENV"
+            docker stop $CONTAINER || true
+            docker rm $CONTAINER || true
+
+            echo "Loading pre-built docker image..."
+            docker load -i image.tar
+
+            echo "Starting new application container..."
+            docker run -d \
+              --name $CONTAINER \
+              --env-file .env \
+              --network=host --add-host=host.docker.internal:host-gateway \
+              "$APP_NAME-$APP_ENV:latest"
+
+            echo "Done: $APP_NAME => $APP_ENV => Deployed"
+      - name: Post Deployment Clean Up on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          APP_ENV: ${{ secrets.APP_ENV }}
+          APP_NAME: ${{ secrets.APP_NAME }}
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          envs: APP_ENV,APP_NAME
+          script: |
+            rm -rf $HOME/$APP_NAME/$APP_ENV
