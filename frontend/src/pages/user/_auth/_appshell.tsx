@@ -14,7 +14,7 @@ export const Route = createFileRoute('/user/_auth/_appshell')({
 });
 
 const userMenuItems = [
-    { label: 'My Projects', path: '/user/dashboard', icon: <FiFolder /> },
+    { label: 'Projects', path: '/user/dashboard', icon: <FiFolder /> },
     { label: 'Settings', path: '/user/settings', icon: <FiSettings /> },
     // { label: 'Resources', path: '/resources', icon: <FiBook /> },
     // { label: 'Favorites', path: '/favorites', icon: <FiStar /> },
