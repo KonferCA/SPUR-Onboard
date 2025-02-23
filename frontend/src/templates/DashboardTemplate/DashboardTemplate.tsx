@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
 import { PageLayout, Stack } from '@layouts';
+import { LogoSVG } from '@assets';
 
 interface MenuItem {
     label: string;
@@ -23,7 +24,11 @@ interface DashboardTemplateProps {
 export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
     children,
     menuItems,
-    logo = <h1 className="text-xl font-bold">Logo</h1>,
+    logo = (
+        <Link to="/user/dashboard" className="h-8">
+            <img src={LogoSVG} alt="Logo" className="h-full w-auto" />
+        </Link>
+    ),
     navTabs = [],
     actions,
     customSidebar,
@@ -82,17 +87,17 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
             <div className="w-full min-h-[calc(100vh_-_4rem)] max-w-[1440px] mx-auto flex flex-1">
                 {/* sidebar */}
                 {customSidebar || (
-                    <div className="w-64 bg-white border-r border-gray-200">
+                    <div className="w-48 bg-white border-r border-gray-200">
                         <nav className="sticky top-16 py-4">
                             {menuItems.map((item) => (
                                 <Link
                                     key={item.path}
                                     to={item.path}
                                     className={`
-                    flex items-center gap-3 px-6 py-2 text-sm whitespace-nowrap
+                    flex items-center gap-3 px-6 py-2 text-sm whitespace-nowrap rounded-lg mx-2
                     ${
                         location.pathname === item.path
-                            ? 'bg-gray-50 text-gray-900 font-medium'
+                            ? 'bg-gray-100 text-gray-900 font-normal [&>svg]:text-button-primary-100'
                             : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                     }
                   `}
