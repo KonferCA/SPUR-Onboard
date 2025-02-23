@@ -15,7 +15,7 @@
 
 ---
 
-## Builds & Deployments
+## 🔨 Builds & Deployments
 
 [![Deploy Backend to AWS - Preview](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-backend.yml/badge.svg?branch=main)](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-backend.yml)
 [![Deploy Frontend to AWS - Preview](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-frontend.yml/badge.svg?branch=main)](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-frontend.yml)
