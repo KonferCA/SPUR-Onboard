@@ -218,6 +218,79 @@ func AllProjectStatusValues() []ProjectStatus {
 	}
 }
 
+type SocialPlatformEnum string
+
+const (
+	SocialPlatformEnumLinkedin  SocialPlatformEnum = "linkedin"
+	SocialPlatformEnumInstagram SocialPlatformEnum = "instagram"
+	SocialPlatformEnumFacebook  SocialPlatformEnum = "facebook"
+	SocialPlatformEnumBluesky   SocialPlatformEnum = "bluesky"
+	SocialPlatformEnumX         SocialPlatformEnum = "x"
+	SocialPlatformEnumDiscord   SocialPlatformEnum = "discord"
+	SocialPlatformEnumCustomUrl SocialPlatformEnum = "custom_url"
+)
+
+func (e *SocialPlatformEnum) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = SocialPlatformEnum(s)
+	case string:
+		*e = SocialPlatformEnum(s)
+	default:
+		return fmt.Errorf("unsupported scan type for SocialPlatformEnum: %T", src)
+	}
+	return nil
+}
+
+type NullSocialPlatformEnum struct {
+	SocialPlatformEnum SocialPlatformEnum `json:"social_platform_enum"`
+	Valid              bool               `json:"valid"` // Valid is true if SocialPlatformEnum is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullSocialPlatformEnum) Scan(value interface{}) error {
+	if value == nil {
+		ns.SocialPlatformEnum, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.SocialPlatformEnum.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullSocialPlatformEnum) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.SocialPlatformEnum), nil
+}
+
+func (e SocialPlatformEnum) Valid() bool {
+	switch e {
+	case SocialPlatformEnumLinkedin,
+		SocialPlatformEnumInstagram,
+		SocialPlatformEnumFacebook,
+		SocialPlatformEnumBluesky,
+		SocialPlatformEnumX,
+		SocialPlatformEnumDiscord,
+		SocialPlatformEnumCustomUrl:
+		return true
+	}
+	return false
+}
+
+func AllSocialPlatformEnumValues() []SocialPlatformEnum {
+	return []SocialPlatformEnum{
+		SocialPlatformEnumLinkedin,
+		SocialPlatformEnumInstagram,
+		SocialPlatformEnumFacebook,
+		SocialPlatformEnumBluesky,
+		SocialPlatformEnumX,
+		SocialPlatformEnumDiscord,
+		SocialPlatformEnumCustomUrl,
+	}
+}
+
 type Company struct {
 	ID            string   `json:"id"`
 	OwnerID       string   `json:"owner_id"`
@@ -299,6 +372,16 @@ type ProjectQuestion struct {
 	CreatedAt           int64                 `json:"created_at"`
 	UpdatedAt           int64                 `json:"updated_at"`
 	QuestionKey         *string               `json:"question_key"`
+	InputProps          []byte                `json:"input_props"`
+}
+
+type ProjectQuestions20250220Backup struct {
+	ID              string `json:"id"`
+	Section         string `json:"section"`
+	SubSection      string `json:"sub_section"`
+	SectionOrder    int32  `json:"section_order"`
+	SubSectionOrder int32  `json:"sub_section_order"`
+	QuestionOrder   int32  `json:"question_order"`
 }
 
 type TeamMember struct {
@@ -351,6 +434,15 @@ type User struct {
 	UpdatedAt         int64   `json:"updated_at"`
 	TokenSalt         []byte  `json:"token_salt"`
 	ProfilePictureUrl *string `json:"profile_picture_url"`
+}
+
+type UserSocial struct {
+	ID          string             `json:"id"`
+	Platform    SocialPlatformEnum `json:"platform"`
+	UrlOrHandle string             `json:"url_or_handle"`
+	UserID      string             `json:"user_id"`
+	CreatedAt   int64              `json:"created_at"`
+	UpdatedAt   int64              `json:"updated_at"`
 }
 
 type VerifyEmailToken struct {

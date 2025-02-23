@@ -7,6 +7,7 @@ import { SETTINGS_ROUTES } from '@/constants/settings';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { ProfilePicture } from '@/components/ProfilePicture/ProfilePicture';
+import { IoSettingsOutline, IoLogOutOutline } from "react-icons/io5";
 
 export const Route = createFileRoute('/user/_auth/_appshell')({
     component: RouteComponent,
@@ -32,9 +33,14 @@ function RouteComponent() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const handleLogout = async () => {
+        setIsDropdownOpen(false);
         await clearAuth();
         navigate({ to: '/auth' });
     };
+
+    const handleSettingsClick = () => {
+        setIsDropdownOpen(false);
+    }
 
     const isSettingsPage = location.pathname.includes('/settings');
 
@@ -69,11 +75,21 @@ function RouteComponent() {
             {/* Dropdown menu */}
             {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-lg border border-gray-200">
+                    <Link
+                        to="/user/settings"
+                        onClick={handleSettingsClick}
+                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                    >
+                        <IoSettingsOutline className="w-5 h-5 inline-block mr-2" />
+                        Settings
+                    </Link>
+
                     <button
                         onClick={handleLogout}
-                        className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                     >
-                        Logout
+                        <IoLogOutOutline className="w-5 h-5 inline-block mr-2" />
+                        Log Out
                     </button>
                 </div>
             )}
@@ -106,13 +122,12 @@ function RouteComponent() {
                             key={route.path}
                             to={route.path}
                             className={`
-                flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md
-                ${
-                    location.pathname === route.path
-                        ? 'bg-gray-50 text-gray-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }
-              `}
+                                flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md 
+                                ${ location.pathname === route.path
+                                    ? 'bg-gray-50 text-gray-900'
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                }
+                            `}
                         >
                             {route.icon}
                             {route.label}

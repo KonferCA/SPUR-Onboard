@@ -53,6 +53,8 @@ export interface ProjectQuestion {
     disabled: boolean;
     answer: string;
     choices: string[];
+    // inputProps is a base64 encoded json
+    inputProps?: string | null;
 }
 
 // Frontend interfaces

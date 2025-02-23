@@ -1,4 +1,8 @@
-import { ProjectDocument, uploadDocument, removeDocument } from '@/services/project';
+import {
+    ProjectDocument,
+    uploadDocument,
+    removeDocument,
+} from '@/services/project';
 import { useState, useRef } from 'react';
 import { FiUpload, FiX, FiLoader, FiCheck } from 'react-icons/fi';
 import { useDebounceFn } from '@/hooks';
@@ -40,6 +44,7 @@ export interface FileUploadProps {
     accessToken?: string;
     enableAutosave?: boolean;
     limit?: number;
+    accept?: string;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
@@ -54,71 +59,85 @@ const FileUpload: React.FC<FileUploadProps> = ({
     section,
     subSection,
     accessToken,
+    accept = '.pdf,.png,.jpeg,.jpg',
     enableAutosave = false,
     limit = Infinity,
 }) => {
     const [isDragging, setIsDragging] = useState(false);
-    const [uploadedFiles, setUploadedFiles] = useState<UploadableFile[]>(initialFiles);
+    const [uploadedFiles, setUploadedFiles] =
+        useState<UploadableFile[]>(initialFiles);
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const pendingChangesRef = useRef<{adds: UploadableFile[], removes: UploadableFile[]}>({
+    const pendingChangesRef = useRef<{
+        adds: UploadableFile[];
+        removes: UploadableFile[];
+    }>({
         adds: [],
-        removes: []
+        removes: [],
     });
 
     // Autosave function
-    const autosave = useDebounceFn(async () => {
-        if (!enableAutosave || !projectId || !accessToken) return;
-        
-        setIsProcessing(true);
-        setError(null);
+    const autosave = useDebounceFn(
+        async () => {
+            if (!enableAutosave || !projectId || !accessToken) return;
 
-        try {
-            // Handle removals
-            await Promise.all(
-                pendingChangesRef.current.removes.map(async (file) => {
-                    if (file.metadata?.id) {
-                        await removeDocument(accessToken, {
-                            projectId,
-                            documentId: file.metadata.id,
-                        });
-                    }
-                })
-            );
+            setIsProcessing(true);
+            setError(null);
 
-            // Handle additions
-            const uploadResults = await Promise.all(
-                pendingChangesRef.current.adds.map(async (file) => {
-                    const response = await uploadDocument(accessToken, {
-                        projectId,
-                        file,
-                        questionId: questionId || '',
-                        name: file.name,
-                        section: section || '',
-                        subSection: subSection || '',
-                    });
-                    file.metadata = response;
-                    file.uploaded = true;
-                    return file;
-                })
-            );
-
-            // Clear pending changes and update state
-            pendingChangesRef.current = { adds: [], removes: [] };
-            if (onFilesChange) {
-                onFilesChange(
-                    uploadedFiles
-                        .filter(f => !pendingChangesRef.current.removes.includes(f))
-                        .concat(uploadResults)
+            try {
+                // Handle removals
+                await Promise.all(
+                    pendingChangesRef.current.removes.map(async (file) => {
+                        if (file.metadata?.id) {
+                            await removeDocument(accessToken, {
+                                projectId,
+                                documentId: file.metadata.id,
+                            });
+                        }
+                    })
                 );
+
+                // Handle additions
+                const uploadResults = await Promise.all(
+                    pendingChangesRef.current.adds.map(async (file) => {
+                        const response = await uploadDocument(accessToken, {
+                            projectId,
+                            file,
+                            questionId: questionId || '',
+                            name: file.name,
+                            section: section || '',
+                            subSection: subSection || '',
+                        });
+                        file.metadata = response;
+                        file.uploaded = true;
+                        return file;
+                    })
+                );
+
+                // Clear pending changes and update state
+                pendingChangesRef.current = { adds: [], removes: [] };
+                if (onFilesChange) {
+                    onFilesChange(
+                        uploadedFiles
+                            .filter(
+                                (f) =>
+                                    !pendingChangesRef.current.removes.includes(
+                                        f
+                                    )
+                            )
+                            .concat(uploadResults)
+                    );
+                }
+            } catch (e) {
+                setError('Failed to save file changes. Please try again.');
+            } finally {
+                setIsProcessing(false);
             }
-        } catch (e) {
-            setError('Failed to save file changes. Please try again.');
-        } finally {
-            setIsProcessing(false);
-        }
-    }, 500, [projectId, questionId, section, subSection, accessToken]);
+        },
+        500,
+        [projectId, questionId, section, subSection, accessToken]
+    );
 
     // handle drag events
     const handleDrag = (e: React.DragEvent) => {
@@ -183,7 +202,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         }
 
         const newFiles = validFiles.map((f) => createUploadableFile(f));
-        
+
         // Track new files for autosave
         if (enableAutosave) {
             pendingChangesRef.current.adds.push(...newFiles);
@@ -196,9 +215,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
     const removeFile = (fileToRemove: File) => {
         const newFiles = uploadedFiles.filter((file) => file !== fileToRemove);
-        
+
         if (enableAutosave && (fileToRemove as UploadableFile).metadata?.id) {
-            pendingChangesRef.current.removes.push(fileToRemove as UploadableFile);
+            pendingChangesRef.current.removes.push(
+                fileToRemove as UploadableFile
+            );
             setUploadedFiles(newFiles);
             autosave();
         } else if (onFilesChange) {
@@ -224,8 +245,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
                     isDragging
                         ? 'border-blue-500 bg-blue-50'
                         : error
-                        ? 'border-red-300 bg-red-50'
-                        : 'border-gray-300'
+                          ? 'border-red-300 bg-red-50'
+                          : 'border-gray-300'
                 }`}
                 onDragEnter={handleDragIn}
                 onDragLeave={handleDragOut}
@@ -258,7 +279,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                     type="file"
                     ref={fileInputRef}
                     onChange={handleFileSelect}
-                    accept=".pdf,.png,.jpeg,.jpg"
+                    accept={accept}
                     className="hidden"
                     multiple
                     disabled={isProcessing}
@@ -280,9 +301,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
                                 <span className="text-sm text-gray-500">
                                     {formatFileSize(file.size)}
                                 </span>
-                                {isProcessing && pendingChangesRef.current.adds.includes(file) && (
-                                    <FiLoader className="animate-spin text-blue-500" />
-                                )}
+                                {isProcessing &&
+                                    pendingChangesRef.current.adds.includes(
+                                        file
+                                    ) && (
+                                        <FiLoader className="animate-spin text-blue-500" />
+                                    )}
                                 {file.uploaded && (
                                     <FiCheck className="text-green-500" />
                                 )}

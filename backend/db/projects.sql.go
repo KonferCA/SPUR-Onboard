@@ -569,7 +569,7 @@ func (q *Queries) GetProjectDocuments(ctx context.Context, projectID string) ([]
 }
 
 const getProjectQuestion = `-- name: GetProjectQuestion :one
-SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, condition_type, condition_value, dependent_question_id, validations, question_group_id, input_type, options, required, placeholder, description, disabled, created_at, updated_at, question_key FROM project_questions
+SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, condition_type, condition_value, dependent_question_id, validations, question_group_id, input_type, options, required, placeholder, description, disabled, created_at, updated_at, question_key, input_props FROM project_questions
 WHERE id = $1
 LIMIT 1
 `
@@ -599,6 +599,7 @@ func (q *Queries) GetProjectQuestion(ctx context.Context, id string) (ProjectQue
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.QuestionKey,
+		&i.InputProps,
 	)
 	return i, err
 }
@@ -606,29 +607,12 @@ func (q *Queries) GetProjectQuestion(ctx context.Context, id string) (ProjectQue
 const getProjectQuestions = `-- name: GetProjectQuestions :many
 WITH all_questions AS (
     SELECT 
-        pq.id,
-        pq.question,
-        pq.section,
-        pq.sub_section,
-        pq.section_order,
-        pq.sub_section_order,
-        pq.question_order,
-        pq.input_type,
-        pq.options,
-        pq.required,
-        pq.validations,
-        pq.condition_type,
-        pq.condition_value,
-        pq.dependent_question_id,
-        pq.question_group_id,
-        pq.placeholder,
-        pq.description,
-        pq.disabled,
+        pq.id, pq.question, pq.section, pq.sub_section, pq.section_order, pq.sub_section_order, pq.question_order, pq.condition_type, pq.condition_value, pq.dependent_question_id, pq.validations, pq.question_group_id, pq.input_type, pq.options, pq.required, pq.placeholder, pq.description, pq.disabled, pq.created_at, pq.updated_at, pq.question_key, pq.input_props,
         '' AS answer, -- these are here to match the query output when fetching QA for a project
         ARRAY[]::text[] as choices -- same here
     FROM project_questions pq
 )
-SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, input_type, options, required, validations, condition_type, condition_value, dependent_question_id, question_group_id, placeholder, description, disabled, answer, choices FROM all_questions
+SELECT id, question, section, sub_section, section_order, sub_section_order, question_order, condition_type, condition_value, dependent_question_id, validations, question_group_id, input_type, options, required, placeholder, description, disabled, created_at, updated_at, question_key, input_props, answer, choices FROM all_questions
 ORDER BY
     section_order,
     sub_section_order,
@@ -643,17 +627,21 @@ type GetProjectQuestionsRow struct {
 	SectionOrder        int32                 `json:"section_order"`
 	SubSectionOrder     int32                 `json:"sub_section_order"`
 	QuestionOrder       int32                 `json:"question_order"`
-	InputType           InputTypeEnum         `json:"input_type"`
-	Options             []string              `json:"options"`
-	Required            bool                  `json:"required"`
-	Validations         []string              `json:"validations"`
 	ConditionType       NullConditionTypeEnum `json:"condition_type"`
 	ConditionValue      *string               `json:"condition_value"`
 	DependentQuestionID pgtype.UUID           `json:"dependent_question_id"`
+	Validations         []string              `json:"validations"`
 	QuestionGroupID     pgtype.UUID           `json:"question_group_id"`
+	InputType           InputTypeEnum         `json:"input_type"`
+	Options             []string              `json:"options"`
+	Required            bool                  `json:"required"`
 	Placeholder         *string               `json:"placeholder"`
 	Description         *string               `json:"description"`
 	Disabled            bool                  `json:"disabled"`
+	CreatedAt           int64                 `json:"created_at"`
+	UpdatedAt           int64                 `json:"updated_at"`
+	QuestionKey         *string               `json:"question_key"`
+	InputProps          []byte                `json:"input_props"`
 	Answer              string                `json:"answer"`
 	Choices             []string              `json:"choices"`
 }
@@ -675,17 +663,21 @@ func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestion
 			&i.SectionOrder,
 			&i.SubSectionOrder,
 			&i.QuestionOrder,
-			&i.InputType,
-			&i.Options,
-			&i.Required,
-			&i.Validations,
 			&i.ConditionType,
 			&i.ConditionValue,
 			&i.DependentQuestionID,
+			&i.Validations,
 			&i.QuestionGroupID,
+			&i.InputType,
+			&i.Options,
+			&i.Required,
 			&i.Placeholder,
 			&i.Description,
 			&i.Disabled,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.QuestionKey,
+			&i.InputProps,
 			&i.Answer,
 			&i.Choices,
 		); err != nil {
@@ -734,7 +726,7 @@ func (q *Queries) GetProjectsByCompanyID(ctx context.Context, companyID string) 
 }
 
 const getQuestionByAnswerID = `-- name: GetQuestionByAnswerID :one
-SELECT q.id, q.question, q.section, q.sub_section, q.section_order, q.sub_section_order, q.question_order, q.condition_type, q.condition_value, q.dependent_question_id, q.validations, q.question_group_id, q.input_type, q.options, q.required, q.placeholder, q.description, q.disabled, q.created_at, q.updated_at, q.question_key FROM project_questions q
+SELECT q.id, q.question, q.section, q.sub_section, q.section_order, q.sub_section_order, q.question_order, q.condition_type, q.condition_value, q.dependent_question_id, q.validations, q.question_group_id, q.input_type, q.options, q.required, q.placeholder, q.description, q.disabled, q.created_at, q.updated_at, q.question_key, q.input_props FROM project_questions q
 JOIN project_answers a ON a.question_id = q.id
 WHERE a.id = $1
 `
@@ -764,6 +756,7 @@ func (q *Queries) GetQuestionByAnswerID(ctx context.Context, id string) (Project
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.QuestionKey,
+		&i.InputProps,
 	)
 	return i, err
 }
@@ -777,24 +770,7 @@ WITH project_owner_check AS (
    AND c.owner_id = $2
 )
 SELECT 
-    pq.id,
-    pq.question,
-    pq.section,
-    pq.sub_section,
-    pq.section_order,
-    pq.sub_section_order,
-    pq.question_order,
-    pq.input_type,
-    pq.options,
-    pq.required,
-    pq.validations,
-    pq.condition_type,
-    pq.condition_value,
-    pq.dependent_question_id,
-    pq.question_group_id,
-    pq.placeholder,
-    pq.description,
-    pq.disabled,
+    pq.id, pq.question, pq.section, pq.sub_section, pq.section_order, pq.sub_section_order, pq.question_order, pq.condition_type, pq.condition_value, pq.dependent_question_id, pq.validations, pq.question_group_id, pq.input_type, pq.options, pq.required, pq.placeholder, pq.description, pq.disabled, pq.created_at, pq.updated_at, pq.question_key, pq.input_props,
     COALESCE(pa.answer, '') AS answer,
     COALESCE(pa.choices, ARRAY[]::text[]) as choices
 FROM project_questions pq
@@ -820,17 +796,21 @@ type GetQuestionsByProjectRow struct {
 	SectionOrder        int32                 `json:"section_order"`
 	SubSectionOrder     int32                 `json:"sub_section_order"`
 	QuestionOrder       int32                 `json:"question_order"`
-	InputType           InputTypeEnum         `json:"input_type"`
-	Options             []string              `json:"options"`
-	Required            bool                  `json:"required"`
-	Validations         []string              `json:"validations"`
 	ConditionType       NullConditionTypeEnum `json:"condition_type"`
 	ConditionValue      *string               `json:"condition_value"`
 	DependentQuestionID pgtype.UUID           `json:"dependent_question_id"`
+	Validations         []string              `json:"validations"`
 	QuestionGroupID     pgtype.UUID           `json:"question_group_id"`
+	InputType           InputTypeEnum         `json:"input_type"`
+	Options             []string              `json:"options"`
+	Required            bool                  `json:"required"`
 	Placeholder         *string               `json:"placeholder"`
 	Description         *string               `json:"description"`
 	Disabled            bool                  `json:"disabled"`
+	CreatedAt           int64                 `json:"created_at"`
+	UpdatedAt           int64                 `json:"updated_at"`
+	QuestionKey         *string               `json:"question_key"`
+	InputProps          []byte                `json:"input_props"`
 	Answer              string                `json:"answer"`
 	Choices             []string              `json:"choices"`
 }
@@ -852,17 +832,21 @@ func (q *Queries) GetQuestionsByProject(ctx context.Context, arg GetQuestionsByP
 			&i.SectionOrder,
 			&i.SubSectionOrder,
 			&i.QuestionOrder,
-			&i.InputType,
-			&i.Options,
-			&i.Required,
-			&i.Validations,
 			&i.ConditionType,
 			&i.ConditionValue,
 			&i.DependentQuestionID,
+			&i.Validations,
 			&i.QuestionGroupID,
+			&i.InputType,
+			&i.Options,
+			&i.Required,
 			&i.Placeholder,
 			&i.Description,
 			&i.Disabled,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.QuestionKey,
+			&i.InputProps,
 			&i.Answer,
 			&i.Choices,
 		); err != nil {
@@ -884,24 +868,7 @@ WITH project_owner_check AS (
    WHERE p.id = $1
 )
 SELECT 
-    pq.id,
-    pq.question,
-    pq.section,
-    pq.sub_section,
-    pq.section_order,
-    pq.sub_section_order,
-    pq.question_order,
-    pq.input_type,
-    pq.options,
-    pq.required,
-    pq.validations,
-    pq.condition_type,
-    pq.condition_value,
-    pq.dependent_question_id,
-    pq.question_group_id,
-    pq.placeholder,
-    pq.description,
-    pq.disabled,
+    pq.id, pq.question, pq.section, pq.sub_section, pq.section_order, pq.sub_section_order, pq.question_order, pq.condition_type, pq.condition_value, pq.dependent_question_id, pq.validations, pq.question_group_id, pq.input_type, pq.options, pq.required, pq.placeholder, pq.description, pq.disabled, pq.created_at, pq.updated_at, pq.question_key, pq.input_props,
     COALESCE(pa.answer, '') AS answer,
     COALESCE(pa.choices, ARRAY[]::text[]) as choices
 FROM project_questions pq
@@ -922,17 +889,21 @@ type GetQuestionsByProjectAsAdminRow struct {
 	SectionOrder        int32                 `json:"section_order"`
 	SubSectionOrder     int32                 `json:"sub_section_order"`
 	QuestionOrder       int32                 `json:"question_order"`
-	InputType           InputTypeEnum         `json:"input_type"`
-	Options             []string              `json:"options"`
-	Required            bool                  `json:"required"`
-	Validations         []string              `json:"validations"`
 	ConditionType       NullConditionTypeEnum `json:"condition_type"`
 	ConditionValue      *string               `json:"condition_value"`
 	DependentQuestionID pgtype.UUID           `json:"dependent_question_id"`
+	Validations         []string              `json:"validations"`
 	QuestionGroupID     pgtype.UUID           `json:"question_group_id"`
+	InputType           InputTypeEnum         `json:"input_type"`
+	Options             []string              `json:"options"`
+	Required            bool                  `json:"required"`
 	Placeholder         *string               `json:"placeholder"`
 	Description         *string               `json:"description"`
 	Disabled            bool                  `json:"disabled"`
+	CreatedAt           int64                 `json:"created_at"`
+	UpdatedAt           int64                 `json:"updated_at"`
+	QuestionKey         *string               `json:"question_key"`
+	InputProps          []byte                `json:"input_props"`
 	Answer              string                `json:"answer"`
 	Choices             []string              `json:"choices"`
 }
@@ -954,17 +925,21 @@ func (q *Queries) GetQuestionsByProjectAsAdmin(ctx context.Context, projectID st
 			&i.SectionOrder,
 			&i.SubSectionOrder,
 			&i.QuestionOrder,
-			&i.InputType,
-			&i.Options,
-			&i.Required,
-			&i.Validations,
 			&i.ConditionType,
 			&i.ConditionValue,
 			&i.DependentQuestionID,
+			&i.Validations,
 			&i.QuestionGroupID,
+			&i.InputType,
+			&i.Options,
+			&i.Required,
 			&i.Placeholder,
 			&i.Description,
 			&i.Disabled,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.QuestionKey,
+			&i.InputProps,
 			&i.Answer,
 			&i.Choices,
 		); err != nil {

@@ -1,5 +1,6 @@
 import type { UploadableFile } from '@/components';
 import { ZodTypeAny } from 'zod';
+import { UserSocial } from './auth';
 
 export type FormFieldType =
     | 'textinput'
@@ -33,6 +34,7 @@ export interface FormField {
     value: FormFieldValue;
     invalid?: boolean;
     disabled?: boolean;
+    props?: any;
 }
 
 export interface FormSection {
@@ -63,11 +65,7 @@ export interface TeamMember {
     updated_at?: number;
 }
 
-export interface SocialLink {
-    id: string;
-    url: string;
-    type?: string;
-}
+export type SocialLink = Pick<UserSocial, 'id' | 'urlOrHandle' | 'platform'>;
 
 export type FormData = {
     [key: string]: any;
