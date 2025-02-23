@@ -1,3 +1,19 @@
+/*
+ *
+ * Branding SVGs
+ *
+ */
+import LogoSVG from './logo.svg';
+
+export { 
+    LogoSVG 
+};
+
+/*
+ *
+ * Socials SVGs
+ *
+ */
 import DiscordLogoSVG from './discord_logo.svg';
 import LinkedInLogoSVG from './linkedin_logo.svg';
 import FacebookLogoSVG from './facebook_logo.svg';
