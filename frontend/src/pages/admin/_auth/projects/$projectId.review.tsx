@@ -203,7 +203,6 @@ function RouteComponent() {
             </nav>
             <div className="h-24"></div>
             <SectionedLayout
-                asideTitle="Submit a project"
                 linkContainerClassnames="top-36"
                 links={asideLinks}
             >
@@ -238,10 +237,10 @@ function RouteComponent() {
                                     key={subsection.name}
                                     className={questionGroupContainerStyles()}
                                 >
-                                    <CollapsibleSection 
-                                        title={subsection.name}
-                                    >
-                                        <div className={questionGroupQuestionsContainerStyles()}>
+                                    <CollapsibleSection title={subsection.name}>
+                                        <div
+                                            className={questionGroupQuestionsContainerStyles()}
+                                        >
                                             {subsection.questions.map((q) =>
                                                 shouldRenderQuestion(
                                                     q,
@@ -285,7 +284,7 @@ function RouteComponent() {
                                 </div>
                             )
                         )}
-                        
+
                         <div className="pb-32 flex gap-8">
                             <Button
                                 variant="outline"

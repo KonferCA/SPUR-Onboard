@@ -26,7 +26,7 @@ import { useAuth } from '@/contexts';
 import { useNavigate } from '@tanstack/react-router';
 import { ValidationError, ProjectError } from '@/components/ProjectError';
 import { RecommendedFields } from '@/components/RecommendedFields';
-import { AutosaveIndicator } from '@/components/AutosaveIndicator';
+import { AutosaveIndicator } from '@/components/AutoSaveIndicator';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
 
