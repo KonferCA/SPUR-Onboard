@@ -15,6 +15,11 @@
 
 ---
 
+## 🔨 Builds & Deployments
+
+[![Deploy Backend to AWS - Preview](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-backend.yml/badge.svg?branch=main)](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-backend.yml)
+[![Deploy Frontend to AWS - Preview](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-frontend.yml/badge.svg?branch=main)](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-frontend.yml)
+
 ## ⚡ Quickstart
 >[!NOTE]
 > This is the monorepo containing the backend and frontend code for the webapp, as well as code related to the Web3 infrastructure
