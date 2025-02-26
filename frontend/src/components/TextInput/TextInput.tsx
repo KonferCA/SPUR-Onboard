@@ -28,6 +28,7 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
             className = '',
             value,
             required,
+            disabled,
             onChange,
             rows = 4,
             ...props
@@ -37,7 +38,6 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
         const inputProps = onChange
             ? { value, onChange }
             : { defaultValue: value };
-
         return (
             <div className="w-full">
                 <Field>
@@ -63,9 +63,11 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
                                 className,
                                 prefix: !!prefix,
                                 error: !!error,
+                                disabled: !!disabled,
                             })}
                             invalid={!!error}
                             required={required}
+                            disabled={disabled}
                             {...inputProps}
                             {...props}
                         />
@@ -84,4 +86,5 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
 );
 
 TextInput.displayName = 'TextInput';
+
 export { TextInput };
