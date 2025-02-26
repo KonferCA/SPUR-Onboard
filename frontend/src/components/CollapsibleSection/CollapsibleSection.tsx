@@ -51,7 +51,6 @@ export const CollapsibleSection = ({ title, children }: CollapsibleSectionProps)
                             ease: "easeInOut",
                             opacity: { duration: 0.2 }
                         }}
-                        style={{ overflow: "hidden" }}
                     >
                         {children}
                     </motion.div>
