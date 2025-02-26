@@ -830,5 +830,5 @@ function ProjectFormPage() {
                 </div>
             </ConfirmationModal>
         </div>
-    )
-}
+    );
+};
