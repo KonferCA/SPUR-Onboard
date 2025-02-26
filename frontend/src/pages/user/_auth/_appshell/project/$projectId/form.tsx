@@ -26,9 +26,9 @@ import { useAuth } from '@/contexts';
 import { useNavigate } from '@tanstack/react-router';
 import { ValidationError, ProjectError } from '@/components/ProjectError';
 import { RecommendedFields } from '@/components/RecommendedFields';
-import { AutosaveIndicator } from '@/components/AutosaveIndicator';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
+import { AutosaveIndicator } from '@/components/AutosaveIndicator';
 
 export const Route = createFileRoute(
     '/user/_auth/_appshell/project/$projectId/form',
