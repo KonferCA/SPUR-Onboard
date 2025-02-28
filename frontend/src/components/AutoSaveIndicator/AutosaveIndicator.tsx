@@ -9,12 +9,12 @@ const indicatorStyles = cva(
                 idle: 'bg-gray-50 text-gray-600 border-gray-200',
                 saving: 'bg-blue-50 text-blue-700 border-blue-100',
                 success: 'bg-green-50 text-green-700 border-green-100',
-                error: 'bg-red-50 text-red-700 border-red-100'
-            }
+                error: 'bg-red-50 text-red-700 border-red-100',
+            },
         },
         defaultVariants: {
-            status: 'idle'
-        }
+            status: 'idle',
+        },
     }
 );
 
@@ -24,10 +24,10 @@ export interface AutoSaveIndicatorProps {
     className?: string;
 }
 
-export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({ 
+export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
     status,
     message,
-    className = ''
+    className = '',
 }) => {
     const [showSuccess, setShowSuccess] = useState(false);
 
@@ -44,29 +44,35 @@ export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
         };
     }, [status]);
 
-    const indicatorStatus = 
-        status === 'saving' ? 'saving' :
-        status === 'error' ? 'error' :
-        showSuccess ? 'success' : 'idle';
+    const indicatorStatus =
+        status === 'saving'
+            ? 'saving'
+            : status === 'error'
+              ? 'error'
+              : showSuccess
+                ? 'success'
+                : 'idle';
 
     const defaultMessages = {
         idle: 'Your answers will be autosaved as you complete your application',
         saving: 'Autosaving...',
         success: 'All changes saved',
-        error: 'Failed to save changes'
+        error: 'Failed to save changes',
     };
 
     const displayMessage = message || defaultMessages[indicatorStatus];
 
     return (
-        <div className={indicatorStyles({ status: indicatorStatus, className })}>
-            <div className="flex items-center gap-2">
+        <div
+            className={indicatorStyles({ status: indicatorStatus, className })}
+        >
+            <div className="flex px-6 lg:px-0 justify-center items-center gap-2">
                 {status === 'saving' && (
                     <div className="w-4 h-4 relative">
                         <div className="absolute inset-0 border-2 border-blue-700 border-solid rounded-full border-r-transparent animate-spin" />
                     </div>
                 )}
-                <span>{displayMessage}</span>
+                <span className="text-sm sm:text-base">{displayMessage}</span>
             </div>
         </div>
     );
