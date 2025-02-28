@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, TextInput } from '@/components';
 import type { AuthFormProps, AuthFormData } from '@/types/auth';
+import { LogoSVG } from '@/assets';
 
 export function AuthForm({ 
     onSubmit, 
@@ -45,78 +46,88 @@ export function AuthForm({
         (formData.password && formData.password === confirmPassword);
 
     return (
-        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-            <h2 className="text-2xl font-semibold text-center mb-6">
-                {mode === 'login' ? 'Sign In to Your Account' : 'Create Your Account'}
-            </h2>
+        <>
+            <div className="hidden md:block absolute top-0 left-0 p-6">
+                <img src={LogoSVG} alt="Logo" className="h-8" />
+            </div>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <TextInput
-                    label="Email"
-                    required
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    error={errors.email}
-                    placeholder="Enter your email"
-                />
-
-                <TextInput
-                    label="Password"
-                    required
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    error={errors.password}
-                    placeholder={mode === 'login' ? 'Enter your password' : 'Create a password'}
-                />
+            <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+                <div className="md:hidden flex justify-center mb-6">
+                    <img src={LogoSVG} alt="Logo" className="h-8" />
+                </div>
                 
-                {mode === 'register' && (
+                <h2 className="text-2xl font-semibold text-center mb-6">
+                    {mode === 'login' ? 'Sign In to Your Account' : 'Create Your Account'}
+                </h2>
+                
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <TextInput
-                        label="Confirm Password"
+                        label="Email"
+                        required
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        error={errors.email}
+                        placeholder="Enter your email"
+                    />
+
+                    <TextInput
+                        label="Password"
                         required
                         type="password"
-                        name="confirmPassword"
-                        value={confirmPassword}
+                        name="password"
+                        value={formData.password}
                         onChange={handleChange}
-                        error={confirmError}
-                        placeholder="Confirm your password"
+                        error={errors.password}
+                        placeholder={mode === 'login' ? 'Enter your password' : 'Create a password'}
                     />
-                )}
+                    
+                    {mode === 'register' && (
+                        <TextInput
+                            label="Confirm Password"
+                            required
+                            type="password"
+                            name="confirmPassword"
+                            value={confirmPassword}
+                            onChange={handleChange}
+                            error={confirmError}
+                            placeholder="Confirm your password"
+                        />
+                    )}
 
-                <div className="pt-2">
-                    <Button
-                        type="submit"
-                        liquid
-                        size="lg"
-                        variant="primary"
-                        disabled={isLoading || !isValidForm}
-                    >
-                        {isLoading 
-                            ? (mode === 'login' ? 'Signing in...' : 'Creating account...') 
-                            : (mode === 'login' ? 'Sign In' : 'Create Account')}
-                    </Button>
-                </div>
+                    <div className="pt-2">
+                        <Button
+                            type="submit"
+                            liquid
+                            size="lg"
+                            variant="primary"
+                            disabled={isLoading || !isValidForm}
+                        >
+                            {isLoading 
+                                ? (mode === 'login' ? 'Signing in...' : 'Creating account...') 
+                                : (mode === 'login' ? 'Sign In' : 'Create Account')}
+                        </Button>
+                    </div>
 
-                <div className="text-center mt-4">
-                    <p className="text-sm text-gray-600">
-                        {mode === 'login' 
-                            ? "Don't have an account?" 
-                            : "Already have an account?"}
-                    </p>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={onToggleMode}
-                        className="mt-1"
-                    >
-                        {mode === 'login' ? 'Create an account' : 'Sign in'}
-                    </Button>
-                </div>
-            </form>
-        </div>
+                    <div className="text-center mt-4">
+                        <p className="text-sm text-gray-600">
+                            {mode === 'login' 
+                                ? "Don't have an account?" 
+                                : "Already have an account?"}
+                        </p>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onToggleMode}
+                            className="mt-1"
+                        >
+                            {mode === 'login' ? 'Create an account' : 'Sign in'}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </>
     );
 }
 
