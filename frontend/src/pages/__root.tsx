@@ -1,3 +1,4 @@
+import { AppEnv } from '@/constants/env';
 import type { AuthState } from '@/contexts';
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
@@ -10,7 +11,9 @@ export const Route = createRootRouteWithContext<RouterWithContext>()({
     component: () => (
         <>
             <Outlet />
-            <TanStackRouterDevtools />
+            {import.meta.env.VITE_APP_ENV == AppEnv.Development && (
+                <TanStackRouterDevtools />
+            )}
         </>
     ),
 });
