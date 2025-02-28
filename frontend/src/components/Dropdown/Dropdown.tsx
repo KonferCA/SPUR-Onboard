@@ -42,7 +42,7 @@ const Dropdown: React.FC<DropdownProps> = ({
             return (
                 <ul className="flex flex-wrap gap-2">
                     {value.map((v) => (
-                        <Badge text={v.label} />
+                        <Badge key={v.id} text={v.label} />
                     ))}
                 </ul>
             );
@@ -140,4 +140,3 @@ const Dropdown: React.FC<DropdownProps> = ({
 };
 
 export { Dropdown };
-
