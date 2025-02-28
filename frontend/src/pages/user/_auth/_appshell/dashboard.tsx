@@ -11,13 +11,17 @@ export const Route = createFileRoute('/user/_auth/_appshell/dashboard')({
 });
 
 const navButtonStyles = cva(
-    'p-4 transition rounded-xl text-gray-500 hover:outline outline-gray-300',
+    'py-2 px-4 rounded-md text-gray-500 transition-all',
     {
         variants: {
             active: {
-                true: 'bg-gray-200 text-gray-900 hover:outline-transparent',
+                true: 'bg-[#FFC298] text-[#B54A00] border-2 border-[#F4802F]',
+                false: 'hover:bg-gray-100',
             },
         },
+        defaultVariants: {
+            active: false
+        }
     }
 );
 
@@ -35,8 +39,12 @@ function RouteComponent() {
     });
     const navigate = useNavigate({ from: '/user/dashboard' });
 
+    const handleCreateProject = () => {
+        navigate({ to: '/user/project/new' });
+    };
+
     return (
-        <div>
+        <div className="flex flex-col h-full">
             <div>
                 <nav className="flex justify-between items-center">
                     <div>
@@ -52,6 +60,7 @@ function RouteComponent() {
                                     All Projects
                                 </button>
                             </li>
+
                             <li>
                                 <button
                                     type="button"
@@ -65,30 +74,34 @@ function RouteComponent() {
                             </li>
                         </ul>
                     </div>
-                    <div>
-                        <Button
-                            onClick={() =>
-                                navigate({ to: '/user/project/new' })
-                            }
+
+                    <div className="hidden md:block">
+                        <Button 
+                            onClick={handleCreateProject}
+                            variant="primary"
                         >
                             Create a New Project
                         </Button>
                     </div>
                 </nav>
             </div>
-            <div className="h-[1px] bg-gray-300 my-6">{/* Separator */}</div>
-            <div>
+            
+            <div className="h-[1px] bg-gray-300 my-6" />
+
+            <div className="flex-1">
                 <main>
                     {isLoading && (
                         <div className="w-full flex items-center justify-center">
                             <p>Loading projects...</p>
                         </div>
                     )}
+
                     {!isLoading && projects && projects.length < 1 && (
                         <div className="w-full flex items-center justify-center">
                             <p>You currently have no projects</p>
                         </div>
                     )}
+
                     {projects && (
                         <div className="space-y-4">
                             {projects
@@ -107,6 +120,17 @@ function RouteComponent() {
                     )}
                 </main>
             </div>
+
+            <div className="md:hidden p-4 mt-auto">
+                <Button 
+                    onClick={handleCreateProject}
+                    variant="primary"
+                    size="lg"
+                    liquid
+                >
+                    Create a new project
+                </Button>
+            </div>
         </div>
     );
-}
+};

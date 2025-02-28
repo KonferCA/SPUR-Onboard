@@ -19,24 +19,30 @@ function ProfileSettings() {
     const { accessToken, user } = useAuth();
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch profile data
+    // fetch profile data
     const { data: profile, isLoading } = useQuery({
         queryKey: ['profile', user?.id],
         queryFn: () => {
             if (!accessToken || !user?.id) throw new Error('No access token or user ID');
             return getUserProfile(accessToken, user.id);
         },
-        enabled: !!accessToken && !!user?.id, // Only run query if we have a token and user ID
+        enabled: !!accessToken && !!user?.id, // only run query if we have a token and user ID
     });
 
-    // Update profile mutation
+    // update profile mutation
     const { mutate: updateProfile, isLoading: isUpdating } = useMutation({
         mutationFn: (data: UpdateProfileRequest) => {
-            if (!accessToken || !user?.id) throw new Error('No access token or user ID');
+            if (!accessToken || !user?.id) {
+                throw new Error('No access token or user ID');
+            }
+            
             return updateUserProfile(accessToken, user.id, data);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+            queryClient.invalidateQueries({ 
+                queryKey: ['profile', user?.id] 
+            });
+
             setError(null);
         },
         onError: (err) => {
@@ -48,7 +54,7 @@ function ProfileSettings() {
         },
     });
 
-    // Handle form submission
+    // handle form submission
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError(null);
@@ -63,7 +69,7 @@ function ProfileSettings() {
         };
 
         try {
-            // Validate form data
+            // validate form data
             profileValidationSchema.parse(data);
             updateProfile(data);
         } catch (err) {
@@ -82,44 +88,57 @@ function ProfileSettings() {
     }
 
     if (isLoading) {
-        return <SettingsPage title="Personal Profile">Loading...</SettingsPage>;
+        return (
+            <SettingsPage title="Personal Profile">
+                Loading...
+            </SettingsPage>
+        );
     }
 
-    const isEmptyProfile = !profile?.first_name && !profile?.last_name && !profile?.title && !profile?.bio;
+    const isEmptyProfile = !profile?.first_name &&
+                           !profile?.last_name && 
+                           !profile?.title && 
+                           !profile?.bio;
 
     return (
-        <SettingsPage title="Personal Profile" error={error}>
-            <div>
-                <div className="mb-8">
+        <SettingsPage title="Personal Profile" error={error} className="pt-0">
+            <div className="w-full">
+                <div className="mb-6 md:mb-8">
                     <ProfilePictureUpload />
                 </div>
                 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-5 w-full max-w-full md:max-w-2xl text-base">
                     <div className="space-y-4">
-                        <TextInput
-                            name="first_name"
-                            label="First name"
-                            defaultValue={profile?.first_name}
-                            required
-                        />
-                        <TextInput
-                            name="last_name"
-                            label="Last name"
-                            defaultValue={profile?.last_name}
-                            required
-                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <TextInput
+                                name="first_name"
+                                label="First name"
+                                defaultValue={profile?.first_name}
+                                required
+                            />
+
+                            <TextInput
+                                name="last_name"
+                                label="Last name"
+                                defaultValue={profile?.last_name}
+                                required
+                            />
+                        </div>
+
                         <TextInput
                             name="email"
                             label="Email"
                             defaultValue={user.email}
                             disabled
                         />
+
                         <TextInput
                             name="title"
                             label="Position/Title"
                             defaultValue={profile?.title}
                             required
                         />
+
                         <TextArea
                             name="bio"
                             label="Brief Biography"
@@ -127,6 +146,7 @@ function ProfileSettings() {
                             required
                             rows={4}
                         />
+                        
                         <TextInput
                             name="linkedin_url"
                             label="LinkedIn Profile URL"
@@ -142,6 +162,7 @@ function ProfileSettings() {
                         variant="primary"
                         liquid
                         isLoading={isUpdating}
+                        className="mt-6"
                     >
                         {isEmptyProfile ? 'Complete Profile' : 'Save Changes'}
                     </Button>
@@ -150,4 +171,3 @@ function ProfileSettings() {
         </SettingsPage>
     );
 }
-

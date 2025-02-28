@@ -18,13 +18,13 @@ const indicatorStyles = cva(
     }
 );
 
-export interface AutosaveIndicatorProps {
+export interface AutoSaveIndicatorProps {
     status: 'idle' | 'saving' | 'success' | 'error';
     message?: string;
     className?: string;
 }
 
-export const AutosaveIndicator: React.FC<AutosaveIndicatorProps> = ({ 
+export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({ 
     status,
     message,
     className = ''

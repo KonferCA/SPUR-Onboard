@@ -12,12 +12,15 @@ const NewProjectPage = () => {
 
     useEffect(() => {
         if (!accessToken || hasTriggeredFetchRef.current) return;
+
         // create project on mount
         const newProject = async () => {
             const project = await createProject(accessToken);
             navigate({ to: `/user/project/${project.id}/form` });
-        };
+        }
+
         hasTriggeredFetchRef.current = true;
+
         newProject();
     }, [accessToken]);
 
@@ -26,8 +29,8 @@ const NewProjectPage = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
         </div>
     );
-};
+}
 
-export const Route = createFileRoute('/user/_auth/project/new')({
+export const Route = createFileRoute('/user/_auth/_appshell/project/new')({
     component: React.memo(NewProjectPage),
-});
+})
