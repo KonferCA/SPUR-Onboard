@@ -410,12 +410,6 @@ function ProjectFormPage() {
         }));
     }, [currentStep, sectionsMetadata]);
 
-    useEffect(() => {
-        if (asideLinks) {
-            // dashboard.setCustomSidebar(null);
-        }
-    }, [asideLinks]);
-
     const shouldRenderQuestion = (
         question: Question,
         allQuestions: Question[]
