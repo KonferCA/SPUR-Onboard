@@ -730,37 +730,6 @@ function ProjectFormPage() {
                     )}
                 </div>
 
-                {/* <div className="bg-white border-b border-gray-200 max-w-fit fixed left-1/2 -translate-x-1/2 z-50 rounded-full shadow-lg"> */}
-                {/*     <div className="relative"> */}
-                {/*         <div className="flex items-center py-4"> */}
-                {/*             <div className="flex-1 flex justify-center overflow-x-scroll px-6"> */}
-                {/*                 <nav className="relative overflow-x-scroll"> */}
-                {/*                     <ul className="flex items-center space-x-8 overflow-x-scroll"> */}
-                {/*                         {groupedQuestions.map((group, idx) => ( */}
-                {/*                             <li */}
-                {/*                                 key={`step_${group.section}`} */}
-                {/*                                 className={stepItemStyles({ */}
-                {/*                                     active: currentStep === idx, */}
-                {/*                                 })} */}
-                {/*                                 onClick={() => */}
-                {/*                                     setCurrentStep(idx) */}
-                {/*                                 } */}
-                {/*                             > */}
-                {/*                                 <span className="text-nowrap"> */}
-                {/*                                     {group.section} */}
-                {/*                                 </span> */}
-                {/*                                 {currentStep === idx && ( */}
-                {/*                                     <div className="absolute bottom-0 left-0 w-full h-1 bg-button-secondary-100" /> */}
-                {/*                                 )} */}
-                {/*                             </li> */}
-                {/*                         ))} */}
-                {/*                     </ul> */}
-                {/*                     <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gray-200" /> */}
-                {/*                 </nav> */}
-                {/*             </div> */}
-                {/*         </div> */}
-                {/*     </div> */}
-                {/* </div> */}
                 <form className="space-y-12 2xl:max-w-7xl 2xl:mx-auto">
                     {groupedQuestions[currentStep].subSections.map(
                         (subsection) => (
