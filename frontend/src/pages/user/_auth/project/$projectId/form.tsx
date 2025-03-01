@@ -714,8 +714,11 @@ function ProjectFormPage() {
                 </div>
             </div>
 
-            <div className="pt-28">
-                <div className="flex fixed justify-end px-4 py-2">
+            <div className="pt-52">
+                <div className="fixed w-80 left-12">
+                    <AnchorLinks links={asideLinks} />
+                </div>
+
                 <div className="fixed w-80 right-12">
                     {validationErrors.length > 0 && (
                         <ProjectError
@@ -725,7 +728,7 @@ function ProjectFormPage() {
                     )}
                 </div>
 
-                <form className="space-y-12 2xl:max-w-7xl 2xl:mx-auto">
+                <form className="space-y-12 p-4 lg:p-0 lg:max-w-5xl lg:mx-auto">
                     {groupedQuestions[currentStep].subSections.map(
                         (subsection) => (
                             <div
