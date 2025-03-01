@@ -1,36 +1,36 @@
-import React from 'react'
-import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useRef } from 'react'
-import { createProject } from '@/services/project'
-import { useAuth } from '@/contexts'
-import { useNavigate } from '@tanstack/react-router'
+import React from 'react';
+import { createFileRoute } from '@tanstack/react-router';
+import { useEffect, useRef } from 'react';
+import { createProject } from '@/services/project';
+import { useAuth } from '@/contexts';
+import { useNavigate } from '@tanstack/react-router';
 
 const NewProjectPage = () => {
-  const navigate = useNavigate()
-  const { accessToken } = useAuth()
-  const hasTriggeredFetchRef = useRef(false)
+    const navigate = useNavigate();
+    const { accessToken } = useAuth();
+    const hasTriggeredFetchRef = useRef(false);
 
-  useEffect(() => {
-    if (!accessToken || hasTriggeredFetchRef.current) return
+    useEffect(() => {
+        if (!accessToken || hasTriggeredFetchRef.current) return;
 
-    // create project on mount
-    const newProject = async () => {
-      const project = await createProject(accessToken)
-      navigate({ to: `/user/project/${project.id}/form` })
-    }
+        // create project on mount
+        const newProject = async () => {
+            const project = await createProject(accessToken);
+            navigate({ to: `/user/project/${project.id}/form` });
+        };
 
-    hasTriggeredFetchRef.current = true
+        hasTriggeredFetchRef.current = true;
 
-    newProject()
-  }, [accessToken])
+        newProject();
+    }, [accessToken]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-    </div>
-  )
-}
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+        </div>
+    );
+};
 
 export const Route = createFileRoute('/user/_auth/project/new')({
-  component: React.memo(NewProjectPage),
-})
+    component: React.memo(NewProjectPage),
+});
