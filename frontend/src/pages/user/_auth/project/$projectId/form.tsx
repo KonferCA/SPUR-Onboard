@@ -722,6 +722,7 @@ function ProjectFormPage() {
 
             <div className="pt-28">
                 <div className="flex fixed justify-end px-4 py-2">
+                <div className="fixed w-80 right-12">
                     {validationErrors.length > 0 && (
                         <ProjectError
                             errors={validationErrors}
