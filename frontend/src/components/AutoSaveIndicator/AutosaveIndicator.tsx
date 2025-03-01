@@ -60,7 +60,15 @@ export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
         error: 'Failed to save changes',
     };
 
+    const mobileMessages = {
+        idle: 'Answers are autosaved',
+        saving: 'Autosaving...',
+        success: 'All changes saved',
+        error: 'Failed to save changes',
+    };
+
     const displayMessage = message || defaultMessages[indicatorStatus];
+    const mobileDisplayMessage = message || mobileMessages[indicatorStatus];
 
     return (
         <div
@@ -72,7 +80,12 @@ export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
                         <div className="absolute inset-0 border-2 border-blue-700 border-solid rounded-full border-r-transparent animate-spin" />
                     </div>
                 )}
-                <span className="text-sm sm:text-base">{displayMessage}</span>
+                <span className="hidden md:inline text-sm sm:text-base">
+                    {displayMessage}
+                </span>
+                <span className="inline md:hidden text-sm sm:text-base">
+                    {mobileDisplayMessage}
+                </span>
             </div>
         </div>
     );
