@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
+    AnchorLinkItem,
     AnchorLinks,
     Button,
     DropdownOption,
@@ -403,10 +404,12 @@ function ProjectFormPage() {
         }
     }, [questionData]);
 
-    const asideLinks = useMemo(() => {
+    const asideLinks = useMemo<AnchorLinkItem[]>(() => {
         return sectionsMetadata[currentStep]?.subSections.map((name) => ({
             target: `#${sanitizeHtmlId(name)}`,
             label: name,
+            offset: 208,
+            offsetType: 'after',
         }));
     }, [currentStep, sectionsMetadata]);
 
