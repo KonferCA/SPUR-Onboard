@@ -59,6 +59,7 @@ export default {
                 sm: 'calc(var(--radius) - 4px)',
             },
             screens: {
+                '1.5xl': '1360px',
                 '3xl': '1756px',
             },
         },
