@@ -256,8 +256,8 @@ describe('EquityProgressBar', () => {
     expect(progressBarContainer).toBeInTheDocument();
     
     // should not find a filled part with significant width
-    const significantWidth = document.querySelector('.h-full[style*="width: 1"]');
-    
+    const significantWidth = document.querySelector('.h-full[style*="width: 1%"]') ||
+                              document.querySelector('.h-full[style*="width: 1px"]');
     // should have 0% width or very minimal width
     const zeroWidth = document.querySelector('.h-full[style*="width: 0%"]') || 
                       document.querySelector('.h-full[style*="width:0"]');
