@@ -63,3 +63,6 @@ export {
     type SocialIconButtonProps,
     SocialIconButton,
 } from './SocialIconButton';
+
+export { SectionDrawer } from './SectionDrawer';
+export type { SectionDrawerProps } from './SectionDrawer';
