@@ -80,10 +80,16 @@ export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
                         <div className="absolute inset-0 border-2 border-blue-700 border-solid rounded-full border-r-transparent animate-spin" />
                     </div>
                 )}
-                <span className="hidden md:inline text-sm sm:text-base">
+                <span
+                    data-testid="desktop-autosaveindicator-text"
+                    className="hidden md:inline text-sm sm:text-base"
+                >
                     {displayMessage}
                 </span>
-                <span className="inline md:hidden text-sm sm:text-base">
+                <span
+                    data-testid="mobile-autosaveindicator-text"
+                    className="inline md:hidden text-sm sm:text-base"
+                >
                     {mobileDisplayMessage}
                 </span>
             </div>
