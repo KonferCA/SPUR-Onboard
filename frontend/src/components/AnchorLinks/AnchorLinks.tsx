@@ -8,6 +8,7 @@ export interface AnchorLinkItem {
     // provide the id of the target, or a query selector
     target: string;
     offset?: number;
+    offsetType?: 'after' | 'before' | 'default';
 }
 
 export type ControlledLink = AnchorLinkItem & {
@@ -144,38 +145,35 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
     }, []);
 
     return (
-        <div>
-            <ul className="flex flex-col gap-2">
-                {controlledLinks.map((link, idx) => (
-                    <li
-                        key={link.label}
-                        onClick={async (e) =>
-                            onClick && (await onClick(link, e))
-                        }
+        <ul className="flex flex-col gap-2">
+            {controlledLinks.map((link, idx) => (
+                <li
+                    key={link.label}
+                    onClick={async (e) => onClick && (await onClick(link, e))}
+                >
+                    <ScrollLink
+                        to={link.el ?? link.target}
+                        offset={link.offset}
+                        offsetType={link.offsetType}
                     >
-                        <ScrollLink
-                            to={link.el ?? link.target}
-                            offset={link.offset}
-                        >
-                            {typeof children === 'function' ? (
-                                children(link)
-                            ) : (
-                                <span
-                                    className={clsx(
-                                        'flex gap-2 transition hover:text-gray-800 hover:cursor-pointer',
-                                        link.active && 'text-black',
-                                        !link.active && 'text-gray-400'
-                                    )}
-                                >
-                                    <span>{idx + 1}.</span>
-                                    <span>{link.label}</span>
-                                </span>
-                            )}
-                        </ScrollLink>
-                    </li>
-                ))}
-            </ul>
-        </div>
+                        {typeof children === 'function' ? (
+                            children(link)
+                        ) : (
+                            <span
+                                className={clsx(
+                                    'flex gap-2 transition hover:text-gray-800 hover:cursor-pointer',
+                                    link.active && 'text-black',
+                                    !link.active && 'text-gray-400'
+                                )}
+                            >
+                                <span>{idx + 1}.</span>
+                                <span>{link.label}</span>
+                            </span>
+                        )}
+                    </ScrollLink>
+                </li>
+            ))}
+        </ul>
     );
 };
 
