@@ -6,6 +6,7 @@ export default {
     theme: {
         extend: {
             colors: {
+                'custom-blue-200': '#446E8A',
                 'button-default': '#154261',
                 'button-primary-100': '#F4802F',
                 'button-primary-200': '#D2691F',
@@ -56,6 +57,9 @@ export default {
                 lg: 'var(--radius)',
                 md: 'calc(var(--radius) - 2px)',
                 sm: 'calc(var(--radius) - 4px)',
+            },
+            screens: {
+                '3xl': '1756px',
             },
         },
     },
