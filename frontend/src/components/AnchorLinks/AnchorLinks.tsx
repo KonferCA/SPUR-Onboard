@@ -2,6 +2,7 @@ import React, { FC, ReactNode, useEffect, useState } from 'react';
 import { ScrollLink } from '@components';
 import { isAtEndOfPage, isElementInView } from '@utils';
 import clsx from 'clsx';
+import { getRootListStyles } from './AnchorLinks.styles';
 
 export interface AnchorLinkItem {
     label: string;
@@ -39,9 +40,23 @@ export interface AnchorLinksProps {
               link: ControlledLink,
               event: React.MouseEvent<HTMLLIElement>
           ) => Promise<void>);
+    /*
+     * Sets the scrolling to manual. Use the onClick prop to handle.
+     */
+    manualScroll?: boolean;
+    /*
+     * Sets the gap in the y-axis between links.
+     */
+    yGap?: 'sm' | 'md' | 'lg' | 'default';
 }
 
-const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
+const AnchorLinks: FC<AnchorLinksProps> = ({
+    links,
+    manualScroll,
+    yGap = 'default',
+    children,
+    onClick,
+}) => {
     const [controlledLinks, setControlledLinks] = useState<ControlledLink[]>(
         []
     );
@@ -145,32 +160,52 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
     }, []);
 
     return (
-        <ul className="flex flex-col gap-2">
+        <ul className={getRootListStyles({ yGap })}>
             {controlledLinks.map((link, idx) => (
                 <li
                     key={link.label}
                     onClick={async (e) => onClick && (await onClick(link, e))}
+                    className="cursor-pointer"
                 >
-                    <ScrollLink
-                        to={link.el ?? link.target}
-                        offset={link.offset}
-                        offsetType={link.offsetType}
-                    >
-                        {typeof children === 'function' ? (
-                            children(link)
-                        ) : (
-                            <span
-                                className={clsx(
-                                    'flex gap-2 transition hover:text-gray-800 hover:cursor-pointer',
-                                    link.active && 'text-black',
-                                    !link.active && 'text-gray-400'
-                                )}
-                            >
-                                <span>{idx + 1}.</span>
-                                <span>{link.label}</span>
-                            </span>
-                        )}
-                    </ScrollLink>
+                    {manualScroll ? (
+                        <a>
+                            {typeof children === 'function' ? (
+                                children(link)
+                            ) : (
+                                <span
+                                    className={clsx(
+                                        'flex gap-2 transition hover:text-gray-800 hover:cursor-pointer',
+                                        link.active && 'text-black',
+                                        !link.active && 'text-gray-400'
+                                    )}
+                                >
+                                    <span>{idx + 1}.</span>
+                                    <span>{link.label}</span>
+                                </span>
+                            )}
+                        </a>
+                    ) : (
+                        <ScrollLink
+                            to={link.el ?? link.target}
+                            offset={link.offset}
+                            offsetType={link.offsetType}
+                        >
+                            {typeof children === 'function' ? (
+                                children(link)
+                            ) : (
+                                <span
+                                    className={clsx(
+                                        'flex gap-2 transition hover:text-gray-800 hover:cursor-pointer',
+                                        link.active && 'text-black',
+                                        !link.active && 'text-gray-400'
+                                    )}
+                                >
+                                    <span>{idx + 1}.</span>
+                                    <span>{link.label}</span>
+                                </span>
+                            )}
+                        </ScrollLink>
+                    )}
                 </li>
             ))}
         </ul>
