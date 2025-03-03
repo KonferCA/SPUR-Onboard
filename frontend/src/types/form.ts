@@ -1,6 +1,7 @@
 import type { UploadableFile } from '@/components';
 import { ZodTypeAny } from 'zod';
 import { UserSocial } from './auth';
+import { FundingStructureModel } from '@/components/FundingStructure';
 
 export type FormFieldType =
     | 'textinput'
@@ -9,11 +10,13 @@ export type FormFieldType =
     | 'multiselect'
     | 'textarea'
     | 'file'
-    | 'team';
+    | 'team'
+    | 'fundingstructure';
 
 export interface FormFieldValue {
     files?: UploadableFile[];
     teamMembers?: TeamMember[];
+    fundingStructure?: FundingStructureModel;
     value?: any;
 }
 

@@ -10,6 +10,7 @@ import { Question } from '@/config/forms';
 import { FormField } from '@/types';
 import { FC } from 'react';
 import { cva } from 'class-variance-authority';
+import FundingStructure from '../FundingStructure';
 
 const legendStyles = cva('block text-md font-normal', {
     variants: {
@@ -160,6 +161,18 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         })}
                         {...field.props}
                     />
+                );
+
+            case 'fundingstructure':
+                return (
+                    <div className="w-full">
+                        <FundingStructure
+                            value={field.value.fundingStructure}
+                            onChange={(structure) => 
+                                onChange(question.id, field.key, structure)
+                            }
+                        />
+                    </div>
                 );
 
             case 'multiselect':
