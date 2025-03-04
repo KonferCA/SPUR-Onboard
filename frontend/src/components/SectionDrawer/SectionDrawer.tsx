@@ -8,8 +8,6 @@ import {
     DrawerDescription,
 } from '@/components/ui/drawer';
 import { IoMdAlert } from 'react-icons/io';
-import { BiChevronDown } from 'react-icons/bi';
-import { motion } from 'framer-motion';
 import type { SectionDrawerProps } from './SectionDrawer.types';
 import { AnchorLinks, ControlledLink } from '@components';
 import { isElementInView, scrollToWithOffset } from '@/utils';
@@ -19,9 +17,9 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
     activeSection,
     subSectionLinks,
     validationErrors,
+    onRequestChangeSection,
 }) => {
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const [sectionListOpen, _] = useState(false);
     const [activeSubSection, setActiveSubSection] = useState('');
 
     const handleLinkClick = (link: ControlledLink) => {
@@ -37,6 +35,15 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
             }, 500);
         }
     };
+
+    useEffect(() => {
+        if (validationErrors.length) {
+            onRequestChangeSection(validationErrors[0].section);
+            setTimeout(() => {
+                setDrawerOpen(true);
+            }, 500);
+        }
+    }, [validationErrors]);
 
     useEffect(() => {
         const handler = () => {
@@ -147,15 +154,7 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                                 </DrawerTitle>
                             </div>
                             <DrawerDescription className="text-custom-blue-200">
-                                <motion.div
-                                    initial={false}
-                                    animate={{
-                                        rotate: sectionListOpen ? 180 : 360,
-                                    }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    <BiChevronDown className="w-6 h-6" />
-                                </motion.div>
+                                Go to...
                             </DrawerDescription>
                         </div>
                     </DrawerHeader>

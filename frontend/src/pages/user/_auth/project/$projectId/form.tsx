@@ -814,6 +814,14 @@ function ProjectFormPage() {
                     activeSection={groupedQuestions[currentStep]?.section || ''}
                     subSectionLinks={asideLinks || []}
                     validationErrors={validationErrors}
+                    onRequestChangeSection={(section) => {
+                        const idx = groupedQuestions.findIndex(
+                            (group) => group.section === section
+                        );
+                        if (idx !== -1) {
+                            setCurrentStep(idx);
+                        }
+                    }}
                 />
             </div>
 
