@@ -26,7 +26,7 @@ export interface AnchorLinksProps {
      * should look. This also allows the usage of stateful components as children
      * that are controlled by the page using the AnchorLinks component.
      */
-    children?: (link: ControlledLink) => ReactNode;
+    children?: (link: ControlledLink, idx: number) => ReactNode;
     /*
      * onClick handler for when a link item is clicked. Pass this if additional operations
      * are desired on top of scrolling to the target.
@@ -170,7 +170,7 @@ const AnchorLinks: FC<AnchorLinksProps> = ({
                     {manualScroll ? (
                         <a>
                             {typeof children === 'function' ? (
-                                children(link)
+                                children(link, idx)
                             ) : (
                                 <span
                                     className={clsx(
@@ -191,7 +191,7 @@ const AnchorLinks: FC<AnchorLinksProps> = ({
                             offsetType={link.offsetType}
                         >
                             {typeof children === 'function' ? (
-                                children(link)
+                                children(link, idx)
                             ) : (
                                 <span
                                     className={clsx(
