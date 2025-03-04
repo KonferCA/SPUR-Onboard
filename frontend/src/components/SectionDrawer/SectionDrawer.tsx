@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import {
     Drawer,
     DrawerTrigger,
@@ -38,12 +38,25 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
 
     useEffect(() => {
         if (validationErrors.length) {
-            onRequestChangeSection(validationErrors[0].section);
+            const firstSectionWithError = validationErrors[0].section;
+
+            onRequestChangeSection(firstSectionWithError);
+
             setTimeout(() => {
                 setDrawerOpen(true);
             }, 500);
         }
     }, [validationErrors]);
+
+    const activeSectionValidationErrors = useMemo(() => {
+        if (validationErrors.length) {
+            const errors = validationErrors.filter(
+                (e) => e.section === activeSection
+            );
+            return errors;
+        }
+        return [];
+    }, [activeSection, validationErrors]);
 
     useEffect(() => {
         const handler = () => {
@@ -169,7 +182,10 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                                     className={clsx(
                                         'flex gap-2 transition',
                                         link.active && 'text-black',
-                                        !link.active && 'text-gray-300'
+                                        !link.active && 'text-gray-300',
+                                        activeSectionValidationErrors.find(
+                                            (e) => e.subsection === link.label
+                                        ) && 'text-red-500'
                                     )}
                                 >
                                     <span>{idx + 1}.</span>
