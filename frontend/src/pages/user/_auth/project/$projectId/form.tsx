@@ -813,6 +813,7 @@ function ProjectFormPage() {
                 <SectionDrawer
                     activeSection={groupedQuestions[currentStep]?.section || ''}
                     subSectionLinks={asideLinks || []}
+                    validationErrors={validationErrors}
                 />
             </div>
 
