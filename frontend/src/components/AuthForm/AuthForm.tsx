@@ -1,7 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, TextInput } from '@/components';
 import type { AuthFormProps, AuthFormData } from '@/types/auth';
 import { LogoSVG } from '@/assets';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
+
+interface PasswordValidation {
+    hasUpperCase: boolean;
+    hasNumber: boolean;
+    hasSpecialChar: boolean;
+    isValid: boolean;
+}
 
 export function AuthForm({ 
     onSubmit, 
@@ -16,13 +24,55 @@ export function AuthForm({
     });
     const [confirmPassword, setConfirmPassword] = useState('');
     const [confirmError, setConfirmError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [passwordValidation, setPasswordValidation] = useState<PasswordValidation>({
+        hasUpperCase: false,
+        hasNumber: false,
+        hasSpecialChar: false,
+        isValid: false
+    });
+    const [showRequirements, setShowRequirements] = useState(false);
+
+    useEffect(() => {
+        if (mode === 'register' && formData.password) {
+            const validation = {
+                hasUpperCase: /[A-Z]/.test(formData.password),
+                hasNumber: /[0-9]/.test(formData.password),
+                hasSpecialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password),
+                isValid: false
+            };
+            
+            validation.isValid = 
+                validation.hasUpperCase && 
+                validation.hasNumber && 
+                validation.hasSpecialChar;
+            
+            setPasswordValidation(validation);
+            
+            setShowRequirements(formData.password.length > 0 && !validation.isValid);
+        } else {
+            setShowRequirements(false);
+        }
+    }, [formData.password, mode]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (mode === 'register' && formData.password !== confirmPassword) {
-            setConfirmError('Passwords do not match');
-            return;
+        
+        if (mode === 'register') {
+            if (formData.password !== confirmPassword) {
+                setConfirmError('Passwords do not match');
+
+                return;
+            }
+            
+            if (!passwordValidation.isValid) {
+                setShowRequirements(true);
+
+                return;
+            }
         }
+        
         await onSubmit(formData);
     };
 
@@ -43,7 +93,19 @@ export function AuthForm({
     };
 
     const isValidForm = mode === 'login' || 
-        (formData.password && formData.password === confirmPassword);
+        (
+            formData.password && 
+            formData.password === confirmPassword && 
+            passwordValidation.isValid
+        );
+
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
+
+    const toggleConfirmPasswordVisibility = () => {
+        setShowConfirmPassword(!showConfirmPassword);
+    };
 
     return (
         <>
@@ -72,27 +134,66 @@ export function AuthForm({
                         placeholder="Enter your email"
                     />
 
-                    <TextInput
-                        label="Password"
-                        required
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        error={errors.password}
-                        placeholder={mode === 'login' ? 'Enter your password' : 'Create a password'}
-                    />
+                    <div className="relative">
+                        <TextInput
+                            label="Password"
+                            required
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            error={errors.password}
+                            placeholder={mode === 'login' ? 'Enter your password' : 'Create a password'}
+                            endIcon={
+                                <button 
+                                    type="button"
+                                    className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                                    onClick={togglePasswordVisibility}
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                >
+                                    {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                                </button>
+                            }
+                        /> 
+                    </div>
+                    
+                    {mode === 'register' && showRequirements && (
+                        <div className="text-sm space-y-1 mt-1 text-gray-600">
+                            <p className="font-medium">Password must contain:</p>
+                            <ul className="space-y-1 pl-5 list-disc">
+                                <li className={passwordValidation.hasUpperCase ? "text-green-600" : ""}>
+                                    At least one uppercase letter
+                                </li>
+                                <li className={passwordValidation.hasNumber ? "text-green-600" : ""}>
+                                    At least one number
+                                </li>
+                                <li className={passwordValidation.hasSpecialChar ? "text-green-600" : ""}>
+                                    At least one special character
+                                </li>
+                            </ul>
+                        </div>
+                    )}
                     
                     {mode === 'register' && (
                         <TextInput
                             label="Confirm Password"
                             required
-                            type="password"
+                            type={showConfirmPassword ? "text" : "password"}
                             name="confirmPassword"
                             value={confirmPassword}
                             onChange={handleChange}
                             error={confirmError}
                             placeholder="Confirm your password"
+                            endIcon={
+                                <button 
+                                    type="button"
+                                    className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                                    onClick={toggleConfirmPasswordVisibility}
+                                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                                >
+                                    {showConfirmPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                                </button>
+                            }
                         />
                     )}
 
@@ -116,6 +217,7 @@ export function AuthForm({
                                 ? "Don't have an account?" 
                                 : "Already have an account?"}
                         </p>
+
                         <Button
                             type="button"
                             variant="outline"
