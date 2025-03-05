@@ -30,9 +30,7 @@ import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
 import { AutoSaveIndicator } from '@/components/AutoSaveIndicator';
 
-export const Route = createFileRoute(
-    '/user/_auth/_appshell/project/$projectId/form'
-)({
+export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
     component: ProjectFormPage,
 });
 
@@ -836,7 +834,6 @@ function ProjectFormPage() {
                                     </div>
                                 )
                             )}
-
                             <div className="pb-32 flex gap-8">
                                 <Button
                                     variant="outline"

@@ -32,9 +32,7 @@ const stepItemStyles = cva(
 const questionGroupContainerStyles = cva('');
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
-export const Route = createFileRoute(
-    '/user/_auth/_appshell/project/$projectId/view'
-)({
+export const Route = createFileRoute('/user/_auth/project/$projectId/view')({
     component: RouteComponent,
 });
 
@@ -286,7 +284,6 @@ function RouteComponent() {
                                 </div>
                             )
                         )}
-
                         <div className="pb-32 flex gap-8">
                             <Button
                                 variant="outline"
