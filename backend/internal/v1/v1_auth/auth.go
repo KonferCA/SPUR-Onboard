@@ -380,6 +380,31 @@ func (h *Handler) handleVerifyEmail(c echo.Context) error {
 }
 
 /*
+Handles resending verification emails for users who haven't verified their email yet
+or if the link has expired
+*/
+func (h *Handler) handleResendVerificationEmail(c echo.Context) error {
+	logger := middleware.GetLogger(c)
+
+	user, ok := c.Get("user").(*db.User)
+	if !ok {
+		return v1_common.Fail(c, http.StatusInternalServerError, "", errors.New("failed to cast user type from context"))
+	}
+
+	// prevent sending verification email if already verified
+	if user.EmailVerified {
+		return v1_common.Fail(c, http.StatusBadRequest, "email is already verified", nil)
+	}
+
+	logger.Info(fmt.Sprintf("Resending verification email to user: %s", user.Email))
+
+	// use the existing helper function to send the verification email
+	go sendEmailVerification(user.ID, user.Email, h.server.GetQueries())
+
+	return v1_common.Success(c, http.StatusOK, "verification email sent")
+}
+
+/*
 Handle incoming requests to verify the refresh token saved in a HTTP-only cookie.
 This route is used for a form to verify persistant authentication and generate
 new access tokens for clients to use.

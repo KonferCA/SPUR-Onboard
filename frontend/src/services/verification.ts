@@ -77,6 +77,41 @@ export async function handleEmailVerificationRedirect(
 }
 
 /**
+ * Resends the verification email to the user
+ */
+export async function resendVerificationEmail(accessToken: string): Promise<boolean> {
+    const url = getApiUrl('/auth/resend-verification');
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            
+            throw new ApiError('Failed to resend verification email', response.status, errorData);
+        }
+    
+        return true;
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        
+        throw new ApiError(
+            'Failed to resend verification email',
+            500,
+            { message: error instanceof Error ? error.message : 'Unknown error' }
+        );
+    }
+  }
+
+/**
  * Helper function to check if we're currently on a verification redirect URL
  */
 export function isVerificationRedirect(params: URLSearchParams): boolean {
