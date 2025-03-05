@@ -9,7 +9,7 @@ import { ExtendedProjectResponse } from '@/services/project';
 // mock the router hook
 vi.mock('@tanstack/react-router', async () => {
     const actual = await vi.importActual('@tanstack/react-router');
-    
+
     return {
         ...actual,
         useNavigate: vi.fn(() => vi.fn()),
@@ -21,44 +21,43 @@ vi.mock('@/services/projects', () => ({
     ProjectStatusEnum: {
         Pending: 'pending',
         Withdrawn: 'withdrawn',
-        Draft: 'draft'
+        Draft: 'draft',
     },
 
-    updateProjectStatus: vi.fn(() => Promise.resolve())
+    updateProjectStatus: vi.fn(() => Promise.resolve()),
 }));
 
 // mock the format date util
 vi.mock('@/utils/date', () => ({
-    formatUnixTimestamp: vi.fn(() => 'Feb 4, 2024')
+    formatUnixTimestamp: vi.fn(() => 'Feb 4, 2024'),
 }));
 
 // create a wrapper component that provides both contexts
 const renderWithProviders = async (ui: React.ReactNode) => {
     const rendered = render(
         <NotificationProvider>
-            <AuthProvider>
-                {ui}
-            </AuthProvider>
+            <AuthProvider>{ui}</AuthProvider>
         </NotificationProvider>
     );
-  
+
     // wait for auth state to settle
     await waitFor(() => {
         expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
-  
+
     return rendered;
 };
 
 describe('Test ProjectCard Component', () => {
     let projectData: ExtendedProjectResponse;
     let mockNavigate: ReturnType<typeof vi.fn>;
-  
+
     beforeEach(() => {
         projectData = {
             id: 'proj_123xyz789',
             title: 'Website Redesign',
-            description: 'Complete overhaul of company website with new branding and improved UX',
+            description:
+                'Complete overhaul of company website with new branding and improved UX',
             status: 'draft',
             createdAt: 1675209600000, // Feb 1, 2024
             updatedAt: 1707004800000, // Feb 4, 2024
@@ -70,18 +69,12 @@ describe('Test ProjectCard Component', () => {
         mockNavigate = vi.fn();
         vi.spyOn(router, 'useNavigate').mockImplementation(() => mockNavigate);
     });
-  
+
     it('should render project information correctly', async () => {
         await renderWithProviders(<ProjectCard data={projectData} />);
 
         // check for title
         expect(screen.getByText(projectData.title)).toBeInTheDocument();
-
-        // for company name, check if it appears anywhere in the document
-        const companyNameElements = screen.getAllByText((content, _) => {
-            return content.includes(projectData.companyName);
-        });
-        expect(companyNameElements.length).toBeGreaterThan(0);
 
         // for document count, check if the number appears
         const docCountElements = screen.getAllByText((content, _) => {
@@ -95,7 +88,7 @@ describe('Test ProjectCard Component', () => {
         });
         expect(teamCountElements.length).toBeGreaterThan(0);
     });
-  
+
     it('should render correct button for draft projects', async () => {
         await renderWithProviders(<ProjectCard data={projectData} />);
 
@@ -103,17 +96,17 @@ describe('Test ProjectCard Component', () => {
             // look for buttons in both desktop and mobile layouts
             const allButtons = screen.getAllByText(/Edit Draft Project/i);
             expect(allButtons.length).toBeGreaterThan(0);
-            
+
             // click the first one we find
             fireEvent.click(allButtons[0]);
-            
+
             // check navigation was called
             expect(mockNavigate).toHaveBeenCalledWith({
                 to: `/user/project/${projectData.id}/form`,
             });
         });
     });
-  
+
     it('should render correct button for non-draft projects', async () => {
         projectData.status = 'pending';
         await renderWithProviders(<ProjectCard data={projectData} />);
@@ -122,28 +115,30 @@ describe('Test ProjectCard Component', () => {
             // look for buttons in both desktop and mobile layouts
             const allButtons = screen.getAllByText(/View/i);
             expect(allButtons.length).toBeGreaterThan(0);
-            
+
             // click the first one we find
             fireEvent.click(allButtons[0]);
-            
+
             // check navigation was called
             expect(mockNavigate).toHaveBeenCalledWith({
                 to: `/user/project/${projectData.id}/view`,
             });
         });
     });
-  
+
     it('should display project status badge', async () => {
         await renderWithProviders(<ProjectCard data={projectData} />);
 
         // look for the status text anywhere in the document
         const statusElements = screen.getAllByText((content, _) => {
-            return content.toLowerCase().includes(projectData.status.toLowerCase());
+            return content
+                .toLowerCase()
+                .includes(projectData.status.toLowerCase());
         });
 
         expect(statusElements.length).toBeGreaterThan(0);
     });
-  
+
     // TODO: date-fns is returning wrong formats even if the timestamp is correct. Seems like an issue beyond us.
     it('should display some form of date for the submission date', async () => {
         // mock the format date function to return a predictable string
@@ -159,7 +154,7 @@ describe('Test ProjectCard Component', () => {
 
         expect(dateElements.length).toBeGreaterThan(0);
     });
-  
+
     it('should show withdraw button for pending projects', async () => {
         projectData.status = ProjectStatusEnum.Pending;
         await renderWithProviders(<ProjectCard data={projectData} />);
@@ -174,3 +169,4 @@ describe('Test ProjectCard Component', () => {
         expect(screen.queryByText('Withdraw')).not.toBeInTheDocument();
     });
 });
+

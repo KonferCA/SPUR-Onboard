@@ -148,7 +148,7 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	// create a company upon registration
 	company, err := q.CreateCompany(ctx, db.CreateCompanyParams{
 		OwnerID:       newUser.ID,
-		Name:          newUser.ID + "_group",
+		Name:          "Untitled",
 		WalletAddress: nil,
 		LinkedinUrl:   "",
 		Description:   nil,
