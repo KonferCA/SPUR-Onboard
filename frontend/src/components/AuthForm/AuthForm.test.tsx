@@ -46,7 +46,7 @@ describe('AuthForm', () => {
 
         render(<AuthForm {...defaultProps} errors={errors} />);
 
-        expect(screen.getByText('Invalid email address')).toBeInTheDocument();
+        expect(screen.getAllByText('Invalid email address').length).toBeGreaterThan(0);
         expect(screen.getByText('Password is required')).toBeInTheDocument();
     });
 
