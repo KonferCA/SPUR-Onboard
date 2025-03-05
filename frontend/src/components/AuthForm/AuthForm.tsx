@@ -66,12 +66,16 @@ export function AuthForm({
                 <div className="my-4 p-4 bg-red-100 rounded-lg">
                     <h3 className="text-red-500">Oops, something went wrong</h3>
                     <div className="space-y-1">
-                        {internalErrors.map((e, idx) => (
-                            <p
-                                key={idx}
-                                className="underline"
-                            >{`${idx + 1}. ${e}`}</p>
-                        ))}
+                        {internalErrors.length === 1 ? (
+                            <p className="underline">{internalErrors[0]}</p>
+                        ) : (
+                            internalErrors.map((e, idx) => (
+                                <p
+                                    key={idx}
+                                    className="underline"
+                                >{`${idx + 1}. ${e}`}</p>
+                            ))
+                        )}
                     </div>
                 </div>
             )}
