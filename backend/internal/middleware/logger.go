@@ -1,53 +1,85 @@
+// Package middleware provides Echo middleware functions for the SPUR backend
 package middleware
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
-// Logger is a middleware that logs the request and response basic information.
-func Logger() echo.MiddlewareFunc {
+type contextKey string
+const loggerContextKey contextKey = "logger"
+
+/*
+Logger provides a simplified interface for structured logging throughout the application.
+It automatically includes request context (request ID, path, method) in all log entries
+while providing a clean interface for developers.
+
+Usage in handlers:
+    logger := middleware.GetLogger(c)
+    logger.Info("starting process")
+    logger.Error(err, "process failed")
+    logger.Warn("suspicious activity", optionalError)
+*/
+type Logger struct {
+	baseLogger *zerolog.Logger
+}
+
+func (l *Logger) Info(msg string) {
+	l.baseLogger.Info().Msg(msg)
+}
+
+func (l *Logger) Error(err error, msg string) {
+	l.baseLogger.Error().Err(err).Msg(msg)
+}
+
+func (l *Logger) Warn(msg string, err ...error) {
+	logger := l.baseLogger.Warn()
+	if len(err) > 0 && err[0] != nil {
+		logger = logger.Err(err[0])
+	}
+	logger.Msg(msg)
+}
+
+/*
+GetLogger retrieves the request-scoped logger from the echo context.
+If no logger is found, returns a default logger.
+
+The returned logger automatically includes request context in all log entries.
+*/
+func GetLogger(c echo.Context) *Logger {
+	if l, ok := c.Get(string(loggerContextKey)).(*Logger); ok {
+		return l
+	}
+	defaultLogger := log.With().Logger()
+	return &Logger{baseLogger: &defaultLogger}
+}
+
+/*
+LoggerMiddleware initializes a request-scoped logger and stores it in the context.
+The logger includes request ID, method, and path in all subsequent log entries.
+*/
+func LoggerMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			method := c.Request().Method
-			path := c.Request().URL.Path
-			requestId := c.Request().Header.Get(echo.HeaderXRequestID)
-			xRealIp := c.Request().Header.Get(echo.HeaderXRealIP)
-			realIp := c.RealIP()
-			remoteAddr := c.Request().RemoteAddr
-			contentType := c.Request().Header.Get(echo.HeaderContentType)
-			contentLength := c.Request().Header.Get(echo.HeaderContentLength)
-			userAgent := c.Request().UserAgent()
-			// before processing the request
-			log.Info().
-				Str("method", method).
-				Str("path", path).
-				Str(echo.HeaderXRequestID, requestId).
-				Str(echo.HeaderXRealIP, xRealIp).
-				Str(echo.HeaderContentType, contentType).
-				Str(echo.HeaderContentLength, contentLength).
-				Str("remote_addr", remoteAddr).
-				Str("user_agent", userAgent).
-				Str("real_ip", realIp).
-				Msg("New request!")
-
-				// process the request
-			err := next(c)
-			// after processing the request
-			if err != nil {
-				log.Error().
-					Err(err).
-					Str(echo.HeaderXRequestID, requestId).
-					Str(echo.HeaderContentType, c.Response().Header().Get(echo.HeaderContentType)).
-					Str(echo.HeaderContentLength, c.Response().Header().Get(echo.HeaderContentLength)).
-					Send()
+			// Get request ID from header OR response header (in case middleware set it)
+			requestID := c.Request().Header.Get(echo.HeaderXRequestID)
+			if requestID == "" {
+				requestID = c.Response().Header().Get(echo.HeaderXRequestID)
 			}
-			log.Info().
-				Str(echo.HeaderXRequestID, requestId).
-				Str(echo.HeaderContentType, c.Response().Header().Get(echo.HeaderContentType)).
-				Str(echo.HeaderContentLength, c.Response().Header().Get(echo.HeaderContentLength)).
-				Msg("Requested processed.")
-			return err
+
+			// Create logger with request context
+			baseLogger := log.With().
+				Str("request_id", requestID).
+				Str("method", c.Request().Method).
+				Str("path", c.Request().URL.Path).
+				Logger()
+
+			c.Set(string(loggerContextKey), &Logger{
+				baseLogger: &baseLogger,
+			})
+
+			return next(c)
 		}
 	}
-}
+} 

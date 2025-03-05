@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"KonferCA/SPUR/common"
 	"bytes"
 	"context"
 	"fmt"
@@ -28,7 +29,12 @@ func NewStorage() (*Storage, error) {
 		return nil, fmt.Errorf("unable to load SDK config: %v", err)
 	}
 
-	client := s3.NewFromConfig(cfg)
+	var client *s3.Client
+	if os.Getenv("APP_ENV") != common.TEST_ENV {
+		client = s3.NewFromConfig(cfg)
+	} else {
+		client = nil
+	}
 
 	return &Storage{
 		s3Client: client,
@@ -45,7 +51,7 @@ func (s *Storage) ValidateFileURL(url string) bool {
 // GetPresignedURL generates a presigned URL for uploading a file
 func (s *Storage) GetPresignedURL(ctx context.Context, key string) (string, error) {
 	presignClient := s3.NewPresignClient(s.s3Client)
-	
+
 	putObjectInput := &s3.PutObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
@@ -84,4 +90,5 @@ func (s *Storage) DeleteFile(ctx context.Context, key string) error {
 	}
 
 	return nil
-} 
+}
+

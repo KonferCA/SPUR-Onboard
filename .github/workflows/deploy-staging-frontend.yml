@@ -1,4 +1,4 @@
-name: Build and Deploy Preview / Frontend
+name: Build and Deploy Staging / Frontend
 on:
   workflow_dispatch:
   push:

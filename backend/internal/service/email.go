@@ -12,6 +12,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const DELIVERY_EMAIL = "delivered@resend.dev"
+
 /*
 SendVerficationEmail takes a JWT that is later verified by the verify email route.
 The function requires the BACKEND_URL env to work.
@@ -25,6 +27,7 @@ func SendVerficationEmail(ctx context.Context, to string, token string) error {
 		return err
 	}
 
+	// Use the delivery email address but keep the original recipient in the email body
 	return SendEmail(ctx, "Verify Your Email", os.Getenv("NOREPLY_EMAIL"), []string{to}, buf.String())
 }
 
@@ -38,8 +41,13 @@ func SendEmail(ctx context.Context, subject string, from string, to []string, ht
 		return nil
 	}
 
+	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
+		to = []string{DELIVERY_EMAIL}
+	}
+
 	apiKey := os.Getenv("RESEND_API_KEY")
 	client := resend.NewClient(apiKey)
+
 	params := &resend.SendEmailRequest{
 		From:    from,
 		To:      to,
@@ -52,7 +60,12 @@ func SendEmail(ctx context.Context, subject string, from string, to []string, ht
 		return err
 	}
 
-	log.Info().Str("email_id", sent.Id).Str("from", from).Strs("to", to).Str("subject", subject).Msg("Email sent!")
+	log.Info().
+		Str("email_id", sent.Id).
+		Str("from", from).
+		Strs("to", to).
+		Str("subject", subject).
+		Msg("Email sent!")
 
 	return nil
 }

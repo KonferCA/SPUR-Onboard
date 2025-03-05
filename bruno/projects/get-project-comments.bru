@@ -1,0 +1,38 @@
+meta {
+  name: Get Project Comments
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/project/{{project_id}}/comments
+}
+
+headers {
+  Authorization: Bearer {{access_token}}
+}
+
+tests {
+  test("should get project comments", function() {
+    expect(res.status).to.equal(200);
+    
+    // Check response structure
+    expect(res.body).to.have.property("comments");
+    expect(res.body.comments).to.be.an("array");
+    
+    // If comments exist, verify structure of first comment
+    if (res.body.comments.length > 0) {
+      const comment = res.body.comments[0];
+      expect(comment).to.have.property("id");
+      expect(comment).to.have.property("project_id");
+      expect(comment).to.have.property("target_id");
+      expect(comment).to.have.property("comment");
+      expect(comment).to.have.property("commenter_id");
+      expect(comment).to.have.property("created_at");
+      expect(comment).to.have.property("updated_at");
+      
+      // Save first comment ID for single comment test
+      bru.setVar("comment_id", comment.id);
+    }
+  });
+} 
