@@ -22,7 +22,7 @@ INSERT INTO companies (
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8
 )
-RETURNING id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at
+RETURNING id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at, group_type
 `
 
 type CreateCompanyParams struct {
@@ -60,6 +60,7 @@ func (q *Queries) CreateCompany(ctx context.Context, arg CreateCompanyParams) (C
 		&i.LinkedinUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GroupType,
 	)
 	return i, err
 }
@@ -75,7 +76,7 @@ func (q *Queries) DeleteCompany(ctx context.Context, id string) error {
 }
 
 const getCompanyByID = `-- name: GetCompanyByID :one
-SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at FROM companies
+SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at, group_type FROM companies
 WHERE id = $1
 `
 
@@ -94,12 +95,13 @@ func (q *Queries) GetCompanyByID(ctx context.Context, id string) (Company, error
 		&i.LinkedinUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GroupType,
 	)
 	return i, err
 }
 
 const getCompanyByOwnerID = `-- name: GetCompanyByOwnerID :one
-SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at FROM companies
+SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at, group_type FROM companies
 WHERE owner_id = $1
 `
 
@@ -118,12 +120,13 @@ func (q *Queries) GetCompanyByOwnerID(ctx context.Context, ownerID string) (Comp
 		&i.LinkedinUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GroupType,
 	)
 	return i, err
 }
 
 const getCompanyByProjectID = `-- name: GetCompanyByProjectID :one
-SELECT c.id, c.owner_id, c.name, c.description, c.date_founded, c.stages, c.website, c.wallet_address, c.linkedin_url, c.created_at, c.updated_at FROM projects p
+SELECT c.id, c.owner_id, c.name, c.description, c.date_founded, c.stages, c.website, c.wallet_address, c.linkedin_url, c.created_at, c.updated_at, c.group_type FROM projects p
 JOIN companies c ON c.id = p.company_id
 WHERE p.id = $1
 `
@@ -143,12 +146,13 @@ func (q *Queries) GetCompanyByProjectID(ctx context.Context, id string) (Company
 		&i.LinkedinUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GroupType,
 	)
 	return i, err
 }
 
 const getCompanyWithAuth = `-- name: GetCompanyWithAuth :one
-SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at FROM companies 
+SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at, group_type FROM companies 
 WHERE (owner_id = $1 OR $2 = 'admin') AND id = $3
 `
 
@@ -173,12 +177,13 @@ func (q *Queries) GetCompanyWithAuth(ctx context.Context, arg GetCompanyWithAuth
 		&i.LinkedinUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GroupType,
 	)
 	return i, err
 }
 
 const listCompanies = `-- name: ListCompanies :many
-SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at FROM companies
+SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at, group_type FROM companies
 WHERE owner_id = $1
 ORDER BY created_at DESC
 `
@@ -204,6 +209,7 @@ func (q *Queries) ListCompanies(ctx context.Context, ownerID string) ([]Company,
 			&i.LinkedinUrl,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.GroupType,
 		); err != nil {
 			return nil, err
 		}
@@ -227,7 +233,7 @@ SET
   stages = COALESCE($8, stages),
   updated_at = extract(epoch from now())
 WHERE id = $1
-RETURNING id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at
+RETURNING id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at, group_type
 `
 
 type UpdateCompanyParams struct {
@@ -265,6 +271,7 @@ func (q *Queries) UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (C
 		&i.LinkedinUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GroupType,
 	)
 	return i, err
 }

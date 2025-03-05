@@ -75,6 +75,64 @@ func AllConditionTypeEnumValues() []ConditionTypeEnum {
 	}
 }
 
+type GroupTypeEnum string
+
+const (
+	GroupTypeEnumTeam    GroupTypeEnum = "team"
+	GroupTypeEnumCompany GroupTypeEnum = "company"
+)
+
+func (e *GroupTypeEnum) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = GroupTypeEnum(s)
+	case string:
+		*e = GroupTypeEnum(s)
+	default:
+		return fmt.Errorf("unsupported scan type for GroupTypeEnum: %T", src)
+	}
+	return nil
+}
+
+type NullGroupTypeEnum struct {
+	GroupTypeEnum GroupTypeEnum `json:"group_type_enum"`
+	Valid         bool          `json:"valid"` // Valid is true if GroupTypeEnum is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullGroupTypeEnum) Scan(value interface{}) error {
+	if value == nil {
+		ns.GroupTypeEnum, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.GroupTypeEnum.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullGroupTypeEnum) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.GroupTypeEnum), nil
+}
+
+func (e GroupTypeEnum) Valid() bool {
+	switch e {
+	case GroupTypeEnumTeam,
+		GroupTypeEnumCompany:
+		return true
+	}
+	return false
+}
+
+func AllGroupTypeEnumValues() []GroupTypeEnum {
+	return []GroupTypeEnum{
+		GroupTypeEnumTeam,
+		GroupTypeEnumCompany,
+	}
+}
+
 type InputTypeEnum string
 
 const (
@@ -292,17 +350,18 @@ func AllSocialPlatformEnumValues() []SocialPlatformEnum {
 }
 
 type Company struct {
-	ID            string   `json:"id"`
-	OwnerID       string   `json:"owner_id"`
-	Name          string   `json:"name"`
-	Description   *string  `json:"description"`
-	DateFounded   int64    `json:"date_founded"`
-	Stages        []string `json:"stages"`
-	Website       *string  `json:"website"`
-	WalletAddress *string  `json:"wallet_address"`
-	LinkedinUrl   string   `json:"linkedin_url"`
-	CreatedAt     int64    `json:"created_at"`
-	UpdatedAt     int64    `json:"updated_at"`
+	ID            string        `json:"id"`
+	OwnerID       string        `json:"owner_id"`
+	Name          string        `json:"name"`
+	Description   *string       `json:"description"`
+	DateFounded   int64         `json:"date_founded"`
+	Stages        []string      `json:"stages"`
+	Website       *string       `json:"website"`
+	WalletAddress *string       `json:"wallet_address"`
+	LinkedinUrl   string        `json:"linkedin_url"`
+	CreatedAt     int64         `json:"created_at"`
+	UpdatedAt     int64         `json:"updated_at"`
+	GroupType     GroupTypeEnum `json:"group_type"`
 }
 
 type Project struct {

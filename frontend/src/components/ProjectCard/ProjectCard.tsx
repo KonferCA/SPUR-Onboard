@@ -8,6 +8,7 @@ import { WithdrawProjectModal } from '../WithdrawProjectModal/WithdrawProjectMod
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotification } from '@/contexts/NotificationContext';
 import { FiMoreVertical } from 'react-icons/fi';
+import clsx from 'clsx';
 
 export interface ProjectCardProps {
     data: ExtendedProjectResponse;
@@ -32,7 +33,6 @@ const InfoSection: FC<InfoSectionProps> = ({ label, children }) => {
     );
 };
 
-
 const MobileInfoRow: FC<MobileInfoRowProps> = ({ label, value }) => {
     return (
         <div className="flex justify-between items-center">
@@ -51,12 +51,12 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
     const [_, setIsMobileView] = useState(false);
     const [showOptionsMenu, setShowOptionsMenu] = useState(false);
 
-    const DESKTOP_BREAKPOINT = 992; 
+    const DESKTOP_BREAKPOINT = 992;
 
     useEffect(() => {
         const handleResize = () => {
             setIsMobileView(window.innerWidth < DESKTOP_BREAKPOINT);
-            
+
             if (showOptionsMenu && window.innerWidth >= DESKTOP_BREAKPOINT) {
                 setShowOptionsMenu(false);
             }
@@ -64,7 +64,7 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
 
         handleResize();
         window.addEventListener('resize', handleResize);
-        
+
         return () => window.removeEventListener('resize', handleResize);
     }, [showOptionsMenu]);
 
@@ -72,7 +72,7 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
         const handleClickOutside = (event: MouseEvent) => {
             const menu = document.getElementById(`options-menu-${data.id}`);
             const button = document.getElementById(`options-button-${data.id}`);
-            
+
             if (
                 menu &&
                 button &&
@@ -94,11 +94,15 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
 
     const handleWithdraw = async () => {
         if (!accessToken) return;
-        
+
         try {
             setIsWithdrawing(true);
 
-            await updateProjectStatus(accessToken, data.id, ProjectStatusEnum.Withdrawn);
+            await updateProjectStatus(
+                accessToken,
+                data.id,
+                ProjectStatusEnum.Withdrawn
+            );
 
             push({
                 message: 'Project withdrawn successfully',
@@ -108,7 +112,7 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
             window.location.reload();
         } catch (error: any) {
             console.error('Failed to withdraw project:', error);
-            
+
             if (error?.response?.status === 401) {
                 push({
                     message: 'Your session has expired. Please sign in again.',
@@ -116,12 +120,14 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                 });
             } else if (error?.response?.status === 403) {
                 push({
-                    message: 'You do not have permission to withdraw this project.',
+                    message:
+                        'You do not have permission to withdraw this project.',
                     level: 'error',
                 });
             } else {
                 push({
-                    message: 'Unable to withdraw your project. Please try again or contact support if the issue persists.',
+                    message:
+                        'Unable to withdraw your project. Please try again or contact support if the issue persists.',
                     level: 'error',
                 });
             }
@@ -152,14 +158,20 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
             <Card>
                 <div className="flex justify-between items-center">
                     <div className="h-full">
-                        <h1 className="align-bottom h-full text-lg lg:text-xl font-semibold">
+                        <h1
+                            className={clsx(
+                                'align-bottom h-full text-lg lg:text-xl font-semibold',
+                                data.title.toLowerCase().includes('untitled') &&
+                                    'italic'
+                            )}
+                        >
                             {data.title}
                         </h1>
                     </div>
-                    
+
                     <div className="hidden lg:flex items-center gap-3">
                         {canWithdraw && (
-                            <Button 
+                            <Button
                                 variant="outline"
                                 onClick={() => setShowWithdrawModal(true)}
                             >
@@ -189,23 +201,23 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                             </Button>
                         )}
                     </div>
-                    
+
                     <div className="lg:hidden relative">
-                        <button 
+                        <button
                             id={`options-button-${data.id}`}
                             onClick={() => setShowOptionsMenu(!showOptionsMenu)}
                             className="p-2 text-gray-700 hover:text-gray-900 focus:outline-none"
                         >
                             <FiMoreVertical size={20} />
                         </button>
-                        
+
                         {showOptionsMenu && (
-                            <div 
+                            <div
                                 id={`options-menu-${data.id}`}
                                 className="absolute right-0 top-10 z-10 w-48 bg-white rounded-md shadow-lg border border-gray-200"
                             >
                                 {canWithdraw && (
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             setShowOptionsMenu(false);
                                             setShowWithdrawModal(true);
@@ -216,29 +228,22 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                                     </button>
                                 )}
 
-                                <button 
+                                <button
                                     onClick={viewProject}
                                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                 >
-                                    {data.status === 'draft' ? 'Edit Draft Project' : 'View'}
+                                    {data.status === 'draft'
+                                        ? 'Edit Draft Project'
+                                        : 'View'}
                                 </button>
                             </div>
                         )}
                     </div>
                 </div>
-                
-                <div className="h-[1px] bg-gray-300 my-4" />
-                
-                <div className="hidden lg:flex items-center justify-between">
-                    <InfoSection label="Company Name">
-                        <span 
-                            className="truncate max-w-[150px] block" 
-                            title={data.companyName}
-                        >
-                            {data.companyName}
-                        </span>
-                    </InfoSection>
 
+                <div className="h-[1px] bg-gray-300 my-4" />
+
+                <div className="hidden lg:flex items-center justify-between">
                     <InfoSection label="Status">
                         <Badge text={data.status} />
                     </InfoSection>
@@ -255,50 +260,37 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                         {`${data.teamMemberCount} Members`}
                     </InfoSection>
                 </div>
-                
-                <div className="lg:hidden space-y-4">
-                    <MobileInfoRow 
-                        label="Company name" 
-                        value={
-                            <span 
-                                className="truncate max-w-[200px] md:max-w-[300px] block text-right" 
-                                title={data.companyName}
-                            >
-                                {data.companyName}
-                            </span>
-                        } 
-                    />
 
-                    <MobileInfoRow 
-                        label="Status" 
+                <div className="lg:hidden space-y-4">
+                    <MobileInfoRow
+                        label="Status"
                         value={
                             <div className="flex justify-end">
                                 <Badge text={data.status} />
                             </div>
-                        } 
+                        }
                     />
 
-                    <MobileInfoRow 
-                        label="Date submitted" 
-                        value={formatUnixTimestamp(data.updatedAt)} 
+                    <MobileInfoRow
+                        label="Date submitted"
+                        value={formatUnixTimestamp(data.updatedAt)}
                     />
 
-                    <MobileInfoRow 
-                        label="Documents uploaded" 
-                        value={`${data.documentCount} Documents`} 
+                    <MobileInfoRow
+                        label="Documents uploaded"
+                        value={`${data.documentCount} Documents`}
                     />
 
-                    <MobileInfoRow 
-                        label="Team members" 
-                        value={`${data.teamMemberCount} Members`} 
+                    <MobileInfoRow
+                        label="Team members"
+                        value={`${data.teamMemberCount} Members`}
                     />
-                    
+
                     <div className="pt-2">
-                        <Button
-                            onClick={viewProject}
-                            className="w-full"
-                        >
-                            {data.status === 'draft' ? 'Edit Draft Project' : 'View'}
+                        <Button onClick={viewProject} className="w-full">
+                            {data.status === 'draft'
+                                ? 'Edit Draft Project'
+                                : 'View'}
                         </Button>
                     </div>
                 </div>

@@ -272,7 +272,7 @@ func (q *Queries) DeleteProjectDocument(ctx context.Context, arg DeleteProjectDo
 }
 
 const getCompanyByUserID = `-- name: GetCompanyByUserID :one
-SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at FROM companies 
+SELECT id, owner_id, name, description, date_founded, stages, website, wallet_address, linkedin_url, created_at, updated_at, group_type FROM companies 
 WHERE owner_id = $1 
 LIMIT 1
 `
@@ -292,6 +292,7 @@ func (q *Queries) GetCompanyByUserID(ctx context.Context, ownerID string) (Compa
 		&i.LinkedinUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GroupType,
 	)
 	return i, err
 }
@@ -1008,7 +1009,23 @@ func (q *Queries) ListAllProjects(ctx context.Context) ([]ListAllProjectsRow, er
 }
 
 const listCompanyProjects = `-- name: ListCompanyProjects :many
-SELECT p.id, p.company_id, p.title, p.description, p.status, p.created_at, p.updated_at, COUNT(d.id) as document_count, COUNT(t.id) as team_member_count
+SELECT 
+    p.id,
+    p.company_id,
+    COALESCE(
+        (SELECT pa.answer 
+         FROM project_answers pa
+         JOIN project_questions pq ON pa.question_id = pq.id
+         WHERE pa.project_id = p.id AND pq.question_key = 'company_name' AND pa.answer != ''
+         LIMIT 1),
+        p.title
+    ) as title,
+    p.description,
+    p.status,
+    p.created_at,
+    p.updated_at,
+    COUNT(d.id) as document_count,
+    COUNT(t.id) as team_member_count
 FROM projects p
 LEFT JOIN project_documents d ON d.project_id = p.id
 LEFT JOIN team_members t ON t.company_id = $1
