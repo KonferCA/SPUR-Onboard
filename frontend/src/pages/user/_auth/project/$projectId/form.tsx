@@ -3,15 +3,15 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Button, DropdownOption, UploadableFile } from '@components';
 import { IoMdArrowRoundBack } from 'react-icons/io';
 import {
-  getProjectFormQuestions,
-  ProjectDraft,
-  saveProjectDraft,
-  submitProject,
+    getProjectFormQuestions,
+    ProjectDraft,
+    saveProjectDraft,
+    submitProject,
 } from '@/services/project';
 import {
-  GroupedProjectQuestions,
-  groupProjectQuestions,
-  Question,
+    GroupedProjectQuestions,
+    groupProjectQuestions,
+    Question,
 } from '@/config/forms';
 import { SectionedLayout } from '@/templates';
 import { cva } from 'class-variance-authority';
@@ -30,11 +30,9 @@ import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
 import { AutoSaveIndicator } from '@/components/AutoSaveIndicator';
 
-export const Route = createFileRoute(
-    '/user/_auth/_appshell/project/$projectId/form',
-)({
+export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
     component: ProjectFormPage,
-})
+});
 
 const stepItemStyles = cva(
     'text-lg relative transition text-gray-400 hover:text-button-secondary-100 hover:cursor-pointer py-2',
@@ -44,7 +42,7 @@ const stepItemStyles = cva(
                 true: 'font-semibold !text-button-secondary-100',
             },
         },
-    },
+    }
 );
 
 const questionGroupContainerStyles = cva('');
@@ -53,7 +51,7 @@ const questionGroupQuestionsContainerStyles = cva('space-y-6');
 const isEmptyValue = (value: any, type: string): boolean => {
     if (value === null || value === undefined) {
         return true;
-    };
+    }
 
     switch (type) {
         case 'textinput':
@@ -67,10 +65,10 @@ const isEmptyValue = (value: any, type: string): boolean => {
         default:
             return false;
     }
-}
+};
 
 function ProjectFormPage() {
-    const { projectId: currentProjectId } = Route.useParams()
+    const { projectId: currentProjectId } = Route.useParams();
     const navigate = useNavigate({
         from: `/user/project/${currentProjectId}/form`,
     });
@@ -83,7 +81,10 @@ function ProjectFormPage() {
                 return;
             }
 
-            const data = await getProjectFormQuestions(accessToken, currentProjectId);
+            const data = await getProjectFormQuestions(
+                accessToken,
+                currentProjectId
+            );
             return data;
         },
         enabled: !!currentProjectId,
@@ -100,14 +101,14 @@ function ProjectFormPage() {
     const [showSubmitModal, setShowSubmitModal] = useState(false);
     const [showRecommendedModal, setShowRecommendedModal] = useState(false);
     const [validationErrors, setValidationErrors] = useState<ValidationError[]>(
-        [],
+        []
     );
     const [recommendedFields, setRecommendedFields] = useState<
         Array<{
-            section: string
-            subsection: string
-            questionText: string
-            inputType: string
+            section: string;
+            subsection: string;
+            questionText: string;
+            inputType: string;
         }>
     >([]);
     const [autosaveStatus, setAutosaveStatus] = useState<
@@ -123,7 +124,7 @@ function ProjectFormPage() {
 
             // find all dirty inputs and create params while clearing dirty flags
             const dirtyInputsSnapshot: ProjectDraft[] = Array.from(
-                dirtyInputRef.current.values(),
+                dirtyInputRef.current.values()
             );
             dirtyInputRef.current.clear();
 
@@ -137,9 +138,9 @@ function ProjectFormPage() {
                     await saveProjectDraft(
                         accessToken,
                         currentProjectId,
-                        dirtyInputsSnapshot,
+                        dirtyInputsSnapshot
                     );
-                    
+
                     setAutosaveStatus('success');
                 }
             } catch (e) {
@@ -149,8 +150,8 @@ function ProjectFormPage() {
                 setIsSaving(false);
             }
         },
-        1500, 
-        [currentProjectId, accessToken, companyId, isSaving],
+        1500,
+        [currentProjectId, accessToken, companyId, isSaving]
     );
 
     const handleManualSave = useCallback(async () => {
@@ -159,7 +160,7 @@ function ProjectFormPage() {
         }
 
         const dirtyInputsSnapshot: ProjectDraft[] = Array.from(
-            dirtyInputRef.current.values(),
+            dirtyInputRef.current.values()
         );
 
         if (dirtyInputsSnapshot.length === 0) {
@@ -170,7 +171,11 @@ function ProjectFormPage() {
         setAutosaveStatus('saving');
 
         try {
-            await saveProjectDraft(accessToken, currentProjectId, dirtyInputsSnapshot);
+            await saveProjectDraft(
+                accessToken,
+                currentProjectId,
+                dirtyInputsSnapshot
+            );
             dirtyInputRef.current.clear();
             setAutosaveStatus('success');
         } catch (error) {
@@ -197,7 +202,7 @@ function ProjectFormPage() {
     const handleChange = (
         questionId: string,
         inputFieldKey: string,
-        value: any,
+        value: any
     ) => {
         console.log('[ProjectPage] handleChange called:', {
             questionId,
@@ -221,51 +226,64 @@ function ProjectFormPage() {
                         questions: subsection.questions.map((question) => {
                             // Process file uploads separately from other field types
                             const isFileInput = question.inputFields.some(
-                                (f) => f.type === 'file' && f.key === inputFieldKey,
-                            )
+                                (f) =>
+                                    f.type === 'file' && f.key === inputFieldKey
+                            );
 
                             if (isFileInput) {
-                            // Handle file upload case
-                            return {
-                                ...question,
-                                inputFields: question.inputFields.map((field) => {
-                                    if (field.key !== inputFieldKey) {
-                                        return field;
-                                    }
+                                // Handle file upload case
+                                return {
+                                    ...question,
+                                    inputFields: question.inputFields.map(
+                                        (field) => {
+                                            if (field.key !== inputFieldKey) {
+                                                return field;
+                                            }
 
-                                    const files = value as UploadableFile[];
+                                            const files =
+                                                value as UploadableFile[];
 
-                                    // if we're clearing files
-                                    if (files.length === 0) {
-                                        return {
-                                            ...field,
-                                            value: {
-                                                ...field.value,
-                                                value: [],
-                                            },
+                                            // if we're clearing files
+                                            if (files.length === 0) {
+                                                return {
+                                                    ...field,
+                                                    value: {
+                                                        ...field.value,
+                                                        value: [],
+                                                    },
+                                                };
+                                            }
+
+                                            // handle file upload state
+                                            const uploadedFiles = files.filter(
+                                                (f) => f.metadata?.id
+                                            );
+                                            if (uploadedFiles.length > 0) {
+                                                dirtyInputRef.current.set(
+                                                    inputFieldKey,
+                                                    {
+                                                        question_id:
+                                                            inputFieldKey,
+                                                        answer:
+                                                            uploadedFiles[0]
+                                                                .metadata?.id ||
+                                                            '',
+                                                    }
+                                                );
+
+                                                setTimeout(() => autosave(), 0);
+                                            }
+
+                                            return {
+                                                ...field,
+                                                value: {
+                                                    ...field.value,
+                                                    value: files,
+                                                },
+                                            };
                                         }
-                                    }
-
-                                    // handle file upload state
-                                    const uploadedFiles = files.filter((f) => f.metadata?.id);
-                                        if (uploadedFiles.length > 0) {
-                                            dirtyInputRef.current.set(inputFieldKey, {
-                                                question_id: inputFieldKey,
-                                                answer: uploadedFiles[0].metadata?.id || '',
-                                            });
-
-                                            setTimeout(() => autosave(), 0);
-                                        }
-
-                                        return {
-                                            ...field,
-                                            value: {
-                                                ...field.value,
-                                                value: files,
-                                            },
-                                        }
-                                    }),
-                                }
+                                    ),
+                                };
                             }
 
                             // handle non-file fields
@@ -275,58 +293,74 @@ function ProjectFormPage() {
 
                             return {
                                 ...question,
-                                inputFields: question.inputFields.map((field) => {
-                                    if (field.key !== inputFieldKey) {
-                                        return field;
-                                    }
-
-                                    let newValue = value;
-
-                                    switch (field.type) {
-                                        case 'select':
-                                        case 'multiselect':
-                                            const choices = value as DropdownOption[];
-                                                dirtyInputRef.current.set(questionId, {
-                                                    question_id: questionId,
-                                                    answer: choices.map((c) => c.value),
-                                                });
-                                            break;
-
-                                        case 'date':
-                                            const date = value as Date;
-
-                                            dirtyInputRef.current.set(questionId, {
-                                                question_id: questionId,
-                                                answer: date.toISOString().split('T')[0],
-                                            });
-                                            break;
-
-                                        default:
-                                            dirtyInputRef.current.set(questionId, {
-                                                question_id: questionId,
-                                                answer: value,
-                                            });
-                                            break;
+                                inputFields: question.inputFields.map(
+                                    (field) => {
+                                        if (field.key !== inputFieldKey) {
+                                            return field;
                                         }
 
-                                    setTimeout(() => autosave(), 0);
+                                        let newValue = value;
 
-                                    return {
-                                        ...field,
-                                        value: {
-                                            ...field.value,
-                                            value: newValue,
-                                        },
+                                        switch (field.type) {
+                                            case 'select':
+                                            case 'multiselect':
+                                                const choices =
+                                                    value as DropdownOption[];
+                                                dirtyInputRef.current.set(
+                                                    questionId,
+                                                    {
+                                                        question_id: questionId,
+                                                        answer: choices.map(
+                                                            (c) => c.value
+                                                        ),
+                                                    }
+                                                );
+                                                break;
+
+                                            case 'date':
+                                                const date = value as Date;
+
+                                                dirtyInputRef.current.set(
+                                                    questionId,
+                                                    {
+                                                        question_id: questionId,
+                                                        answer: date
+                                                            .toISOString()
+                                                            .split('T')[0],
+                                                    }
+                                                );
+                                                break;
+
+                                            default:
+                                                dirtyInputRef.current.set(
+                                                    questionId,
+                                                    {
+                                                        question_id: questionId,
+                                                        answer: value,
+                                                    }
+                                                );
+                                                break;
+                                        }
+
+                                        setTimeout(() => autosave(), 0);
+
+                                        return {
+                                            ...field,
+                                            value: {
+                                                ...field.value,
+                                                value: newValue,
+                                            },
+                                        };
                                     }
-                                }),
-                            }
+                                ),
+                            };
                         }),
                     })),
-                }
-            })
+                };
+            });
             return newGroups;
-        })
-    }
+        });
+    };
 
     const handleNextStep = () => {
         setCurrentStep((curr) => {
@@ -340,7 +374,7 @@ function ProjectFormPage() {
         setTimeout(() => {
             scrollToTop();
         }, 120);
-    }
+    };
 
     const handleBackStep = () => {
         setCurrentStep((curr) => {
@@ -354,7 +388,7 @@ function ProjectFormPage() {
         setTimeout(() => {
             scrollToTop();
         }, 120);
-    }
+    };
 
     // For filling sample data - uncomment out if needed
     // const handleFillSampleData = () => {
@@ -413,19 +447,19 @@ function ProjectFormPage() {
         (name) => ({
             target: `#${sanitizeHtmlId(name)}`,
             label: name,
-        }),
+        })
     );
 
     const shouldRenderQuestion = (
         question: Question,
-        allQuestions: Question[],
+        allQuestions: Question[]
     ) => {
         if (!question.dependentQuestionId) {
             return true;
         }
 
         const dependentQuestion = allQuestions.find(
-            (q) => q.id === question.dependentQuestionId,
+            (q) => q.id === question.dependentQuestionId
         );
 
         if (!dependentQuestion) {
@@ -438,10 +472,13 @@ function ProjectFormPage() {
         for (const group of groupedQuestions) {
             for (const subSection of group.subSections) {
                 const foundQuestion = subSection.questions.find(
-                    (q) => q.id === question.dependentQuestionId,
+                    (q) => q.id === question.dependentQuestionId
                 );
 
-                if (foundQuestion && foundQuestion.inputFields[0]?.value.value) {
+                if (
+                    foundQuestion &&
+                    foundQuestion.inputFields[0]?.value.value
+                ) {
                     dependentAnswer = foundQuestion.inputFields[0].value.value;
                     break;
                 }
@@ -456,14 +493,14 @@ function ProjectFormPage() {
                     return dependentAnswer.length > 0;
                 case 'equals':
                     return dependentAnswer.every(
-                        (a) => a.value === question.conditionValue,
+                        (a) => a.value === question.conditionValue
                     );
                 case 'contains':
                     return (
                         dependentAnswer.findIndex(
-                            (a) => a.value === question.conditionValue,
+                            (a) => a.value === question.conditionValue
                         ) !== -1
-                    )
+                    );
                 default:
                     return true;
             }
@@ -476,12 +513,14 @@ function ProjectFormPage() {
                 case 'equals':
                     return dependentAnswer === question.conditionValue;
                 case 'contains':
-                    return dependentAnswer.includes(question.conditionValue || '');
+                    return dependentAnswer.includes(
+                        question.conditionValue || ''
+                    );
                 default:
                     return true;
             }
         }
-    }
+    };
 
     const handleSubmit = async () => {
         const invalidQuestions: ValidationError[] = [];
@@ -518,7 +557,10 @@ function ProjectFormPage() {
                                     fieldValid = false;
                                 } else if (input.validations) {
                                     fieldValid = input.validations.every(
-                                        (validation) => validation.safeParse(input.value.value).success,
+                                        (validation) =>
+                                            validation.safeParse(
+                                                input.value.value
+                                            ).success
                                     );
                                 }
                                 break;
@@ -530,12 +572,14 @@ function ProjectFormPage() {
                                 ) {
                                     fieldValid = false;
                                 } else if (input.validations) {
-                                    const values = input.value.value as string[];
+                                    const values = input.value
+                                        .value as string[];
                                     fieldValid = values.every((v) =>
                                         input.validations?.every(
-                                            (validation) => validation.safeParse(v).success,
-                                        ),
-                                    )
+                                            (validation) =>
+                                                validation.safeParse(v).success
+                                        )
+                                    );
                                 }
                                 break;
                             default:
@@ -568,10 +612,10 @@ function ProjectFormPage() {
             setValidationErrors([]);
 
             const recommended: Array<{
-                section: string
-                subsection: string
-                questionText: string
-                inputType: string
+                section: string;
+                subsection: string;
+                questionText: string;
+                inputType: string;
             }> = [];
 
             groupedQuestions.forEach((group) => {
@@ -580,7 +624,10 @@ function ProjectFormPage() {
                         if (
                             question.conditionType &&
                             question.conditionType.valid &&
-                            !shouldRenderQuestion(question, subsection.questions)
+                            !shouldRenderQuestion(
+                                question,
+                                subsection.questions
+                            )
                         ) {
                             return;
                         }
@@ -613,7 +660,7 @@ function ProjectFormPage() {
             setValidationErrors(invalidQuestions);
             setGroupedQuestions((prev) => [...prev]);
         }
-    }
+    };
 
     const handleSubmitConfirm = async () => {
         try {
@@ -624,15 +671,15 @@ function ProjectFormPage() {
             await submitProject(accessToken, currentProjectId);
 
             // replace to not let them go back, it causes the creation of a new project
-            navigate({ to: '/user/dashboard', replace: true })
+            navigate({ to: '/user/dashboard', replace: true });
         } catch (e) {
             console.error(e);
         }
-    }
+    };
 
     const handleErrorClick = (section: string, subsectionId: string) => {
         const sectionIndex = groupedQuestions.findIndex(
-            (group) => group.section === section,
+            (group) => group.section === section
         );
 
         if (sectionIndex !== -1) {
@@ -646,7 +693,7 @@ function ProjectFormPage() {
                 }
             }, 100);
         }
-    }
+    };
 
     // TODO: make a better loading screen
     if (groupedQuestions.length < 1 || loadingQuestions) return null;
@@ -686,11 +733,11 @@ function ProjectFormPage() {
                                                 className={stepItemStyles({
                                                     active: currentStep === idx,
                                                 })}
-                                                onClick={() => setCurrentStep(idx)}
+                                                onClick={() =>
+                                                    setCurrentStep(idx)
+                                                }
                                             >
-                                                <span>
-                                                    {group.section}
-                                                </span>
+                                                <span>{group.section}</span>
 
                                                 {currentStep === idx && (
                                                     <div className="absolute bottom-0 left-0 w-full h-1 bg-button-secondary-100" />
@@ -708,7 +755,10 @@ function ProjectFormPage() {
             </div>
 
             <div className="pt-[144px]">
-                <SectionedLayout links={asideLinks} linkContainerClassnames="top-48">
+                <SectionedLayout
+                    links={asideLinks}
+                    linkContainerClassnames="top-48"
+                >
                     <div>
                         {/* <div className="flex justify-center mt-8">
                                         <Button
@@ -730,41 +780,60 @@ function ProjectFormPage() {
                         </div>
 
                         <form className="space-y-12 lg:max-w-3xl mx-auto">
-                            {groupedQuestions[currentStep].subSections.map((subsection) => (
-                                <div
-                                    id={sanitizeHtmlId(subsection.name)}
-                                    key={subsection.name}
-                                    className={questionGroupContainerStyles()}
-                                >
-                                    <CollapsibleSection title={subsection.name}>
-                                        <div className={questionGroupQuestionsContainerStyles()}>
-                                            {subsection.questions.map((q) =>
-                                                shouldRenderQuestion(q, subsection.questions) ? (
-                                                    <QuestionInputs
-                                                        key={q.id}
-                                                        question={q}
-                                                        onChange={handleChange}
-                                                        fileUploadProps={
-                                                            accessToken
-                                                            ? {
-                                                                projectId: currentProjectId,
-                                                                questionId: q.id,
-                                                                section:
-                                                                    groupedQuestions[currentStep].section,
-                                                                subSection: subsection.name,
-                                                                accessToken: accessToken,
-                                                                enableAutosave: true,
+                            {groupedQuestions[currentStep].subSections.map(
+                                (subsection) => (
+                                    <div
+                                        id={sanitizeHtmlId(subsection.name)}
+                                        key={subsection.name}
+                                        className={questionGroupContainerStyles()}
+                                    >
+                                        <CollapsibleSection
+                                            title={subsection.name}
+                                        >
+                                            <div
+                                                className={questionGroupQuestionsContainerStyles()}
+                                            >
+                                                {subsection.questions.map(
+                                                    (q) =>
+                                                        shouldRenderQuestion(
+                                                            q,
+                                                            subsection.questions
+                                                        ) ? (
+                                                            <QuestionInputs
+                                                                key={q.id}
+                                                                question={q}
+                                                                onChange={
+                                                                    handleChange
                                                                 }
-                                                            : undefined
-                                                        }
-                                                    />
-                                                ) : null,
-                                            )};
-                                        </div>
-                                    </CollapsibleSection>
-                                </div>
-                            ))};
-
+                                                                fileUploadProps={
+                                                                    accessToken
+                                                                        ? {
+                                                                              projectId:
+                                                                                  currentProjectId,
+                                                                              questionId:
+                                                                                  q.id,
+                                                                              section:
+                                                                                  groupedQuestions[
+                                                                                      currentStep
+                                                                                  ]
+                                                                                      .section,
+                                                                              subSection:
+                                                                                  subsection.name,
+                                                                              accessToken:
+                                                                                  accessToken,
+                                                                              enableAutosave:
+                                                                                  true,
+                                                                          }
+                                                                        : undefined
+                                                                }
+                                                            />
+                                                        ) : null
+                                                )}
+                                            </div>
+                                        </CollapsibleSection>
+                                    </div>
+                                )
+                            )}
                             <div className="pb-32 flex gap-8">
                                 <Button
                                     variant="outline"
@@ -780,14 +849,15 @@ function ProjectFormPage() {
                                     liquid
                                     type="button"
                                     onClick={
-                                    currentStep < groupedQuestions.length - 1
-                                        ? handleNextStep
-                                        : handleSubmit
+                                        currentStep <
+                                        groupedQuestions.length - 1
+                                            ? handleNextStep
+                                            : handleSubmit
                                     }
                                 >
                                     {currentStep < groupedQuestions.length - 1
-                                    ? 'Continue'
-                                    : 'Submit'}
+                                        ? 'Continue'
+                                        : 'Submit'}
                                 </Button>
                             </div>
                         </form>
@@ -819,16 +889,15 @@ function ProjectFormPage() {
                 primaryActionText="Yes, submit it"
             >
                 <div className="space-y-4">
-                    <p>
-                        Have you double-checked everything in this project?
-                    </p>
+                    <p>Have you double-checked everything in this project?</p>
 
                     <p>
-                        Once submitted, you won't be able to make changes until the
-                        application is either approved or sent back for review.
+                        Once submitted, you won't be able to make changes until
+                        the application is either approved or sent back for
+                        review.
                     </p>
                 </div>
             </ConfirmationModal>
         </div>
     );
-};
+}

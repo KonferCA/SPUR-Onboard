@@ -65,7 +65,7 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 	description := ""
 	project, err := h.server.GetQueries().CreateProject(c.Request().Context(), db.CreateProjectParams{
 		CompanyID:   company.ID,
-		Title:       fmt.Sprintf("Project %d", count), // For now the project title is not editable in the frontend
+		Title:       fmt.Sprintf("Untitled %d", count), // For now the project title is not editable in the frontend
 		Description: &description,
 		Status:      db.ProjectStatusDraft,
 		CreatedAt:   now,
