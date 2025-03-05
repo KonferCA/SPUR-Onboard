@@ -1,0 +1,45 @@
+meta {
+  name: Create Project Comment
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/project/{{project_id}}/comments
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{access_token}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "target_id": "{{project_id}}",
+    "comment": "This is a test comment"
+  }
+}
+
+tests {
+  test("should create project comment", function() {
+    expect(res.status).to.equal(201);
+    
+    // Check all required fields
+    expect(res.body).to.have.property("id");
+    expect(res.body).to.have.property("project_id");
+    expect(res.body).to.have.property("target_id");
+    expect(res.body).to.have.property("comment");
+    expect(res.body).to.have.property("commenter_id");
+    expect(res.body).to.have.property("created_at");
+    expect(res.body).to.have.property("updated_at");
+    
+    // Verify data matches request
+    expect(res.body.project_id).to.equal(bru.getVar("project_id"));
+    expect(res.body.comment).to.equal("This is a test comment");
+    
+    // Save comment ID for update test
+    bru.setVar("comment_id", res.body.id);
+  });
+}

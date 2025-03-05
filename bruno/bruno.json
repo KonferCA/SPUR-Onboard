@@ -1,7 +1,8 @@
 {
   "version": "1",
-  "name": "SPUR",
+  "name": "Spur",
   "type": "collection",
+  "folders": ["auth", "projects"],
   "ignore": [
     "node_modules",
     ".git"

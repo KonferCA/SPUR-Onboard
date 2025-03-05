@@ -1,77 +1,146 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/jwt"
+	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/v1/v1_common"
+
+	"github.com/google/uuid"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog/log"
 )
 
-const JWT_CLAIMS = "MIDDLEWARE_JWT_CLAIMS"
+var (
+	ErrNoUserInContext = errors.New("user not found in context")
+)
 
-// Middleware that validates the JWT token from either cookie or Authorization header
-func ProtectAPI(acceptTokenType string, queries *db.Queries) echo.MiddlewareFunc {
+// GetUserFromContext tries to get the user object from the context.
+// Returns an error if the user object is not found or is not the correct type.
+func GetUserFromContext(c echo.Context) (*db.User, error) {
+	user, ok := c.Get("user").(*db.User)
+	if !ok {
+		return nil, ErrNoUserInContext
+	}
+	return user, nil
+}
+
+// CompanyAccess creates a middleware that validates company ownership
+func CompanyAccess(dbPool *pgxpool.Pool) echo.MiddlewareFunc {
+	queries := db.New(dbPool)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			var tokenString string
+			// Validate UUID format first
+			companyID := c.Param("company_id")
+			if _, err := uuid.Parse(companyID); err != nil {
+				return v1_common.Fail(c, http.StatusBadRequest, "Invalid company ID format", err)
+			}
 
-			// first try to get token from cookie
-			cookie, err := c.Cookie("token")
-			if err == nil {
-				tokenString = cookie.Value
-			} else {
-				// fallback to Authorization header
-				auth := c.Request().Header.Get(echo.HeaderAuthorization)
-				if auth == "" {
-					return echo.NewHTTPError(http.StatusUnauthorized, "No authentication token found")
+			// Get user from context (set by Auth middleware)
+			user, ok := c.Get("user").(*db.User)
+			if !ok {
+				// This is a true auth error - user not authenticated
+				return v1_common.Fail(c, http.StatusUnauthorized, "Authentication required", nil)
+			}
+
+			// Check if user is company owner first
+			company, err := queries.GetCompanyByID(c.Request().Context(), companyID)
+			if err != nil {
+				if err.Error() == "no rows in result set" {
+					return v1_common.Fail(c, http.StatusNotFound, "Company not found", err)
 				}
-				
-				parts := strings.Split(auth, " ")
-				if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-					return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authorization header. Only accept Bearer token.")
+				return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get company", err)
+			}
+
+			// If user is company owner, allow all operations
+			if company.OwnerID == user.ID {
+				return next(c)
+			}
+
+			// For non-owners, check if they have view permissions
+			if permissions.HasPermission(uint32(user.Permissions), permissions.PermViewAllProjects) {
+				// For GET requests, allow access
+				if c.Request().Method == http.MethodGet {
+					return next(c)
 				}
-				tokenString = parts[1]
+				// For other methods, return 403 since they can view but not modify
+				return v1_common.Fail(c, http.StatusForbidden, "Not authorized to modify this company", nil)
 			}
 
-			// Step 1: Parse claims without verification to get userID
-			unverifiedClaims, err := jwt.ParseUnverifiedClaims(tokenString)
+			// User has no access at all, return 404 to hide resource existence
+			return v1_common.Fail(c, http.StatusNotFound, "Company not found", nil)
+		}
+	}
+}
+
+// Auth creates a middleware that validates JWT access tokens with specified user roles
+func Auth(dbPool *pgxpool.Pool, requiredPerms ...uint32) echo.MiddlewareFunc {
+	return AuthWithConfig(AuthConfig{
+		AcceptTokenType:     jwt.ACCESS_TOKEN_TYPE,
+		RequiredPermissions: requiredPerms,
+	}, dbPool)
+}
+
+// AuthWithConfig creates a middleware with custom configuration for JWT validation
+func AuthWithConfig(config AuthConfig, dbPool *pgxpool.Pool) echo.MiddlewareFunc {
+	queries := db.New(dbPool)
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			// get the authorization header
+			auth := c.Request().Header.Get(echo.HeaderAuthorization)
+			if auth == "" {
+				return v1_common.Fail(c, http.StatusUnauthorized, "missing authorization header", nil)
+			}
+
+			// check bearer format
+			parts := strings.Split(auth, " ")
+			if len(parts) != 2 || parts[0] != "Bearer" {
+				return v1_common.Fail(c, http.StatusUnauthorized, "invalid authorization format", nil)
+			}
+
+			// Parse claims without verification first
+			claims, err := jwt.ParseUnverifiedClaims(parts[1])
 			if err != nil {
-				log.Error().Err(err).Msg("Failed to parse JWT claims")
-				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token format")
+				return v1_common.Fail(c, http.StatusUnauthorized, "invalid token", err)
 			}
 
-			// Step 2: Get user's salt
-			salt, err := queries.GetUserTokenSalt(c.Request().Context(), unverifiedClaims.UserID)
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to get user's token salt")
-				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token")
-			}
-
-			// Step 3: Verify token with salt
-			claims, err := jwt.VerifyTokenWithSalt(tokenString, salt)
-			if err != nil {
-				log.Error().Err(err).Msg("JWT verification error")
-				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid or expired token")
-			}
-
-			// Step 4: Verify token type
-			if acceptTokenType != claims.TokenType {
-				log.Error().Str("accept", acceptTokenType).Str("received", claims.TokenType).Msg("Invalid token type")
-				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token type")
-			}
-
-			// Get user from database and set in context
+			// Get user's salt from database
 			user, err := queries.GetUserByID(c.Request().Context(), claims.UserID)
 			if err != nil {
-				log.Error().Err(err).Msg("Failed to get user")
-				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid user")
+				return v1_common.Fail(c, http.StatusUnauthorized, "invalid token", nil)
 			}
 
-			c.Set("user", user)
-			c.Set(JWT_CLAIMS, claims)
+			// Verify token with user's salt
+			claims, err = jwt.VerifyTokenWithSalt(parts[1], user.TokenSalt)
+			if err != nil {
+				return v1_common.Fail(c, http.StatusUnauthorized, "invalid token", nil)
+			}
+
+			// Verify token type
+			if claims.TokenType != config.AcceptTokenType {
+				return v1_common.Fail(c, http.StatusUnauthorized, "invalid token type", nil)
+			}
+
+			// Verify user permissions if required
+			if len(config.RequiredPermissions) > 0 {
+				// Convert int32 to uint32 for permissions check
+				if !permissions.HasAnyPermission(uint32(user.Permissions), config.RequiredPermissions...) {
+					return v1_common.Fail(c, http.StatusForbidden, "Insufficient permissions", nil)
+				}
+			}
+
+			// store claims and user in context for handlers
+			c.Set("claims", &AuthClaims{
+				JWTClaims: claims,
+				Salt:      user.TokenSalt,
+			})
+			c.Set("user", &user)
+
 			return next(c)
 		}
 	}

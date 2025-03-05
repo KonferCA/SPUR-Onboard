@@ -4,7 +4,7 @@ NAME ?= name
 TEST_DB_USER ?= postgres
 TEST_DB_PASSWORD ?= postgres
 TEST_DB_NAME ?= postgres
-TEST_DB_HOST_PORT ?= 5432
+TEST_DB_HOST_PORT ?= 5433
 TEST_DB_URL ?= postgres://$(TEST_DB_USER):$(TEST_DB_PASSWORD)@localhost:$(TEST_DB_HOST_PORT)/$(TEST_DB_NAME)?sslmode=disable
 POSTGRESQL_VERSION ?= 16
 
@@ -16,6 +16,8 @@ up:
 	@goose -dir .sqlc/migrations postgres "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" up
 down:
 	@goose -dir .sqlc/migrations postgres "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" down-to 0
+down-1:
+	@goose -dir .sqlc/migrations postgres "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" down
 migration:
 	@goose -dir .sqlc/migrations postgres "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" create $(NAME) sql
 sql:
@@ -23,7 +25,7 @@ sql:
 
 seed:
 	@echo "Running development seed data..."
-	@cat .sqlc/seeds/development_seed.sql | docker exec -i nokap-postgres psql -U postgres -d postgres
+	@cat .sqlc/seeds/development_seed.sql | docker exec -i spur-postgres psql -U postgres -d postgres
 
 setup:
 	@go install github.com/air-verse/air@v1.61.1 && \
@@ -31,24 +33,24 @@ setup:
 		go install github.com/pressly/goose/v3/cmd/goose@v3.22.1
 
 init-dev-db:
-	@docker run --name nokap-postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DATABASE=postgres -p 5432:5432 -d postgres:$(POSTGRESQL_VERSION) && \
-		timeout 90s bash -c "until docker exec nokap-postgres pg_isready ; do sleep 5 ; done" && echo "Postgres is ready! Run migrations with 'make up'"
+	@docker run --name spur-postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DATABASE=postgres -p 5432:5432 -d postgres:$(POSTGRESQL_VERSION) && \
+		timeout 90s bash -c "until docker exec spur-postgres pg_isready ; do sleep 5 ; done" && echo "Postgres is ready! Run migrations with 'make up'"
 start-dev-db:
-	@docker start nokap-postgres && \
+	@docker start spur-postgres && \
 		timeout 90s bash -c \
-		"until docker exec nokap-postgres pg_isready ; do sleep 5 ; done" && \
+		"until docker exec spur-postgres pg_isready ; do sleep 5 ; done" && \
 		echo "Postgres is ready! Run migrations with 'make up'"
 stop-dev-db:
-	@docker stop nokap-postgres
+	@docker stop spur-postgres
 check-dev-db:
-	@docker exec nokap-postgres pg_isready
+	@docker exec spur-postgres pg_isready
 clean-dev-db:
-	@docker stop nokap-postgres && docker rm nokap-postgres
+	@docker stop spur-postgres && docker rm spur-postgres
 health-dev-db:
 	@echo "Checking server health..."
 	@curl -s localhost:8080/api/v1/health | jq || echo "Failed to connect to health endpoint"
 query:
-	@docker exec nokap-postgres psql -U postgres -d postgres -c "$(filter-out $@,$(MAKECMDGOALS))"
+	@docker exec spur-postgres psql -U postgres -d postgres -c "$(filter-out $@,$(MAKECMDGOALS))"
 # Prevent make from treating the query string as a target
 %:
 	@:

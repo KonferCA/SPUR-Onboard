@@ -24,7 +24,7 @@ func main() {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339})
 	}
 
-	s, err := server.New(false)
+	s, err := server.New()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to initialized server")
 	}
@@ -34,8 +34,9 @@ func main() {
 		port = "8080"
 	}
 
-	err = s.Listen(":" + os.Getenv("PORT"))
+	err = s.Start(port)
 	if err != nil {
 		log.Fatal().Err(err).Str("PORT", port).Msg("failed to bind server to start accepting connections.")
 	}
+
 }

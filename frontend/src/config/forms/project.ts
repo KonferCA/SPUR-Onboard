@@ -1,217 +1,190 @@
-import type { FormStep } from '@/types';
+import { createUploadableFile, UploadableFile } from '@/components';
+import {
+    ConditionType,
+    ProjectQuestion,
+    ProjectQuestionsData,
+} from '@/services/project';
+import { FormField, FormFieldType } from '@/types';
+import { createZodSchema } from '@/utils/form-validation';
 
-export const projectFormSchema: FormStep[] = [
-    {
-        id: 'A',
-        title: 'Project Information',
-        subtitle: 'Tell us about your project',
-        sections: [
-            {
-                id: 'bookkeeping',
-                title: 'Bookkeeping',
-                fields: [
-                    {
-                        id: 'companyName',
-                        type: 'text',
-                        label: 'What is the name of your company?',
-                        required: true,
-                    },
-                    {
-                        id: 'foundedDate',
-                        type: 'date',
-                        label: 'When was your company founded?',
-                    },
-                    {
-                        id: 'companyStage',
-                        type: 'dropdown',
-                        label: 'What stage is your company at?',
-                        options: [
-                            { id: 1, label: 'Pre-seed', value: 'pre-seed' },
-                            { id: 2, label: 'Seed', value: 'seed' },
-                            { id: 3, label: 'Series A', value: 'series-a' },
-                            { id: 4, label: 'Series B', value: 'series-b' },
-                            {
-                                id: 5,
-                                label: 'Series C+',
-                                value: 'series-c-plus',
-                            },
-                        ],
-                    },
-                    {
-                        id: 'investmentStage',
-                        type: 'dropdown',
-                        label: 'What investment stage is your company at?',
-                        options: [
-                            { id: 1, label: 'Pre-seed', value: 'pre-seed' },
-                            { id: 2, label: 'Seed', value: 'seed' },
-                            { id: 3, label: 'Series A', value: 'series-a' },
-                            { id: 4, label: 'Series B', value: 'series-b' },
-                            {
-                                id: 5,
-                                label: 'Series C+',
-                                value: 'series-c-plus',
-                            },
-                        ],
-                    },
-                ],
+export interface GroupedProjectQuestions {
+    // section basically serves as the id of the group
+    section: string;
+    subSections: SubSection[];
+    subSectionNames: string[];
+}
+
+export interface SubSection {
+    name: string;
+    questions: Question[];
+}
+
+export interface Question {
+    id: string;
+    question: string;
+    required: boolean;
+    inputFields: FormField[];
+    dependentQuestionId?: string;
+    conditionType?: ConditionType;
+    conditionValue?: string;
+    questionGroupId?: string;
+    questionOrder: number;
+    description?: string;
+    answer?: string;
+}
+
+/*
+ * This will sort based on the sections order array and group the questions that belong
+ * to the same section together. The questions in a section will also be sorted based on their
+ * sub section order.
+ */
+export function groupProjectQuestions(
+    data: ProjectQuestionsData
+): GroupedProjectQuestions[] {
+    const { questions, documents, teamMembers } = data;
+
+    // Pre-process documents for faster lookup
+    const documentsByQuestion =
+        documents?.reduce(
+            (acc, doc) => {
+                if (!acc[doc.questionId]) {
+                    acc[doc.questionId] = [];
+                }
+                const file = new File([new ArrayBuffer(doc.size)], doc.name, {
+                    type: doc.mimeType,
+                });
+                acc[doc.questionId].push(createUploadableFile(file, doc, true));
+                return acc;
             },
-            {
-                id: 'company-overview',
-                title: 'Company Overview',
-                description:
-                    'Please do not go into detail about your product in this section, you will have a chance to do so in the following sections of the form.',
-                fields: [
-                    {
-                        id: 'description',
-                        type: 'textarea',
-                        label: 'Brief description of your company',
-                        required: true,
-                        rows: 4,
-                    },
-                    {
-                        id: 'inspiration',
-                        type: 'textarea',
-                        label: "What inspired you to start this company, and what is the core problem you're solving?",
-                        required: true,
-                        rows: 4,
-                    },
-                    {
-                        id: 'vision',
-                        type: 'textarea',
-                        label: 'What is your long-term vision for the company, and how do you plan to disrupt or lead your market?',
-                        required: true,
-                        rows: 4,
-                    },
-                ],
-            },
-            {
-                id: 'product-overview',
-                title: 'Product Overview',
-                description: '',
-                fields: [
-                    {
-                        id: 'product-description',
-                        type: 'textarea',
-                        label: 'How does your product or idea differentiate from competitors, and what makes it defensible or unique?',
-                        required: true,
-                    },
-                    {
-                        id: 'product-roadmap',
-                        type: 'textarea',
-                        label: 'What does your current product roadmap look like?',
-                        required: true,
-                    },
-                ],
-            },
-            {
-                id: 'customer-demographic',
-                title: 'Customer & Demographic',
-                description: '',
-                fields: [
-                    {
-                        id: 'target-demographic',
-                        type: 'textarea',
-                        label: 'Who are your target demographic and customers? What makes your product or service compelling to them?',
-                        required: true,
-                    },
-                    {
-                        id: 'addressable-market',
-                        type: 'textarea',
-                        label: 'What is the total addressable market for this company? How do you plan to capture your share of it?',
-                        required: true,
-                    },
-                ],
-            },
-            {
-                id: 'financials',
-                title: 'Financials',
-                description: '',
-                fields: [
-                    {
-                        id: 'company-revenue',
-                        type: 'text',
-                        label: "What is your company's annual recurring revenue (ARR)?",
-                        required: true,
-                    },
-                    {
-                        id: 'company-raised',
-                        type: 'text',
-                        label: 'How much has your company raised so far?',
-                        required: true,
-                    },
-                    {
-                        id: 'company-valuation',
-                        type: 'text',
-                        label: "What is your company's current valuation?",
-                        required: true,
-                    },
-                    {
-                        id: 'company-monthly-expenses',
-                        type: 'text',
-                        label: "What are your company's monthly expenses?",
-                        required: true,
-                    },
-                    {
-                        id: 'company-main-revenue',
-                        type: 'textarea',
-                        label: 'What are your main revenue streams, and how do you project these will grow over the next 12-36 months?',
-                        required: true,
-                    },
-                    {
-                        id: 'company-funding',
-                        type: 'textarea',
-                        label: 'What funding have you raised so far, and how have you allocated that capital towards growth and development?',
-                        required: true,
-                    },
-                ],
-            },
-            {
-                id: 'team-overview',
-                title: 'Team Overview',
-                description: 'Tell us about your team members',
-                fields: [
-                    {
-                        id: 'team-members',
-                        type: 'team-members',
-                        label: 'Team Members',
-                        required: true,
-                    },
-                ],
-            },
-            {
-                id: 'social-media',
-                title: 'Social Media & Web Presence',
-                description:
-                    "Please share with us your online presence so we can get a better understanding of your organization's identity. You can share pages like your website, LinkedIn, Instagram etc...",
-                fields: [
-                    {
-                        id: 'social-links',
-                        type: 'social-links',
-                        label: 'Social Links',
-                        required: true,
-                    },
-                ],
-            },
-        ],
-    },
-    {
-        id: 'B',
-        title: 'Part B',
-        subtitle: 'Document uploads',
-        sections: [
-            {
-                id: 'document-upload',
-                title: 'Upload company business documents',
-                description:
-                    "To help us verify your organization's legitimacy, please provide us with business related documents.",
-                fields: [
-                    {
-                        id: 'documents',
-                        type: 'file',
-                        label: 'Upload your documents',
-                    },
-                ],
-            },
-        ],
-    },
-];
+            {} as Record<string, UploadableFile[]>
+        ) ?? {};
+
+    // Group questions by questionGroupId
+    const questionGroups = questions.reduce(
+        (acc, q) => {
+            const groupId = q.questionGroupId || q.id;
+            if (!acc[groupId]) {
+                acc[groupId] = [];
+            }
+            acc[groupId].push(q);
+            return acc;
+        },
+        {} as Record<string, ProjectQuestion[]>
+    );
+
+    return questions.reduce<GroupedProjectQuestions[]>(
+        (acc, projectQuestion) => {
+            // Skip if this question is part of a group but not the primary question
+            if (projectQuestion.questionGroupId) {
+                return acc;
+            }
+
+            let group = acc.find((g) => g.section === projectQuestion.section);
+            if (!group) {
+                group = {
+                    section: projectQuestion.section,
+                    subSections: [],
+                    subSectionNames: [],
+                };
+                acc.push(group);
+            }
+
+            let subSection = group.subSections.find(
+                (s) => s.name === projectQuestion.subSection
+            );
+            if (!subSection) {
+                subSection = {
+                    name: projectQuestion.subSection,
+                    questions: [],
+                };
+                group.subSections.push(subSection);
+                group.subSectionNames.push(projectQuestion.subSection);
+            }
+
+            // Get all questions in this group
+            const groupQuestions = questionGroups[projectQuestion.id] || [
+                projectQuestion,
+            ];
+
+            const inputFields = groupQuestions.map((q) => {
+                const inputField: FormField = {
+                    key: q.id,
+                    type: q.inputType as FormFieldType,
+                    label: q.question,
+                    required: q.required,
+                    placeholder: q.placeholder || undefined,
+                    description: q.description || undefined,
+                    validations: q.validations
+                        ? createZodSchema(
+                              q.inputType as FormFieldType,
+                              q.validations
+                          )
+                        : undefined,
+                    value: {},
+                    disabled: q.disabled,
+                };
+
+                if (typeof q.inputProps === 'string') {
+                    const decoded = window.atob(q.inputProps);
+                    try {
+                        inputField.props = JSON.parse(decoded);
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }
+
+                switch (inputField.type) {
+                    case 'file':
+                        inputField.value.files =
+                            documentsByQuestion[q.id] ?? [];
+                        break;
+                    case 'team':
+                        inputField.value.teamMembers = teamMembers ?? [];
+                        break;
+                    case 'multiselect':
+                    case 'select':
+                        inputField.options = q.options?.map((opt, idx) => ({
+                            id: idx,
+                            label: opt,
+                            value: opt,
+                        }));
+                        inputField.value.value = q.choices.map((c, idx) => ({
+                            id: idx,
+                            label: c,
+                            value: c,
+                        }));
+                        break;
+                    case 'date':
+                        const date = new Date(q.answer);
+                        inputField.value.value = date;
+                        break;
+                    default:
+                        inputField.value.value = q.answer;
+                        break;
+                }
+
+                return inputField;
+            });
+
+            const question: Question = {
+                id: projectQuestion.id,
+                question: projectQuestion.question,
+                required: projectQuestion.required,
+                inputFields,
+                dependentQuestionId:
+                    projectQuestion.dependentQuestionId || undefined,
+                conditionType:
+                    (projectQuestion.conditionType as any) || undefined,
+                conditionValue: projectQuestion.conditionValue || undefined,
+                questionOrder: projectQuestion.questionOrder,
+                description: projectQuestion.description || undefined,
+                answer: projectQuestion.answer,
+            };
+
+            subSection.questions.push(question);
+
+            return acc;
+        },
+        []
+    );
+}

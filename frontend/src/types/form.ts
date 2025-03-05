@@ -1,44 +1,72 @@
+import type { UploadableFile } from '@/components';
+import { ZodTypeAny } from 'zod';
+import { UserSocial } from './auth';
+
+export type FormFieldType =
+    | 'textinput'
+    | 'date'
+    | 'select'
+    | 'multiselect'
+    | 'textarea'
+    | 'file'
+    | 'team';
+
+export interface FormFieldValue {
+    files?: UploadableFile[];
+    teamMembers?: TeamMember[];
+    value?: any;
+}
+
 export interface FormField {
-  id: string;
-  type: 'text' | 'date' | 'dropdown' | 'textarea' | 'file' | 'team-members' | 'social-links';
-  label: string;
-  required?: boolean;
-  placeholder?: string;
-  rows?: number;
-  options?: Array<{
-    id: number;
+    key: string;
+    type: FormFieldType;
     label: string;
-    value: string;
-  }>;
-}
-
-export interface TeamMember {
-  id: string;
-  name: string;
-  role: string;
-  avatar?: string;
-}
-
-export interface SocialLink {
-  id: string;
-  url: string;
-  type?: string;
+    required?: boolean;
+    placeholder?: string;
+    description?: string;
+    rows?: number;
+    options?: Array<{
+        id: number;
+        label: string;
+        value: string;
+    }>;
+    validations?: ZodTypeAny[];
+    value: FormFieldValue;
+    invalid?: boolean;
+    disabled?: boolean;
+    props?: any;
 }
 
 export interface FormSection {
-  id: string;
-  title: string;
-  description?: string;
-  fields: FormField[];
+    id: string;
+    title: string;
+    description?: string;
+    fields: FormField[];
 }
 
-export interface FormStep {
-  id: 'A' | 'B';
-  title: string;
-  subtitle: string;
-  sections: FormSection[];
+export interface TeamMember {
+    id: string;
+    firstName: string;
+    lastName: string;
+    title: string;
+    detailedBiography: string;
+    linkedin: string;
+    resumeExternalUrl: string;
+    resumeInternalUrl: string;
+    personalWebsite: string;
+    commitmentType: string;
+    introduction: string;
+    industryExperience: string;
+    previousWork?: string;
+    founderAgreementExternalUrl?: string;
+    founderAgreementInternalUrl?: string;
+    isAccountOwner: boolean;
+    created_at: number;
+    updated_at?: number;
 }
+
+export type SocialLink = Pick<UserSocial, 'id' | 'urlOrHandle' | 'platform'>;
 
 export type FormData = {
-  [key: string]: any;
-}; 
+    [key: string]: any;
+};

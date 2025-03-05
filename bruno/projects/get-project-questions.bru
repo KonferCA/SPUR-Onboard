@@ -1,0 +1,32 @@
+meta {
+  name: Get Project Questions
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/project/questions
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{access_token}}
+}
+
+tests {
+  test("should return project questions", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property("questions");
+    expect(res.body.questions).to.be.an("array");
+    
+    // Verify question structure if any exist
+    if (res.body.questions.length > 0) {
+      const question = res.body.questions[0];
+      expect(question).to.have.property("id");
+      expect(question).to.have.property("text");
+      expect(question).to.have.property("required");
+      expect(question).to.have.property("order");
+    }
+  });
+}

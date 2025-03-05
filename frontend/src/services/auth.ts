@@ -3,19 +3,19 @@
  */
 
 import { getApiUrl, HttpStatusCode } from '@utils';
-import { RegisterError, ApiError } from './errors';
+import { ApiError } from './errors';
 
 import type { User, UserRole } from '@t';
+import { snakeToCamel } from '@/utils/object';
 
 export interface AuthResponse {
-    access_token: string;
+    accessToken: string;
+    companyId: string | null;
     user: User;
 }
 
 export interface RegisterReponse extends AuthResponse {}
 export interface SigninResponse extends AuthResponse {}
-
-let currentAccessToken: string | null = null;
 
 /**
  * Registers a user if the given email is not already registered.
@@ -25,28 +25,27 @@ export async function register(
     password: string,
     role: UserRole = 'startup_owner'
 ): Promise<RegisterReponse> {
-    const url = getApiUrl('/auth/signup');
-    const body = {
-        email,
-        password,
-        role,
-    };
-
+    const url = getApiUrl('/auth/register');
     const res = await fetch(url, {
         method: 'POST',
-        body: JSON.stringify(body),
+        credentials: 'include',
         headers: {
+            Accept: 'application/json',
             'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ email, password, role }),
     });
-    // the backend should always return json for the api calls
-    const json = await res.json();
 
-    if (res.status !== HttpStatusCode.CREATED) {
-        throw new RegisterError('Failed to register', res.status, json);
+    if (!res.ok) {
+        throw new ApiError(
+            'Failed to register',
+            res.status,
+            await res.json().catch(() => ({}))
+        );
     }
 
-    return json as RegisterReponse;
+    const json = await res.json();
+    return snakeToCamel(json);
 }
 
 /**
@@ -56,87 +55,51 @@ export async function signin(
     email: string,
     password: string
 ): Promise<SigninResponse> {
-    const url = getApiUrl('/auth/signin');
-    const body = {
-        email,
-        password,
-    };
+    const url = getApiUrl('/auth/login');
 
     const res = await fetch(url, {
         method: 'POST',
-        body: JSON.stringify(body),
+        credentials: 'include',
         headers: {
+            Accept: 'application/json',
             'Content-Type': 'application/json',
         },
-        credentials: 'include'
-    });
-
-    const json = await res.json();
-
-    if (res.status !== HttpStatusCode.OK) {
-        throw new ApiError('Failed to sign in', res.status, json);
-    }
-
-    // Store the access token
-    currentAccessToken = json.access_token;
-    return json as SigninResponse;
-}
-
-export async function refreshAccessToken(): Promise<string> {
-    const url = getApiUrl('/auth/refresh');
-    const res = await fetch(url, {
-        method: 'POST',
-        credentials: 'include'
+        body: JSON.stringify({ email, password }),
     });
 
     if (!res.ok) {
-        throw new ApiError('Failed to refresh token', res.status, await res.json());
+        throw new ApiError(
+            'Failed to sign in',
+            res.status,
+            await res.json().catch(() => ({}))
+        );
     }
 
     const json = await res.json();
-    currentAccessToken = json.access_token;
-    return json.access_token;
+    return snakeToCamel(json);
 }
 
-export function getAccessToken(): string | null {
-    return currentAccessToken;
-}
+export async function refreshAccessToken(): Promise<AuthResponse> {
+    const url = getApiUrl('/auth/verify');
+    const res = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+        },
+    });
 
-// Add this utility function to handle API requests with auto-refresh
-export async function fetchWithAuth(url: string, options: RequestInit = {}) {
-    // Ensure credentials are included
-    options.credentials = 'include';
-    
-    // Add access token if available
-    const accessToken = getAccessToken();
-    if (accessToken) {
-        options.headers = {
-            ...options.headers,
-            'Authorization': `Bearer ${accessToken}`
-        };
+    if (!res.ok) {
+        throw new ApiError(
+            'Failed to refresh token',
+            res.status,
+            await res.json()
+        );
     }
-    
-    let response = await fetch(url, options);
-    
-    if (response.status === 401) {
-        // Try to refresh the token
-        try {
-            const newAccessToken = await refreshAccessToken();
-            
-            // Add the new access token to headers
-            const headers = new Headers(options.headers);
-            headers.set('Authorization', `Bearer ${newAccessToken}`);
-            options.headers = headers;
-            
-            // Retry the original request
-            response = await fetch(url, options);
-        } catch (error) {
-            // If refresh fails, throw error to trigger logout
-            throw new ApiError('Authentication failed', 401, {});
-        }
-    }
-    
-    return response;
+
+    const json = await res.json();
+    return snakeToCamel(json);
 }
 
 /**
@@ -145,10 +108,24 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
  * 2. Clearing the auth context
  */
 export async function signout(): Promise<void> {
-    const url = getApiUrl('/auth/signout');
-    await fetch(url, { 
+    const url = getApiUrl('/auth/logout');
+    await fetch(url, {
         method: 'POST',
-        credentials: 'include' 
+        credentials: 'include',
     });
-    currentAccessToken = null;
+}
+
+export async function checkEmailVerifiedStatus(
+    accessToken: string
+): Promise<boolean> {
+    const url = getApiUrl('/auth/ami-verified');
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    const body = await res.json();
+    return res.status === HttpStatusCode.OK && body.verified;
 }

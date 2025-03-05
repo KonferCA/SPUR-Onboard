@@ -1,0 +1,19 @@
+meta {
+  name: Verify Cookie
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{URL}}/auth/verify
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  const cookie = bru.getVar("cookie");
+  
+  if(cookie) {
+    req.setHeader("Cookie", cookie)
+  }
+}
