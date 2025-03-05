@@ -213,14 +213,6 @@ function ProjectFormPage() {
         inputFieldKey: string,
         value: any
     ) => {
-        console.log('[ProjectPage] handleChange called:', {
-            questionId,
-            inputFieldKey,
-            valueType: typeof value,
-            isArray: Array.isArray(value),
-            value,
-        });
-
         setGroupedQuestions((prevGroups) => {
             const newGroups = prevGroups.map((group, idx) => {
                 // ONLY process the current step
@@ -393,7 +385,7 @@ function ProjectFormPage() {
 
     useEffect(() => {
         const handleResize = () => {
-            setIsMobile(window.innerWidth < 1360);
+            setIsMobile(window.innerWidth < 1536);
         };
 
         handleResize();
@@ -731,11 +723,11 @@ function ProjectFormPage() {
             </div>
 
             <div className="pt-52">
-                <div className="hidden 1.5xl:block fixed lg:w-40 2xl:w-60 3xl:w-80 max-h-96 overflow-y-auto left-12">
+                <div className="hidden 2xl:block fixed w-60 3xl:w-80 max-h-96 overflow-y-auto left-12">
                     <AnchorLinks links={asideLinks} />
                 </div>
 
-                <div className="hidden 1.5xl:block fixed lg:w-40 2xl:w-60 3xl:w-80 right-12">
+                <div className="hidden 2xl:block fixed w-60 3xl:w-80 right-12">
                     {validationErrors.length > 0 && (
                         <ProjectError
                             errors={validationErrors}
