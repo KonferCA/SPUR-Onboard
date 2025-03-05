@@ -52,7 +52,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             secondary:
                 'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-400',
             outline:
-                'border-2 border-gray-700 text-gray-700 hover:bg-gray-50 focus:ring-gray-400',
+                'border-2 border-button-primary-100 text-button-primary-100 hover:bg-button-primary-25 focus:ring-button-primary-200',
         };
 
         // loading spinner size classes
