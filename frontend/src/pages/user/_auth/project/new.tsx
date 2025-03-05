@@ -16,7 +16,7 @@ const NewProjectPage = () => {
     // create project on mount
     const newProject = async () => {
       const project = await createProject(accessToken)
-      navigate({ to: `/user/project/${project.id}/form` })
+      navigate({ to: `/user/project/${project.id}/form`, replace: true })
     }
 
     hasTriggeredFetchRef.current = true
