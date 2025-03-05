@@ -105,7 +105,10 @@ function AuthPage() {
         } catch (error: any) {
             console.error('Auth error:', error);
             setErrors({
-                email: error.body?.message || 'Authentication failed',
+                email:
+                    error.body?.details ||
+                    error.body?.message ||
+                    'Authentication failed',
             });
             clearAuth();
         } finally {
