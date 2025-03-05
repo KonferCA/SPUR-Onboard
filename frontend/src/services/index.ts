@@ -36,5 +36,6 @@ export {
 export {
     checkVerificationStatus,
     handleEmailVerificationRedirect,
+    resendVerificationEmail,
     isVerificationRedirect
 } from './verification';
