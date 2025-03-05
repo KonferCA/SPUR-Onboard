@@ -40,11 +40,12 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
         if (validationErrors.length) {
             const firstSectionWithError = validationErrors[0].section;
 
-            onRequestChangeSection(firstSectionWithError);
-
-            setTimeout(() => {
-                setDrawerOpen(true);
-            }, 500);
+            const accepted = onRequestChangeSection(firstSectionWithError);
+            if (accepted) {
+                setTimeout(() => {
+                    setDrawerOpen(true);
+                }, 500);
+            }
         }
     }, [validationErrors]);
 

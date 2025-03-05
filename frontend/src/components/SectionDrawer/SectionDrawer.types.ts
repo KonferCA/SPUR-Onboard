@@ -7,7 +7,8 @@ export interface SectionDrawerProps {
     validationErrors: ValidationError[];
     /*
      * onRequestChangeSection is used when the drawer needs to change the currently active section
-     * based on validationErrors to properly render the list of sub-sections with errors.
+     * based on validationErrors to properly render the list of sub-sections with errors. Returns
+     * a boolean to indicate whether the request was accepted or not.
      */
-    onRequestChangeSection: (section: string) => void;
+    onRequestChangeSection: (section: string) => boolean;
 }

@@ -123,6 +123,7 @@ function ProjectFormPage() {
         'idle' | 'saving' | 'success' | 'error'
     >('idle');
     const [isSaving, setIsSaving] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
 
     const autosave = useDebounceFn(
         async () => {
@@ -389,6 +390,17 @@ function ProjectFormPage() {
             return curr;
         });
     };
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 1360);
+        };
+
+        handleResize();
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         if (questionData) {
@@ -809,21 +821,25 @@ function ProjectFormPage() {
                 </form>
             </div>
 
-            <div className="1.5xl:hidden">
+            {isMobile && (
                 <SectionDrawer
                     activeSection={groupedQuestions[currentStep]?.section || ''}
                     subSectionLinks={asideLinks || []}
                     validationErrors={validationErrors}
                     onRequestChangeSection={(section) => {
-                        const idx = groupedQuestions.findIndex(
-                            (group) => group.section === section
-                        );
-                        if (idx !== -1) {
-                            setCurrentStep(idx);
+                        if (isMobile) {
+                            const idx = groupedQuestions.findIndex(
+                                (group) => group.section === section
+                            );
+                            if (idx !== -1) {
+                                setCurrentStep(idx);
+                            }
+                            return true;
                         }
+                        return false;
                     }}
                 />
-            </div>
+            )}
 
             <ConfirmationModal
                 isOpen={showRecommendedModal}
