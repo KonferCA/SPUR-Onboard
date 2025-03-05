@@ -127,7 +127,23 @@ AND project_documents.project_id = $2
 AND projects.company_id = $3;
 
 -- name: ListCompanyProjects :many
-SELECT p.*, COUNT(d.id) as document_count, COUNT(t.id) as team_member_count
+SELECT 
+    p.id,
+    p.company_id,
+    COALESCE(
+        (SELECT pa.answer 
+         FROM project_answers pa
+         JOIN project_questions pq ON pa.question_id = pq.id
+         WHERE pa.project_id = p.id AND pq.question_key = 'company_name' AND pa.answer != ''
+         LIMIT 1),
+        p.title
+    ) as title,
+    p.description,
+    p.status,
+    p.created_at,
+    p.updated_at,
+    COUNT(d.id) as document_count,
+    COUNT(t.id) as team_member_count
 FROM projects p
 LEFT JOIN project_documents d ON d.project_id = p.id
 LEFT JOIN team_members t ON t.company_id = $1
