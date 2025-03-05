@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { isValid as isValidDate } from 'date-fns';
 import { Button, DropdownOption, UploadableFile } from '@components';
 import { IoMdArrowRoundBack } from 'react-icons/io';
 import {
@@ -551,6 +552,8 @@ function ProjectFormPage() {
 
                         switch (input.type) {
                             case 'date':
+                                fieldValid = isValidDate(input.value.value);
+                                break;
                             case 'textarea':
                             case 'textinput':
                                 if (!input.value.value) {
