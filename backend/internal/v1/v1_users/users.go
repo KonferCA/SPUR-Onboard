@@ -56,7 +56,7 @@ func (h *Handler) handleUpdateUserDetails(c echo.Context) error {
 	// which will be the official way to connect a social account since ownership can be verified.
 
 	// Only process socials if they were included in the request
-	if req.Socials != nil && len(req.Socials) > 0 {
+	if req.Socials != nil {
 		// Get existing socials
 		existingSocials, err := qtx.GetUserSocialsByUserID(c.Request().Context(), userID)
 		if err != nil && !db.IsNoRowsErr(err) {
@@ -136,16 +136,16 @@ func (h *Handler) handleGetUserDetails(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, UserDetailsResponse{
-		ID:        details.ID,
-		FirstName: details.FirstName,
-		LastName:  details.LastName,
-		Title:     details.Title,
-		Bio:       details.Bio,
-		LinkedIn:  details.Linkedin,
-    ProfilePictureUrl: details.ProfilePictureUrl,
-		Socials:   socials,
-		CreatedAt: createdAt,
-		UpdatedAt: updatedAt,
+		ID:                details.ID,
+		FirstName:         details.FirstName,
+		LastName:          details.LastName,
+		Title:             details.Title,
+		Bio:               details.Bio,
+		LinkedIn:          details.Linkedin,
+		ProfilePictureUrl: details.ProfilePictureUrl,
+		Socials:           socials,
+		CreatedAt:         createdAt,
+		UpdatedAt:         updatedAt,
 	})
 }
 
@@ -370,7 +370,7 @@ func (h *Handler) handleUploadProfilePicture(c echo.Context) error {
 	// Update user's profile picture URL in database
 	err = h.server.GetQueries().UpdateUserProfilePicture(c.Request().Context(), db.UpdateUserProfilePictureParams{
 		ProfilePictureUrl: &fileURL,
-		ID:               userID,
+		ID:                userID,
 	})
 	if err != nil {
 		// Try to cleanup the uploaded file if database update fails
@@ -403,7 +403,7 @@ func (h *Handler) handleRemoveProfilePicture(c echo.Context) error {
 	// Update user's profile picture URL in database to null
 	err = h.server.GetQueries().UpdateUserProfilePicture(c.Request().Context(), db.UpdateUserProfilePictureParams{
 		ProfilePictureUrl: nil,
-		ID:               userID,
+		ID:                userID,
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to remove profile picture", err)
