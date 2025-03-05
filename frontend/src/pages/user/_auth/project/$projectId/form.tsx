@@ -88,9 +88,12 @@ function ProjectFormPage() {
             return data;
         },
         enabled: !!currentProjectId,
-        refetchOnReconnect: true,
+        refetchOnReconnect: false,       
         refetchOnWindowFocus: false,
-        refetchOnMount: true,
+        refetchOnMount: false,          
+        staleTime: Infinity,             
+        cacheTime: 1000 * 60 * 30,      
+        retry: 1,      
     });
 
     const [groupedQuestions, setGroupedQuestions] = useState<
