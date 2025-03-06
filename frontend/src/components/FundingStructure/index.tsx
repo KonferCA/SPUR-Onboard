@@ -78,7 +78,7 @@ const EquityProgressBar: FC<{
             backgroundImage: isOverallocated 
               ? 'repeating-linear-gradient(-45deg, #8E0B07, #8E0B07 3px, #CF2E2E 3px, #CF2E2E 9px)'
               : 'repeating-linear-gradient(-45deg, #154261, #154261 3px, transparent 3px, transparent 9px)',
-            transition: 'width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s ease-in-out, background-image 0.4s ease-in-out'
+            transition: 'width 0.6s cubic-bezier(0.34, 1.28, 0.64, 1), background-color 0.4s ease-in-out, background-image 0.4s ease-in-out'
           }}
         />
       );
@@ -108,7 +108,7 @@ const EquityProgressBar: FC<{
                 width: `${width}%`,
                 backgroundColor: color.bg,
                 backgroundImage: `repeating-linear-gradient(-45deg, ${color.pattern}, ${color.pattern} 3px, transparent 3px, transparent 9px)`,
-                transition: 'left 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                transition: 'left 0.6s cubic-bezier(0.34, 1.28, 0.64, 1), width 0.6s cubic-bezier(0.34, 1.22, 0.24, 1)'
               }}
             />
           );
@@ -889,7 +889,7 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                 
                 {currentStructure.minAmount && currentStructure.maxAmount && currentStructure.equityPercentage && structureType === 'minimum' && (
                   <p className="text-sm text-gray-700 mt-2">
-                    Total amount of funding: ${currentStructure.maxAmount} CAD for {currentStructure.equityPercentage}% of total equity in your company.
+                    Total amount of funding: ${currentStructure.maxAmount} CAD for {currentStructure.equityPercentage}% of total equity in your company. Funds will be held until the minimum amount of funding has been fulfilled.
                   </p>
                 )}
                 
@@ -1198,7 +1198,7 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                       <div className="flex items-start space-x-4">
                         <div className="w-[45%]">
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Total amount ($)
+                            Amount ($)
                           </label>
                           <input
                             type="text"
@@ -1210,15 +1210,11 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                                 ? 'border-red-500' 
                                 : 'border-gray-300'
                             }`}
-                            placeholder="e.g. 100000"
+                            placeholder="e.g. 1000"
                           />
                           {shouldShowTierError(tier.id, 'amount') && validationErrors.tiers?.[tier.id]?.amount && (
                             <p className={errorTextStyle}>{validationErrors.tiers[tier.id].amount}</p>
                           )}
-                        </div>
-                        
-                        <div className="flex mx-1 self-start" style={{ marginTop: "29px" }}>
-                          <span className="text-sm text-gray-500">for</span>
                         </div>
                         
                         <div className="flex-1">
@@ -1422,6 +1418,14 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                       >
                         Tiered
                       </Button>
+                    </div>
+                    <div className={`py-1 px-4 rounded-full text-sm font-medium ${
+                      getRemainingEquityPercentage() < 0 
+                        ? 'bg-red-600 text-white' 
+                        : 'bg-purple-100 text-purple-700'
+                    }`}>
+                      {getRemainingEquityPercentage() < 0 ? '-' : ''}
+                      {Math.abs(getRemainingEquityPercentage()).toFixed(2)}% equity left
                     </div>
                   </div>
                 )}
