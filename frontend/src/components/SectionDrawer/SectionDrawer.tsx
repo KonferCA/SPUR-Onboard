@@ -212,7 +212,7 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                                 <span className="sr-only">
                                     Go to sub-section...
                                 </span>
-                                <motion.div
+                                <motion.span
                                     aria-hidden
                                     initial={{ rotate: 0 }}
                                     animate={{
@@ -221,7 +221,7 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                                     transition={{ duration: 0.3 }}
                                 >
                                     <BiChevronUp className="w-6 h-6 text-black" />
-                                </motion.div>
+                                </motion.span>
                             </DrawerDescription>
                         </div>
                     </DrawerHeader>
