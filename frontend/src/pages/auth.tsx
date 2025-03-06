@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { AuthForm } from '@/components/AuthForm';
 import { UserDetailsForm } from '@/components/UserDetailsForm';
 import { VerifyEmail } from '@/components/VerifyEmail';
-import { register, signin } from '@/services';
+import { register, signin, resendVerificationEmail } from '@/services';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import type {
@@ -14,6 +14,7 @@ import type {
 } from '@/types/auth';
 import { isAdmin } from '@/utils/permissions';
 import { initialUserProfile } from '@/services/user';
+import { useNotification } from '@/contexts';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
@@ -26,6 +27,8 @@ function AuthPage() {
         setAuth,
         clearAuth,
     } = useAuth();
+
+    const  { push } = useNotification();
 
     const [currentStep, setCurrentStep] =
         useState<RegistrationStep>('login-register');
@@ -102,7 +105,10 @@ function AuthPage() {
         } catch (error: any) {
             console.error('Auth error:', error);
             setErrors({
-                email: error.body?.message || 'Authentication failed',
+                email:
+                    error.body?.details ||
+                    error.body?.message ||
+                    'Authentication failed',
             });
             clearAuth();
         } finally {
@@ -162,15 +168,22 @@ function AuthPage() {
     };
 
     const handleResendVerification = async () => {
-        if (!user?.email) return;
+        if (!user?.email || !accessToken) return;
 
         setIsResendingVerification(true);
+
         try {
-            // TODO: Add resend verification email API call here
-            // Need to implement in backend (route does not exist)
-            // await resendVerificationEmail(user.email);
+            await resendVerificationEmail(accessToken);
+            push({
+                message: 'Verification email sent! Please check your inbox.',
+                level: 'success',
+            });
         } catch (error) {
             console.error('Failed to resend verification:', error);
+            push({
+                message: 'Failed to resend verification email. Please try again.',
+                level: 'error',
+            });
         } finally {
             setIsResendingVerification(false);
         }

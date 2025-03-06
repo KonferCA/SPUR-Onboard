@@ -14,6 +14,7 @@ export interface TextInputProps
     value?: string;
     required?: boolean;
     prefix?: string;
+    endIcon?: React.ReactNode; 
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     rows?: number;
 }
@@ -25,6 +26,7 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
             error,
             description,
             prefix,
+            endIcon, 
             className = '',
             value,
             required,
@@ -53,10 +55,12 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
                             )}
                         </div>
                     )}
-                    <div className="flex">
+
+                    <div className="flex relative">
                         {prefix && (
                             <div className={getPrefixStyles()}>{prefix}</div>
                         )}
+
                         <Input
                             ref={ref as any}
                             className={getInputStyles({
@@ -71,7 +75,14 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
                             {...inputProps}
                             {...props}
                         />
+
+                        {endIcon && (
+                            <div className="absolute right-3 inset-y-0 flex items-center">
+                                {endIcon}
+                            </div>
+                        )}
                     </div>
+                    
                     {(description || error) && (
                         <Description
                             className={getDescriptionStyles({ error: !!error })}

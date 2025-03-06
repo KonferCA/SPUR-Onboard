@@ -148,7 +148,7 @@ func (h *Handler) handleRegister(c echo.Context) error {
 	// create a company upon registration
 	company, err := q.CreateCompany(ctx, db.CreateCompanyParams{
 		OwnerID:       newUser.ID,
-		Name:          newUser.ID + "_group",
+		Name:          "Untitled",
 		WalletAddress: nil,
 		LinkedinUrl:   "",
 		Description:   nil,
@@ -377,6 +377,31 @@ func (h *Handler) handleVerifyEmail(c echo.Context) error {
 	}
 
 	return nil
+}
+
+/*
+Handles resending verification emails for users who haven't verified their email yet
+or if the link has expired
+*/
+func (h *Handler) handleResendVerificationEmail(c echo.Context) error {
+	logger := middleware.GetLogger(c)
+
+	user, ok := c.Get("user").(*db.User)
+	if !ok {
+		return v1_common.Fail(c, http.StatusInternalServerError, "", errors.New("failed to cast user type from context"))
+	}
+
+	// prevent sending verification email if already verified
+	if user.EmailVerified {
+		return v1_common.Fail(c, http.StatusBadRequest, "email is already verified", nil)
+	}
+
+	logger.Info(fmt.Sprintf("Resending verification email to user: %s", user.Email))
+
+	// use the existing helper function to send the verification email
+	go sendEmailVerification(user.ID, user.Email, h.server.GetQueries())
+
+	return v1_common.Success(c, http.StatusOK, "verification email sent")
 }
 
 /*

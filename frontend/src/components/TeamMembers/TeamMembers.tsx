@@ -50,7 +50,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         lastName: user.lastName || '',
                         title: userProfile.title || 'Account Owner',
                         detailedBiography: userProfile.bio || '',
-                        linkedin: userProfile.linkedin_url || '',
+                        linkedin: userProfile.linkedinUrl || '',
                         resumeExternalUrl: '',
                         resumeInternalUrl: '',
                         personalWebsite: '',
