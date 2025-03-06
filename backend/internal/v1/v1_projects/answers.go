@@ -117,7 +117,7 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 	// Parse and validate request body
 	var req PatchAnswerRequest
 	if err := c.Bind(&req); err != nil {
-		return v1_common.Fail(c, http.StatusUnauthorized, "Invalid request body", err)
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
 	}
 
 	// Get authenticated user
