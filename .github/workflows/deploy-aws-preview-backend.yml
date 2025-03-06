@@ -144,4 +144,4 @@ jobs:
             #!/usr/bin/env bash
             set -e
             rm -rf "$HOME/$APP_NAME/$APP_ENV/migrations"
-            rm -rf "$HOME/$APP_NAME/$APP_ENV/image.tar"
+            rm -f "$HOME/$APP_NAME/$APP_ENV/image.tar"
