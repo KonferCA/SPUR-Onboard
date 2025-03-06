@@ -1,5 +1,11 @@
 package v1_projects
 
+/*
+ * package v1_projects implements project answer management functionality.
+ * this file provides handlers for creating, updating, and managing project question answers,
+ * including validation and draft management for project submissions.
+ */
+
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/middleware"
@@ -13,10 +19,19 @@ import (
 
 /*
  * handleSaveProjectDraft updates a batch of answers for a project.
- * These answers must be of type string or array of string
+ * it handles both text answers and multiple-choice answers.
  *
- * Security:
- * - Verifies project belongs to user's company
+ * input:
+ * - project id (from url parameter)
+ * - array of draft answers in request body
+ *
+ * processing:
+ * - validates project ownership
+ * - accepts both string and array answer types
+ * - batches all updates into a single database operation
+ *
+ * security:
+ * - verifies project belongs to user's company
  */
 func (h *Handler) handleSaveProjectDraft(c echo.Context) error {
 	logger := middleware.GetLogger(c)
@@ -76,12 +91,21 @@ func (h *Handler) handleSaveProjectDraft(c echo.Context) error {
 /*
  * handlePatchProjectAnswer updates an answer for a project question.
  *
- * Validation:
- * - Validates answer content against question rules
- * - Returns validation errors if content invalid
+ * input:
+ * - project id (from url parameter)
+ * - answer id and content in request body
  *
- * Security:
- * - Verifies project belongs to user's company
+ * processing:
+ * - verifies project ownership
+ * - validates answer content against question rules
+ * - updates the answer in the database
+ *
+ * validation:
+ * - validates answer content against question rules
+ * - returns validation errors if content invalid
+ *
+ * security:
+ * - verifies project belongs to user's company
  */
 func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 	// Validate static parameters first
@@ -93,7 +117,7 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 	// Parse and validate request body
 	var req PatchAnswerRequest
 	if err := c.Bind(&req); err != nil {
-		return v1_common.Fail(c, 400, "Invalid request body", err)
+		return v1_common.Fail(c, http.StatusUnauthorized, "Invalid request body", err)
 	}
 
 	// Get authenticated user
@@ -163,13 +187,18 @@ func (h *Handler) handlePatchProjectAnswer(c echo.Context) error {
 /*
  * handleGetProjectAnswers retrieves all answers for a project.
  *
- * Returns:
- * - Question ID and content
- * - Current answer text
- * - Question section
+ * input:
+ * - project id (from url parameter)
  *
- * Security:
- * - Verifies project belongs to user's company
+ * processing:
+ * - verifies project ownership
+ * - retrieves all answers from the database
+ *
+ * response:
+ * - returns array of answers with question details
+ *
+ * security:
+ * - verifies project belongs to user's company
  */
 func (h *Handler) handleGetProjectAnswers(c echo.Context) error {
 	user, err := getUserFromContext(c)
@@ -220,3 +249,5 @@ func (h *Handler) handleGetProjectAnswers(c echo.Context) error {
 		"answers": response,
 	})
 }
+
+// note: handleCreateAnswer is implemented in projects.go

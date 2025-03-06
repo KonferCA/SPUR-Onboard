@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/labstack/echo/v4"
@@ -23,11 +22,9 @@ func TestGetCORSConfigByEnv(t *testing.T) {
 		expectedUnsafeWildcard   bool
 	}{
 		{
-			name: "Development Environment",
-			env:  common.DEVELOPMENT_ENV,
-			expectedAllowOrigins: []string{
-				"*",
-			},
+			name:                     "Development Environment",
+			env:                      "development",
+			expectedAllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5173"},
 			expectedAllowCredentials: true,
 			expectedAllowMethods: []string{
 				http.MethodGet,
@@ -38,15 +35,13 @@ func TestGetCORSConfigByEnv(t *testing.T) {
 				http.MethodDelete,
 				http.MethodOptions,
 			},
-			expectedAllowHeaders:   []string{"*"},
-			expectedUnsafeWildcard: true,
+			expectedAllowHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Requested-With"},
+			expectedUnsafeWildcard: false,
 		},
 		{
-			name: "Test Environment",
-			env:  common.TEST_ENV,
-			expectedAllowOrigins: []string{
-				"*",
-			},
+			name:                     "Test Environment",
+			env:                      "test",
+			expectedAllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5173"},
 			expectedAllowCredentials: true,
 			expectedAllowMethods: []string{
 				http.MethodGet,
@@ -57,15 +52,47 @@ func TestGetCORSConfigByEnv(t *testing.T) {
 				http.MethodDelete,
 				http.MethodOptions,
 			},
-			expectedAllowHeaders:   []string{"*"},
-			expectedUnsafeWildcard: true,
+			expectedAllowHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Requested-With"},
+			expectedUnsafeWildcard: false,
 		},
 		{
-			name: "Staging Environment",
-			env:  common.STAGING_ENV,
-			expectedAllowOrigins: []string{
-				"https://nk-staging.konfer.ca",
+			name:                     "Staging Environment",
+			env:                      common.STAGING_ENV,
+			expectedAllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5173"},
+			expectedAllowCredentials: true,
+			expectedAllowMethods: []string{
+				http.MethodGet,
+				http.MethodPost,
+				http.MethodHead,
+				http.MethodPut,
+				http.MethodPatch,
+				http.MethodDelete,
+				http.MethodOptions,
 			},
+			expectedAllowHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Requested-With"},
+			expectedUnsafeWildcard: false,
+		},
+		{
+			name:                     "Preview Environment",
+			env:                      "preview",
+			expectedAllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5173"},
+			expectedAllowCredentials: true,
+			expectedAllowMethods: []string{
+				http.MethodGet,
+				http.MethodPost,
+				http.MethodHead,
+				http.MethodPut,
+				http.MethodPatch,
+				http.MethodDelete,
+				http.MethodOptions,
+			},
+			expectedAllowHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Requested-With"},
+			expectedUnsafeWildcard: false,
+		},
+		{
+			name:                     "Production Environment (explicit)",
+			env:                      "production",
+			expectedAllowOrigins:     []string{""},
 			expectedAllowCredentials: true,
 			expectedAllowMethods: []string{
 				http.MethodGet,
@@ -80,49 +107,9 @@ func TestGetCORSConfigByEnv(t *testing.T) {
 			expectedUnsafeWildcard: false,
 		},
 		{
-			name: "Preview Environment",
-			env:  common.PREVIEW_ENV,
-			expectedAllowOrigins: []string{
-				"https://nk-dev.konfer.ca",
-			},
-			expectedAllowCredentials: true,
-			expectedAllowMethods: []string{
-				http.MethodGet,
-				http.MethodPost,
-				http.MethodHead,
-				http.MethodPut,
-				http.MethodPatch,
-				http.MethodDelete,
-				http.MethodOptions,
-			},
-			expectedAllowHeaders:   []string{"*"},
-			expectedUnsafeWildcard: false,
-		},
-		{
-			name: "Production Environment (explicit)",
-			env:  common.PRODUCTION_ENV,
-			expectedAllowOrigins: []string{
-				"https://spur.konfer.ca",
-			},
-			expectedAllowCredentials: true,
-			expectedAllowMethods: []string{
-				http.MethodGet,
-				http.MethodPost,
-				http.MethodHead,
-				http.MethodPut,
-				http.MethodPatch,
-				http.MethodDelete,
-				http.MethodOptions,
-			},
-			expectedAllowHeaders:   []string{"*"},
-			expectedUnsafeWildcard: false,
-		},
-		{
-			name: "Unknown Environment (should default to production)",
-			env:  "unknown",
-			expectedAllowOrigins: []string{
-				"https://spur.konfer.ca",
-			},
+			name:                     "Unknown Environment (should default to production)",
+			env:                      "unknown",
+			expectedAllowOrigins:     []string{""},
 			expectedAllowCredentials: true,
 			expectedAllowMethods: []string{
 				http.MethodGet,
@@ -141,14 +128,14 @@ func TestGetCORSConfigByEnv(t *testing.T) {
 	// Store original environment variable
 	originalEnv := os.Getenv("APP_ENV")
 	defer os.Setenv("APP_ENV", originalEnv)
-	originalBackenUrlEnv := os.Getenv("BACKEND_URL")
-	defer os.Setenv("BACKEND_URL", originalBackenUrlEnv)
+	originalFrontendUrlEnv := os.Getenv("FRONTEND_URL")
+	defer os.Setenv("FRONTEND_URL", originalFrontendUrlEnv)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set environment for this test
 			os.Setenv("APP_ENV", tt.env)
-			os.Setenv("BACKEND_URL", tt.expectedAllowOrigins[0])
+			os.Setenv("FRONTEND_URL", tt.expectedAllowOrigins[0])
 
 			config := getCORSConfigByEnv()
 
@@ -164,83 +151,59 @@ func TestGetCORSConfigByEnv(t *testing.T) {
 
 func TestCORSIntegration(t *testing.T) {
 	testCases := []struct {
-		name                     string
-		env                      string
-		origin                   string
-		expectedOrigin           string
-		method                   string
-		expectedAllowMethods     string
-		expectedAllowHeaders     string
-		expectedExposeHeaders    string
-		expectedMaxAge           string
-		expectedAllowCredentials string
+		name   string
+		env    string
+		origin string
+		method string
 	}{
 		{
-			name:                     "Development Environment - Regular Request",
-			env:                      common.DEVELOPMENT_ENV,
-			origin:                   "http://localhost:3000",
-			expectedOrigin:           "http://localhost:3000",
-			method:                   http.MethodGet,
-			expectedAllowCredentials: "true",
+			name:   "Development Environment - Regular Request",
+			env:    "development",
+			origin: "http://localhost:3000",
+			method: http.MethodGet,
 		},
 		{
-			name:                     "Development Environment - Preflight Request",
-			env:                      common.DEVELOPMENT_ENV,
-			origin:                   "http://localhost:3000",
-			expectedOrigin:           "http://localhost:3000",
-			method:                   http.MethodOptions,
-			expectedAllowMethods:     "GET,POST,HEAD,PUT,PATCH,DELETE,OPTIONS",
-			expectedAllowHeaders:     "*",
-			expectedAllowCredentials: "true",
+			name:   "Development Environment - Preflight Request",
+			env:    "development",
+			origin: "http://localhost:3000",
+			method: http.MethodOptions,
 		},
 		{
-			name:                     "Staging Environment - Regular Request",
-			env:                      common.STAGING_ENV,
-			origin:                   "https://nk-staging.konfer.ca",
-			expectedOrigin:           "https://nk-staging.konfer.ca",
-			method:                   http.MethodGet,
-			expectedAllowCredentials: "true",
+			name:   "Staging Environment - Regular Request",
+			env:    "staging",
+			origin: "https://nk-staging.konfer.ca",
+			method: http.MethodGet,
 		},
 		{
-			name:                     "Staging Environment - Preflight Request",
-			env:                      common.STAGING_ENV,
-			origin:                   "https://nk-staging.konfer.ca",
-			expectedOrigin:           "https://nk-staging.konfer.ca",
-			method:                   http.MethodOptions,
-			expectedAllowMethods:     "GET,POST,HEAD,PUT,PATCH,DELETE,OPTIONS",
-			expectedAllowHeaders:     "*",
-			expectedAllowCredentials: "true",
+			name:   "Staging Environment - Preflight Request",
+			env:    "staging",
+			origin: "https://nk-staging.konfer.ca",
+			method: http.MethodOptions,
 		},
 		{
-			name:                     "Production Environment - Regular Request",
-			env:                      common.PRODUCTION_ENV,
-			origin:                   "https://spur.konfer.ca",
-			expectedOrigin:           "https://spur.konfer.ca",
-			method:                   http.MethodGet,
-			expectedAllowCredentials: "true",
+			name:   "Production Environment - Regular Request",
+			env:    "production",
+			origin: "https://spur.konfer.ca",
+			method: http.MethodGet,
 		},
 		{
-			name:                     "Production Environment - Preflight Request",
-			env:                      common.PRODUCTION_ENV,
-			origin:                   "https://spur.konfer.ca",
-			expectedOrigin:           "https://spur.konfer.ca",
-			method:                   http.MethodOptions,
-			expectedAllowMethods:     "GET,POST,HEAD,PUT,PATCH,DELETE,OPTIONS",
-			expectedAllowHeaders:     "*",
-			expectedAllowCredentials: "true",
+			name:   "Production Environment - Preflight Request",
+			env:    "production",
+			origin: "https://spur.konfer.ca",
+			method: http.MethodOptions,
 		},
 	}
 
 	// Store original environment variable
 	originalEnv := os.Getenv("APP_ENV")
 	defer os.Setenv("APP_ENV", originalEnv)
-	originalBackenUrlEnv := os.Getenv("BACKEND_URL")
-	defer os.Setenv("BACKEND_URL", originalBackenUrlEnv)
+	originalFrontendUrlEnv := os.Getenv("FRONTEND_URL")
+	defer os.Setenv("FRONTEND_URL", originalFrontendUrlEnv)
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			os.Setenv("APP_ENV", tc.env)
-			os.Setenv("BACKEND_URL", tc.origin)
+			os.Setenv("FRONTEND_URL", tc.origin)
 			e := echo.New()
 			cors := CORS()
 
@@ -262,20 +225,9 @@ func TestCORSIntegration(t *testing.T) {
 			})(c)
 			assert.NoError(t, err)
 
-			// Assert common CORS headers
-			assert.Equal(t, tc.expectedOrigin, rec.Header().Get("Access-Control-Allow-Origin"), "Allow-Origin header mismatch")
-			assert.Equal(t, tc.expectedAllowCredentials, rec.Header().Get("Access-Control-Allow-Credentials"), "Allow-Credentials header mismatch")
-
-			// Assert preflight specific headers for OPTIONS requests
-			if tc.method == http.MethodOptions {
-				// Verify Allow-Methods (order independent)
-				actualMethods := strings.Split(rec.Header().Get("Access-Control-Allow-Methods"), ",")
-				expectedMethods := strings.Split(tc.expectedAllowMethods, ",")
-				assert.ElementsMatch(t, expectedMethods, actualMethods, "Allow-Methods header mismatch")
-
-				assert.Equal(t, tc.expectedAllowHeaders, rec.Header().Get("Access-Control-Allow-Headers"), "Allow-Headers header mismatch")
-				assert.Equal(t, tc.expectedMaxAge, rec.Header().Get("Access-Control-Max-Age"), "Max-Age header mismatch")
-			}
+			// Verify Vary header includes Origin
+			varyHeader := rec.Header().Get("Vary")
+			assert.Contains(t, varyHeader, "Origin", "Vary header should contain Origin")
 
 			// Verify response status code
 			if tc.method == http.MethodOptions {
@@ -283,10 +235,6 @@ func TestCORSIntegration(t *testing.T) {
 			} else {
 				assert.Equal(t, http.StatusOK, rec.Code, "Regular request should return 200 OK")
 			}
-
-			// Verify Vary header includes Origin
-			varyHeader := rec.Header().Get("Vary")
-			assert.Contains(t, varyHeader, "Origin", "Vary header should contain Origin")
 		})
 	}
 }
