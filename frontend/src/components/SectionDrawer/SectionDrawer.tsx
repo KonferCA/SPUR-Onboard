@@ -18,6 +18,7 @@ import { isElementInView, scrollToWithOffset } from '@/utils';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
 import { BiChevronUp } from 'react-icons/bi';
+import { cn } from '@/lib/utils';
 
 export const SectionDrawer: FC<SectionDrawerProps> = ({
     activeSection,
@@ -30,6 +31,7 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
     const [activeSubSection, setActiveSubSection] = useState('');
     const [isRecommendedFieldsCollapse, setIsRecommendedFieldsCollapse] =
         useState(false);
+    const [isSubSectionsCollapse, setIsSubSectionsCollapse] = useState(false);
 
     const handleLinkClick = (link: ControlledLink) => {
         setDrawerOpen(false);
@@ -52,6 +54,8 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
             const accepted = onRequestChangeSection(firstSectionWithError);
             if (accepted) {
                 setTimeout(() => {
+                    setIsSubSectionsCollapse(false);
+                    setIsRecommendedFieldsCollapse(false);
                     setDrawerOpen(true);
                 }, 500);
             }
@@ -180,17 +184,20 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
             </DrawerTrigger>
             <DrawerContent className="md:max-w-3xl md:mx-auto max-h-[80%] lg:max-h-[60%]">
                 <div className="overflow-y-auto">
-                    <DrawerHeader className="">
+                    <DrawerHeader className="py-0">
                         {validationErrors.length > 0 && (
-                            <p className="text-lg text-red-500 font-bold flex items-center gap-2 mb-2">
+                            <p className="text-lg text-red-500 font-bold flex items-center gap-2">
                                 <IoMdAlert className="w-6 h-6" />
                                 <span>Oops! You're missing information</span>
                             </p>
                         )}
-                        <div className="relative flex items-center justify-between">
+                        <div className="relative flex items-center justify-between py-4">
                             <button
                                 type="button"
                                 className="absolute inset-0 left-0 right-0 h-full w-full"
+                                onClick={() =>
+                                    setIsSubSectionsCollapse((prev) => !prev)
+                                }
                             >
                                 <span className="sr-only">
                                     open list of sections
@@ -201,56 +208,93 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                                     {activeSection}
                                 </DrawerTitle>
                             </div>
-                            <DrawerDescription className="text-custom-blue-200">
-                                Go to...
+                            <DrawerDescription>
+                                <span className="sr-only">
+                                    Go to sub-section...
+                                </span>
+                                <motion.div
+                                    aria-hidden
+                                    initial={{ rotate: 0 }}
+                                    animate={{
+                                        rotate: isSubSectionsCollapse ? 180 : 0,
+                                    }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    <BiChevronUp className="w-6 h-6" />
+                                </motion.div>
                             </DrawerDescription>
                         </div>
                     </DrawerHeader>
-                    <div className="p-4 pt-0 pb-6 overflow-y-auto">
-                        <AnchorLinks
-                            manualScroll
-                            links={controlledLinks}
-                            onClick={handleLinkClick}
+                    <div
+                        className={cn(
+                            'px-4 py-0 overflow-y-auto',
+                            controlledRecommendedFields.length < 1 && 'pb-4'
+                        )}
+                    >
+                        <motion.div
+                            initial={{
+                                height: 0,
+                                opacity: 0,
+                                overflow: 'hidden',
+                            }}
+                            animate={{
+                                height: isSubSectionsCollapse ? 0 : 'auto',
+                                opacity: isSubSectionsCollapse ? 0 : 1,
+                            }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{
+                                duration: 0.3,
+                                ease: 'easeInOut',
+                                opacity: { duration: 0.2 },
+                            }}
                         >
-                            {(
-                                link: ControlledLink & SectionDrawerLinkItem,
-                                idx: number
-                            ) => (
-                                <span
-                                    className={clsx(
-                                        'flex p-2 justify-between gap-2 transition',
-                                        (link.active ||
-                                            (!link.hasErrors &&
-                                                validationErrors.length > 0)) &&
-                                            'text-black',
-                                        !link.active &&
-                                            !link.hasErrors &&
-                                            validationErrors.length < 1 &&
-                                            'text-gray-300',
-                                        link.hasErrors &&
-                                            'text-red-500 bg-red-100 rounded-lg font-medium'
-                                    )}
-                                >
-                                    <div className="flex items-center gap-1">
-                                        <span>{`${idx + 1}. ${link.label}`}</span>
-                                        {link.hasErrors && (
-                                            <IoIosAlert className="w-6 h-6" />
+                            <AnchorLinks
+                                manualScroll
+                                links={controlledLinks}
+                                onClick={handleLinkClick}
+                            >
+                                {(
+                                    link: ControlledLink &
+                                        SectionDrawerLinkItem,
+                                    idx: number
+                                ) => (
+                                    <span
+                                        className={clsx(
+                                            'flex p-2 justify-between gap-2 transition',
+                                            (link.active ||
+                                                (!link.hasErrors &&
+                                                    validationErrors.length >
+                                                        0)) &&
+                                                'text-black',
+                                            !link.active &&
+                                                !link.hasErrors &&
+                                                validationErrors.length < 1 &&
+                                                'text-gray-300',
+                                            link.hasErrors &&
+                                                'text-red-500 bg-red-100 rounded-lg font-medium'
                                         )}
-                                        {!link.hasErrors &&
-                                            validationErrors.length > 0 && (
-                                                <IoIosCheckmarkCircle className="w-6 h-6 text-green-500" />
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            <span>{`${idx + 1}. ${link.label}`}</span>
+                                            {link.hasErrors && (
+                                                <IoIosAlert className="w-6 h-6" />
                                             )}
-                                    </div>
-                                    {link.hasErrors &&
-                                        link.missingRequiredCount &&
-                                        link.missingRequiredCount > 0 && (
-                                            <span className="text-black underline">
-                                                {`${link.missingRequiredCount} ${link.missingRequiredCount > 1 ? 'required fields' : 'required field'}`}
-                                            </span>
-                                        )}
-                                </span>
-                            )}
-                        </AnchorLinks>
+                                            {!link.hasErrors &&
+                                                validationErrors.length > 0 && (
+                                                    <IoIosCheckmarkCircle className="w-6 h-6 text-green-500" />
+                                                )}
+                                        </div>
+                                        {link.hasErrors &&
+                                            link.missingRequiredCount &&
+                                            link.missingRequiredCount > 0 && (
+                                                <span className="text-black underline">
+                                                    {`${link.missingRequiredCount} ${link.missingRequiredCount > 1 ? 'required fields' : 'required field'}`}
+                                                </span>
+                                            )}
+                                    </span>
+                                )}
+                            </AnchorLinks>
+                        </motion.div>
                     </div>
                     {controlledRecommendedFields.length > 0 && (
                         <div className="p-4 pt-0 pb-6 overflow-y-auto">
