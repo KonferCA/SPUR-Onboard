@@ -94,7 +94,7 @@ jobs:
           script: |
             # Run migrations up
             /opt/go/bin/goose -dir "$HOME/$APP_NAME/$APP_ENV/migrations" postgres \
-              "postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" up
+              "postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" up --allow-missing
       - name: Deploy Go App on VPS
         uses: appleboy/ssh-action@v1.0.3
         env:
