@@ -38,6 +38,11 @@ type ProjectAnswerResponse struct {
 	Section    string `json:"section"`
 }
 
+type GetNewProjectsRequest struct {
+	Count  int               `query:"count" validate:"omitempty,min=1,max=50"`
+	Status *db.ProjectStatus `query:"status" validate:"omitempty,oneof=draft pending verified declined withdrawn"`
+}
+
 type PatchAnswerRequest struct {
 	Content  string `json:"content" validate:"required"`
 	AnswerID string `json:"answer_id" validate:"required,uuid"`
