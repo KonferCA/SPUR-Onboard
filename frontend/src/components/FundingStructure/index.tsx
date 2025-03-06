@@ -58,7 +58,7 @@ const EquityProgressBar: FC<{
     setShowTooltip(false);
   };
 
-  // Colors for tiers - using site color scheme with no looping
+  // Colors for tiers - using site color scheme
   const tierColors = [
     { bg: '#F4802F', pattern: '#D2691F' }, // primary orange - first tier
     { bg: '#154261', pattern: '#1C262D' }, // secondary blue - second tier
