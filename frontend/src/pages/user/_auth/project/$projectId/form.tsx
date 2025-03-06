@@ -34,6 +34,8 @@ import { RecommendedFields } from '@/components/RecommendedFields';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
 import { AutoSaveIndicator } from '@/components/AutoSaveIndicator';
+import { RecommendedField } from '@/types';
+import { isValid as isValidDate } from 'date-fns';
 
 export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
     component: ProjectFormPage,
@@ -66,7 +68,7 @@ const isEmptyValue = (value: any, type: string): boolean => {
         case 'multiselect':
             return value.length === 0;
         case 'date':
-            return value === '';
+            return isValidDate(value);
         default:
             return false;
     }
@@ -112,12 +114,7 @@ function ProjectFormPage() {
         []
     );
     const [recommendedFields, setRecommendedFields] = useState<
-        Array<{
-            section: string;
-            subsection: string;
-            questionText: string;
-            inputType: string;
-        }>
+        RecommendedField[]
     >([]);
     const [autosaveStatus, setAutosaveStatus] = useState<
         'idle' | 'saving' | 'success' | 'error'
@@ -492,6 +489,7 @@ function ProjectFormPage() {
 
     const handleSubmit = async () => {
         const invalidQuestions: ValidationError[] = [];
+        const recommended: RecommendedField[] = [];
 
         let isValid = true;
 
@@ -513,7 +511,16 @@ function ProjectFormPage() {
 
                         input.invalid = false;
 
-                        if (!input.required && !input.value.value) {
+                        if (
+                            !input.required &&
+                            isEmptyValue(input.value.value, input.type)
+                        ) {
+                            recommended.push({
+                                section: group.section,
+                                subsection: subsection.name,
+                                questionText: question.question,
+                                inputType: input.type,
+                            });
                             return;
                         }
 
@@ -576,50 +583,11 @@ function ProjectFormPage() {
             });
         });
 
+        setRecommendedFields(recommended);
+
         if (isValid) {
             setValidationErrors([]);
-
-            const recommended: Array<{
-                section: string;
-                subsection: string;
-                questionText: string;
-                inputType: string;
-            }> = [];
-
-            groupedQuestions.forEach((group) => {
-                group.subSections.forEach((subsection) => {
-                    subsection.questions.forEach((question) => {
-                        if (
-                            question.conditionType &&
-                            question.conditionType.valid &&
-                            !shouldRenderQuestion(
-                                question,
-                                subsection.questions
-                            )
-                        ) {
-                            return;
-                        }
-
-                        question.inputFields.forEach((input) => {
-                            if (input.required) {
-                                return;
-                            }
-
-                            if (isEmptyValue(input.value.value, input.type)) {
-                                recommended.push({
-                                    section: group.section,
-                                    subsection: subsection.name,
-                                    questionText: question.question,
-                                    inputType: input.type,
-                                });
-                            }
-                        });
-                    });
-                });
-            });
-
             if (recommended.length > 0) {
-                setRecommendedFields(recommended);
                 setShowRecommendedModal(true);
             } else {
                 setShowSubmitModal(true);
@@ -818,6 +786,7 @@ function ProjectFormPage() {
                     activeSection={groupedQuestions[currentStep]?.section || ''}
                     subSectionLinks={asideLinks || []}
                     validationErrors={validationErrors}
+                    recommendedFields={recommendedFields}
                     onRequestChangeSection={(section) => {
                         if (isMobile) {
                             const idx = groupedQuestions.findIndex(

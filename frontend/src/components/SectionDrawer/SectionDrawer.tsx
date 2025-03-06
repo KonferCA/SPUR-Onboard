@@ -16,15 +16,20 @@ import { AnchorLinks, ControlledLink } from '@components';
 import { IoIosAlert, IoIosCheckmarkCircle } from 'react-icons/io';
 import { isElementInView, scrollToWithOffset } from '@/utils';
 import clsx from 'clsx';
+import { motion } from 'framer-motion';
+import { BiChevronUp } from 'react-icons/bi';
 
 export const SectionDrawer: FC<SectionDrawerProps> = ({
     activeSection,
     subSectionLinks,
     validationErrors,
+    recommendedFields,
     onRequestChangeSection,
 }) => {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [activeSubSection, setActiveSubSection] = useState('');
+    const [isRecommendedFieldsCollapse, setIsRecommendedFieldsCollapse] =
+        useState(false);
 
     const handleLinkClick = (link: ControlledLink) => {
         setDrawerOpen(false);
@@ -54,25 +59,39 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
     }, [validationErrors]);
 
     const controlledLinks = useMemo(() => {
-        if (validationErrors.length) {
-            const errors = validationErrors.filter(
-                (e) => e.section === activeSection
+        const errors = validationErrors.filter(
+            (e) => e.section === activeSection
+        );
+        return subSectionLinks.map((link) => {
+            const count = errors.reduce(
+                (count, err) =>
+                    err.subsection === link.label && err.required
+                        ? count + 1
+                        : count,
+                0
             );
-            return subSectionLinks.map((link) => {
-                const count = errors.reduce(
-                    (count, err) =>
-                        err.subsection === link.label && err.required
-                            ? count + 1
-                            : count,
+            link.missingRequiredCount = count;
+            link.hasErrors = count > 0;
+            return link;
+        });
+    }, [activeSection, validationErrors, subSectionLinks]);
+
+    const controlledRecommendedFields = useMemo(() => {
+        const fields = recommendedFields.filter(
+            (f) => f.section === activeSection
+        );
+        return subSectionLinks
+            .map((link) => {
+                const count = fields.reduce(
+                    (count, f) =>
+                        f.subsection === link.label ? count + 1 : count,
                     0
                 );
-                link.missingRequiredCount = count;
-                link.hasErrors = count > 0;
+                link.optionalCount = count;
                 return link;
-            });
-        }
-        return [];
-    }, [activeSection, validationErrors, subSectionLinks]);
+            })
+            .filter((link) => link.optionalCount);
+    }, [recommendedFields, activeSection, subSectionLinks]);
 
     useEffect(() => {
         const handler = () => {
@@ -233,6 +252,75 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                             )}
                         </AnchorLinks>
                     </div>
+                    {controlledRecommendedFields.length > 0 && (
+                        <div className="p-4 pt-0 pb-6 overflow-y-auto">
+                            <button
+                                type="button"
+                                className="w-full py-4"
+                                onClick={() =>
+                                    setIsRecommendedFieldsCollapse(
+                                        (prev) => !prev
+                                    )
+                                }
+                            >
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-xl font-semibold text-left">
+                                        Recommended Fields
+                                    </h2>
+                                    <motion.div
+                                        initial={{ rotate: 0 }}
+                                        animate={{
+                                            rotate: isRecommendedFieldsCollapse
+                                                ? 180
+                                                : 0,
+                                        }}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        <BiChevronUp className="w-6 h-6" />
+                                    </motion.div>
+                                </div>
+                            </button>
+                            <motion.div
+                                initial={{
+                                    height: 0,
+                                    opacity: 0,
+                                    overflow: 'hidden',
+                                }}
+                                animate={{
+                                    height: isRecommendedFieldsCollapse
+                                        ? 0
+                                        : 'auto',
+                                    opacity: isRecommendedFieldsCollapse
+                                        ? 0
+                                        : 1,
+                                }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{
+                                    duration: 0.3,
+                                    ease: 'easeInOut',
+                                    opacity: { duration: 0.2 },
+                                }}
+                            >
+                                <AnchorLinks
+                                    manualScroll
+                                    links={controlledRecommendedFields}
+                                    onClick={handleLinkClick}
+                                >
+                                    {(
+                                        link: ControlledLink &
+                                            SectionDrawerLinkItem
+                                    ) => (
+                                        <span className="text-black flex justify-between p-2 bg-gray-100 rounded-lg">
+                                            <span>{link.label}</span>
+                                            <span>
+                                                {`${link.optionalCount} optional ${link.optionalCount && link.optionalCount > 0 ? 'fields' : 'field'}`}
+                                            </span>
+                                        </span>
+                                    )}
+                                </AnchorLinks>
+                            </motion.div>
+                        </div>
+                    )}
                 </div>
             </DrawerContent>
         </Drawer>
