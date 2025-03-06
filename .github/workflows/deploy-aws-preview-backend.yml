@@ -65,6 +65,8 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           envs: APP_ENV,APP_NAME
           script: |
+            #!/usr/bin/env bash
+            set -e
             mkdir -p "$HOME/$APP_NAME/$APP_ENV/migrations"
       - name: Upload .env
         run: |
@@ -92,6 +94,8 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           envs: DB_NAME,DB_PASSWORD,DB_PORT,DB_SSLMODE,DB_USER,DB_HOST,APP_NAME,APP_ENV
           script: |
+            #!/usr/bin/env bash
+            set -e
             # Run migrations up
             /opt/go/bin/goose -dir "$HOME/$APP_NAME/$APP_ENV/migrations" postgres \
               "postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" up --allow-missing
@@ -108,6 +112,8 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           envs: APP_NAME,APP_ENV,HOST_PORT,PORT
           script: |
+            #!/usr/bin/env bash
+            set -e
             echo "Stopping and removing existing container if present..."
             CONTAINER="$APP_NAME-$APP_ENV"
             docker stop $CONTAINER || true
@@ -135,5 +141,7 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           envs: APP_ENV,APP_NAME
           script: |
+            #!/usr/bin/env bash
+            set -e
             rm -rf "$HOME/$APP_NAME/$APP_ENV/migrations"
-            rm -r "$HOME/$APP_NAME/$APP_ENV/image.tar"
+            rm -rf "$HOME/$APP_NAME/$APP_ENV/image.tar"
