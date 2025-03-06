@@ -14,7 +14,7 @@ export interface TextInputProps
     value?: string;
     required?: boolean;
     prefix?: string;
-    endIcon?: React.ReactNode; 
+    endIcon?: React.ReactNode;
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     rows?: number;
 }
@@ -26,7 +26,7 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
             error,
             description,
             prefix,
-            endIcon, 
+            endIcon,
             className = '',
             value,
             required,
@@ -82,7 +82,7 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
                             </div>
                         )}
                     </div>
-                    
+
                     {(description || error) && (
                         <Description
                             className={getDescriptionStyles({ error: !!error })}

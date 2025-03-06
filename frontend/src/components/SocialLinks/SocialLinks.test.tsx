@@ -224,7 +224,9 @@ describe('SocialLinks', () => {
 
             // Enter valid URL
             const input = screen.getByTestId('social-input');
-            fireEvent.change(input, { target: { value: 'www.linkedin.com/in/test' } });
+            fireEvent.change(input, {
+                target: { value: 'www.linkedin.com/in/test' },
+            });
 
             // Confirm
             fireEvent.click(screen.getByTestId('confirm-button'));

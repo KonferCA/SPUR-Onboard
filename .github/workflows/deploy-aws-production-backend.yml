@@ -2,9 +2,9 @@ name: Deploy Backend to AWS - Production
 on:
   workflow_dispatch:
   push:
-    branches: ['production']
+    branches: ["production"]
     paths:
-      - 'backend/**'
+      - "backend/**"
 jobs:
   deploy:
     runs-on: ubuntu-latest

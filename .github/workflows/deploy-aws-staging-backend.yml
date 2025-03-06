@@ -2,9 +2,9 @@ name: Deploy Backend to AWS - Staging
 on:
   workflow_dispatch:
   push:
-    branches: ['staging']
+    branches: ["staging"]
     paths:
-      - 'backend/**'
+      - "backend/**"
 jobs:
   deploy:
     runs-on: ubuntu-latest

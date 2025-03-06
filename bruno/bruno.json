@@ -3,8 +3,5 @@
   "name": "Spur",
   "type": "collection",
   "folders": ["auth", "projects"],
-  "ignore": [
-    "node_modules",
-    ".git"
-  ]
+  "ignore": ["node_modules", ".git"]
 }

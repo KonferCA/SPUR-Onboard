@@ -21,15 +21,18 @@
 [![Deploy Frontend to AWS - Preview](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-frontend.yml/badge.svg?branch=main)](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-frontend.yml)
 
 ## ⚡ Quickstart
->[!NOTE]
+
+> [!NOTE]
 > This is the monorepo containing the backend and frontend code for the webapp, as well as code related to the Web3 infrastructure
 
 > Clone the repo
+
 ```console
 git clone https://github.com/KonferCA/SPUR.git
 ```
 
 > From your terminal, navigate to the root path of your clone
+
 ```console
 cd path/to/your/clone
 ```
@@ -41,6 +44,7 @@ SPUR backend requires **Go version `1.23` or higher** for best compatibility. If
 ### Getting Started
 
 > From your terminal, navigate to the backend path of your clone
+
 ```console
 cd path/to/your/clone/backend
 ```
@@ -54,51 +58,62 @@ go install github.com/air-verse/air@v1.61.1
 ```
 
 > SQLc (generate type-safe code from SQL queries)
+
 ```console
 go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0
 ```
 
 > Goose (SQL migration management tool)
+
 ```console
 go install github.com/pressly/goose/v3/cmd/goose@v3.22.1
 ```
 
 #### 🍺 Homebrew quick start
+
 > Make
+
 ```console
 brew install make
 ```
 
 > Docker
+
 ```console
 brew install docker
 ```
 
 > [!IMPORTANT]
->  Make commands only work on unix like systems.
+> Make commands only work on unix like systems.
 
 #### 🏗️ Setup development environment
 
 > Create a new PostgreSQL instance using Docker
+
 ```console
 make init-dev-db
 ```
 
 > Start PostgreSQL for development
+
 ```console
 make start-dev-db
 ```
+
 > Check health of DB
+
 ```console
 make health-dev-db
 ```
 
 > Run migrations when ready
+
 ```console
 make up
 ```
 
 > Start development server
+
 ```console
 make dev
 ```
@@ -107,7 +122,7 @@ make dev
 > Use `make query "SELECT ... FROM ..."` for quick query on the terminal.
 > You should also checkout the other available commands in the Makefile.
 
---- 
+---
 
 ## ⚙️ Installation [Frontend]
 
@@ -116,6 +131,7 @@ SPUR frontend requires **Node version `22.9.0` or higher** for best compatibilit
 ### Getting Started
 
 > From your terminal, navigate to the backend path of your clone
+
 ```console
 cd path/to/your/clone/frontend
 ```
@@ -123,6 +139,7 @@ cd path/to/your/clone/frontend
 #### 🔨 Install prerequisite tools
 
 > Install pnpm using npm
+
 ```console
 npm install -g pnpm
 ```
@@ -130,11 +147,13 @@ npm install -g pnpm
 #### 🏗️ Setup development environment
 
 > Install dependencies
+
 ```console
 pnpm i
 ```
 
 > Run local server
+
 ```console
 pnpm dev
 ```

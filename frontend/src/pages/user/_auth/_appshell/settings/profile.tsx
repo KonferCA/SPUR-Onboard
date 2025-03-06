@@ -191,4 +191,3 @@ function ProfileSettings() {
         </SettingsPage>
     );
 }
-

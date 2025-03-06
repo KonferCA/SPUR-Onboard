@@ -33,7 +33,8 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
     const [newMember, setNewMember] = useState<Partial<LocalTeamMember>>({});
     const [members, setMembers] = useState<LocalTeamMember[]>([]);
     const [resumeFile, setResumeFile] = useState<UploadableFile | null>(null);
-    const [foundersAgreementFile, setFoundersAgreementFile] = useState<UploadableFile | null>(null);
+    const [foundersAgreementFile, setFoundersAgreementFile] =
+        useState<UploadableFile | null>(null);
 
     const { accessToken, companyId, user } = useAuth();
     const notification = useNotification();
@@ -42,8 +43,11 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         const initializeMembers = async () => {
             if (user && accessToken) {
                 try {
-                    const userProfile = await getUserProfile(accessToken, user.id);
-                    
+                    const userProfile = await getUserProfile(
+                        accessToken,
+                        user.id
+                    );
+
                     const accountOwner: LocalTeamMember = {
                         id: user.id,
                         firstName: user.firstName || user.email.split('@')[0],
@@ -66,8 +70,8 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                     };
 
                     const otherMembers = initialValue
-                        .filter(member => !member.isAccountOwner)
-                        .map(member => ({ ...member, isLoading: false }));
+                        .filter((member) => !member.isAccountOwner)
+                        .map((member) => ({ ...member, isLoading: false }));
 
                     setMembers([accountOwner, ...otherMembers]);
                 } catch (error) {
@@ -100,7 +104,13 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         created_at: Date.now(),
                     };
 
-                    setMembers([accountOwner, ...initialValue.map(member => ({ ...member, isLoading: false }))]);
+                    setMembers([
+                        accountOwner,
+                        ...initialValue.map((member) => ({
+                            ...member,
+                            isLoading: false,
+                        })),
+                    ]);
                 }
             }
         };
@@ -299,14 +309,16 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
 
                         {/* Actions */}
                         <div className="flex items-center gap-2 flex-shrink-0">
-                            {!member.isLoading && !disabled && !member.isAccountOwner && (
-                                <button
-                                    onClick={() => handleRemove(member)}
-                                    className="p-1 text-gray-400 hover:text-red-500"
-                                >
-                                    <FiX size={18} />
-                                </button>
-                            )}
+                            {!member.isLoading &&
+                                !disabled &&
+                                !member.isAccountOwner && (
+                                    <button
+                                        onClick={() => handleRemove(member)}
+                                        className="p-1 text-gray-400 hover:text-red-500"
+                                    >
+                                        <FiX size={18} />
+                                    </button>
+                                )}
                         </div>
                     </div>
                 ))}

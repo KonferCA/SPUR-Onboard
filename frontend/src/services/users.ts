@@ -58,7 +58,11 @@ export async function getUsers(
     });
 
     if (res.status !== HttpStatusCode.OK) {
-        throw new ApiError('Failed to fetch users', res.status, await res.json());
+        throw new ApiError(
+            'Failed to fetch users',
+            res.status,
+            await res.json()
+        );
     }
 
     const json = await res.json();
@@ -86,7 +90,11 @@ export async function updateUserRole(
     });
 
     if (res.status !== HttpStatusCode.OK) {
-        throw new ApiError('Failed to update user role', res.status, await res.json());
+        throw new ApiError(
+            'Failed to update user role',
+            res.status,
+            await res.json()
+        );
     }
 
     const json = await res.json();
@@ -112,6 +120,10 @@ export async function updateUsersRole(
     });
 
     if (res.status !== HttpStatusCode.OK) {
-        throw new ApiError('Failed to update user roles', res.status, await res.json());
+        throw new ApiError(
+            'Failed to update user roles',
+            res.status,
+            await res.json()
+        );
     }
-} 
+}

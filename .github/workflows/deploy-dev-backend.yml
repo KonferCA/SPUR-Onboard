@@ -2,9 +2,9 @@ name: Deploy Dev Backend
 on:
   workflow_dispatch:
   push:
-    branches: ['main']
+    branches: ["main"]
     paths:
-      - 'backend/**'
+      - "backend/**"
 jobs:
   deploy:
     runs-on: ubuntu-latest

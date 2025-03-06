@@ -98,8 +98,10 @@ export async function getTeamMembers(
     }
 
     const json = await res.json();
-    const teamMembers = json.team_members || [] as TeamMemberResponse[];
-    return teamMembers.map((member: TeamMemberResponse) => snakeToCamel(member) as TeamMember);
+    const teamMembers = json.team_members || ([] as TeamMemberResponse[]);
+    return teamMembers.map(
+        (member: TeamMemberResponse) => snakeToCamel(member) as TeamMember
+    );
 }
 
 export interface UploadTeamMemberDocumentData {

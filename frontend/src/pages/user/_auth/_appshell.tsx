@@ -11,15 +11,15 @@ export const Route = createFileRoute('/user/_auth/_appshell')({
 
 // dashboard nav items
 const userMenuItems = [
-    { 
-        path: '/user/dashboard', 
-        label: 'Projects', 
-        icon: <FiFolder /> 
+    {
+        path: '/user/dashboard',
+        label: 'Projects',
+        icon: <FiFolder />,
     },
-    { 
+    {
         path: '/user/settings/profile',
         label: 'Settings',
-        icon: <FiSettings /> 
+        icon: <FiSettings />,
     },
 ];
 
@@ -41,22 +41,17 @@ function RouteComponent() {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, clearAuth } = useAuth();
-    
+
     const isSettingsPage = location.pathname.includes('/settings');
-    
+
     const handleLogout = async () => {
         await clearAuth();
 
         navigate({ to: '/auth' });
     };
-    
-    const userActions = (
-        <UserDropdown 
-            user={user} 
-            onLogout={handleLogout} 
-        />
-    );
-    
+
+    const userActions = <UserDropdown user={user} onLogout={handleLogout} />;
+
     const desktopSidebar = (
         <div className="hidden md:block w-48 bg-white border-r border-gray-200">
             <div className="p-6">
@@ -67,21 +62,27 @@ function RouteComponent() {
                             to={item.path}
                             className={`
                                 flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md 
-                                ${(item.path === '/user/dashboard' && location.pathname.startsWith('/user/dashboard')) ||
-                                  (item.path === '/user/settings/profile' && location.pathname.startsWith('/user/settings')) 
-                                    ? 'bg-gray-50 text-gray-900'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
+                                ${
+                                    (item.path === '/user/dashboard' &&
+                                        location.pathname.startsWith(
+                                            '/user/dashboard'
+                                        )) ||
+                                    (item.path === '/user/settings/profile' &&
+                                        location.pathname.startsWith(
+                                            '/user/settings'
+                                        ))
+                                        ? 'bg-gray-50 text-gray-900'
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                }
                             `}
                         >
                             {item.icon}
 
-                            <span className="truncate">
-                                {item.label}
-                            </span>
+                            <span className="truncate">{item.label}</span>
                         </Link>
                     ))}
                 </nav>
-                
+
                 {isSettingsPage && (
                     <div className="mt-6 pt-6 border-t border-gray-200">
                         <nav className="space-y-1">
@@ -91,9 +92,10 @@ function RouteComponent() {
                                     to={route.path}
                                     className={`
                                         flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md 
-                                        ${location.pathname === route.path
-                                            ? 'bg-gray-50 text-gray-900'
-                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                        ${
+                                            location.pathname === route.path
+                                                ? 'bg-gray-50 text-gray-900'
+                                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                         }
                                     `}
                                 >
@@ -110,23 +112,23 @@ function RouteComponent() {
             </div>
         </div>
     );
-    
-    const mobileMenuItems = isSettingsPage 
-        ? [
-            ...userMenuItems,
-            
-            // seperator
-            { path: '', label: '', icon: null, isSeparator: true },
 
-            // include settings subitems in mobile menu
-            ...settingsItems.map(item => ({
-                ...item,
-                label: `${item.label}`,
-                isSubmenu: true
-            }))
+    const mobileMenuItems = isSettingsPage
+        ? [
+              ...userMenuItems,
+
+              // seperator
+              { path: '', label: '', icon: null, isSeparator: true },
+
+              // include settings subitems in mobile menu
+              ...settingsItems.map((item) => ({
+                  ...item,
+                  label: `${item.label}`,
+                  isSubmenu: true,
+              })),
           ]
         : userMenuItems;
-    
+
     return (
         <DashboardTemplate
             menuItems={mobileMenuItems}

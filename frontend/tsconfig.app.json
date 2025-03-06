@@ -37,10 +37,10 @@
         "noFallthroughCasesInSwitch": true,
         "noUncheckedSideEffectImports": true
     },
-    
+
     "include": ["src"],
     "exclude": [
-        "node_moddules",
+        "node_moddules"
         // "src/**/*.test.ts",
         // "src/**/*.test.tsx",
     ]

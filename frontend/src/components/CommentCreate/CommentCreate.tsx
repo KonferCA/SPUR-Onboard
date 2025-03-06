@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { 
+import {
     BiLink,
     BiBold,
     BiItalic,
     BiListUl,
     BiListOl,
-    BiDotsVerticalRounded
+    BiDotsVerticalRounded,
 } from 'react-icons/bi';
 
 export interface CommentCreateProps {
@@ -31,18 +31,24 @@ export const CommentCreate: React.FC<CommentCreateProps> = ({
         setSelectionEnd(textarea.selectionEnd);
     };
 
-    const formatText = useCallback((wrapWith: string) => {
-        const before = text.substring(0, selectionStart);
-        const selected = text.substring(selectionStart, selectionEnd);
-        const after = text.substring(selectionEnd);
+    const formatText = useCallback(
+        (wrapWith: string) => {
+            const before = text.substring(0, selectionStart);
+            const selected = text.substring(selectionStart, selectionEnd);
+            const after = text.substring(selectionEnd);
 
-        if (wrapWith === '- ' || wrapWith === '1. ') {
-            const formattedText = selected.split('\n').map(line => `${wrapWith}${line}`).join('\n');
-            setText(`${before}${formattedText}${after}`);
-        } else {
-            setText(`${before}${wrapWith}${selected}${wrapWith}${after}`);
-        }
-    }, [text, selectionStart, selectionEnd]);
+            if (wrapWith === '- ' || wrapWith === '1. ') {
+                const formattedText = selected
+                    .split('\n')
+                    .map((line) => `${wrapWith}${line}`)
+                    .join('\n');
+                setText(`${before}${formattedText}${after}`);
+            } else {
+                setText(`${before}${wrapWith}${selected}${wrapWith}${after}`);
+            }
+        },
+        [text, selectionStart, selectionEnd]
+    );
 
     const handleSubmit = () => {
         if (text.trim() && onSubmit) {
@@ -52,49 +58,51 @@ export const CommentCreate: React.FC<CommentCreateProps> = ({
     };
 
     return (
-        <div className={`w-full max-w-2xl bg-white rounded-lg shadow ${className}`}>
-            <div className="p-4">                
+        <div
+            className={`w-full max-w-2xl bg-white rounded-lg shadow ${className}`}
+        >
+            <div className="p-4">
                 <div className="border rounded-lg">
                     <div className="flex items-center gap-1 border-b">
                         <h2 className="font-normal p-4">Comment</h2>
 
                         <div className="flex gap-1 ml-auto">
-                            <button 
+                            <button
                                 onClick={() => formatText('[')}
                                 className="p-2 hover:bg-gray-100 rounded"
                                 aria-label="Insert link"
                             >
                                 <BiLink className="w-5 h-5 text-gray-600" />
                             </button>
-                            <button 
+                            <button
                                 onClick={() => formatText('**')}
                                 className="p-2 hover:bg-gray-100 rounded"
                                 aria-label="Bold text"
                             >
                                 <BiBold className="w-5 h-5 text-gray-600" />
                             </button>
-                            <button 
+                            <button
                                 onClick={() => formatText('_')}
                                 className="p-2 hover:bg-gray-100 rounded"
                                 aria-label="Italic text"
                             >
                                 <BiItalic className="w-5 h-5 text-gray-600" />
                             </button>
-                            <button 
+                            <button
                                 onClick={() => formatText('- ')}
                                 className="p-2 hover:bg-gray-100 rounded"
                                 aria-label="Bullet list"
                             >
                                 <BiListUl className="w-5 h-5 text-gray-600" />
                             </button>
-                            <button 
+                            <button
                                 onClick={() => formatText('1. ')}
                                 className="p-2 hover:bg-gray-100 rounded"
                                 aria-label="Numbered list"
                             >
                                 <BiListOl className="w-5 h-5 text-gray-600" />
                             </button>
-                            <button 
+                            <button
                                 className="p-2 hover:bg-gray-100 rounded"
                                 aria-label="More options"
                             >
