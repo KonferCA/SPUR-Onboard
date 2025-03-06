@@ -214,6 +214,7 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                                 </span>
                                 <motion.span
                                     aria-hidden
+                                    className="block"
                                     initial={{ rotate: 0 }}
                                     animate={{
                                         rotate: isSubSectionsCollapse ? 180 : 0,
