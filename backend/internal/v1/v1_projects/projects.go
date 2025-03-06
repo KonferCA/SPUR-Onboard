@@ -553,3 +553,84 @@ func (h *Handler) handleUpdateProjectStatus(c echo.Context) error {
 
 	return v1_common.Success(c, http.StatusOK, "Project status updated")
 }
+
+/*
+ * handleGetNewProjects retrieves the most recently created projects.
+ *
+ * parameters (all optional):
+ * - count: Number of projects to return (default: 10)
+ * - status: Type of projects to return (draft, pending, verified, etc.). If not provided, returns projects of any status.
+ *
+ * security:
+ * - Public endpoint (no authentication required)
+ * - Only returns basic project information
+ *
+ * returns array of ExtendedProjectResponse objects ordered by creation date (newest first)
+ */
+func (h *Handler) handleGetNewProjects(c echo.Context) error {
+	var req GetNewProjectsRequest
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request parameters", err)
+	}
+
+	// set default count if not provided
+	count := 10
+	if req.Count > 0 {
+		count = req.Count
+	}
+
+	var projects []db.GetNewProjectsAnyStatusRow
+	var err error
+
+	if req.Status != nil {
+		// get projects with specific status
+		statusProjects, err := h.server.GetQueries().GetNewProjectsByStatus(c.Request().Context(), db.GetNewProjectsByStatusParams{
+			Status: *req.Status,
+			Limit:  int32(count),
+		})
+		if err == nil {
+			for _, project := range statusProjects {
+				projects = append(projects, db.GetNewProjectsAnyStatusRow(project))
+			}
+		}
+	} else {
+		// get projects of any status
+		projects, err = h.server.GetQueries().GetNewProjectsAnyStatus(c.Request().Context(), int32(count))
+	}
+
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to fetch new projects", err)
+	}
+
+	// convert to response format
+	response := make([]ExtendedProjectResponse, 0, len(projects))
+	for _, project := range projects {
+		description := ""
+		if project.Description != nil {
+			description = *project.Description
+		}
+
+		companyName := ""
+		if project.CompanyName != nil {
+			companyName = *project.CompanyName
+		}
+
+		response = append(response, ExtendedProjectResponse{
+			ProjectResponse: ProjectResponse{
+				ID:          project.ID,
+				Title:       project.Title,
+				Description: description,
+				Status:      project.Status,
+				CreatedAt:   project.CreatedAt,
+				UpdatedAt:   project.UpdatedAt,
+			},
+			CompanyName:     companyName,
+			DocumentCount:   project.DocumentCount,
+			TeamMemberCount: project.TeamMemberCount,
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"projects": response,
+	})
+}
