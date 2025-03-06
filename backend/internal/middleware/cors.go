@@ -14,7 +14,6 @@ CORS is a wrapper middleware for the echo.CORS middleware.
 The added feature of this wrapper is that it checks the app environment
 and chooses the right configs to set. This allows a cleaner view
 where the CORS middleware is declared.
-
 Example:
 
 	e := echo.New()
@@ -30,30 +29,36 @@ func getCORSConfigByEnv() em.CORSConfig {
 	appEnv := os.Getenv("APP_ENV")
 	fe_url := os.Getenv("FRONTEND_URL")
 
+	allowMethods := []string{
+		http.MethodGet,
+		http.MethodPost,
+		http.MethodHead,
+		http.MethodPut,
+		http.MethodPatch,
+		http.MethodDelete,
+		http.MethodOptions,
+	}
+
+	allowHeaders := []string{
+		"Accept",
+		"Authorization",
+		"Content-Type",
+		"X-CSRF-Token",
+		"X-Requested-With",
+	}
+
 	switch appEnv {
 	case common.DEVELOPMENT_ENV, common.TEST_ENV:
 		return em.CORSConfig{
 			AllowOrigins: []string{
 				"http://localhost:5173",
 				"http://127.0.0.1:5173",
+				"https://spuric.com",
+				"http://spuric.com",
 				fe_url,
 			},
-			AllowMethods: []string{
-				http.MethodGet,
-				http.MethodPost,
-				http.MethodHead,
-				http.MethodPut,
-				http.MethodPatch,
-				http.MethodDelete,
-				http.MethodOptions,
-			},
-			AllowHeaders: []string{
-				"Accept",
-				"Authorization",
-				"Content-Type",
-				"X-CSRF-Token",
-				"X-Requested-With",
-			},
+			AllowMethods:     allowMethods,
+			AllowHeaders:     allowHeaders,
 			AllowCredentials: true,
 			MaxAge:           300,
 		}
@@ -62,24 +67,12 @@ func getCORSConfigByEnv() em.CORSConfig {
 			AllowOrigins: []string{
 				"http://localhost:5173",
 				"http://127.0.0.1:5173",
+				"https://spuric.com",
+				"http://spuric.com",
 				fe_url,
 			},
-			AllowMethods: []string{
-				http.MethodGet,
-				http.MethodPost,
-				http.MethodHead,
-				http.MethodPut,
-				http.MethodPatch,
-				http.MethodDelete,
-				http.MethodOptions,
-			},
-			AllowHeaders: []string{
-				"Accept",
-				"Authorization",
-				"Content-Type",
-				"X-CSRF-Token",
-				"X-Requested-With",
-			},
+			AllowMethods:     allowMethods,
+			AllowHeaders:     allowHeaders,
 			AllowCredentials: true,
 			MaxAge:           300,
 		}
@@ -88,45 +81,29 @@ func getCORSConfigByEnv() em.CORSConfig {
 			AllowOrigins: []string{
 				"http://localhost:5173",
 				"http://127.0.0.1:5173",
+				"https://spuric.com",
+				"http://spuric.com",
 				fe_url,
 			},
-			AllowMethods: []string{
-				http.MethodGet,
-				http.MethodPost,
-				http.MethodHead,
-				http.MethodPut,
-				http.MethodPatch,
-				http.MethodDelete,
-				http.MethodOptions,
-			},
-			AllowHeaders: []string{
-				"Accept",
-				"Authorization",
-				"Content-Type",
-				"X-CSRF-Token",
-				"X-Requested-With",
-			},
+			AllowMethods:     allowMethods,
+			AllowHeaders:     allowHeaders,
 			AllowCredentials: true,
 			MaxAge:           300,
 		}
 	}
+
 	// production configuration is last to prevent situations
 	// where the wrong APP_ENV was set for produciton.
 	// In this order, at least production won't break.
 	return em.CORSConfig{
-		// TODO: We need to decide on a name and what will be the domain name
-		// for the production deployment
-		AllowOrigins: []string{fe_url},
-		AllowMethods: []string{
-			http.MethodGet,
-			http.MethodPost,
-			http.MethodHead,
-			http.MethodPut,
-			http.MethodPatch,
-			http.MethodDelete,
-			http.MethodOptions,
+		AllowOrigins: []string{
+			fe_url,
+			"https://spuric.com",
+			"http://spuric.com",
 		},
+		AllowMethods:     allowMethods,
 		AllowHeaders:     []string{"*"},
 		AllowCredentials: true,
+		MaxAge:           300,
 	}
 }
