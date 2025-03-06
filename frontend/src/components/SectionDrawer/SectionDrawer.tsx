@@ -8,8 +8,12 @@ import {
     DrawerDescription,
 } from '@/components/ui/drawer';
 import { IoMdAlert } from 'react-icons/io';
-import type { SectionDrawerProps } from './SectionDrawer.types';
+import type {
+    SectionDrawerLinkItem,
+    SectionDrawerProps,
+} from './SectionDrawer.types';
 import { AnchorLinks, ControlledLink } from '@components';
+import { IoIosAlert, IoIosCheckmarkCircle } from 'react-icons/io';
 import { isElementInView, scrollToWithOffset } from '@/utils';
 import clsx from 'clsx';
 
@@ -49,15 +53,26 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
         }
     }, [validationErrors]);
 
-    const activeSectionValidationErrors = useMemo(() => {
+    const controlledLinks = useMemo(() => {
         if (validationErrors.length) {
             const errors = validationErrors.filter(
                 (e) => e.section === activeSection
             );
-            return errors;
+            return subSectionLinks.map((link) => {
+                const count = errors.reduce(
+                    (count, err) =>
+                        err.subsection === link.label && err.required
+                            ? count + 1
+                            : count,
+                    0
+                );
+                link.missingRequiredCount = count;
+                link.hasErrors = count > 0;
+                return link;
+            });
         }
         return [];
-    }, [activeSection, validationErrors]);
+    }, [activeSection, validationErrors, subSectionLinks]);
 
     useEffect(() => {
         const handler = () => {
@@ -175,22 +190,45 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                     <div className="p-4 pt-0 pb-6 overflow-y-auto">
                         <AnchorLinks
                             manualScroll
-                            links={subSectionLinks}
+                            links={controlledLinks}
                             onClick={handleLinkClick}
                         >
-                            {(link: ControlledLink, idx: number) => (
+                            {(
+                                link: ControlledLink & SectionDrawerLinkItem,
+                                idx: number
+                            ) => (
                                 <span
                                     className={clsx(
-                                        'flex gap-2 transition',
-                                        link.active && 'text-black',
-                                        !link.active && 'text-gray-300',
-                                        activeSectionValidationErrors.find(
-                                            (e) => e.subsection === link.label
-                                        ) && 'text-red-500'
+                                        'flex p-2 justify-between gap-2 transition',
+                                        (link.active ||
+                                            (!link.hasErrors &&
+                                                validationErrors.length > 0)) &&
+                                            'text-black',
+                                        !link.active &&
+                                            !link.hasErrors &&
+                                            validationErrors.length < 1 &&
+                                            'text-gray-300',
+                                        link.hasErrors &&
+                                            'text-red-500 bg-red-100 rounded-lg font-medium'
                                     )}
                                 >
-                                    <span>{idx + 1}.</span>
-                                    <span>{link.label}</span>
+                                    <div className="flex items-center gap-1">
+                                        <span>{`${idx + 1}. ${link.label}`}</span>
+                                        {link.hasErrors && (
+                                            <IoIosAlert className="w-6 h-6" />
+                                        )}
+                                        {!link.hasErrors &&
+                                            validationErrors.length > 0 && (
+                                                <IoIosCheckmarkCircle className="w-6 h-6 text-green-500" />
+                                            )}
+                                    </div>
+                                    {link.hasErrors &&
+                                        link.missingRequiredCount &&
+                                        link.missingRequiredCount > 0 && (
+                                            <span className="text-black underline">
+                                                {`${link.missingRequiredCount} ${link.missingRequiredCount > 1 ? 'required fields' : 'required field'}`}
+                                            </span>
+                                        )}
                                 </span>
                             )}
                         </AnchorLinks>
