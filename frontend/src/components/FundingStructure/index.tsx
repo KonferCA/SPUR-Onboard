@@ -58,13 +58,13 @@ const EquityProgressBar: FC<{
     setShowTooltip(false);
   };
 
-  // Colors for tiers
+  // Colors for tiers - using site color scheme with no looping
   const tierColors = [
-    { bg: '#3482F6', pattern: '#2563EB' }, // blue
-    { bg: '#8B5CF6', pattern: '#7C3AED' }, // purple
-    { bg: '#EC4899', pattern: '#DB2777' }, // pink
-    { bg: '#F59E0B', pattern: '#D97706' }, // amber
-    { bg: '#10B981', pattern: '#059669' }, // emerald
+    { bg: '#F4802F', pattern: '#D2691F' }, // primary orange - first tier
+    { bg: '#154261', pattern: '#1C262D' }, // secondary blue - second tier
+    { bg: '#1F2937', pattern: '#111827' }, // gray-800/900 - third tier
+    { bg: '#4B5563', pattern: '#374151' }, // gray-600/700 - fourth tier
+    { bg: '#71717A', pattern: '#52525B' }, // zinc-500/600 - fifth tier
   ];
   
   const renderBar = () => {
@@ -72,12 +72,12 @@ const EquityProgressBar: FC<{
       // Standard single bar
       return (
         <div 
-          className={`h-full ${isOverallocated ? 'bg-[#CF2E2E]' : 'bg-[#446E8A]'}`}
+          className={`h-full ${isOverallocated ? 'bg-red-500' : 'bg-[#F4802F]'}`}
           style={{ 
             width: `${clampedPercentage}%`,
             backgroundImage: isOverallocated 
-              ? 'repeating-linear-gradient(-45deg, #8E0B07, #8E0B07 3px, #CF2E2E 3px, #CF2E2E 9px)'
-              : 'repeating-linear-gradient(-45deg, #154261, #154261 3px, transparent 3px, transparent 9px)',
+              ? 'repeating-linear-gradient(-45deg, #B91C1C, #B91C1C 3px, #EF4444 3px, #EF4444 9px)'
+              : 'repeating-linear-gradient(-45deg, #D2691F, #D2691F 3px, transparent 3px, transparent 9px)',
             transition: 'width 0.6s cubic-bezier(0.34, 1.28, 0.64, 1), background-color 0.4s ease-in-out, background-image 0.4s ease-in-out'
           }}
         />
@@ -96,7 +96,8 @@ const EquityProgressBar: FC<{
           const position = currentPosition;
           currentPosition += width;
           
-          const colorIndex = index % tierColors.length;
+          // Use the correct color for each tier, without looping
+          const colorIndex = Math.min(index, tierColors.length - 1);
           const color = tierColors[colorIndex];
           
           return (
@@ -113,14 +114,15 @@ const EquityProgressBar: FC<{
             />
           );
         })}
+        {/* Error overlay for overallocated equity */}
         {isOverallocated && (
           <div 
             className="h-full absolute top-0 right-0"
             style={{
               width: '100%', 
               opacity: 0.35,
-              backgroundColor: '#CF2E2E',
-              backgroundImage: 'repeating-linear-gradient(-45deg, #8E0B07, #8E0B07 3px, #CF2E2E 3px, #CF2E2E 9px)',
+              backgroundColor: '#EF4444',
+              backgroundImage: 'repeating-linear-gradient(-45deg, #B91C1C, #B91C1C 3px, #EF4444 3px, #EF4444 9px)',
               transition: 'opacity 0.4s ease-in-out',
               clipPath: `polygon(${Math.min(percentageUsed, 100)}% 0, 100% 0, 100% 100%, ${Math.min(percentageUsed, 100)}% 100%)`
             }}
@@ -134,7 +136,7 @@ const EquityProgressBar: FC<{
     <div className="mt-4 mb-6 relative">
       <div 
         ref={barRef}
-        className="h-8 w-full bg-gray-200 rounded-md overflow-hidden relative cursor-pointer"
+        className={`h-8 w-full bg-gray-200 rounded-md overflow-hidden relative cursor-pointer ${isOverallocated ? 'border border-red-500' : ''}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -151,8 +153,17 @@ const EquityProgressBar: FC<{
             maxWidth: '260px'
           }}
         >
-          <span className="font-medium">{clampedPercentage}%</span> equity of your company will be divided among investors
+          {isOverallocated ? (
+            <span className="text-red-600">{clampedPercentage}% exceeds 100% equity</span>
+          ) : (
+            <span><span className="font-medium">{clampedPercentage}%</span> equity of your company will be divided among investors</span>
+          )}
         </div>
+      )}
+      
+      {/* Display error message only when overallocated */}
+      {isOverallocated && (
+        <p className={errorTextStyle}>Total equity cannot exceed 100%</p>
       )}
     </div>
   );
@@ -471,6 +482,11 @@ export const FundingStructure: FC<FundingStructureProps> = ({
   };
 
   const handleAddTier = () => {
+    // Limit to maximum 5 tiers
+    if (currentStructure.tiers && currentStructure.tiers.length >= 5) {
+      return; // Don't add more than 5 tiers
+    }
+    
     const newTier: FundingTier = {
       id: Date.now().toString(),
       amount: '',
@@ -869,13 +885,16 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                       </div>
                     ))}
                     
-                    <div className="flex justify-end mt-2">
-                      <button
+                    <div className="flex justify-end mt-4 mb-8">
+                      <Button
                         onClick={handleAddTier}
-                        className="bg-[#23445a] text-white px-4 py-2 rounded text-sm hover:bg-[#1a3344] flex items-center"
+                        disabled={currentStructure.tiers && currentStructure.tiers.length >= 5}
+                        variant="primary"
+                        size="sm"
+                        className={currentStructure.tiers && currentStructure.tiers.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''}
                       >
-                        <span className="mr-1">+</span> Add Tier
-                      </button>
+                        {currentStructure.tiers && currentStructure.tiers.length >= 5 ? '+ Add Tier (Max 5)' : '+ Add Tier'}
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -1247,11 +1266,12 @@ export const FundingStructure: FC<FundingStructureProps> = ({
             <div className="flex justify-end mt-4 mb-8">
               <Button
                 onClick={handleAddTier}
-                type="button"
+                disabled={currentStructure.tiers && currentStructure.tiers.length >= 5}
                 variant="primary"
                 size="sm"
+                className={currentStructure.tiers && currentStructure.tiers.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''}
               >
-                + Add Tier
+                {currentStructure.tiers && currentStructure.tiers.length >= 5 ? '+ Add Tier (Max 5)' : '+ Add Tier'}
               </Button>
             </div>
             
