@@ -22,11 +22,14 @@ const renderWithRouter = () => {
 };
 
 describe('NotFound Component', () => {
-    it('should render a 404 text and home link', () => {
+    it('should render the not found text and back to dashboard link', () => {
         renderWithRouter();
 
-        expect(screen.getByText('Oops, page not found')).toBeInTheDocument();
-        expect(screen.getByText('Go Back Home')).toBeInTheDocument();
+        expect(screen.getByText('Page Not Found')).toBeInTheDocument();
+        expect(
+            screen.getByText(/We're sorry, the page you're looking for/)
+        ).toBeInTheDocument();
+        expect(screen.getByText('Back to Dashboard')).toBeInTheDocument();
         expect(screen.getByRole('link')).toHaveAttribute('href', '/');
     });
 });

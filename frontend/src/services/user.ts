@@ -5,11 +5,15 @@ import type {
     ProfileResponse,
     UpdateProfileRequest,
 } from '@/types/user';
+import { snakeToCamel } from '@/utils/object';
 
 /**
  * Get the current user's profile
  */
-export async function getUserProfile(token: string, userId: string): Promise<ProfileResponse> {
+export async function getUserProfile(
+    token: string,
+    userId: string
+): Promise<ProfileResponse> {
     const url = getApiUrl(`users/${userId}/details`);
     const response = await fetch(url, {
         method: 'GET',
@@ -29,7 +33,9 @@ export async function getUserProfile(token: string, userId: string): Promise<Pro
         );
     }
 
-    return response.json();
+    const body = await response.json();
+
+    return snakeToCamel(body);
 }
 
 /**
@@ -53,7 +59,7 @@ export async function updateUserProfile(
             lastName: data.last_name,
             title: data.title,
             bio: data.bio,
-            linkedin: data.linkedin_url,
+            socials: data.socials,
         }),
     });
 
@@ -95,4 +101,3 @@ export async function initialUserProfile(
         );
     }
 }
-

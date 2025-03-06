@@ -8,6 +8,8 @@ export default {
             colors: {
                 'custom-blue-200': '#446E8A',
                 'button-default': '#154261',
+                'button-primary-25': '#FCDFCB',
+                'button-primary-50': '#F9B98D',
                 'button-primary-100': '#F4802F',
                 'button-primary-200': '#D2691F',
                 'button-secondary-100': '#154261',
@@ -61,6 +63,9 @@ export default {
             screens: {
                 '1.5xl': '1360px',
                 '3xl': '1756px',
+            },
+            screens: {
+                '2k': '2048px',
             },
         },
     },

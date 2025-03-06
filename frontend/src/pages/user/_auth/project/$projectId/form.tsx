@@ -36,6 +36,7 @@ import { CollapsibleSection } from '@/components/CollapsibleSection';
 import { AutoSaveIndicator } from '@/components/AutoSaveIndicator';
 import { RecommendedField } from '@/types';
 import { isValid as isValidDate } from 'date-fns';
+import { scrollToTop } from '@/utils';
 
 export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
     component: ProjectFormPage,
@@ -368,6 +369,9 @@ function ProjectFormPage() {
 
             return curr;
         });
+        setTimeout(() => {
+            scrollToTop();
+        }, 120);
     };
 
     const handleBackStep = () => {
@@ -384,6 +388,9 @@ function ProjectFormPage() {
         const handleResize = () => {
             setIsMobile(window.innerWidth < 1536);
         };
+        setTimeout(() => {
+            scrollToTop();
+        }, 120);
 
         handleResize();
 
@@ -526,6 +533,8 @@ function ProjectFormPage() {
 
                         switch (input.type) {
                             case 'date':
+                                fieldValid = isValidDate(input.value.value);
+                                break;
                             case 'textarea':
                             case 'textinput':
                                 if (!input.value.value) {
@@ -694,7 +703,6 @@ function ProjectFormPage() {
                 <div className="hidden 2xl:block fixed w-60 3xl:w-80 max-h-96 overflow-y-auto left-12">
                     <AnchorLinks links={asideLinks} />
                 </div>
-
                 <div className="hidden 2xl:block fixed w-60 3xl:w-80 right-12">
                     {validationErrors.length > 0 && (
                         <ProjectError

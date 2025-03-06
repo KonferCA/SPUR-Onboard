@@ -5,9 +5,7 @@
  */
 import LogoSVG from './logo.svg';
 
-export { 
-    LogoSVG 
-};
+export { LogoSVG };
 
 /*
  *
@@ -29,3 +27,10 @@ export {
     XLogoSVG,
     BlueskyLogoSVG,
 };
+
+/*
+ * Static 404 background image
+ */
+import NotFoundBgSVG from './404s.svg';
+
+export { NotFoundBgSVG };

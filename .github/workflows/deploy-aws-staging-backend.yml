@@ -1,14 +1,14 @@
-name: Deploy Backend to AWS - Preview
+name: Deploy Backend to AWS - Staging
 on:
   workflow_dispatch:
   push:
-    branches: ['main']
+    branches: ['staging']
     paths:
       - 'backend/**'
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: preview_aws
+    environment: staging_aws
     defaults:
       run:
         shell: bash
@@ -98,7 +98,7 @@ jobs:
             set -e
             # Run migrations up
             /opt/go/bin/goose -dir "$HOME/$APP_NAME/$APP_ENV/migrations" postgres \
-              "postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" up --allow-missing
+              "postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=$DB_SSLMODE" up
       - name: Deploy Go App on VPS
         uses: appleboy/ssh-action@v1.0.3
         env:
