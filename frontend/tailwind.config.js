@@ -15,6 +15,25 @@ export default {
             screens: {
                 '2k': '2048px',
             },
+            keyframes: {
+                blink: {
+                  '0%': { 
+                      backgroundColor: 'rgba(244, 128, 47, 0)',
+                      boxShadow: '0 0 0 2px rgba(244, 128, 47, 0)'
+                  },
+                  '50%': { 
+                      backgroundColor: 'rgba(244, 128, 47, 0.1)', 
+                      boxShadow: '0 0 0 2px rgba(244, 128, 47, 0.5)'
+                  },
+                  '100%': { 
+                      backgroundColor: 'rgba(244, 128, 47, 0)',
+                      boxShadow: '0 0 0 2px rgba(244, 128, 47, 0)'
+                  }
+                }
+            },
+            animation: {
+                blink: 'blink 1.2s ease-in-out 1',
+            },
         },
     },
 

@@ -110,12 +110,16 @@ function ProjectFormPage() {
             subsection: string;
             questionText: string;
             inputType: string;
+            questionId: string;
         }>
     >([]);
     const [autosaveStatus, setAutosaveStatus] = useState<
         'idle' | 'saving' | 'success' | 'error'
     >('idle');
     const [isSaving, setIsSaving] = useState(false);
+    
+    // state to track which question should be highlighted
+    const [highlightedQuestionId, setHighlightedQuestionId] = useState<string | null>(null);
 
     const autosave = useDebounceFn(
         async () => {
@@ -585,11 +589,17 @@ function ProjectFormPage() {
                                     );
                                 }
                                 break;
+                            case 'file':
+                                if (
+                                    input.required &&
+                                    (!input.value.files || input.value.files.length === 0)
+                                ) {
+                                    fieldValid = false;
+                                }
+                                break;
                             default:
                                 break;
                         }
-
-                        input.invalid = !fieldValid;
 
                         if (!fieldValid) {
                             invalidQuestions.push({
@@ -602,6 +612,7 @@ function ProjectFormPage() {
                                 reason: !input.value.value
                                     ? 'Missing required value'
                                     : 'Failed validation',
+                                questionId: question.id
                             });
 
                             isValid = false;
@@ -619,6 +630,7 @@ function ProjectFormPage() {
                 subsection: string;
                 questionText: string;
                 inputType: string;
+                questionId: string;
             }> = [];
 
             groupedQuestions.forEach((group) => {
@@ -646,6 +658,7 @@ function ProjectFormPage() {
                                     subsection: subsection.name,
                                     questionText: question.question,
                                     inputType: input.type,
+                                    questionId: question.id
                                 });
                             }
                         });
@@ -680,7 +693,18 @@ function ProjectFormPage() {
         }
     };
 
-    const handleErrorClick = (section: string, subsectionId: string) => {
+    // helper func to check if an element is in the viewport
+    const isElementInViewport = (el: HTMLElement) => {
+        const rect = el.getBoundingClientRect();
+        return (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+        );
+    };
+
+    const handleErrorClick = (section: string, subsectionId: string, questionId?: string) => {
         const sectionIndex = groupedQuestions.findIndex(
             (group) => group.section === section
         );
@@ -688,11 +712,72 @@ function ProjectFormPage() {
         if (sectionIndex !== -1) {
             setCurrentStep(sectionIndex);
 
+            // delay to allow the step change to render
             setTimeout(() => {
-                const element = document.getElementById(subsectionId);
-
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth' });
+                const subsectionElement = document.getElementById(subsectionId);
+                
+                if (!subsectionElement) return;
+                
+                // collect info on target question
+                let targetQuestionId = questionId;
+                
+                if (!targetQuestionId) {
+                    // find the first or invalid question if no specific question was provided
+                    const subsection = groupedQuestions[sectionIndex].subSections.find(
+                        (sub) => sanitizeHtmlId(sub.name) === subsectionId
+                    );
+                    
+                    if (subsection && subsection.questions.length > 0) {
+                        // find the first invalid question if available
+                        const invalidQuestion = subsection.questions.find(q => 
+                            q.inputFields.some(field => field.invalid)
+                        );
+                        
+                        // use either the invalid question or the first one
+                        const targetQuestion = invalidQuestion || subsection.questions[0];
+                        targetQuestionId = targetQuestion.id;
+                    }
+                }
+                
+                if (!targetQuestionId) return;
+                
+                const targetElement = document.getElementById(targetQuestionId);
+                
+                // check if the target is already in viewport
+                const isTargetInView = targetElement && isElementInViewport(targetElement);
+                
+                if (isTargetInView) {
+                    // if already in view, highlight immediately
+                    setHighlightedQuestionId(targetQuestionId);
+                    setTimeout(() => setHighlightedQuestionId(null), 1200);
+                } else {
+                    // if not in view, scroll and wait for scrolling to finish
+                    subsectionElement.scrollIntoView({ behavior: 'smooth' });
+                    
+                    // create a one-time scroll event listener to detect when scrolling stops
+                    let scrollTimeout: NodeJS.Timeout;
+                    const handleScrollEnd = () => {
+                        clearTimeout(scrollTimeout);
+                        scrollTimeout = setTimeout(() => {
+                            // scrolling has stopped
+                            setHighlightedQuestionId(targetQuestionId);
+                            setTimeout(() => setHighlightedQuestionId(null), 1200);
+                            
+                            // remove the event listener
+                            window.removeEventListener('scroll', handleScrollEnd);
+                        }, 100);
+                    };
+                    
+                    window.addEventListener('scroll', handleScrollEnd);
+                    
+                    // fallback in case scroll event doesn't fire or scrolling is very short
+                    setTimeout(() => {
+                        if (highlightedQuestionId !== targetQuestionId) {
+                            setHighlightedQuestionId(targetQuestionId);
+                            setTimeout(() => setHighlightedQuestionId(null), 1200);
+                            window.removeEventListener('scroll', handleScrollEnd);
+                        }
+                    }, 600);
                 }
             }, 100);
         }
@@ -777,7 +862,9 @@ function ProjectFormPage() {
                             {validationErrors.length > 0 && (
                                 <ProjectError
                                     errors={validationErrors}
-                                    onErrorClick={handleErrorClick}
+                                    onErrorClick={(section, subsection, questionId) => {
+                                        handleErrorClick(section, subsection, questionId);
+                                    }}
                                 />
                             )}
                         </div>
@@ -808,6 +895,7 @@ function ProjectFormPage() {
                                                                 onChange={
                                                                     handleChange
                                                                 }
+                                                                shouldHighlight={q.id === highlightedQuestionId}
                                                                 fileUploadProps={
                                                                     accessToken
                                                                         ? {
@@ -877,8 +965,8 @@ function ProjectFormPage() {
             >
                 <RecommendedFields
                     fields={recommendedFields}
-                    onFieldClick={(section, subsection) => {
-                        handleErrorClick(section, subsection);
+                    onFieldClick={(section, subsection, questionId) => {
+                        handleErrorClick(section, subsection, questionId);
                         setShowRecommendedModal(false);
                     }}
                 />

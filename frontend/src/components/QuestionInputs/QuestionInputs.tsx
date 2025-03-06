@@ -8,7 +8,7 @@ import {
 } from '@/components';
 import { Question } from '@/config/forms';
 import { FormField } from '@/types';
-import { FC } from 'react';
+import { FC, useRef, useEffect } from 'react';
 import { cva } from 'class-variance-authority';
 
 const legendStyles = cva('block text-md font-normal', {
@@ -47,7 +47,17 @@ const requiredTextStyles = cva('text-sm', {
     },
 });
 
-const fieldsetStyles = cva('space-y-4');
+const fieldsetStyles = cva('space-y-4 rounded-lg p-3 mb-2', {
+    variants: {
+        highlight: {
+            true: 'animate-blink',
+            false: '',
+        },
+    },
+    defaultVariants: {
+        highlight: false,
+    },
+});
 
 const headerContainerStyles = cva('flex justify-between items-center mb-1');
 
@@ -63,17 +73,34 @@ interface QuestionInputsProps {
         accessToken?: string;
         enableAutosave?: boolean;
     };
+    shouldHighlight?: boolean;
 }
 
 export const QuestionInputs: FC<QuestionInputsProps> = ({
     question,
     onChange,
     fileUploadProps,
+    shouldHighlight = false,
 }) => {
     const hasInvalidField = question.inputFields.some((field) => field.invalid);
     const isQuestionRequired = question.inputFields.some(
         (field) => field.required
     );
+    
+    // reference to the first input field
+    const inputRef = useRef<HTMLInputElement | null>(null);
+    
+    // auto-focus when highlighted
+    useEffect(() => {
+        if (shouldHighlight && inputRef.current) {
+            // slight delay to ensure focus happens after scroll and DOM is ready
+            const timer = setTimeout(() => {
+                inputRef.current?.focus();
+            }, 300);
+            
+            return () => clearTimeout(timer);
+        }
+    }, [shouldHighlight]);
 
     const getErrorMessage = (field: FormField): string => {
         if (!field.invalid) return '';
@@ -114,8 +141,11 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
         return 'This field is required';
     };
 
-    const renderInput = (field: FormField) => {
+    const renderInput = (field: FormField, isFirstInput = false) => {
         const errorMessage = getErrorMessage(field);
+        
+        // ref for the first input field
+        const ref = isFirstInput ? inputRef : undefined;
 
         switch (field.type) {
             case 'textinput':
@@ -129,6 +159,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         error={errorMessage}
                         required={field.required}
                         disabled={field.disabled}
+                        ref={ref}
                         {...field.props}
                     />
                 );
@@ -145,6 +176,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         rows={field.rows || 4}
                         error={errorMessage}
                         disabled={field.disabled}
+                        ref={ref}
                         {...field.props}
                     />
                 );
@@ -217,7 +249,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     };
 
     return (
-        <fieldset className={fieldsetStyles()}>
+        <fieldset id={question.id} className={fieldsetStyles({ highlight: shouldHighlight })}>
             <div className={headerContainerStyles()}>
                 <legend className={legendStyles({ hasError: hasInvalidField })}>
                     {question.question}
@@ -242,9 +274,9 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                 )}
             </div>
             <div className="space-y-4">
-                {question.inputFields.map((field) => (
+                {question.inputFields.map((field, index) => (
                     <div key={field.key} className="w-full">
-                        {renderInput(field)}
+                        {renderInput(field, index === 0)}
                     </div>
                 ))}
             </div>
