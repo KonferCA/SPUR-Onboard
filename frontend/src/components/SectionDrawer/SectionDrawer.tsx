@@ -220,7 +220,7 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                                     }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    <BiChevronUp className="w-6 h-6" />
+                                    <BiChevronUp className="w-6 h-6 text-black" />
                                 </motion.div>
                             </DrawerDescription>
                         </div>
