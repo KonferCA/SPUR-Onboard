@@ -1,3 +1,4 @@
+name: Test Frontend Code
 on:
   push:
     branches: ['main', 'staging', 'prod']
