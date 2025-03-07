@@ -22,7 +22,7 @@ import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { useQuery } from '@tanstack/react-query';
 import { scrollToTop } from '@/utils';
 import { useDebounceFn } from '@/hooks';
-import { useAuth } from '@/contexts';
+import { useAuth, useNotification } from '@/contexts';
 // import { getSampleAnswer } from '@/utils/sampleData';
 import { useNavigate } from '@tanstack/react-router';
 import { ValidationError, ProjectError } from '@/components/ProjectError';
@@ -69,6 +69,7 @@ const isEmptyValue = (value: any, type: string): boolean => {
 };
 
 function ProjectFormPage() {
+    const notification = useNotification();
     const { projectId: currentProjectId } = Route.useParams();
     const navigate = useNavigate({
         from: `/user/project/${currentProjectId}/form`,
@@ -673,9 +674,20 @@ function ProjectFormPage() {
 
             await submitProject(accessToken, currentProjectId);
 
+            notification.push({
+                message:
+                    'Your project has been submitted! Please give us a few weeks to review your project!',
+                level: 'success',
+            });
+
             // replace to not let them go back, it causes the creation of a new project
             navigate({ to: '/user/dashboard', replace: true });
         } catch (e) {
+            notification.push({
+                message:
+                    'Oops, seems like something went wrong. Please try again later.',
+                level: 'error',
+            });
             console.error(e);
         }
     };
