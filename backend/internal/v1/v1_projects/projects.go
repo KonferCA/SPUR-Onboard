@@ -6,6 +6,7 @@ import (
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -580,27 +581,39 @@ func (h *Handler) handleGetNewProjects(c echo.Context) error {
 	}
 
 	var projects []db.GetNewProjectsAnyStatusRow
-	var err error
 
-	if req.Status != nil {
-		// get projects with specific status
+	// if no statuses provided, default to pending and verified
+	if len(req.Statuses) == 0 {
+		req.Statuses = []db.ProjectStatus{db.ProjectStatusPending, db.ProjectStatusVerified}
+	}
+
+	allProjects := []db.GetNewProjectsAnyStatusRow{}
+
+	// fetch projects for each requested status
+	for _, status := range req.Statuses {
 		statusProjects, err := h.server.GetQueries().GetNewProjectsByStatus(c.Request().Context(), db.GetNewProjectsByStatusParams{
-			Status: *req.Status,
+			Status: status,
 			Limit:  int32(count),
 		})
+
 		if err == nil {
 			for _, project := range statusProjects {
-				projects = append(projects, db.GetNewProjectsAnyStatusRow(project))
+				allProjects = append(allProjects, db.GetNewProjectsAnyStatusRow(project))
 			}
 		}
-	} else {
-		// get projects of any status
-		projects, err = h.server.GetQueries().GetNewProjectsAnyStatus(c.Request().Context(), int32(count))
 	}
 
-	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to fetch new projects", err)
+	// sort by created_at in descending order (newest first)
+	sort.Slice(allProjects, func(i, j int) bool {
+		return allProjects[i].CreatedAt > allProjects[j].CreatedAt
+	})
+
+	// limit to requested count
+	if len(allProjects) > count {
+		allProjects = allProjects[:count]
 	}
+
+	projects = allProjects
 
 	// convert to response format
 	response := make([]ExtendedProjectResponse, 0, len(projects))
