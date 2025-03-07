@@ -20,7 +20,7 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 		maxRequests = 5000
 	}
 
-	authLimiter := middleware.NewRateLimiter(&middleware.RateLimiterConfig{
+	publicProjectsLimiter := middleware.NewRateLimiter(&middleware.RateLimiterConfig{
 		Requests:    maxRequests,
 		Window:      time.Minute,
 		BlockPeriod: time.Minute * 15,
@@ -37,7 +37,7 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	g.GET("/project/list/all", h.handleListAllProjects, middleware.Auth(s.GetDB(), permissions.PermAdmin))
 
 	// Get new projects
-	g.GET("/project/latest", h.handleGetNewProjects, authLimiter.RateLimit())
+	g.GET("/project/latest", h.handleGetNewProjects, publicProjectsLimiter.RateLimit())
 
 	// Update project status
 	g.PUT("/project/:id/status", h.handleUpdateProjectStatus, middleware.Auth(s.GetDB(), permissions.PermAdmin))
