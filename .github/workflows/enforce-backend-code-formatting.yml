@@ -30,4 +30,3 @@ jobs:
           fi
 
           echo "All Go files are properly formatted!"
-          "go install golang.org/x/tools/cmd/goimports@latest"
