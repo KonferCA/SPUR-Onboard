@@ -6,7 +6,7 @@ on:
       - 'backend/**'
 jobs:
   check-format:
-    name: Check backend code formatting
+    name: Check Backend Code Formatting
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
