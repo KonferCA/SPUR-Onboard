@@ -301,7 +301,14 @@ const getNewProjectsAnyStatus = `-- name: GetNewProjectsAnyStatus :many
 SELECT 
     p.id, 
     p.company_id, 
-    p.title, 
+    COALESCE(
+        (SELECT pa.answer 
+         FROM project_answers pa
+         JOIN project_questions pq ON pa.question_id = pq.id
+         WHERE pa.project_id = p.id AND pq.question_key = 'company_name' AND pa.answer != ''
+         LIMIT 1),
+        p.title
+    ) as title,
     p.description, 
     p.status, 
     p.created_at, 
@@ -373,7 +380,14 @@ const getNewProjectsByStatus = `-- name: GetNewProjectsByStatus :many
 SELECT 
     p.id, 
     p.company_id, 
-    p.title, 
+    COALESCE(
+        (SELECT pa.answer 
+         FROM project_answers pa
+         JOIN project_questions pq ON pa.question_id = pq.id
+         WHERE pa.project_id = p.id AND pq.question_key = 'company_name' AND pa.answer != ''
+         LIMIT 1),
+        p.title
+    ) as title,
     p.description, 
     p.status, 
     p.created_at, 
