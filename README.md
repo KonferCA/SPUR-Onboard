@@ -63,6 +63,11 @@ go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0
 go install github.com/pressly/goose/v3/cmd/goose@v3.22.1
 ```
 
+> Goimports (Code formatting tool)
+```console
+go install golang.org/x/tools/cmd/goimports@latest
+```
+
 #### 🍺 Homebrew quick start
 > Make
 ```console
