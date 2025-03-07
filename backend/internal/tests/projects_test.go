@@ -2,8 +2,8 @@ package tests
 
 import (
 	"KonferCA/SPUR/db"
-	"KonferCA/SPUR/internal/server"
 	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/server"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -106,7 +106,7 @@ func TestProjectEndpoints(t *testing.T) {
 
 	// Create test user and get auth token
 	ctx := context.Background()
-	userID, email, password, err := createTestUser(ctx, s, uint32(permissions.PermSubmitProject | permissions.PermViewAllProjects | permissions.PermManageTeam))
+	userID, email, password, err := createTestUser(ctx, s, uint32(permissions.PermSubmitProject|permissions.PermViewAllProjects|permissions.PermManageTeam))
 	assert.NoError(t, err)
 	t.Logf("Created test user - ID: %s, Email: %s, Password: %s", userID, email, password)
 	defer removeTestUser(ctx, email, s)

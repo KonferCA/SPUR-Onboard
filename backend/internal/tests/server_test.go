@@ -78,7 +78,7 @@ func TestServer(t *testing.T) {
 			_, err = s.DBPool.Exec(ctx, `
 				INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
 				VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
-			`, userID, email, string(hashedPassword), 
+			`, userID, email, string(hashedPassword),
 				int32(permissions.PermSubmitProject|permissions.PermManageTeam), true)
 			assert.NoError(t, err)
 
@@ -139,7 +139,7 @@ func TestServer(t *testing.T) {
 			reader := bytes.NewReader(reqBodyBytes)
 			req := httptest.NewRequest(http.MethodPost, url, reader)
 			req.Header.Add(echo.HeaderContentType, echo.MIMEApplicationJSON)
-			
+
 			rec := httptest.NewRecorder()
 
 			s.Echo.ServeHTTP(rec, req)

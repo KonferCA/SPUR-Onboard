@@ -25,16 +25,16 @@ type UpdateUserDetailsRequest struct {
 }
 
 type UserDetailsResponse struct {
-	ID        string          `json:"id"`
-	FirstName string          `json:"first_name"`
-	LastName  string          `json:"last_name"`
-	Title     string          `json:"title"`
-	Bio       string          `json:"bio"`
-	LinkedIn  string          `json:"linkedin_url"`
-	Socials   []db.UserSocial `json:"socials"`
-  ProfilePictureUrl *string `json:"profile_picture_url"`
-	CreatedAt string          `json:"created_at"`
-	UpdatedAt *string         `json:"updated_at,omitempty"`
+	ID                string          `json:"id"`
+	FirstName         string          `json:"first_name"`
+	LastName          string          `json:"last_name"`
+	Title             string          `json:"title"`
+	Bio               string          `json:"bio"`
+	LinkedIn          string          `json:"linkedin_url"`
+	Socials           []db.UserSocial `json:"socials"`
+	ProfilePictureUrl *string         `json:"profile_picture_url"`
+	CreatedAt         string          `json:"created_at"`
+	UpdatedAt         *string         `json:"updated_at,omitempty"`
 }
 
 type ListUsersRequest struct {

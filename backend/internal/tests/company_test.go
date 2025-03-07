@@ -9,13 +9,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/require"
 	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/server"
-	"KonferCA/SPUR/internal/v1"
+	v1 "KonferCA/SPUR/internal/v1"
+
+	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/require"
 )
 
 type CompanyState struct {

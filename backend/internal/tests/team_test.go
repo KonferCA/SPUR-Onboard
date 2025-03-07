@@ -9,13 +9,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/server"
+	v1 "KonferCA/SPUR/internal/v1"
+	"KonferCA/SPUR/internal/v1/v1_teams"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
-	"KonferCA/SPUR/internal/permissions"
-	"KonferCA/SPUR/internal/server"
-	"KonferCA/SPUR/internal/v1"
-	"KonferCA/SPUR/internal/v1/v1_teams"
 )
 
 // Helper function to setup test server
@@ -126,7 +127,7 @@ func TestTeamEndpoints(t *testing.T) {
 
 		// Test cases for authorization
 		testCases := []struct {
-			name       string
+			name      string
 			token     string
 			companyID string
 			memberID  string
@@ -149,7 +150,7 @@ func TestTeamEndpoints(t *testing.T) {
 						Title: "Updated Title",
 					}
 					jsonBody, _ := json.Marshal(updateReq)
-					req = httptest.NewRequest(tc.method, 
+					req = httptest.NewRequest(tc.method,
 						fmt.Sprintf("/api/v1/companies/%s/team/%s", tc.companyID, tc.memberID),
 						bytes.NewBuffer(jsonBody))
 					req.Header.Set(echo.HeaderContentType, "application/json")
@@ -171,14 +172,14 @@ func TestTeamEndpoints(t *testing.T) {
 		reqBody := v1_teams.AddTeamMemberRequest{
 			FirstName:   "John",
 			LastName:    "Doe",
-			Title:      "CTO",
-			Bio:        "Experienced tech leader",
+			Title:       "CTO",
+			Bio:         "Experienced tech leader",
 			LinkedinUrl: "https://linkedin.com/in/johndoe",
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 
-		req := httptest.NewRequest(http.MethodPost, 
-			fmt.Sprintf("/api/v1/companies/%s/team", companyID), 
+		req := httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/companies/%s/team", companyID),
 			bytes.NewBuffer(jsonBody))
 		req.Header.Set(echo.HeaderAuthorization, "Bearer "+ownerToken)
 		req.Header.Set(echo.HeaderContentType, "application/json")
@@ -201,7 +202,7 @@ func TestTeamEndpoints(t *testing.T) {
 	})
 
 	t.Run("Get Team Members", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, 
+		req := httptest.NewRequest(http.MethodGet,
 			fmt.Sprintf("/api/v1/companies/%s/team", companyID), nil)
 		req.Header.Set(echo.HeaderAuthorization, "Bearer "+ownerToken)
 		rec := httptest.NewRecorder()
@@ -217,7 +218,7 @@ func TestTeamEndpoints(t *testing.T) {
 
 	t.Run("Update Team Member", func(t *testing.T) {
 		// First get the team member ID
-		req := httptest.NewRequest(http.MethodGet, 
+		req := httptest.NewRequest(http.MethodGet,
 			fmt.Sprintf("/api/v1/companies/%s/team", companyID), nil)
 		req.Header.Set(echo.HeaderAuthorization, "Bearer "+ownerToken)
 		rec := httptest.NewRecorder()
@@ -235,8 +236,8 @@ func TestTeamEndpoints(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(updateReq)
 
-		req = httptest.NewRequest(http.MethodPut, 
-			fmt.Sprintf("/api/v1/companies/%s/team/%s", companyID, memberID), 
+		req = httptest.NewRequest(http.MethodPut,
+			fmt.Sprintf("/api/v1/companies/%s/team/%s", companyID, memberID),
 			bytes.NewBuffer(jsonBody))
 		req.Header.Set(echo.HeaderAuthorization, "Bearer "+ownerToken)
 		req.Header.Set(echo.HeaderContentType, "application/json")
@@ -255,7 +256,7 @@ func TestTeamEndpoints(t *testing.T) {
 
 	t.Run("Delete Team Member", func(t *testing.T) {
 		// First get the team member ID
-		req := httptest.NewRequest(http.MethodGet, 
+		req := httptest.NewRequest(http.MethodGet,
 			fmt.Sprintf("/api/v1/companies/%s/team", companyID), nil)
 		req.Header.Set(echo.HeaderAuthorization, "Bearer "+ownerToken)
 		rec := httptest.NewRecorder()
@@ -268,7 +269,7 @@ func TestTeamEndpoints(t *testing.T) {
 
 		memberID := listResponse.TeamMembers[0].ID
 
-		req = httptest.NewRequest(http.MethodDelete, 
+		req = httptest.NewRequest(http.MethodDelete,
 			fmt.Sprintf("/api/v1/companies/%s/team/%s", companyID, memberID), nil)
 		req.Header.Set(echo.HeaderAuthorization, "Bearer "+ownerToken)
 		rec = httptest.NewRecorder()
@@ -299,11 +300,11 @@ func TestTeamEndpoints(t *testing.T) {
 		require.NoError(t, err)
 
 		testCases := []struct {
-			name       string
-			token      string
-			method     string
-			endpoint   string
-			wantCode   int
+			name     string
+			token    string
+			method   string
+			endpoint string
+			wantCode int
 		}{
 			{"Member can view team list", memberToken, http.MethodGet, fmt.Sprintf("/api/v1/companies/%s/team", companyID), http.StatusOK},
 			{"Member can view specific member", memberToken, http.MethodGet, fmt.Sprintf("/api/v1/companies/%s/team/%s", companyID, memberID), http.StatusOK},
@@ -327,11 +328,11 @@ func TestTeamEndpoints(t *testing.T) {
 	t.Run("Error Handling Tests", func(t *testing.T) {
 		nonExistentID := uuid.New().String()
 		testCases := []struct {
-			name       string
-			endpoint   string
-			method     string
-			body       interface{}
-			wantCode   int
+			name     string
+			endpoint string
+			method   string
+			body     interface{}
+			wantCode int
 		}{
 			{"Get non-existent member", fmt.Sprintf("/api/v1/companies/%s/team/%s", companyID, nonExistentID), http.MethodGet, nil, http.StatusNotFound},
 			{"Update non-existent member", fmt.Sprintf("/api/v1/companies/%s/team/%s", companyID, nonExistentID), http.MethodPut, v1_teams.UpdateTeamMemberRequest{Title: "New"}, http.StatusNotFound},
