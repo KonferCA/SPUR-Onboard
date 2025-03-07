@@ -55,6 +55,8 @@ func getCORSConfigByEnv() em.CORSConfig {
 				"http://127.0.0.1:5173",
 				"https://spuric.com",
 				"http://spuric.com",
+				"https://konfer.ca",
+				"http://konfer.ca",
 				fe_url,
 			},
 			AllowMethods:     allowMethods,
@@ -65,10 +67,10 @@ func getCORSConfigByEnv() em.CORSConfig {
 	case common.STAGING_ENV:
 		return em.CORSConfig{
 			AllowOrigins: []string{
-				"http://localhost:5173",
-				"http://127.0.0.1:5173",
 				"https://spuric.com",
 				"http://spuric.com",
+				"https://konfer.ca",
+				"http://konfer.ca",
 				fe_url,
 			},
 			AllowMethods:     allowMethods,
@@ -79,10 +81,10 @@ func getCORSConfigByEnv() em.CORSConfig {
 	case common.PREVIEW_ENV:
 		return em.CORSConfig{
 			AllowOrigins: []string{
-				"http://localhost:5173",
-				"http://127.0.0.1:5173",
 				"https://spuric.com",
 				"http://spuric.com",
+				"https://konfer.ca",
+				"http://konfer.ca",
 				fe_url,
 			},
 			AllowMethods:     allowMethods,
@@ -100,6 +102,8 @@ func getCORSConfigByEnv() em.CORSConfig {
 			fe_url,
 			"https://spuric.com",
 			"http://spuric.com",
+			"https://konfer.ca",
+			"http://konfer.ca",
 		},
 		AllowMethods:     allowMethods,
 		AllowHeaders:     []string{"*"},
