@@ -1,0 +1,33 @@
+name: Enforce Proper Backend Code Formatting
+on:
+  pull_request:
+    branches: ['main', 'staging', 'production']
+    paths:
+      - 'backend/**'
+jobs:
+  check-format:
+    name: Check backend code formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+      - name: Install goimports
+        # goimports is a builtin tool from Go that checks for missing imports, unused imports, and code format
+        run: go install golang.org/x/tools/cmd/goimports@latest
+      - name: Check formatting
+        run: |
+          GOIMPORTS_ISSUES=$(goimports -l $(find . -type f -name '*.go'))
+          if [ -n "$GOIMPORTS_ISSUES" ]; then
+            echo "Goimports issues found in the following files:"
+            echo "$GOIMPORTS_ISSUES"
+            echo "Please run 'make format-fix' to fix the issues."
+            exit 1
+          fi
+
+          echo "All Go files are properly formatted!"
+          "go install golang.org/x/tools/cmd/goimports@latest"
