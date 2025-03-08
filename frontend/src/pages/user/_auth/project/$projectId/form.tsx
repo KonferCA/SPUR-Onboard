@@ -602,6 +602,8 @@ function ProjectFormPage() {
                                 break;
                         }
 
+                        input.invalid = !fieldValid;
+
                         if (!fieldValid) {
                             invalidQuestions.push({
                                 section: group.section,
@@ -609,7 +611,7 @@ function ProjectFormPage() {
                                 questionText: question.question,
                                 inputType: input.type,
                                 required: input.required ?? false,
-                                value: input.value.value,
+                                value: input.value,
                                 reason: !input.value.value
                                     ? 'Missing required value'
                                     : 'Failed validation',
