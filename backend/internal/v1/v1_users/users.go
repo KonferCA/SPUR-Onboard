@@ -123,10 +123,10 @@ func (h *Handler) handleGetUserDetails(c echo.Context) error {
 	}
 
 	// Format timestamps
-	createdAt := time.Unix(details.CreatedAt, 0).Format(time.RFC3339)
+	createdAt := v1_common.FormatUnixTime(details.CreatedAt)
 	var updatedAt *string
 	if details.UpdatedAt != 0 {
-		formatted := time.Unix(details.UpdatedAt, 0).Format(time.RFC3339)
+		formatted := v1_common.FormatUnixTime(details.UpdatedAt)
 		updatedAt = &formatted
 	}
 
@@ -227,10 +227,10 @@ func (h *Handler) handleListUsers(c echo.Context) error {
 		}
 
 		// Format timestamps as RFC3339
-		dateJoined := time.Unix(user.CreatedAt, 0).Format(time.RFC3339)
+		dateJoined := v1_common.FormatUnixTime(user.CreatedAt)
 		var lastUpdated *string
 		if updatedAt != nil {
-			formatted := time.Unix(*updatedAt, 0).Format(time.RFC3339)
+			formatted := v1_common.FormatUnixTime(*updatedAt)
 			lastUpdated = &formatted
 		}
 

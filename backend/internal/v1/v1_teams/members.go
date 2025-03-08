@@ -15,9 +15,6 @@ import (
  * Formats Unix timestamp to RFC3339 string
  * Used for consistent date formatting in responses
  */
-func formatTime(t int64) string {
-	return time.Unix(t, 0).Format(time.RFC3339)
-}
 
 // helper function to convert db.TeamMember to TeamMemberResponse
 func buildTeamMemberResponse(member db.TeamMember) TeamMemberResponse {
@@ -64,8 +61,8 @@ func buildTeamMemberResponse(member db.TeamMember) TeamMemberResponse {
 		ResumeInternalUrl:            resumeInternalUrlStr,
 		FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
 		FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
-		CreatedAt:                    formatTime(member.CreatedAt),
-		UpdatedAt:                    formatTime(member.UpdatedAt),
+		CreatedAt:                    v1_common.FormatUnixTime(member.CreatedAt),
+		UpdatedAt:                    v1_common.FormatUnixTime(member.UpdatedAt),
 	}
 }
 

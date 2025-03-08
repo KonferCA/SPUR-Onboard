@@ -397,7 +397,7 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 			}
 		case 1:
 			if question.Answer == "" {
-				question.Answer = time.Unix(company.DateFounded, 0).Format("2006-01-02")
+				question.Answer = v1_common.FormatUnixTimeCustom(company.DateFounded, v1_common.DateOnlyFormat)
 			}
 		}
 

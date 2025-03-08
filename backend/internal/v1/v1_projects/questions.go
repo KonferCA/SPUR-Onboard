@@ -12,11 +12,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// helper function to format time, same as in v1_teams lol
-func formatTime(t int64) string {
-	return time.Unix(t, 0).Format(time.RFC3339)
-}
-
 /*
  * handleGetQuestions returns all available project questions.
  * Used by the frontend to:
@@ -143,8 +138,8 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 			ResumeInternalUrl:            resumeInternalUrlStr,
 			FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
 			FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
-			CreatedAt:                    formatTime(member.CreatedAt),
-			UpdatedAt:                    formatTime(member.UpdatedAt),
+			CreatedAt:                    v1_common.FormatUnixTime(member.CreatedAt),
+			UpdatedAt:                    v1_common.FormatUnixTime(member.UpdatedAt),
 		})
 	}
 
