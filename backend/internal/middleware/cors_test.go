@@ -58,7 +58,7 @@ func TestGetCORSConfigByEnv(t *testing.T) {
 		{
 			name:                     "Staging Environment",
 			env:                      common.STAGING_ENV,
-			expectedAllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "https://spuric.com", "http://spuric.com", "https://konfer.ca", "http://konfer.ca", "http://localhost:5173"},
+			expectedAllowOrigins:     []string{"https://spuric.com", "http://spuric.com", "https://konfer.ca", "http://konfer.ca", "https://spuric.com"},
 			expectedAllowCredentials: true,
 			expectedAllowMethods: []string{
 				http.MethodGet,
@@ -75,7 +75,7 @@ func TestGetCORSConfigByEnv(t *testing.T) {
 		{
 			name:                     "Preview Environment",
 			env:                      "preview",
-			expectedAllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "https://spuric.com", "http://spuric.com", "https://konfer.ca", "http://konfer.ca", "http://localhost:5173"},
+			expectedAllowOrigins:     []string{"https://spuric.com", "http://spuric.com", "https://konfer.ca", "http://konfer.ca", "https://spuric.com"},
 			expectedAllowCredentials: true,
 			expectedAllowMethods: []string{
 				http.MethodGet,
