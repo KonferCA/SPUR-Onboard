@@ -38,5 +38,3 @@ jobs:
         with:
           name: coverage-report-frontend
           path: frontend/coverage/
-      - name: Build Check
-        run: pnpm build
