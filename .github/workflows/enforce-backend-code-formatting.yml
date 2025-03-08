@@ -2,12 +2,14 @@ name: Enforce Proper Backend Code Formatting
 on:
   pull_request:
     branches: ['main', 'staging', 'production']
-    paths:
-      - 'backend/**'
 jobs:
   check-format:
     name: Check Backend Code Formatting
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: backend
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
