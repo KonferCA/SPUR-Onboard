@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/permissions"
@@ -96,6 +97,8 @@ func TestCompanyEndpoints(t *testing.T) {
 					"name":           "Test Company",
 					"wallet_address": "0x1234567890123456789012345678901234567890123456789012345678901234",
 					"linkedin_url":   "https://linkedin.com/company/test",
+					"date_founded":   time.Now().Unix(),
+					"stages":         []string{"Ideation"},
 				},
 				wantCode: http.StatusCreated,
 			},
@@ -107,6 +110,8 @@ func TestCompanyEndpoints(t *testing.T) {
 					"name":           "Bad Wallet",
 					"wallet_address": "invalid",
 					"linkedin_url":   "https://linkedin.com/company/test",
+					"date_founded":   time.Now().Unix(),
+					"stages":         []string{"Ideation"},
 				},
 				wantCode: http.StatusBadRequest,
 			},
@@ -118,6 +123,8 @@ func TestCompanyEndpoints(t *testing.T) {
 					"name":           "Bad LinkedIn",
 					"wallet_address": "0x1234567890123456789012345678901234567890123456789012345678901234",
 					"linkedin_url":   "https://invalid.com",
+					"date_founded":   time.Now().Unix(),
+					"stages":         []string{"Ideation"},
 				},
 				wantCode: http.StatusBadRequest,
 			},
@@ -128,6 +135,8 @@ func TestCompanyEndpoints(t *testing.T) {
 				request: map[string]interface{}{
 					"name":         "Investor Company",
 					"linkedin_url": "https://linkedin.com/company/test",
+					"date_founded": time.Now().Unix(),
+					"stages":       []string{"Ideation"},
 				},
 				wantCode: http.StatusForbidden,
 			},
@@ -194,7 +203,7 @@ func TestCompanyEndpoints(t *testing.T) {
 				token:     testUsers[3].token,
 				userID:    adminID,
 				wantCode:  http.StatusOK,
-				urlSuffix: "/" + companies[ownerID.String()].ID,
+				urlSuffix: "/admin/" + companies[ownerID.String()].ID,
 			},
 			{
 				name:      "Other owner cannot access company",
@@ -251,13 +260,15 @@ func TestCompanyEndpoints(t *testing.T) {
 			wantCode int
 		}{
 			{
-				name:   "Owner can update company",
+				name:   "Valid company update",
 				token:  testUsers[0].token,
 				userID: ownerID.String(),
 				request: map[string]interface{}{
 					"name":           "Updated Company",
 					"wallet_address": "0x9876543210987654321098765432109876543210987654321098765432109876",
 					"linkedin_url":   "https://linkedin.com/company/updated",
+					"date_founded":   time.Now().Unix(),
+					"stages":         []string{"Growth"},
 				},
 				wantCode: http.StatusOK,
 			},

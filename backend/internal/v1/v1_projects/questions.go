@@ -4,6 +4,7 @@ import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
+	"KonferCA/SPUR/internal/v1/v1_teams"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -90,10 +91,61 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get questions", err)
 	}
 
-	// Return questions array
+	// convert team members to proper response objects
+	teamMemberResponses := make([]v1_teams.TeamMemberResponse, 0, len(teamMembers))
+	for _, member := range teamMembers {
+		// Process thhe social links with the common helper function
+		socialLinks := v1_common.ProcessSocialLinks(member)
+
+		// convert nullable fields to strings
+		previousWorkStr := ""
+		if member.PreviousWork != nil {
+			previousWorkStr = *member.PreviousWork
+		}
+		resumeExternalUrlStr := ""
+		if member.ResumeExternalUrl != nil {
+			resumeExternalUrlStr = *member.ResumeExternalUrl
+		}
+		resumeInternalUrlStr := ""
+		if member.ResumeInternalUrl != nil {
+			resumeInternalUrlStr = *member.ResumeInternalUrl
+		}
+		foundersAgreementExternalUrlStr := ""
+		if member.FoundersAgreementExternalUrl != nil {
+			foundersAgreementExternalUrlStr = *member.FoundersAgreementExternalUrl
+		}
+		foundersAgreementInternalUrlStr := ""
+		if member.FoundersAgreementInternalUrl != nil {
+			foundersAgreementInternalUrlStr = *member.FoundersAgreementInternalUrl
+		}
+
+		// create team member response
+		teamMemberResponses = append(teamMemberResponses, v1_teams.TeamMemberResponse{
+			ID:                           member.ID,
+			CompanyID:                    member.CompanyID,
+			FirstName:                    member.FirstName,
+			LastName:                     member.LastName,
+			Title:                        member.Title,
+			SocialLinks:                  socialLinks,
+			IsAccountOwner:               member.IsAccountOwner,
+			CommitmentType:               member.CommitmentType,
+			Introduction:                 member.Introduction,
+			IndustryExperience:           member.IndustryExperience,
+			DetailedBiography:            member.DetailedBiography,
+			PreviousWork:                 previousWorkStr,
+			ResumeExternalUrl:            resumeExternalUrlStr,
+			ResumeInternalUrl:            resumeInternalUrlStr,
+			FoundersAgreementExternalUrl: foundersAgreementExternalUrlStr,
+			FoundersAgreementInternalUrl: foundersAgreementInternalUrlStr,
+			CreatedAt:                    v1_common.FormatUnixTime(member.CreatedAt),
+			UpdatedAt:                    v1_common.FormatUnixTime(member.UpdatedAt),
+		})
+	}
+
+	// return questions array
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"questions":    questions,
 		"documents":    documents,
-		"team_members": teamMembers,
+		"team_members": teamMemberResponses,
 	})
 }

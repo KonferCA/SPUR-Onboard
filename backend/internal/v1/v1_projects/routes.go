@@ -35,6 +35,8 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	))
 	// projects := g.Group("/project")
 
+	g.GET("/projects", h.handleListCompanyProjects, middleware.Auth(s.GetDB(), permissions.PermSubmitProject))
+
 	g.GET("/project/list/all", h.handleListAllProjects, middleware.Auth(s.GetDB(), permissions.PermAdmin))
 
 	// Get new projects
