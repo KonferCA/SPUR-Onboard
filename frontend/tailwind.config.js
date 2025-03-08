@@ -18,16 +18,16 @@ export default {
             keyframes: {
                 blink: {
                   '0%': { 
-                      backgroundColor: 'rgba(244, 128, 47, 0)',
-                      boxShadow: '0 0 0 2px rgba(244, 128, 47, 0)'
+                      backgroundColor: 'rgba(239, 68, 68, 0)',
+                      boxShadow: '0 0 0 2px rgba(239, 68, 68, 0)'
                   },
                   '50%': { 
-                      backgroundColor: 'rgba(244, 128, 47, 0.1)', 
-                      boxShadow: '0 0 0 2px rgba(244, 128, 47, 0.5)'
+                      backgroundColor: 'rgba(254, 242, 242, 0.8)', 
+                      boxShadow: '0 0 0 2px rgba(239, 68, 68, 0.5)'
                   },
                   '100%': { 
-                      backgroundColor: 'rgba(244, 128, 47, 0)',
-                      boxShadow: '0 0 0 2px rgba(244, 128, 47, 0)'
+                      backgroundColor: 'rgba(239, 68, 68, 0)',
+                      boxShadow: '0 0 0 2px rgba(239, 68, 68, 0)'
                   }
                 }
             },
