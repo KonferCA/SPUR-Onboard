@@ -39,6 +39,16 @@ interface FundingStructureProps {
 
 const errorTextStyle = "text-xs text-red-500 mt-1";
 
+// format number with commas
+const formatNumberWithCommas = (value: number | string): string => {
+  if (!value && value !== 0) return '';
+  
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(numValue)) return '';
+  
+  return numValue.toLocaleString('en-US');
+};
+
 // equity progress bar component
 const EquityProgressBar: FC<{ 
   percentageUsed: number;
@@ -136,7 +146,7 @@ const EquityProgressBar: FC<{
     <div className="mt-4 mb-6 relative">
       <div 
         ref={barRef}
-        className={`h-8 w-full bg-gray-200 rounded-md overflow-hidden relative cursor-pointer ${isOverallocated ? 'border border-red-500' : ''}`}
+        className={`h-8 w-full bg-gray-200 rounded-md overflow-hidden relative cursor-pointer ${isOverallocated ? 'border-2 border-red-500' : ''}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -159,11 +169,6 @@ const EquityProgressBar: FC<{
             <span><span className="font-medium">{clampedPercentage}%</span> equity of your company will be divided among investors</span>
           )}
         </div>
-      )}
-      
-      {/* Display error message only when overallocated */}
-      {isOverallocated && (
-        <p className={errorTextStyle}>Total equity cannot exceed 100%</p>
       )}
     </div>
   );
@@ -310,21 +315,34 @@ export const FundingStructure: FC<FundingStructureProps> = ({
       case 'target':
         if (!currentStructure.amount) {
           errors.amount = "Amount is required";
+        } else if (parseFloat(currentStructure.amount) < 0) {
+          errors.amount = "Amount cannot be negative";
         }
+        
         if (!currentStructure.equityPercentage) {
           errors.equity = "Equity percentage is required";
+        } else if (parseFloat(currentStructure.equityPercentage) < 0) {
+          errors.equity = "Equity percentage cannot be negative";
         }
         break;
         
       case 'minimum':
         if (!currentStructure.minAmount) {
           errors.minAmount = "Minimum amount is required";
+        } else if (parseFloat(currentStructure.minAmount) < 0) {
+          errors.minAmount = "Minimum amount cannot be negative";
         }
+        
         if (!currentStructure.maxAmount) {
           errors.maxAmount = "Maximum amount is required";
+        } else if (parseFloat(currentStructure.maxAmount) < 0) {
+          errors.maxAmount = "Maximum amount cannot be negative";
         }
+        
         if (!currentStructure.equityPercentage) {
           errors.equity = "Equity percentage is required";
+        } else if (parseFloat(currentStructure.equityPercentage) < 0) {
+          errors.equity = "Equity percentage cannot be negative";
         }
         
         // validate min is not greater than max
@@ -341,14 +359,22 @@ export const FundingStructure: FC<FundingStructureProps> = ({
         } else {
           const tierErrors: {[key: string]: {amount?: string, equityPercentage?: string}} = {};
           
+          // First check individual tiers
           currentStructure.tiers.forEach(tier => {
             const tierError: {amount?: string, equityPercentage?: string} = {};
             
             if (!tier.amount) {
               tierError.amount = "Amount is required";
+            } else if (parseFloat(tier.amount) < 0) {
+              tierError.amount = "Amount cannot be negative";
             }
+            
             if (!tier.equityPercentage) {
               tierError.equityPercentage = "Equity percentage is required";
+            } else if (parseFloat(tier.equityPercentage) < 0) {
+              tierError.equityPercentage = "Equity percentage cannot be negative";
+            } else if (parseFloat(tier.equityPercentage) > 100) {
+              tierError.equityPercentage = "Individual equity cannot exceed 100%";
             }
             
             if (tierError.amount || tierError.equityPercentage) {
@@ -370,6 +396,29 @@ export const FundingStructure: FC<FundingStructureProps> = ({
   useEffect(() => {
     setValidationErrors(validateForm());
   }, [currentStructure, structureType]);
+
+  // Force validation on each tier's equity percentage change
+  useEffect(() => {
+    if (structureType === 'tiered' && currentStructure.tiers) {
+      const totalEquity = currentStructure.tiers.reduce(
+        (sum, tier) => sum + (parseFloat(tier.equityPercentage) || 0), 0
+      );
+      
+      if (totalEquity > 100) {
+        setValidationErrors(prev => ({
+          ...prev,
+          equity: "Total equity percentage cannot exceed 100%"
+        }));
+        
+        // Mark equity as touched to show the error
+        setTouchedFields(prev => {
+          const newSet = new Set(prev);
+          newSet.add('equity');
+          return newSet;
+        });
+      }
+    }
+  }, [currentStructure.tiers]);
 
   const hasValidationErrors = (): boolean => {
     const errors = validateForm();
@@ -507,6 +556,14 @@ export const FundingStructure: FC<FundingStructureProps> = ({
   };
 
   const handleUpdateTier = (id: string, key: keyof FundingTier, value: string) => {
+    // Add validation for extreme values to prevent issues, feels more professional this way imo
+    if (key === 'equityPercentage') {
+      const numValue = parseFloat(value);
+      if (numValue > 99) {
+        value = '99';
+      }
+    }
+    
     setCurrentStructure({
       ...currentStructure,
       tiers: currentStructure.tiers?.map(tier => {
@@ -516,6 +573,11 @@ export const FundingStructure: FC<FundingStructureProps> = ({
         return tier;
       })
     });
+    
+    // Mark field as touched to trigger validation display
+    if (key === 'equityPercentage') {
+      markFieldAsTouched('equity');
+    }
   };
 
   const calculateTotalEquity = (): string => {
@@ -523,7 +585,7 @@ export const FundingStructure: FC<FundingStructureProps> = ({
     const equityPercentage = parseFloat(currentStructure.equityPercentage) || 0;
     
     if (fundingAmount && equityPercentage) {
-      return `$${fundingAmount.toFixed(2)} CAD for ${equityPercentage}% of total equity in your company`;
+      return `$${formatNumberWithCommas(fundingAmount.toFixed(2))} CAD for ${equityPercentage}% of total equity in your company`;
     }
     
     return '';
@@ -841,7 +903,7 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                               Total amount ($)
                             </label>
                             <input
-                              type="text"
+                              type="number"
                               value={tier.amount}
                               onChange={(e) => handleUpdateTier(tier.id, 'amount', e.target.value)}
                               onBlur={() => markTierFieldAsTouched(tier.id, 'amount')}
@@ -850,7 +912,7 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                                   ? 'border-red-500' 
                                   : 'border-gray-300'
                               }`}
-                              placeholder="e.g. 100000"
+                              placeholder="e.g. 1000"
                             />
                             {shouldShowTierError(tier.id, 'amount') && validationErrors.tiers?.[tier.id]?.amount && (
                               <p className={errorTextStyle}>{validationErrors.tiers[tier.id].amount}</p>
@@ -866,12 +928,13 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                               Total Equity (%)
                             </label>
                             <input
-                              type="text"
+                              type="number"
                               value={tier.equityPercentage}
                               onChange={(e) => handleUpdateTier(tier.id, 'equityPercentage', e.target.value)}
                               onBlur={() => markTierFieldAsTouched(tier.id, 'equityPercentage')}
                               className={`w-full p-2 border rounded-md ${
-                                shouldShowTierError(tier.id, 'equityPercentage') && validationErrors.tiers?.[tier.id]?.equityPercentage 
+                                (shouldShowTierError(tier.id, 'equityPercentage') && validationErrors.tiers?.[tier.id]?.equityPercentage) || 
+                                (validationErrors.equity && shouldShowError('equity'))
                                   ? 'border-red-500' 
                                   : 'border-gray-300'
                               }`}
@@ -902,19 +965,19 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                 {/* Summary text */}
                 {currentStructure.amount && currentStructure.equityPercentage && structureType === 'target' && (
                   <p className="text-sm text-gray-700 mt-2">
-                    Total amount of funding: ${currentStructure.amount} CAD for {currentStructure.equityPercentage}% of total equity in your company.
+                    Total amount of funding: {calculateTotalEquity()}
                   </p>
                 )}
                 
                 {currentStructure.minAmount && currentStructure.maxAmount && currentStructure.equityPercentage && structureType === 'minimum' && (
-                  <p className="text-sm text-gray-700 mt-2">
-                    Total amount of funding: ${currentStructure.maxAmount} CAD for {currentStructure.equityPercentage}% of total equity in your company. Funds will be held until the minimum amount of funding has been fulfilled.
+                  <p className="text-sm text-gray-700 mt-4 mb-2">
+                    Total amount of funding: ${formatNumberWithCommas(currentStructure.maxAmount || 0)} for {currentStructure.equityPercentage}% of total equity in your company. Funds will be held until the minimum amount of funding has been fulfilled.
                   </p>
                 )}
                 
                 {structureType === 'tiered' && currentStructure.tiers && currentStructure.tiers.length > 0 && (
-                  <p className="text-sm text-gray-700 mt-2">
-                    Total amount of funding: ${currentStructure.tiers[currentStructure.tiers.length - 1].amount} CAD for {calculateTotalEquity()}% of total equity in your company.
+                  <p className="text-sm text-gray-700 mt-4 mb-2">
+                    Total amount of funding: ${formatNumberWithCommas((currentStructure.tiers || []).reduce((sum, tier) => sum + (parseFloat(tier.amount) || 0), 0).toFixed(2))} CAD for {(currentStructure.tiers || []).reduce((sum, tier) => sum + (parseFloat(tier.equityPercentage) || 0), 0).toFixed(2)}% of total equity in your company
                   </p>
                 )}
                 
@@ -1129,7 +1192,7 @@ export const FundingStructure: FC<FundingStructureProps> = ({
               
               {(currentStructure.minAmount || currentStructure.maxAmount) && currentStructure.equityPercentage && (
                 <p className="text-sm text-gray-700 mt-4 mb-2">
-                  Total amount of funding: ${currentStructure.maxAmount || 0} for {currentStructure.equityPercentage}% of total equity in your company. Funds will be held until the minimum amount of funding has been fulfilled.
+                  Total amount of funding: ${formatNumberWithCommas(currentStructure.maxAmount || 0)} for {currentStructure.equityPercentage}% of total equity in your company. Funds will be held until the minimum amount of funding has been fulfilled.
                 </p>
               )}
               
@@ -1220,7 +1283,7 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                             Amount ($)
                           </label>
                           <input
-                            type="text"
+                            type="number"
                             value={tier.amount}
                             onChange={(e) => handleUpdateTier(tier.id, 'amount', e.target.value)}
                             onBlur={() => markTierFieldAsTouched(tier.id, 'amount')}
@@ -1241,12 +1304,13 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                             Total Equity (%)
                           </label>
                           <input
-                            type="text"
+                            type="number"
                             value={tier.equityPercentage}
                             onChange={(e) => handleUpdateTier(tier.id, 'equityPercentage', e.target.value)}
                             onBlur={() => markTierFieldAsTouched(tier.id, 'equityPercentage')}
                             className={`w-full p-2 border rounded-md ${
-                              shouldShowTierError(tier.id, 'equityPercentage') && validationErrors.tiers?.[tier.id]?.equityPercentage 
+                              (shouldShowTierError(tier.id, 'equityPercentage') && validationErrors.tiers?.[tier.id]?.equityPercentage) || 
+                              (validationErrors.equity && shouldShowError('equity'))
                                 ? 'border-red-500' 
                                 : 'border-gray-300'
                             }`}
@@ -1281,7 +1345,7 @@ export const FundingStructure: FC<FundingStructureProps> = ({
             
             {(currentStructure.tiers || []).length > 0 && (
               <p className="text-sm text-gray-700 mt-4 mb-2">
-                Total amount of funding: ${(currentStructure.tiers || []).reduce((sum, tier) => sum + (parseFloat(tier.amount) || 0), 0).toFixed(2)} CAD for {(currentStructure.tiers || []).reduce((sum, tier) => sum + (parseFloat(tier.equityPercentage) || 0), 0).toFixed(2)}% of total equity in your company
+                Total amount of funding: ${formatNumberWithCommas((currentStructure.tiers || []).reduce((sum, tier) => sum + (parseFloat(tier.amount) || 0), 0).toFixed(2))} CAD for {(currentStructure.tiers || []).reduce((sum, tier) => sum + (parseFloat(tier.equityPercentage) || 0), 0).toFixed(2)}% of total equity in your company
               </p>
             )}
             
