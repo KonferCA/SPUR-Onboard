@@ -12,6 +12,7 @@ import (
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -619,4 +620,97 @@ func (h *Handler) handleUpdateProjectStatus(c echo.Context) error {
 	}
 
 	return v1_common.Success(c, http.StatusOK, "Project status updated")
+}
+
+/*
+ * handleGetNewProjects retrieves the most recently created projects.
+ *
+ * parameters (all optional):
+ * - count: Number of projects to return (default: 10)
+ * - status: Type of projects to return (draft, pending, verified, etc.). If not provided, returns projects of any status.
+ *
+ * security:
+ * - Public endpoint (no authentication required)
+ * - Only returns basic project information
+ *
+ * returns array of ExtendedProjectResponse objects ordered by creation date (newest first)
+ */
+func (h *Handler) handleGetNewProjects(c echo.Context) error {
+	var req GetNewProjectsRequest
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request parameters", err)
+	}
+
+	// set default count if not provided
+	count := 10
+	if req.Count > 0 {
+		count = req.Count
+	}
+
+	var projects []db.GetNewProjectsAnyStatusRow
+
+	// if no statuses provided, default to pending and verified
+	if len(req.Statuses) == 0 {
+		req.Statuses = []db.ProjectStatus{db.ProjectStatusPending, db.ProjectStatusVerified}
+	}
+
+	allProjects := []db.GetNewProjectsAnyStatusRow{}
+
+	// fetch projects for each requested status
+	for _, status := range req.Statuses {
+		statusProjects, err := h.server.GetQueries().GetNewProjectsByStatus(c.Request().Context(), db.GetNewProjectsByStatusParams{
+			Status: status,
+			Limit:  int32(count),
+		})
+
+		if err == nil {
+			for _, project := range statusProjects {
+				allProjects = append(allProjects, db.GetNewProjectsAnyStatusRow(project))
+			}
+		}
+	}
+
+	// sort by created_at in descending order (newest first)
+	sort.Slice(allProjects, func(i, j int) bool {
+		return allProjects[i].CreatedAt > allProjects[j].CreatedAt
+	})
+
+	// limit to requested count
+	if len(allProjects) > count {
+		allProjects = allProjects[:count]
+	}
+
+	projects = allProjects
+
+	// convert to response format
+	response := make([]ExtendedProjectResponse, 0, len(projects))
+	for _, project := range projects {
+		description := ""
+		if project.Description != nil {
+			description = *project.Description
+		}
+
+		companyName := ""
+		if project.CompanyName != nil {
+			companyName = *project.CompanyName
+		}
+
+		response = append(response, ExtendedProjectResponse{
+			ProjectResponse: ProjectResponse{
+				ID:          project.ID,
+				Title:       project.Title,
+				Description: description,
+				Status:      project.Status,
+				CreatedAt:   project.CreatedAt,
+				UpdatedAt:   project.UpdatedAt,
+			},
+			CompanyName:     companyName,
+			DocumentCount:   project.DocumentCount,
+			TeamMemberCount: project.TeamMemberCount,
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"projects": response,
+	})
 }

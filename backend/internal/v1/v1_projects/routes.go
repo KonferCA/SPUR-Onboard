@@ -1,15 +1,31 @@
 package v1_projects
 
 import (
+	"KonferCA/SPUR/common"
 	"KonferCA/SPUR/internal/interfaces"
 	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/permissions"
+	"os"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
 
 func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	h := &Handler{server: s}
+
+	// 5 request per minute, get block for 15 minutes, and ban up to 1 hour after four blocks.
+	maxRequests := 5
+	if os.Getenv("APP_ENV") == common.TEST_ENV {
+		maxRequests = 5000
+	}
+
+	publicProjectsLimiter := middleware.NewRateLimiter(&middleware.RateLimiterConfig{
+		Requests:    maxRequests,
+		Window:      time.Minute,
+		BlockPeriod: time.Minute * 15,
+		MaxBlocks:   4,
+	})
 
 	// Base project routes with auth
 	projects := g.Group("/project", middleware.Auth(s.GetDB(),
@@ -21,6 +37,10 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	g.GET("/projects", h.handleListCompanyProjects, middleware.Auth(s.GetDB(), permissions.PermSubmitProject))
 
 	g.GET("/project/list/all", h.handleListAllProjects, middleware.Auth(s.GetDB(), permissions.PermAdmin))
+
+	// Get new projects
+	g.GET("/project/latest", h.handleGetNewProjects, publicProjectsLimiter.RateLimit())
+
 	// Update project status
 	g.PUT("/project/:id/status", h.handleUpdateProjectStatus, middleware.Auth(s.GetDB(), permissions.PermAdmin))
 
