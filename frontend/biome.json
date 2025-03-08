@@ -26,7 +26,10 @@
         "enabled": true,
         "ignore": ["src/routeTree.gen.ts"],
         "rules": {
-            "recommended": true
+            "recommended": true,
+            "complexity": {
+                "noForEach": "off"
+            }
         }
     },
     "javascript": {
