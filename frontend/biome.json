@@ -7,7 +7,7 @@
     },
     "files": {
         "ignoreUnknown": false,
-        "ignore": []
+        "ignore": ["dist"]
     },
     "formatter": {
         "useEditorconfig": true,
@@ -24,11 +24,13 @@
     },
     "linter": {
         "enabled": true,
+        "ignore": ["src/routeTree.gen.ts"],
         "rules": {
             "recommended": true
         }
     },
     "javascript": {
+        "globals": ["routeTree.gen.ts"],
         "formatter": {
             "jsxQuoteStyle": "double",
             "quoteProperties": "asNeeded",
