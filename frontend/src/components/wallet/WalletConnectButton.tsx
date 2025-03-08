@@ -7,9 +7,13 @@ interface WalletConnectButtonProps {
     className?: string;
 }
 
-export const WalletConnectButton = ({ onWalletConnected, className }: WalletConnectButtonProps) => {
+export const WalletConnectButton = ({
+    onWalletConnected,
+    className,
+}: WalletConnectButtonProps) => {
     const wallet = useWallet();
-    const { connected, select, address, connecting, configuredWallets } = wallet;
+    const { connected, select, address, connecting, configuredWallets } =
+        wallet;
     const [error, setError] = useState<string | null>(null);
 
     const handleConnect = async (walletName: string) => {
@@ -18,7 +22,9 @@ export const WalletConnectButton = ({ onWalletConnected, className }: WalletConn
             await select(walletName);
         } catch (e) {
             console.error('Failed to connect wallet:', e);
-            setError('Failed to connect wallet. Please make sure your wallet is installed and unlocked.');
+            setError(
+                'Failed to connect wallet. Please make sure your wallet is installed and unlocked.'
+            );
         }
     };
 
@@ -46,7 +52,9 @@ export const WalletConnectButton = ({ onWalletConnected, className }: WalletConn
                     {connecting ? 'Connecting...' : 'Connect Wallet'}
                 </Button>
                 {error && (
-                    <p className="text-sm text-red-600 text-center mt-2">{error}</p>
+                    <p className="text-sm text-red-600 text-center mt-2">
+                        {error}
+                    </p>
                 )}
             </div>
         );
@@ -64,10 +72,16 @@ export const WalletConnectButton = ({ onWalletConnected, className }: WalletConn
                     >
                         <div className="flex-shrink-0 mb-2">
                             {wallet.iconUrl ? (
-                                <img src={wallet.iconUrl} alt="" className="w-10 h-10 md:w-12 md:h-12" />
+                                <img
+                                    src={wallet.iconUrl}
+                                    alt=""
+                                    className="w-10 h-10 md:w-12 md:h-12"
+                                />
                             ) : (
                                 <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <span className="text-blue-500 font-semibold text-lg">{wallet.name.charAt(0)}</span>
+                                    <span className="text-blue-500 font-semibold text-lg">
+                                        {wallet.name.charAt(0)}
+                                    </span>
                                 </div>
                             )}
                         </div>

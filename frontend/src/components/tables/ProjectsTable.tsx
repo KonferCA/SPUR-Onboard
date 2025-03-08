@@ -19,14 +19,14 @@ const STATUS_MAPPING = {
     pending: 'submitted',
     verified: 'approved',
     declined: 'rejected',
-    withdrawn: 'withdrew'
+    withdrawn: 'withdrew',
 } as const;
 
-const StatusButton = ({ 
-    label, 
-    isActive, 
-    onClick 
-}: { 
+const StatusButton = ({
+    label,
+    isActive,
+    onClick,
+}: {
     label: string;
     isActive: boolean;
     onClick: () => void;
@@ -34,9 +34,10 @@ const StatusButton = ({
     <button
         onClick={onClick}
         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
-            ${isActive 
-                ? 'bg-gray-900 text-white' 
-                : 'text-gray-500 hover:text-gray-700'
+            ${
+                isActive
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-500 hover:text-gray-700'
             }`}
     >
         {label}
@@ -70,10 +71,10 @@ const FilterDropdown = ({
     </div>
 );
 
-const SearchInput = ({ 
-    value, 
-    onChange 
-}: { 
+const SearchInput = ({
+    value,
+    onChange,
+}: {
     value: string;
     onChange: (value: string) => void;
 }) => (
@@ -108,9 +109,7 @@ const columns = [
         header: 'Project name',
         cell: (info) => (
             <div className="flex flex-col w-32">
-                <div className="font-medium truncate">
-                    {info.getValue()}
-                </div>
+                <div className="font-medium truncate">{info.getValue()}</div>
                 {info.row.original.description && (
                     <div className="text-sm text-gray-500 truncate">
                         {info.row.original.description}
@@ -122,9 +121,7 @@ const columns = [
     columnHelper.accessor('industry', {
         header: 'Industry',
         cell: (info) => (
-            <div className="truncate">
-                {info.getValue() || 'N/A'}
-            </div>
+            <div className="truncate">{info.getValue() || 'N/A'}</div>
         ),
     }),
     columnHelper.accessor('company_stage', {
@@ -146,9 +143,10 @@ const columns = [
     columnHelper.accessor('status', {
         header: 'Status',
         cell: (info) => {
-            const mappedStatus = STATUS_MAPPING[info.getValue() as keyof typeof STATUS_MAPPING];
+            const mappedStatus =
+                STATUS_MAPPING[info.getValue() as keyof typeof STATUS_MAPPING];
             if (!mappedStatus) return null;
-            
+
             return (
                 <div className="">
                     <span
@@ -157,10 +155,10 @@ const columns = [
                             mappedStatus === 'submitted'
                                 ? 'bg-yellow-100 text-yellow-800'
                                 : mappedStatus === 'approved'
-                                    ? 'bg-green-100 text-green-800'
-                                    : mappedStatus === 'rejected'
-                                        ? 'bg-red-100 text-red-800'
-                                        : 'bg-gray-100 text-gray-800'
+                                  ? 'bg-green-100 text-green-800'
+                                  : mappedStatus === 'rejected'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-gray-100 text-gray-800'
                         }`}
                     >
                         {mappedStatus.replace('_', ' ')}
@@ -214,31 +212,63 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
         { label: 'Rejected', value: 'rejected' },
     ];
 
-    const filterOptions = useMemo(() => ({
-        company_stage: [...new Set(data.map(item => item.company_stage))].filter((stage): stage is string => stage !== null),
-        industry: [...new Set(data.map(item => item.industry))].filter((industry): industry is string => industry !== null),
-        status: [...new Set(data.map(item => {
-            const mappedStatus = STATUS_MAPPING[item.status as keyof typeof STATUS_MAPPING];
-            return mappedStatus;
-        }))].filter((status): status is NonNullable<typeof STATUS_MAPPING[keyof typeof STATUS_MAPPING]> => status !== null),
-        year: [...new Set(data.map(item => formatDate(item.founded_date, 'yyyy')))].filter(x => x !== 'N/A'),
-    }), [data]);
+    const filterOptions = useMemo(
+        () => ({
+            company_stage: [
+                ...new Set(data.map((item) => item.company_stage)),
+            ].filter((stage): stage is string => stage !== null),
+            industry: [...new Set(data.map((item) => item.industry))].filter(
+                (industry): industry is string => industry !== null
+            ),
+            status: [
+                ...new Set(
+                    data.map((item) => {
+                        const mappedStatus =
+                            STATUS_MAPPING[
+                                item.status as keyof typeof STATUS_MAPPING
+                            ];
+                        return mappedStatus;
+                    })
+                ),
+            ].filter(
+                (
+                    status
+                ): status is NonNullable<
+                    (typeof STATUS_MAPPING)[keyof typeof STATUS_MAPPING]
+                > => status !== null
+            ),
+            year: [
+                ...new Set(
+                    data.map((item) => formatDate(item.founded_date, 'yyyy'))
+                ),
+            ].filter((x) => x !== 'N/A'),
+        }),
+        [data]
+    );
 
     const filteredData = useMemo(() => {
-        return data.filter(item => {
-            const mappedStatus = STATUS_MAPPING[item.status as keyof typeof STATUS_MAPPING];
-            const matchesSelectedStatus = selectedStatus === 'submitted' ? mappedStatus === 'submitted'
-                : selectedStatus === 'approved' ? mappedStatus === 'approved'
-                : selectedStatus === 'rejected' ? mappedStatus === 'rejected'
-                : selectedStatus === 'withdrew' ? mappedStatus === 'withdrew'
-                : true;
-                
+        return data.filter((item) => {
+            const mappedStatus =
+                STATUS_MAPPING[item.status as keyof typeof STATUS_MAPPING];
+            const matchesSelectedStatus =
+                selectedStatus === 'submitted'
+                    ? mappedStatus === 'submitted'
+                    : selectedStatus === 'approved'
+                      ? mappedStatus === 'approved'
+                      : selectedStatus === 'rejected'
+                        ? mappedStatus === 'rejected'
+                        : selectedStatus === 'withdrew'
+                          ? mappedStatus === 'withdrew'
+                          : true;
+
             return (
                 matchesSelectedStatus &&
-                (!filters.company_stage || item.company_stage === filters.company_stage) &&
+                (!filters.company_stage ||
+                    item.company_stage === filters.company_stage) &&
                 (!filters.industry || item.industry === filters.industry) &&
                 (!filters.status || mappedStatus === filters.status) &&
-                (!filters.year || formatDate(item.founded_date, 'yyyy') === filters.year)
+                (!filters.year ||
+                    formatDate(item.founded_date, 'yyyy') === filters.year)
             );
         });
     }, [data, filters, selectedStatus]);
@@ -251,7 +281,8 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
             globalFilter,
         },
         onSortingChange: (updates) => {
-            const nextSorting = typeof updates === 'function' ? updates(sorting) : updates;
+            const nextSorting =
+                typeof updates === 'function' ? updates(sorting) : updates;
             setSorting(nextSorting);
             onSortingChange?.(nextSorting);
         },
@@ -277,39 +308,47 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
                     />
                 ))}
 
-               <div className="flex-grow" />
-               
-                <SearchInput
-                    value={globalFilter}
-                    onChange={setGlobalFilter}
-                />
+                <div className="flex-grow" />
+
+                <SearchInput value={globalFilter} onChange={setGlobalFilter} />
             </div>
 
-            <div className="flex flex-col gap-4">                
+            <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap gap-4">
                     <FilterDropdown
                         label="Company Stage"
                         options={filterOptions.company_stage}
                         value={filters.company_stage}
-                        onChange={(value) => setFilters(prev => ({ ...prev, company_stage: value }))}
+                        onChange={(value) =>
+                            setFilters((prev) => ({
+                                ...prev,
+                                company_stage: value,
+                            }))
+                        }
                     />
                     <FilterDropdown
                         label="Industry"
                         options={filterOptions.industry}
                         value={filters.industry}
-                        onChange={(value) => setFilters(prev => ({ ...prev, industry: value }))}
+                        onChange={(value) =>
+                            setFilters((prev) => ({ ...prev, industry: value }))
+                        }
                     />
                     <FilterDropdown
                         label="Status"
                         options={filterOptions.status}
                         value={filters.status}
-                        onChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+                        onChange={(value) =>
+                            setFilters((prev) => ({ ...prev, status: value }))
+                        }
                     />
                     <FilterDropdown
                         label="Year Founded"
                         options={filterOptions.year}
                         value={filters.year}
-                        onChange={(value) => setFilters(prev => ({ ...prev, year: value }))}
+                        onChange={(value) =>
+                            setFilters((prev) => ({ ...prev, year: value }))
+                        }
                     />
                 </div>
             </div>
@@ -321,52 +360,70 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
                             <div className="min-w-[1200px] max-w-full">
                                 <table className="w-full table-fixed divide-y divide-gray-300">
                                     <thead className="bg-gray-50">
-                                        {table.getHeaderGroups().map((headerGroup) => (
-                                            <tr key={headerGroup.id}>
-                                                {headerGroup.headers.map((header) => (
-                                                    <th
-                                                        key={header.id}
-                                                        className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900"
-                                                        onClick={header.column.getToggleSortingHandler()}
-                                                        style={{ cursor: 'pointer' }}
-                                                    >
-                                                        <div className="flex items-center gap-2">
-                                                            {flexRender(
-                                                                header.column.columnDef.header,
-                                                                header.getContext()
-                                                            )}
-                                                            {header.column.getIsSorted() && (
-                                                                <span>
-                                                                    {header.column.getIsSorted() === 'asc'
-                                                                        ? '↑'
-                                                                        : '↓'}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        ))}
+                                        {table
+                                            .getHeaderGroups()
+                                            .map((headerGroup) => (
+                                                <tr key={headerGroup.id}>
+                                                    {headerGroup.headers.map(
+                                                        (header) => (
+                                                            <th
+                                                                key={header.id}
+                                                                className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900"
+                                                                onClick={header.column.getToggleSortingHandler()}
+                                                                style={{
+                                                                    cursor: 'pointer',
+                                                                }}
+                                                            >
+                                                                <div className="flex items-center gap-2">
+                                                                    {flexRender(
+                                                                        header
+                                                                            .column
+                                                                            .columnDef
+                                                                            .header,
+                                                                        header.getContext()
+                                                                    )}
+                                                                    {header.column.getIsSorted() && (
+                                                                        <span>
+                                                                            {header.column.getIsSorted() ===
+                                                                            'asc'
+                                                                                ? '↑'
+                                                                                : '↓'}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </th>
+                                                        )
+                                                    )}
+                                                </tr>
+                                            ))}
                                     </thead>
-                                    
+
                                     <tbody className="divide-y divide-gray-200 bg-white">
                                         {table.getRowModel().rows.map((row) => (
                                             <tr
                                                 key={row.id}
                                                 className="hover:bg-gray-50 cursor-pointer"
-                                                onClick={() => handleRowClick(row.original.id)}
+                                                onClick={() =>
+                                                    handleRowClick(
+                                                        row.original.id
+                                                    )
+                                                }
                                             >
-                                                {row.getVisibleCells().map((cell) => (
-                                                    <td
-                                                        key={cell.id}
-                                                        className="whitespace-nowrap py-4 px-3 text-sm text-gray-500"
-                                                    >
-                                                        {flexRender(
-                                                            cell.column.columnDef.cell,
-                                                            cell.getContext()
-                                                        )}
-                                                    </td>
-                                                ))}
+                                                {row
+                                                    .getVisibleCells()
+                                                    .map((cell) => (
+                                                        <td
+                                                            key={cell.id}
+                                                            className="whitespace-nowrap py-4 px-3 text-sm text-gray-500"
+                                                        >
+                                                            {flexRender(
+                                                                cell.column
+                                                                    .columnDef
+                                                                    .cell,
+                                                                cell.getContext()
+                                                            )}
+                                                        </td>
+                                                    ))}
                                             </tr>
                                         ))}
                                     </tbody>

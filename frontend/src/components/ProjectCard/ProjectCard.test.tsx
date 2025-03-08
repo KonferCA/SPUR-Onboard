@@ -169,4 +169,3 @@ describe('Test ProjectCard Component', () => {
         expect(screen.queryByText('Withdraw')).not.toBeInTheDocument();
     });
 });
-

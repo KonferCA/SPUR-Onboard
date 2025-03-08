@@ -19,10 +19,7 @@ const inputStyles = cva(
                 true: ['outline-red-500'],
             },
             disabled: {
-                true: [
-                    'bg-gray-100 text-gray-400',
-                    'cursor-not-allowed',
-                ],
+                true: ['bg-gray-100 text-gray-400', 'cursor-not-allowed'],
             },
         },
         compoundVariants: [

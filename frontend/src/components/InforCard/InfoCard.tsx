@@ -39,4 +39,3 @@ const InfoCard: React.FC<InfoCardProps> = ({
 };
 
 export { InfoCard };
-

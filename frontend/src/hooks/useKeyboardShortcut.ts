@@ -22,17 +22,26 @@ export const useKeyboardShortcut = (
     // memoize the handler to prevent stale event listeners
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
-            const matchesKey = event.key.toLowerCase() === shortcut.key.toLowerCase();
-            
+            const matchesKey =
+                event.key.toLowerCase() === shortcut.key.toLowerCase();
+
             // for ctrl/cmd key, if ctrlKey is specified, match either ctrl or cmd
-            const matchesCtrlOrCmd = shortcut.ctrlKey ? (event.ctrlKey || event.metaKey) : true;
-            
+            const matchesCtrlOrCmd = shortcut.ctrlKey
+                ? event.ctrlKey || event.metaKey
+                : true;
+
             // for specific meta key check (if needed)
             const matchesMeta = shortcut.metaKey ? event.metaKey : true;
             const matchesAlt = shortcut.altKey ? event.altKey : true;
             const matchesShift = shortcut.shiftKey ? event.shiftKey : true;
 
-            if (matchesKey && matchesCtrlOrCmd && matchesMeta && matchesAlt && matchesShift) {
+            if (
+                matchesKey &&
+                matchesCtrlOrCmd &&
+                matchesMeta &&
+                matchesAlt &&
+                matchesShift
+            ) {
                 event.preventDefault();
                 callback(event);
             }
@@ -44,4 +53,4 @@ export const useKeyboardShortcut = (
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [handleKeyDown]);
-}; 
+};

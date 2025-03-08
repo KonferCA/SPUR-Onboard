@@ -1,4 +1,4 @@
-import { DropdownOption } from "@/components/Dropdown";
+import { DropdownOption } from '@/components/Dropdown';
 
 export interface CompanyFormProps {
     onSubmit: (data: CompanyInformation) => Promise<void>;
@@ -29,7 +29,7 @@ export interface CompanyFormErrors {
 export interface CreateCompanyRequest {
     name: string;
     description?: string;
-    date_founded: number; 
+    date_founded: number;
     stages: string[];
     website?: string;
     linkedin_url?: string;
@@ -59,11 +59,13 @@ export enum CompanyStage {
     ProductMarketFit = 'Product-market Fit',
     GoToMarket = 'Go-to-market',
     Growth = 'Growth',
-    Maturity = 'Maturity'
+    Maturity = 'Maturity',
 }
 
-export const COMPANY_STAGES: DropdownOption[] = Object.values(CompanyStage).map(stage => ({
-    id: stage,
-    label: stage,
-    value: stage,
-}));
+export const COMPANY_STAGES: DropdownOption[] = Object.values(CompanyStage).map(
+    (stage) => ({
+        id: stage,
+        label: stage,
+        value: stage,
+    })
+);

@@ -836,8 +836,7 @@ function ProjectFormPage() {
                                                                                   subsection.name,
                                                                               accessToken:
                                                                                   accessToken,
-                                                                              enableAutosave:
-                                                                                  true,
+                                                                              enableAutosave: true,
                                                                           }
                                                                         : undefined
                                                                 }

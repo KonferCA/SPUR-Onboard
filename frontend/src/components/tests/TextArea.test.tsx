@@ -26,7 +26,9 @@ describe('TextArea', () => {
 
     it('displays description text', () => {
         render(<TextArea description="Enter detailed description" />);
-        expect(screen.getByText('Enter detailed description')).toBeInTheDocument();
+        expect(
+            screen.getByText('Enter detailed description')
+        ).toBeInTheDocument();
     });
 
     it('handles onChange events', async () => {

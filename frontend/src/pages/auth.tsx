@@ -28,7 +28,7 @@ function AuthPage() {
         clearAuth,
     } = useAuth();
 
-    const  { push } = useNotification();
+    const { push } = useNotification();
 
     const [currentStep, setCurrentStep] =
         useState<RegistrationStep>('login-register');
@@ -181,7 +181,8 @@ function AuthPage() {
         } catch (error) {
             console.error('Failed to resend verification:', error);
             push({
-                message: 'Failed to resend verification email. Please try again.',
+                message:
+                    'Failed to resend verification email. Please try again.',
                 level: 'error',
             });
         } finally {

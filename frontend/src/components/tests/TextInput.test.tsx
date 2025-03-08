@@ -51,4 +51,3 @@ describe('TextInput', () => {
         expect(screen.getByRole('textbox')).toHaveClass('custom-class');
     });
 });
-

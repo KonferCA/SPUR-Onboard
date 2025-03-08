@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, FC } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ProfilePicture } from '@/components/ProfilePicture/ProfilePicture';
-import { IoSettingsOutline, IoLogOutOutline } from "react-icons/io5";
-import { BiChevronDown } from "react-icons/bi";
+import { IoSettingsOutline, IoLogOutOutline } from 'react-icons/io5';
+import { BiChevronDown } from 'react-icons/bi';
 import { motion } from 'framer-motion';
 
 export interface UserDropdownProps {
@@ -11,10 +11,10 @@ export interface UserDropdownProps {
     onSettingsClick?: () => void;
 }
 
-export const UserDropdown: FC<UserDropdownProps> = ({ 
-    user, 
+export const UserDropdown: FC<UserDropdownProps> = ({
+    user,
     onLogout,
-    onSettingsClick 
+    onSettingsClick,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -23,9 +23,9 @@ export const UserDropdown: FC<UserDropdownProps> = ({
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
-                dropdownRef.current && 
-                buttonRef.current && 
-                !dropdownRef.current.contains(event.target as Node) && 
+                dropdownRef.current &&
+                buttonRef.current &&
+                !dropdownRef.current.contains(event.target as Node) &&
                 !buttonRef.current.contains(event.target as Node)
             ) {
                 setIsOpen(false);

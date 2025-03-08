@@ -1,9 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/admin/_auth/_appshell/resources/')({
-  component: RouteComponent,
-})
+    component: RouteComponent,
+});
 
 function RouteComponent() {
-  return <div>Hello "/admin/_auth/_appshell/resources/"!</div>
+    return <div>Hello "/admin/_auth/_appshell/resources/"!</div>;
 }

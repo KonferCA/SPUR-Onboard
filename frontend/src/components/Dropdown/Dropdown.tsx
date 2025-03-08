@@ -33,15 +33,17 @@ const Dropdown: React.FC<DropdownProps> = ({
         if (Array.isArray(value) && value.length > 0) {
             return (
                 <span className="block truncate text-base">
-                    {value.map(v => v.label).join(', ')}
+                    {value.map((v) => v.label).join(', ')}
                 </span>
             );
         }
-        
+
         if (!Array.isArray(value) && value?.label) {
-            return <span className="block truncate text-base">{value.label}</span>;
+            return (
+                <span className="block truncate text-base">{value.label}</span>
+            );
         }
-        
+
         return (
             <span className="block truncate text-base text-gray-400">
                 {placeholder}
@@ -63,11 +65,13 @@ const Dropdown: React.FC<DropdownProps> = ({
             )}
             <Listbox value={value} onChange={onChange} multiple={multiple}>
                 <div className="relative">
-                    <Listbox.Button 
+                    <Listbox.Button
                         className={`relative w-full py-4 px-4 text-left bg-white rounded-lg border ${
                             error ? 'border-red-500' : 'border-gray-300'
                         } cursor-pointer focus:outline-none focus-visible:ring-2 ${
-                            error ? 'focus-visible:ring-red-500' : 'focus-visible:ring-blue-500'
+                            error
+                                ? 'focus-visible:ring-red-500'
+                                : 'focus-visible:ring-blue-500'
                         }`}
                     >
                         {renderSelectedValue()}
@@ -115,11 +119,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                     </Transition>
                 </div>
             </Listbox>
-            {error && (
-                <p className="mt-1 text-sm text-red-500">
-                    {error}
-                </p>
-            )}
+            {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
         </div>
     );
 };
