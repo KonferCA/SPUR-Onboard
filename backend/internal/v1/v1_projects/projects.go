@@ -286,9 +286,7 @@ func (h *Handler) handleListCompanyProjects(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(200, map[string]interface{}{
-		"projects": response,
-	})
+	return c.JSON(200, response)
 }
 
 func (h *Handler) handleListAllProjects(c echo.Context) error {

@@ -6,7 +6,6 @@ import (
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"KonferCA/SPUR/internal/v1/v1_teams"
 	"net/http"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"

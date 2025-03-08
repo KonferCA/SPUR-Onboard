@@ -67,6 +67,8 @@ func getCORSConfigByEnv() em.CORSConfig {
 	case common.STAGING_ENV:
 		return em.CORSConfig{
 			AllowOrigins: []string{
+				"http://localhost:5173",
+				"http://127.0.0.1:5173",
 				"https://spuric.com",
 				"http://spuric.com",
 				"https://konfer.ca",
@@ -81,6 +83,8 @@ func getCORSConfigByEnv() em.CORSConfig {
 	case common.PREVIEW_ENV:
 		return em.CORSConfig{
 			AllowOrigins: []string{
+				"http://localhost:5173",
+				"http://127.0.0.1:5173",
 				"https://spuric.com",
 				"http://spuric.com",
 				"https://konfer.ca",

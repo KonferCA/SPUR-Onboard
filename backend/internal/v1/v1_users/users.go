@@ -11,7 +11,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
