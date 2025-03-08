@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiPlus } from 'react-icons/fi';
+import { FiPlus, FiEdit } from 'react-icons/fi';
 import {
-    Button,
-    FileUpload,
     TextArea,
     TextInput,
     UploadableFile,
+    SocialLinks,
+    Button,
 } from '@components';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 import type { TeamMember } from '@/types';
+import type { SocialLink } from '@/types';
+import { SocialPlatform } from '@/types/auth';
 import {
     addTeamMember,
     deleteTeamMember,
     uploadTeamMemberDocument,
+    updateTeamMember,
 } from '@/services/teams';
 import { useAuth, useNotification } from '@/contexts';
 import { getUserProfile } from '@/services/user';
+import { randomId } from '@/utils/random';
 
 export interface TeamMembersProps {
     initialValue: TeamMember[];
@@ -30,10 +35,13 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
     disabled = false,
 }) => {
     const [isAdding, setIsAdding] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingMember, setEditingMember] = useState<LocalTeamMember | null>(null);
     const [newMember, setNewMember] = useState<Partial<LocalTeamMember>>({});
     const [members, setMembers] = useState<LocalTeamMember[]>([]);
     const [resumeFile, setResumeFile] = useState<UploadableFile | null>(null);
     const [foundersAgreementFile, setFoundersAgreementFile] = useState<UploadableFile | null>(null);
+    const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
 
     const { accessToken, companyId, user } = useAuth();
     const notification = useNotification();
@@ -50,10 +58,9 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         lastName: user.lastName || '',
                         title: userProfile.title || 'Account Owner',
                         detailedBiography: userProfile.bio || '',
-                        linkedin: userProfile.linkedinUrl || '',
+                        socialLinks: [],
                         resumeExternalUrl: '',
                         resumeInternalUrl: '',
-                        personalWebsite: '',
                         introduction: '',
                         commitmentType: 'Full-time',
                         industryExperience: '',
@@ -67,10 +74,14 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
 
                     const otherMembers = initialValue
                         .filter(member => !member.isAccountOwner)
-                        .map(member => ({ ...member, isLoading: false }));
+                        .map(member => ({
+                            ...member,
+                            isLoading: false
+                        }));
 
                     setMembers([accountOwner, ...otherMembers]);
-                } catch (error) {
+                } catch (e) {
+                    console.error(e);
                     notification.push({
                         message: 'Failed to fetch owner profile',
                         level: 'error',
@@ -85,10 +96,9 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         lastName: user.lastName || '',
                         title: 'Account Owner',
                         detailedBiography: '',
-                        linkedin: '',
+                        socialLinks: [],
                         resumeExternalUrl: '',
                         resumeInternalUrl: '',
-                        personalWebsite: '',
                         introduction: '',
                         commitmentType: 'Full-time',
                         industryExperience: '',
@@ -100,7 +110,14 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         created_at: Date.now(),
                     };
 
-                    setMembers([accountOwner, ...initialValue.map(member => ({ ...member, isLoading: false }))]);
+                    const otherMembers = initialValue
+                        .filter(member => !member.isAccountOwner)
+                        .map(member => ({
+                            ...member,
+                            isLoading: false
+                        }));
+
+                    setMembers([accountOwner, ...otherMembers]);
                 }
             }
         };
@@ -108,17 +125,19 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         initializeMembers();
     }, [user, accessToken, initialValue]);
 
+    // Add a cleanup effect when forms are closed
+    useEffect(() => {
+        if (!isAdding && !isEditing) {
+            // If neither form is open, make sure socialLinks are reset
+            setSocialLinks([]);
+        }
+    }, [isAdding, isEditing]);
+
     const checkAllRequired = () => {
         return (
             newMember.firstName &&
             newMember.lastName &&
             newMember.title &&
-            newMember.linkedin &&
-            (resumeFile !== null || newMember.resumeExternalUrl) &&
-            newMember.personalWebsite &&
-            newMember.commitmentType &&
-            newMember.introduction &&
-            newMember.industryExperience &&
             newMember.detailedBiography
         );
     };
@@ -138,7 +157,9 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         try {
             const res = await addTeamMember(accessToken, {
                 companyId,
-                member,
+                member: {
+                    ...member
+                },
             });
             const originalId = member.id;
 
@@ -196,32 +217,30 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
     const handleAdd = () => {
         if (checkAllRequired()) {
             const member: LocalTeamMember = {
-                id: Math.random().toString(36).substring(2, 9),
+                id: randomId(),
                 firstName: newMember.firstName!,
                 lastName: newMember.lastName!,
                 title: newMember.title!,
                 detailedBiography: newMember.detailedBiography!,
-                linkedin: newMember.linkedin!,
-                resumeExternalUrl: newMember.resumeExternalUrl || '',
-                resumeInternalUrl: newMember.resumeInternalUrl || '',
-                personalWebsite: newMember.personalWebsite!,
-                introduction: newMember.introduction!,
-                commitmentType: newMember.commitmentType!,
-                industryExperience: newMember.industryExperience!,
-                previousWork: newMember.previousWork || '',
-                founderAgreementExternalUrl:
-                    newMember.founderAgreementExternalUrl || '',
-                founderAgreementInternalUrl:
-                    newMember.founderAgreementInternalUrl || '',
+                resumeExternalUrl: '',
+                resumeInternalUrl: '',
+                introduction: newMember.detailedBiography!,
+                commitmentType: 'Full-time',
+                industryExperience: '',
+                previousWork: '',
+                founderAgreementExternalUrl: '',
+                founderAgreementInternalUrl: '',
                 isAccountOwner: false,
                 isLoading: true,
                 created_at: Date.now(),
+                socialLinks: [...socialLinks],
             };
 
             saveToDatabase(member);
             // optimistic addition
-            setMembers([...members, member]);
+            setMembers((prev) => [...prev, member]);
             setNewMember({});
+            setSocialLinks([]);
             setIsAdding(false);
         }
     };
@@ -268,307 +287,345 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         removeFromDatabase(member);
     };
 
+    const handleStartEdit = (member: LocalTeamMember) => {
+        setEditingMember(member);
+        setIsEditing(true);
+        
+        console.log('Starting edit for member with social links:', member.socialLinks);
+        
+        // Set the socialLinks array from the member's data
+        // Ensure each link has a unique ID
+        const links = (member.socialLinks || []).map(link => ({
+            ...link,
+            id: link.id || randomId()
+        }));
+        
+        console.log('Initialized social links for editing:', links);
+        
+        setSocialLinks(links);
+    };
+
+    const handleEdit = async () => {
+        if (!editingMember) return;
+        
+        console.log('Starting handleEdit with socialLinks:', socialLinks);
+        
+        // Helper function to format URLs
+        const formatUrl = (handle: string, platform: SocialPlatform): string => {
+            if (!handle) return '';
+            // if it's already a url, return it
+            if (handle.startsWith('http://') || handle.startsWith('https://')) return handle;
+            // if it starts with @, remove it
+            const cleanHandle = handle.startsWith('@') ? handle.substring(1) : handle;
+            switch (platform) {
+                case SocialPlatform.X:
+                    return `https://twitter.com/${cleanHandle}`; // TODO: change to x.com? This works for now
+                case SocialPlatform.Discord:
+                    return `https://discord.com/users/${cleanHandle}`;
+                case SocialPlatform.BlueSky:
+                    return `https://bsky.app/profile/${cleanHandle}`;
+                case SocialPlatform.Facebook:
+                    return `https://facebook.com/${cleanHandle}`;
+                case SocialPlatform.Instagram:
+                    return `https://instagram.com/${cleanHandle}`;
+                case SocialPlatform.LinkedIn:
+                    return `https://linkedin.com/in/${cleanHandle}`;
+                default:
+                    return handle;
+            }
+        };
+
+        const updatedMember: LocalTeamMember = {
+            ...editingMember,
+            firstName: newMember.firstName || editingMember.firstName,
+            lastName: newMember.lastName || editingMember.lastName,
+            title: newMember.title || editingMember.title,
+            detailedBiography: newMember.detailedBiography || editingMember.detailedBiography,
+            socialLinks: socialLinks.map(link => ({
+                ...link,
+                urlOrHandle: formatUrl(link.urlOrHandle, link.platform as SocialPlatform)
+            })),
+            isLoading: false,
+            resumeExternalUrl: editingMember.resumeExternalUrl,
+            resumeInternalUrl: editingMember.resumeInternalUrl,
+            introduction: editingMember.introduction,
+            commitmentType: editingMember.commitmentType,
+            industryExperience: editingMember.industryExperience,
+            previousWork: editingMember.previousWork,
+            founderAgreementExternalUrl: editingMember.founderAgreementExternalUrl,
+            founderAgreementInternalUrl: editingMember.founderAgreementInternalUrl,
+            isAccountOwner: editingMember.isAccountOwner,
+            created_at: editingMember.created_at,
+            updated_at: editingMember.updated_at,
+        };
+        
+        console.log('Updated member:', {
+            id: updatedMember.id,
+            socials: updatedMember.socialLinks
+        });
+
+        // Update in database
+        try {
+            const notificationId = notification.push({
+                message: 'Updating team member...',
+                level: 'info',
+                autoClose: false,
+            });
+
+            console.log('About to call updateTeamMember with member:', {
+                ...updatedMember,
+                socialLinks: updatedMember.socialLinks
+            });
+
+            await updateTeamMember(accessToken!, {
+                companyId: companyId!,
+                member: updatedMember,
+            });
+
+            setTimeout(() => {
+                notification.update(notificationId, {
+                    message: 'Team member updated',
+                    level: 'success',
+                    autoClose: true,
+                    duration: 1000,
+                });
+            }, 1000);
+
+            // Update local state
+            setMembers(prev => prev.map(m => m.id === updatedMember.id ? updatedMember : m));
+            setIsEditing(false);
+            setEditingMember(null);
+            setNewMember({});
+            setSocialLinks([]);
+        } catch (e) {
+            console.error(e);
+            notification.push({
+                message: 'Failed to update team member',
+                level: 'error',
+                autoClose: true,
+                duration: 2000,
+            });
+        }
+    };
+
     return (
         <div className="space-y-4">
             {/* Member List */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-wrap gap-6">
                 {members.map((member) => (
                     <div
                         key={member.id}
-                        className="flex items-center gap-3 bg-gray-50 rounded-lg p-3"
+                        className="relative bg-white rounded-lg shadow-sm border border-gray-200 w-32 h-32 p-3"
                     >
-                        {/* Avatar */}
-                        <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium flex-shrink-0">
-                            {[member.firstName[0], member.lastName[0]].join('')}
-                        </div>
+                        {/* Edit button */}
+                        {!member.isLoading && !disabled && !member.isAccountOwner && (
+                            <button
+                                type="button"
+                                onClick={() => handleStartEdit(member)}
+                                className="absolute top-1 right-1 p-1 text-gray-400 hover:text-gray-600"
+                            >
+                                <FiEdit size={12} />
+                            </button>
+                        )}
 
-                        {/* Info */}
-                        <div className="flex-grow min-w-0">
-                            <div className="font-medium truncate">
-                                {[member.firstName, member.lastName].join(' ')}
+                        {/* Content wrapper */}
+                        <div className="h-full flex flex-col items-center justify-between">
+                            {/* Avatar */}
+                            <div className="w-14 h-14 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-2xl font-medium">
+                                {member.firstName[0].toUpperCase()}
                             </div>
-                            <div className="text-sm text-gray-500 truncate">
-                                {member.title}
-                                {member.isAccountOwner && (
-                                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                                        Account Owner
-                                    </span>
-                                )}
-                            </div>
-                        </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                            {!member.isLoading && !disabled && !member.isAccountOwner && (
-                                <button
-                                    onClick={() => handleRemove(member)}
-                                    className="p-1 text-gray-400 hover:text-red-500"
-                                >
-                                    <FiX size={18} />
-                                </button>
-                            )}
+                            {/* Info */}
+                            <div className="w-full">
+                                <div className="font-medium text-gray-900 truncate text-center text-sm" style={{ width: '90px', margin: '0 auto' }}>
+                                    {[member.firstName, member.lastName].join(' ')}
+                                </div>
+                                <div className="text-sm text-gray-500 truncate text-center" style={{ width: '90px', margin: '0 auto' }}>
+                                    {member.title}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 ))}
+
+                {/* Member Button */}
+                {!disabled && !isAdding && (
+                    <Button
+                        variant="primary"
+                        onClick={() => {
+                            setSocialLinks([]);
+                            setNewMember({});
+                            setIsAdding(true);
+                        }}
+                        className="w-32 h-32 rounded-lg bg-[#154261] hover:bg-[#2B4A67] flex flex-col items-center justify-center space-y-2"
+                    >
+                        <span className="text-md font-medium text-white">Add new</span>
+                        <span className="text-md font-medium text-white">member</span>
+                        <FiPlus size={24} className="text-white mt-1" />
+                    </Button>
+                )}
             </div>
 
-            {/* Add Member Form */}
-            {!disabled &&
-                (isAdding ? (
-                    <div className="bg-gray-50 rounded-lg p-4 space-y-4 border-2">
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-center gap-2">
-                                <TextInput
-                                    label="First Name"
-                                    value={newMember.firstName || ''}
-                                    onChange={(e) =>
-                                        setNewMember((prev) => ({
-                                            ...prev,
-                                            firstName: e.target.value,
-                                        }))
-                                    }
-                                    required
-                                />
-                                <TextInput
-                                    label="Last Name"
-                                    value={newMember.lastName || ''}
-                                    onChange={(e) =>
-                                        setNewMember((prev) => ({
-                                            ...prev,
-                                            lastName: e.target.value,
-                                        }))
-                                    }
-                                    required
-                                />
-                            </div>
-                            <TextInput
-                                label="Position/Title"
-                                value={newMember.title || ''}
-                                onChange={(e) =>
-                                    setNewMember((prev) => ({
-                                        ...prev,
-                                        title: e.target.value,
-                                    }))
-                                }
-                                required
-                            />
-                            <TextInput
-                                label="LinkedIn Profile"
-                                value={newMember.linkedin || ''}
-                                onChange={(e) =>
-                                    setNewMember((prev) => ({
-                                        ...prev,
-                                        linkedin: e.target.value,
-                                    }))
-                                }
-                                required
-                            />
-                            <fieldset>
-                                <div className="flex justify-between items-center mb-1">
-                                    <legend className="block text-md font-normal">
-                                        Resume or CV
-                                    </legend>
-                                    <span className="text-sm text-gray-500">
-                                        Required
-                                    </span>
-                                </div>
-                                <div className="space-y-4">
-                                    <TextInput
-                                        value={
-                                            newMember.resumeExternalUrl || ''
-                                        }
-                                        onChange={(e) =>
-                                            setNewMember((prev) => ({
-                                                ...prev,
-                                                resumeExternalUrl:
-                                                    e.target.value,
-                                            }))
-                                        }
-                                        placeholder="Provide a link or upload directly"
-                                        required
-                                    />
-                                    <FileUpload
-                                        limit={1}
-                                        onFilesChange={(files) => {
-                                            if (files.length) {
-                                                setResumeFile(files[0]);
-                                            } else {
-                                                setResumeFile(null);
-                                            }
-                                        }}
-                                    />
-                                    {resumeFile && (
-                                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-sm font-medium">
-                                                    {resumeFile.name}
-                                                </span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setResumeFile(null)
-                                                }
-                                                className="text-gray-400 hover:text-gray-600"
-                                            >
-                                                <FiX />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </fieldset>
-                            <TextInput
-                                label="Personal website or portfolio URL"
-                                value={newMember.personalWebsite || ''}
-                                onChange={(e) =>
-                                    setNewMember((prev) => ({
-                                        ...prev,
-                                        personalWebsite: e.target.value,
-                                    }))
-                                }
-                                required
-                            />
-                            <TextInput
-                                label="How committed is this person (e.g., full-time, personal investment)?"
-                                value={newMember.commitmentType || ''}
-                                onChange={(e) =>
-                                    setNewMember((prev) => ({
-                                        ...prev,
-                                        commitmentType: e.target.value,
-                                    }))
-                                }
-                                required
-                            />
-                            <TextInput
-                                label="Give a brief introduction as to who this person is and what their background and expertise are."
-                                value={newMember.introduction || ''}
-                                onChange={(e) =>
-                                    setNewMember((prev) => ({
-                                        ...prev,
-                                        introduction: e.target.value,
-                                    }))
-                                }
-                                required
-                            />
-                            <TextArea
-                                label="Does this person have relevant experience in the industry?"
-                                value={newMember.industryExperience || ''}
-                                onChange={(e) =>
-                                    setNewMember((prev) => ({
-                                        ...prev,
-                                        industryExperience: e.target.value,
-                                    }))
-                                }
-                                required
-                            />
-                            <TextArea
-                                label="Give a detailed biography of this person, outlining roles, responsibilities, and key achievements."
-                                value={newMember.detailedBiography || ''}
-                                onChange={(e) =>
-                                    setNewMember((prev) => ({
-                                        ...prev,
-                                        detailedBiography: e.target.value,
-                                    }))
-                                }
-                                required
-                            />
-                            <TextInput
-                                label="Are there any examples of previous work or case studies from past ventures that this person has participated in?"
-                                value={newMember.previousWork || ''}
-                                onChange={(e) =>
-                                    setNewMember((prev) => ({
-                                        ...prev,
-                                        previousWork: e.target.value,
-                                    }))
-                                }
-                            />
-                            <fieldset>
-                                <div className="flex justify-between items-center mb-1">
-                                    <legend className="block text-md font-normal">
-                                        Is there a founder's agreement in place
-                                        that outlines roles, responsibilities,
-                                        equity split, and dispute resolution
-                                        mechanisms?
-                                    </legend>
-                                </div>
-                                <div className="space-y-4">
-                                    <TextInput
-                                        value={
-                                            newMember.founderAgreementExternalUrl ||
-                                            ''
-                                        }
-                                        onChange={(e) =>
-                                            setNewMember((prev) => ({
-                                                ...prev,
-                                                founderAgreementExternalUrl:
-                                                    e.target.value,
-                                            }))
-                                        }
-                                        placeholder="Provide a link or upload directly"
-                                        required
-                                    />
-                                    <FileUpload
-                                        limit={1}
-                                        onFilesChange={(files) => {
-                                            if (files.length) {
-                                                setFoundersAgreementFile(
-                                                    files[0]
-                                                );
-                                            } else {
-                                                setFoundersAgreementFile(null);
-                                            }
-                                        }}
-                                    />
-                                    {foundersAgreementFile && (
-                                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-sm font-medium">
-                                                    {foundersAgreementFile.name}
-                                                </span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setFoundersAgreementFile(
-                                                        null
-                                                    )
-                                                }
-                                                className="text-gray-400 hover:text-gray-600"
-                                            >
-                                                <FiX />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </fieldset>
-                        </div>
-                        <div className="flex justify-end gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    setIsAdding(false);
-                                    setNewMember({});
-                                }}
-                            >
-                                Cancel
-                            </Button>
-                            <Button type="button" size="sm" onClick={handleAdd}>
-                                Add Member
-                            </Button>
-                        </div>
+            {/* Member Modal */}
+            <ConfirmationModal
+                isOpen={isAdding}
+                onClose={() => {
+                    setIsAdding(false);
+                    setNewMember({});
+                    setResumeFile(null);
+                    setFoundersAgreementFile(null);
+                    setSocialLinks([]);
+                }}
+                title="Add member"
+                primaryAction={handleAdd}
+                primaryActionText="Save Changes"
+                primaryButtonClassName="bg-[#F15A24] hover:bg-[#D14A14]"
+                secondaryActionText="Cancel"
+            >
+                <div className="space-y-6">
+                    <div className="flex items-start gap-4">
+                        <TextInput
+                            label="First name"
+                            value={newMember.firstName || ''}
+                            onChange={(e) =>
+                                setNewMember((prev) => ({
+                                    ...prev,
+                                    firstName: e.target.value,
+                                }))
+                            }
+                            required
+                        />
+                        <TextInput
+                            label="Last name"
+                            value={newMember.lastName || ''}
+                            onChange={(e) =>
+                                setNewMember((prev) => ({
+                                    ...prev,
+                                    lastName: e.target.value,
+                                }))
+                            }
+                            required
+                        />
                     </div>
-                ) : (
-                    <button
-                        type="button"
-                        onClick={() => setIsAdding(true)}
-                        className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-600 flex items-center justify-center gap-2"
+                    
+                    <TextInput
+                        label="Position / Title"
+                        value={newMember.title || ''}
+                        onChange={(e) =>
+                            setNewMember((prev) => ({
+                                ...prev,
+                                title: e.target.value,
+                            }))
+                        }
+                        required
+                    />
+
+                    <TextArea
+                        label="Brief Bio & Expertise"
+                        value={newMember.detailedBiography || ''}
+                        onChange={(e) =>
+                            setNewMember((prev) => ({
+                                ...prev,
+                                detailedBiography: e.target.value,
+                            }))
+                        }
+                        required
+                    />
+
+                    <SocialLinks
+                        value={socialLinks}
+                        onChange={setSocialLinks}
+                    />
+                </div>
+            </ConfirmationModal>
+
+            {/* Edit Member Modal */}
+            <ConfirmationModal
+                isOpen={isEditing}
+                onClose={() => {
+                    setIsEditing(false);
+                    setEditingMember(null);
+                    setNewMember({});
+                    setSocialLinks([]);
+                }}
+                title={`Editing ${editingMember ? [editingMember.firstName, editingMember.lastName].join(' ') : ''}`}
+                primaryAction={handleEdit}
+                primaryActionText="Save Changes"
+                primaryButtonClassName="bg-[#F15A24] hover:bg-[#D14A14]"
+                secondaryActionText="Cancel"
+                additionalButtons={
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            if (editingMember) {
+                                handleRemove(editingMember);
+                                setIsEditing(false);
+                                setEditingMember(null);
+                            }
+                        }}
+                        className="text-red-600 border-red-300 hover:bg-red-50 focus:ring-red-500 flex items-center justify-center"
                     >
-                        <FiPlus />
-                        Add member
-                    </button>
-                ))}
+                        Remove member
+                    </Button>
+                }
+            >
+                <div className="space-y-6">
+                    <div className="flex items-start gap-4">
+                        <TextInput
+                            label="First name"
+                            value={newMember.firstName || (editingMember?.firstName || '')}
+                            onChange={(e) =>
+                                setNewMember((prev) => ({
+                                    ...prev,
+                                    firstName: e.target.value,
+                                }))
+                            }
+                            required
+                        />
+                        <TextInput
+                            label="Last name"
+                            value={newMember.lastName || (editingMember?.lastName || '')}
+                            onChange={(e) =>
+                                setNewMember((prev) => ({
+                                    ...prev,
+                                    lastName: e.target.value,
+                                }))
+                            }
+                            required
+                        />
+                    </div>
+                    
+                    <TextInput
+                        label="Position / Title"
+                        value={newMember.title || (editingMember?.title || '')}
+                        onChange={(e) =>
+                            setNewMember((prev) => ({
+                                ...prev,
+                                title: e.target.value,
+                            }))
+                        }
+                        required
+                    />
+
+                    <TextArea
+                        label="Brief Bio & Expertise"
+                        value={newMember.detailedBiography || (editingMember?.detailedBiography || '')}
+                        onChange={(e) =>
+                            setNewMember((prev) => ({
+                                ...prev,
+                                detailedBiography: e.target.value,
+                            }))
+                        }
+                        required
+                    />
+
+                    <SocialLinks
+                        value={socialLinks}
+                        onChange={setSocialLinks}
+                    />
+                </div>
+            </ConfirmationModal>
         </div>
     );
 };

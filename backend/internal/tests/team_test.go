@@ -9,13 +9,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/server"
+	v1 "KonferCA/SPUR/internal/v1"
+	"KonferCA/SPUR/internal/v1/v1_common"
+	"KonferCA/SPUR/internal/v1/v1_teams"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
-	"KonferCA/SPUR/internal/permissions"
-	"KonferCA/SPUR/internal/server"
-	"KonferCA/SPUR/internal/v1"
-	"KonferCA/SPUR/internal/v1/v1_teams"
 )
 
 // Helper function to setup test server
@@ -106,27 +109,27 @@ func TestTeamEndpoints(t *testing.T) {
 	invalidToken := "invalid.token.here"
 
 	t.Run("Authorization Tests", func(t *testing.T) {
-		// Create team members for testing
+		// Create test members
 		memberID := uuid.New().String()
 		otherMemberID := uuid.New().String()
 
 		// Create member in first company
 		_, err := s.GetDB().Exec(ctx, `
-			INSERT INTO team_members (id, company_id, first_name, last_name, title, bio, linkedin_url)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
-		`, memberID, companyID, "John", "Doe", "Developer", "Test bio", "https://linkedin.com/in/johndoe")
+			INSERT INTO team_members (id, company_id, first_name, last_name, title, linkedin_url, commitment_type, introduction, industry_experience, detailed_biography)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		`, memberID, companyID, "John", "Doe", "Developer", "https://linkedin.com/in/johndoe", "Full-time", "Test introduction", "Tech industry", "Test bio")
 		require.NoError(t, err)
 
 		// Create member in other company
 		_, err = s.GetDB().Exec(ctx, `
-			INSERT INTO team_members (id, company_id, first_name, last_name, title, bio, linkedin_url)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
-		`, otherMemberID, otherCompanyID, "Jane", "Smith", "Designer", "Other bio", "https://linkedin.com/in/janesmith")
+			INSERT INTO team_members (id, company_id, first_name, last_name, title, linkedin_url, commitment_type, introduction, industry_experience, detailed_biography)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		`, otherMemberID, otherCompanyID, "Jane", "Smith", "Designer", "https://linkedin.com/in/janesmith", "Part-time", "Other introduction", "Design industry", "Other bio")
 		require.NoError(t, err)
 
 		// Test cases for authorization
 		testCases := []struct {
-			name       string
+			name      string
 			token     string
 			companyID string
 			memberID  string
@@ -149,7 +152,7 @@ func TestTeamEndpoints(t *testing.T) {
 						Title: "Updated Title",
 					}
 					jsonBody, _ := json.Marshal(updateReq)
-					req = httptest.NewRequest(tc.method, 
+					req = httptest.NewRequest(tc.method,
 						fmt.Sprintf("/api/v1/companies/%s/team/%s", tc.companyID, tc.memberID),
 						bytes.NewBuffer(jsonBody))
 					req.Header.Set(echo.HeaderContentType, "application/json")
@@ -169,16 +172,24 @@ func TestTeamEndpoints(t *testing.T) {
 
 	t.Run("Add Team Member", func(t *testing.T) {
 		reqBody := v1_teams.AddTeamMemberRequest{
-			FirstName:   "John",
-			LastName:    "Doe",
-			Title:      "CTO",
-			Bio:        "Experienced tech leader",
-			LinkedinUrl: "https://linkedin.com/in/johndoe",
+			FirstName: "John",
+			LastName:  "Doe",
+			Title:     "CTO",
+			SocialLinks: []v1_common.SocialLink{
+				{
+					Platform:    db.SocialPlatformEnumLinkedin,
+					UrlOrHandle: "https://linkedin.com/in/johndoe",
+				},
+			},
+			LinkedinUrl:       "https://linkedin.com/in/johndoe",
+			CommitmentType:    "Full-time",
+			Introduction:      "Experienced CTO with 10+ years in software development",
+			DetailedBiography: "Detailed bio with experience and education information",
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 
-		req := httptest.NewRequest(http.MethodPost, 
-			fmt.Sprintf("/api/v1/companies/%s/team", companyID), 
+		req := httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/companies/%s/team", companyID),
 			bytes.NewBuffer(jsonBody))
 		req.Header.Set(echo.HeaderAuthorization, "Bearer "+ownerToken)
 		req.Header.Set(echo.HeaderContentType, "application/json")
@@ -193,15 +204,14 @@ func TestTeamEndpoints(t *testing.T) {
 		require.Equal(t, reqBody.FirstName, response.FirstName)
 		require.Equal(t, reqBody.LastName, response.LastName)
 		require.Equal(t, reqBody.Title, response.Title)
-		require.Equal(t, reqBody.Bio, response.Bio)
-		require.Equal(t, reqBody.LinkedinUrl, response.LinkedinUrl)
+		require.NotEmpty(t, response.SocialLinks)
 		require.False(t, response.IsAccountOwner)
 		require.NotEmpty(t, response.ID)
 		require.NotEmpty(t, response.CreatedAt)
 	})
 
 	t.Run("Get Team Members", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, 
+		req := httptest.NewRequest(http.MethodGet,
 			fmt.Sprintf("/api/v1/companies/%s/team", companyID), nil)
 		req.Header.Set(echo.HeaderAuthorization, "Bearer "+ownerToken)
 		rec := httptest.NewRecorder()
@@ -217,7 +227,7 @@ func TestTeamEndpoints(t *testing.T) {
 
 	t.Run("Update Team Member", func(t *testing.T) {
 		// First get the team member ID
-		req := httptest.NewRequest(http.MethodGet, 
+		req := httptest.NewRequest(http.MethodGet,
 			fmt.Sprintf("/api/v1/companies/%s/team", companyID), nil)
 		req.Header.Set(echo.HeaderAuthorization, "Bearer "+ownerToken)
 		rec := httptest.NewRecorder()
@@ -231,12 +241,17 @@ func TestTeamEndpoints(t *testing.T) {
 		memberID := listResponse.TeamMembers[0].ID
 		updateReq := v1_teams.UpdateTeamMemberRequest{
 			Title: "Updated Title",
-			Bio:   "Updated bio",
+			SocialLinks: []v1_common.SocialLink{
+				{
+					Platform:    db.SocialPlatformEnumX,
+					UrlOrHandle: "https://x.com/johndoe",
+				},
+			},
 		}
 		jsonBody, _ := json.Marshal(updateReq)
 
-		req = httptest.NewRequest(http.MethodPut, 
-			fmt.Sprintf("/api/v1/companies/%s/team/%s", companyID, memberID), 
+		req = httptest.NewRequest(http.MethodPut,
+			fmt.Sprintf("/api/v1/companies/%s/team/%s", companyID, memberID),
 			bytes.NewBuffer(jsonBody))
 		req.Header.Set(echo.HeaderAuthorization, "Bearer "+ownerToken)
 		req.Header.Set(echo.HeaderContentType, "application/json")
@@ -249,13 +264,15 @@ func TestTeamEndpoints(t *testing.T) {
 		err = json.Unmarshal(rec.Body.Bytes(), &response)
 		require.NoError(t, err)
 		require.Equal(t, updateReq.Title, response.Title)
-		require.Equal(t, updateReq.Bio, response.Bio)
+		require.NotEmpty(t, response.SocialLinks)
+		require.Equal(t, updateReq.SocialLinks[0].Platform, response.SocialLinks[0].Platform)
+		require.Equal(t, updateReq.SocialLinks[0].UrlOrHandle, response.SocialLinks[0].UrlOrHandle)
 		require.NotEmpty(t, response.UpdatedAt)
 	})
 
 	t.Run("Delete Team Member", func(t *testing.T) {
 		// First get the team member ID
-		req := httptest.NewRequest(http.MethodGet, 
+		req := httptest.NewRequest(http.MethodGet,
 			fmt.Sprintf("/api/v1/companies/%s/team", companyID), nil)
 		req.Header.Set(echo.HeaderAuthorization, "Bearer "+ownerToken)
 		rec := httptest.NewRecorder()
@@ -268,7 +285,7 @@ func TestTeamEndpoints(t *testing.T) {
 
 		memberID := listResponse.TeamMembers[0].ID
 
-		req = httptest.NewRequest(http.MethodDelete, 
+		req = httptest.NewRequest(http.MethodDelete,
 			fmt.Sprintf("/api/v1/companies/%s/team/%s", companyID, memberID), nil)
 		req.Header.Set(echo.HeaderAuthorization, "Bearer "+ownerToken)
 		rec = httptest.NewRecorder()
@@ -293,17 +310,17 @@ func TestTeamEndpoints(t *testing.T) {
 		// Create a team member with user account
 		memberID := uuid.New().String()
 		_, err = s.GetDB().Exec(ctx, `
-			INSERT INTO team_members (id, company_id, first_name, last_name, title, bio, linkedin_url)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
-		`, memberID, companyID, "John", "Doe", "Developer", "Test bio", "https://linkedin.com/in/johndoe")
+			INSERT INTO team_members (id, company_id, first_name, last_name, title, linkedin_url, commitment_type, introduction, industry_experience, detailed_biography)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		`, memberID, companyID, "John", "Doe", "Developer", "https://linkedin.com/in/johndoe", "Full-time", "Test introduction", "Tech industry", "Test bio")
 		require.NoError(t, err)
 
 		testCases := []struct {
-			name       string
-			token      string
-			method     string
-			endpoint   string
-			wantCode   int
+			name     string
+			token    string
+			method   string
+			endpoint string
+			wantCode int
 		}{
 			{"Member can view team list", memberToken, http.MethodGet, fmt.Sprintf("/api/v1/companies/%s/team", companyID), http.StatusOK},
 			{"Member can view specific member", memberToken, http.MethodGet, fmt.Sprintf("/api/v1/companies/%s/team/%s", companyID, memberID), http.StatusOK},
@@ -327,11 +344,11 @@ func TestTeamEndpoints(t *testing.T) {
 	t.Run("Error Handling Tests", func(t *testing.T) {
 		nonExistentID := uuid.New().String()
 		testCases := []struct {
-			name       string
-			endpoint   string
-			method     string
-			body       interface{}
-			wantCode   int
+			name     string
+			endpoint string
+			method   string
+			body     interface{}
+			wantCode int
 		}{
 			{"Get non-existent member", fmt.Sprintf("/api/v1/companies/%s/team/%s", companyID, nonExistentID), http.MethodGet, nil, http.StatusNotFound},
 			{"Update non-existent member", fmt.Sprintf("/api/v1/companies/%s/team/%s", companyID, nonExistentID), http.MethodPut, v1_teams.UpdateTeamMemberRequest{Title: "New"}, http.StatusNotFound},
