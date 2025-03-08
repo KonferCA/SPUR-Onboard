@@ -50,10 +50,9 @@ export interface TeamMember {
     lastName: string;
     title: string;
     detailedBiography: string;
-    linkedin: string;
+    socialLinks: SocialLink[];
     resumeExternalUrl: string;
     resumeInternalUrl: string;
-    personalWebsite: string;
     commitmentType: string;
     introduction: string;
     industryExperience: string;
@@ -61,6 +60,7 @@ export interface TeamMember {
     founderAgreementExternalUrl?: string;
     founderAgreementInternalUrl?: string;
     isAccountOwner: boolean;
+    linkedinUrl?: string;
     created_at: number;
     updated_at?: number;
 }

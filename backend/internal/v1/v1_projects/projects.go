@@ -1,5 +1,11 @@
 package v1_projects
 
+/*
+ * package v1_projects implements the project management endpoints for the spur api.
+ * this file contains core project operations including creation, retrieval,
+ * updating, submission, and status management.
+ */
+
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/permissions"
@@ -15,11 +21,15 @@ import (
 )
 
 /*
- * Package v1_projects implements the project management endpoints for the SPUR API.
- * It handles project creation, retrieval, document management, and submission workflows.
+ * getUserFromContext extracts the authenticated user from the echo context.
+ *
+ * parameters:
+ * - c: echo context containing the authenticated user
+ *
+ * returns:
+ * - user: the authenticated user object
+ * - error: if user not found or invalid type
  */
-
-// Helper function to get validated user from context
 func getUserFromContext(c echo.Context) (*db.User, error) {
 	userVal := c.Get("user")
 	if userVal == nil {
@@ -34,6 +44,20 @@ func getUserFromContext(c echo.Context) (*db.User, error) {
 	return user, nil
 }
 
+/*
+ * handleCreateProject creates a new project for a company.
+ *
+ * processing:
+ * - verifies user has permission to create projects
+ * - gets the company associated with the user
+ * - creates a new project with draft status
+ *
+ * response:
+ * - returns the created project details
+ *
+ * security:
+ * - requires permission: permissions.PermSubmitProject
+ */
 func (h *Handler) handleCreateProject(c echo.Context) error {
 	user, err := getUserFromContext(c)
 	if err != nil {
@@ -89,11 +113,17 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 /*
  * handleGetProjects retrieves all projects for a company.
  *
- * Security:
- * - Requires authenticated user
- * - Only returns projects for user's company
+ * processing:
+ * - authenticates the user
+ * - determines user permissions and filters projects accordingly
+ * - retrieves projects based on user role (admin vs regular user)
  *
- * Returns array of ProjectResponse with basic project details
+ * response:
+ * - returns array of projects with basic details
+ *
+ * security:
+ * - requires authenticated user
+ * - filters results based on user permissions
  */
 func (h *Handler) handleGetProjects(c echo.Context) error {
 	user, err := getUserFromContext(c)
@@ -135,11 +165,23 @@ func (h *Handler) handleGetProjects(c echo.Context) error {
 }
 
 /*
- * handleGetProject retrieves a single project by ID.
+ * handleGetProject retrieves detailed information for a single project.
  *
- * Security:
- * - Verifies project belongs to user's company
- * - Returns 404 if project not found or unauthorized
+ * input:
+ * - project id (from url parameter)
+ *
+ * processing:
+ * - verifies user has permission to access the project
+ * - retrieves project details including metadata and associated entities
+ * - formats data for client consumption
+ *
+ * response:
+ * - returns comprehensive project details
+ * - includes status, title, description, timestamps, and related items
+ *
+ * security:
+ * - filters based on user permissions (admin vs company owner)
+ * - ensures user can only access authorized projects
  */
 func (h *Handler) handleGetProject(c echo.Context) error {
 	user, err := getUserFromContext(c)
@@ -244,9 +286,7 @@ func (h *Handler) handleListCompanyProjects(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(200, map[string]interface{}{
-		"projects": response,
-	})
+	return c.JSON(200, response)
 }
 
 func (h *Handler) handleListAllProjects(c echo.Context) error {
@@ -348,12 +388,18 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 	for i, question := range questions {
 		// First two questions are the company name and date founded which are never filled
 		// by the user since they can't change through project form.
+		// only override if no answer exists already
 		switch i {
 		case 0:
-			question.Answer = company.Name
+			if question.Answer == "" {
+				question.Answer = company.Name
+			}
 		case 1:
-			question.Answer = time.Unix(company.DateFounded, 0).Format("2006-01-02")
+			if question.Answer == "" {
+				question.Answer = v1_common.FormatUnixTimeCustom(company.DateFounded, v1_common.DateOnlyFormat)
+			}
 		}
+
 		// Check if required question is answered
 		if question.Required {
 			if question.ConditionType.Valid {
@@ -481,6 +527,25 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 	})
 }
 
+/*
+ * handleCreateAnswer creates a new answer for a project question.
+ *
+ * input:
+ * - project id (from url parameter)
+ * - question id and content in request body
+ *
+ * processing:
+ * - verifies project ownership
+ * - validates answer content against question rules
+ * - creates the answer in the database
+ *
+ * validation:
+ * - validates answer content against question rules
+ * - returns validation errors if content invalid
+ *
+ * security:
+ * - verifies project belongs to user's company
+ */
 func (h *Handler) handleCreateAnswer(c echo.Context) error {
 	var req CreateAnswerRequest
 

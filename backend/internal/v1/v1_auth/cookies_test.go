@@ -20,7 +20,7 @@ func TestGetRefreshTokenCookieConfig(t *testing.T) {
 	// 1 is added to account for the time taken to reach this point
 	assert.True(t, time.Now().UTC().Add(24*7*time.Hour+1).After(config.Expires))
 	assert.Equal(t, COOKIE_REFRESH_TOKEN, config.Name)
-	assert.Equal(t, "/api/v1/auth/verify", config.Path)
+	assert.Equal(t, "/api/v1/", config.Path)
 	assert.Equal(t, "localhost", config.Domain)
 	assert.True(t, config.Secure)
 	assert.True(t, config.HttpOnly)
@@ -58,7 +58,7 @@ func TestSetRefreshTokenCookie(t *testing.T) {
 	assert.True(t, time.Now().UTC().Add(24*7*time.Hour+1).After(tokenCookie.Expires))
 	assert.Equal(t, COOKIE_REFRESH_TOKEN, tokenCookie.Name)
 	assert.Equal(t, "some value", tokenCookie.Value)
-	assert.Equal(t, "/api/v1/auth/verify", tokenCookie.Path)
+	assert.Equal(t, "/api/v1/", tokenCookie.Path)
 	assert.Equal(t, "localhost", tokenCookie.Domain)
 	assert.True(t, tokenCookie.Secure)
 	assert.True(t, tokenCookie.HttpOnly)
