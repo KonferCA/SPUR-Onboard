@@ -29,7 +29,7 @@ import { useCallback, useRef, useEffect } from 'react';
  */
 export function useDebounceFn<T extends (...args: any[]) => any>(
     callback: T,
-    delay: number = 500,
+    delay = 500,
     deps: any[] = []
 ): T {
     // use ref to store the timeout ID so it persists across renders

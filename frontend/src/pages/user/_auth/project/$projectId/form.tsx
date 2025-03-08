@@ -1,18 +1,18 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { isValid as isValidDate } from 'date-fns';
-import { Button, DropdownOption, UploadableFile } from '@components';
+import { Button, type DropdownOption, type UploadableFile } from '@components';
 import { IoMdArrowRoundBack } from 'react-icons/io';
 import {
     getProjectFormQuestions,
-    ProjectDraft,
+    type ProjectDraft,
     saveProjectDraft,
     submitProject,
 } from '@/services/project';
 import {
-    GroupedProjectQuestions,
+    type GroupedProjectQuestions,
     groupProjectQuestions,
-    Question,
+    type Question,
 } from '@/config/forms';
 import { SectionedLayout } from '@/templates';
 import { cva } from 'class-variance-authority';
@@ -25,7 +25,7 @@ import { useDebounceFn } from '@/hooks';
 import { useAuth, useNotification } from '@/contexts';
 // import { getSampleAnswer } from '@/utils/sampleData';
 import { useNavigate } from '@tanstack/react-router';
-import { ValidationError, ProjectError } from '@/components/ProjectError';
+import { type ValidationError, ProjectError } from '@/components/ProjectError';
 import { RecommendedFields } from '@/components/RecommendedFields';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
@@ -301,7 +301,7 @@ function ProjectFormPage() {
                                             return field;
                                         }
 
-                                        let newValue = value;
+                                        const newValue = value;
 
                                         switch (field.type) {
                                             case 'select':

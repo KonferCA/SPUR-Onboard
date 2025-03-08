@@ -1,4 +1,4 @@
-import { TeamMember } from '@/types';
+import type { TeamMember } from '@/types';
 import { getApiUrl, HttpStatusCode } from '@/utils';
 import { snakeToCamel } from '@/utils/object';
 import { ApiError } from './errors';

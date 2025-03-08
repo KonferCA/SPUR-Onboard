@@ -1,8 +1,8 @@
-import { ExtendedProjectResponse } from '@/services/project';
+import type { ExtendedProjectResponse } from '@/services/project';
 import { formatUnixTimestamp } from '@/utils/date';
 import { Badge, Button, Card } from '@components';
-import { ReactNode, useNavigate } from '@tanstack/react-router';
-import { FC, useState, useEffect } from 'react';
+import { type ReactNode, useNavigate } from '@tanstack/react-router';
+import { type FC, useState, useEffect } from 'react';
 import { ProjectStatusEnum, updateProjectStatus } from '@/services/projects';
 import { WithdrawProjectModal } from '../WithdrawProjectModal/WithdrawProjectModal';
 import { useAuth } from '@/contexts/AuthContext';

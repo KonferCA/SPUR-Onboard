@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 type SectionWidth = 'full' | 'wide' | 'normal' | 'narrow';
 type SectionPadding = 'none' | 'small' | 'normal' | 'large';

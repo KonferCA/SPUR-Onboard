@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, FC } from 'react';
+import type React from 'react';
+import { useState, useEffect, useRef, type FC } from 'react'
 import { Link } from '@tanstack/react-router';
 import { ProfilePicture } from '@/components/ProfilePicture/ProfilePicture';
 import { IoSettingsOutline, IoLogOutOutline } from 'react-icons/io5';

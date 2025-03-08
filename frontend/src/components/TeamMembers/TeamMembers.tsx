@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import type React from 'react';
+import { useState, useEffect } from 'react';
 import { FiX, FiPlus } from 'react-icons/fi';
 import {
     Button,
     FileUpload,
     TextArea,
     TextInput,
-    UploadableFile,
+    type UploadableFile,
 } from '@components';
 import type { TeamMember } from '@/types';
 import {

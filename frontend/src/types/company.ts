@@ -1,4 +1,4 @@
-import { DropdownOption } from '@/components/Dropdown';
+import type { DropdownOption } from '@/components/Dropdown';
 
 export interface CompanyFormProps {
     onSubmit: (data: CompanyInformation) => Promise<void>;

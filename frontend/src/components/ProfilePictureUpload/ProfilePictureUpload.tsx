@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts';
 import { useNotification } from '@/contexts/NotificationContext';
 import { Button } from '@components';
-import { FC, useRef, useState } from 'react';
+import { type FC, useRef, useState } from 'react';
 import { ProfilePicture } from '../ProfilePicture/ProfilePicture';
 
 interface ProfilePictureUploadProps {

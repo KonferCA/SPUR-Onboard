@@ -1,6 +1,6 @@
 import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
-import { CompanyInformation } from '@/types/company';
+import type { CompanyInformation } from '@/types/company';
 
 export interface CompanyResponse {
     id: string;

@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 type GridColumns = 1 | 2 | 3 | 4 | 6 | 12;
 type GridGap = 'none' | 'small' | 'normal' | 'large';

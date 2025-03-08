@@ -1,6 +1,6 @@
-import { FC } from 'react';
-import { AnchorLinkItem, AnchorLinks } from '@/components';
-import { ReactNode } from '@tanstack/react-router';
+import type { FC } from 'react';
+import { type AnchorLinkItem, AnchorLinks } from '@/components';
+import type { ReactNode } from '@tanstack/react-router';
 import { twMerge } from 'tailwind-merge';
 
 export interface SectionedLayoutProps {

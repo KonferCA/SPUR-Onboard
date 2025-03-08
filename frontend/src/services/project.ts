@@ -1,7 +1,7 @@
 import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
 import { snakeToCamel } from '@/utils/object';
-import { TeamMember } from '@/types';
+import type { TeamMember } from '@/types';
 
 // interface CompanyResponse {
 //     ID: string;

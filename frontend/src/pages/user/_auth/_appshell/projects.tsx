@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { ProjectsTable } from '@/components/tables/ProjectsTable';
 import { getProjects } from '@/services/project';
 import type { Project } from '@/services/project';

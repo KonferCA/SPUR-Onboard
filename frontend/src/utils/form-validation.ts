@@ -1,5 +1,5 @@
-import { FormFieldType } from '@/types';
-import { SocialPlatform, UserSocial } from '@/types/auth';
+import type { FormFieldType } from '@/types';
+import { SocialPlatform, type UserSocial } from '@/types/auth';
 import zod from 'zod';
 
 const LINKEDIN_PROFILE_URL_REGEX =
@@ -40,14 +40,14 @@ export function createZodSchema(
                 return zod
                     .string()
                     .min(
-                        parseInt(param || '0'),
+                        Number.parseInt(param || '0'),
                         `Must be at least ${param} characters`
                     );
             case 'max':
                 return zod
                     .string()
                     .max(
-                        parseInt(param || '0'),
+                        Number.parseInt(param || '0'),
                         `Must be at most ${param} characters`
                     );
             case 'regex':

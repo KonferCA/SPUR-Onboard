@@ -1,6 +1,6 @@
 import type { UploadableFile } from '@/components';
-import { ZodTypeAny } from 'zod';
-import { UserSocial } from './auth';
+import type { ZodTypeAny } from 'zod';
+import type { UserSocial } from './auth';
 
 export type FormFieldType =
     | 'textinput'

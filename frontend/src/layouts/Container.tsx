@@ -1,4 +1,4 @@
-import { LayoutContainerProps } from './types';
+import type { LayoutContainerProps } from './types';
 import { widths } from './utils';
 
 export const Container: React.FC<LayoutContainerProps> = ({

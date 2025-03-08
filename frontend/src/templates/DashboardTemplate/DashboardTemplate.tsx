@@ -1,4 +1,5 @@
-import React, { ReactNode, useState, useEffect } from 'react';
+import type React from 'react';
+import { type ReactNode, useState, useEffect } from 'react'
 import { Link, useLocation } from '@tanstack/react-router';
 import { PageLayout } from '@layouts';
 import { LogoSVG } from '@assets';

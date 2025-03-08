@@ -1,9 +1,9 @@
-import { Button, DropdownOption } from '@/components';
+import { Button, type DropdownOption } from '@/components';
 import { ReviewQuestions } from '@/components/ReviewQuestions/ReviewQuestions';
 import {
-    GroupedProjectQuestions,
+    type GroupedProjectQuestions,
     groupProjectQuestions,
-    Question,
+    type Question,
 } from '@/config/forms';
 import { useAuth } from '@/contexts';
 import { getProjectComments } from '@/services/comment';

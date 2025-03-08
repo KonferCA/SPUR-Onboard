@@ -1,10 +1,10 @@
-import { createUploadableFile, UploadableFile } from '@/components';
-import {
+import { createUploadableFile, type UploadableFile } from '@/components';
+import type {
     ConditionType,
     ProjectQuestion,
     ProjectQuestionsData,
 } from '@/services/project';
-import { FormField, FormFieldType } from '@/types';
+import type { FormField, FormFieldType } from '@/types';
 import { createZodSchema } from '@/utils/form-validation';
 
 export interface GroupedProjectQuestions {

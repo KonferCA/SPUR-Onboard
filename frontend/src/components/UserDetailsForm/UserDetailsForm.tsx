@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button, TextInput, TextArea, SocialLinks } from '@/components';
 import type { UserDetailsFormProps, UserDetailsData } from '@/types/auth';
 import { validateSocialLink } from '@/utils/form-validation';
-import { SocialLink } from '@/types';
+import type { SocialLink } from '@/types';
 
 export function UserDetailsForm({
     onSubmit,

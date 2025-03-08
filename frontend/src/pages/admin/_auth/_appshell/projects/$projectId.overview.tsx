@@ -9,8 +9,8 @@ import {
     FiLinkedin,
 } from 'react-icons/fi';
 import { useEffect, useState } from 'react';
-import { CompanyResponse, getCompanyByProjectId } from '@/services/company';
-import { TeamMember } from '@/types';
+import { type CompanyResponse, getCompanyByProjectId } from '@/services/company';
+import type { TeamMember } from '@/types';
 import { getTeamMembers } from '@/services/teams';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -58,18 +58,18 @@ function FundingModal({
     // SPURCOIN conversion rate (we need to fetch this once the coin, uhh, exists.)
     const SPURCOIN_TO_CAD = 1.5;
     const estimatedSPUR = amount
-        ? (parseFloat(amount) / SPURCOIN_TO_CAD).toFixed(2)
+        ? (Number.parseFloat(amount) / SPURCOIN_TO_CAD).toFixed(2)
         : '0';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!amount || isNaN(parseFloat(amount))) {
+        if (!amount || isNaN(Number.parseFloat(amount))) {
             setError('Please enter a valid amount');
             return;
         }
         try {
             // Convert to smallest SPURCOIN unit
-            const spurAmount = parseFloat(estimatedSPUR);
+            const spurAmount = Number.parseFloat(estimatedSPUR);
             // 9 decimals for SPURCOIN
             const smallestUnit = Math.floor(
                 spurAmount * 1_000_000_000

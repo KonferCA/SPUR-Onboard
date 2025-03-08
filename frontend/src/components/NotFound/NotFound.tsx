@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { FC } from 'react';
+import type { FC } from 'react';
 import { NotFoundBgSVG } from '@assets';
 
 export const NotFound: FC = () => {

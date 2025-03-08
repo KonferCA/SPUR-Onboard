@@ -1,5 +1,5 @@
 import {
-    ProjectDocument,
+    type ProjectDocument,
     uploadDocument,
     removeDocument,
 } from '@/services/project';
@@ -61,7 +61,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
     accessToken,
     accept = '.pdf,.png,.jpeg,.jpg',
     enableAutosave = false,
-    limit = Infinity,
+    limit = Number.POSITIVE_INFINITY,
 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [uploadedFiles, setUploadedFiles] =

@@ -6,9 +6,9 @@ import {
     TeamMembers,
     DateInput,
 } from '@/components';
-import { Question } from '@/config/forms';
-import { FormField } from '@/types';
-import { FC } from 'react';
+import type { Question } from '@/config/forms';
+import type { FormField } from '@/types';
+import type { FC } from 'react';
 import { cva } from 'class-variance-authority';
 
 const legendStyles = cva('block text-md font-normal', {

@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import type { FC } from 'react';
 import type { ComponentProps } from '@t';
 import { scrollTo, scrollToWithOffset } from '@utils';
 

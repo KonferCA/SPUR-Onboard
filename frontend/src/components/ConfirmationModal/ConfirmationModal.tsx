@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { IoMdClose } from 'react-icons/io';

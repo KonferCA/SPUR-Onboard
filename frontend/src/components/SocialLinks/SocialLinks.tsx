@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import type { SocialLink } from '@/types';
 import { SocialPlatform } from '@/types/auth';
 import { SocialIconButton, TextInput, SocialCard } from '@/components';

@@ -1,5 +1,5 @@
-import { FC } from 'react';
-import { ProjectDocument } from '@/services/project';
+import type { FC } from 'react';
+import type { ProjectDocument } from '@/services/project';
 import { FaFile } from 'react-icons/fa';
 
 export interface FileDownloadProps {
@@ -15,7 +15,7 @@ export const FileDownload: FC<FileDownloadProps> = ({ docs }) => {
                     href={d.url}
                     download
                     target="_blank"
-                    className="px-6 py-4 rounded-lg border border-gray-300 bg-gray-100"
+                    className="px-6 py-4 rounded-lg border border-gray-300 bg-gray-100" rel="noreferrer"
                 >
                     <div className="flex items-center justify-center gap-2">
                         <FaFile />

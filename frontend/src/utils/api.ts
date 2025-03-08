@@ -16,7 +16,7 @@ export enum HttpStatusCode {
  * The path can be optional.
  * The url returned is for APIs.
  */
-export function getApiUrl(path: string = '') {
+export function getApiUrl(path = '') {
     // remove leading / if any
     if (path.length > 0 && path[0] === '/') path = path.slice(1);
     const prefix = import.meta.env.VITE_API_URL;

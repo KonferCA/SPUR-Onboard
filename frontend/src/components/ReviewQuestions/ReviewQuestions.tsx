@@ -1,14 +1,14 @@
 import {
     CommentBubble,
-    DropdownOption,
+    type DropdownOption,
     FileDownload,
     TeamMembers,
 } from '@/components';
 import { BiSolidCommentAdd } from 'react-icons/bi';
-import { Question } from '@/config/forms';
-import { Comment } from '@/services/comment';
-import { FormField } from '@/types';
-import { FC, useState } from 'react';
+import type { Question } from '@/config/forms';
+import type { Comment } from '@/services/comment';
+import type { FormField } from '@/types';
+import { type FC, useState } from 'react';
 import { CommentCreate } from '../CommentCreate';
 
 interface ReviewQuestionsProps {

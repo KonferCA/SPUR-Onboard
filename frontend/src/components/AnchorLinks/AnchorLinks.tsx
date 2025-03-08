@@ -1,4 +1,5 @@
-import React, { FC, ReactNode, useEffect, useState } from 'react';
+import type React from 'react';
+import { type FC, type ReactNode, useEffect, useState } from 'react'
 import { ScrollLink } from '@components';
 import { isAtEndOfPage, isElementInView } from '@utils';
 import clsx from 'clsx';

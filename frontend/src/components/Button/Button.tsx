@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { Button as HeadlessButton } from '@headlessui/react';
-import { ReactNode } from '@tanstack/react-router';
+import type { ReactNode } from '@tanstack/react-router';
 
 // define size variants
 const sizeClasses = {

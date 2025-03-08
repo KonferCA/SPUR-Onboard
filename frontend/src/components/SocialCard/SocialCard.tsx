@@ -8,8 +8,8 @@ import {
     LinkedInLogoSVG,
 } from '@/assets';
 import { RxLink2, RxCross2 } from 'react-icons/rx';
-import { FC, useMemo } from 'react';
-import { SocialLink } from '@/types';
+import { type FC, useMemo } from 'react';
+import type { SocialLink } from '@/types';
 
 export interface SocialCardProps {
     data: SocialLink;
