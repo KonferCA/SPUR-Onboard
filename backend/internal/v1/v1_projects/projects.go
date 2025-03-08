@@ -1,11 +1,18 @@
 package v1_projects
 
+/*
+ * package v1_projects implements the project management endpoints for the spur api.
+ * this file contains core project operations including creation, retrieval,
+ * updating, submission, and status management.
+ */
+
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -14,11 +21,15 @@ import (
 )
 
 /*
- * Package v1_projects implements the project management endpoints for the SPUR API.
- * It handles project creation, retrieval, document management, and submission workflows.
+ * getUserFromContext extracts the authenticated user from the echo context.
+ *
+ * parameters:
+ * - c: echo context containing the authenticated user
+ *
+ * returns:
+ * - user: the authenticated user object
+ * - error: if user not found or invalid type
  */
-
-// Helper function to get validated user from context
 func getUserFromContext(c echo.Context) (*db.User, error) {
 	userVal := c.Get("user")
 	if userVal == nil {
@@ -33,6 +44,20 @@ func getUserFromContext(c echo.Context) (*db.User, error) {
 	return user, nil
 }
 
+/*
+ * handleCreateProject creates a new project for a company.
+ *
+ * processing:
+ * - verifies user has permission to create projects
+ * - gets the company associated with the user
+ * - creates a new project with draft status
+ *
+ * response:
+ * - returns the created project details
+ *
+ * security:
+ * - requires permission: permissions.PermSubmitProject
+ */
 func (h *Handler) handleCreateProject(c echo.Context) error {
 	user, err := getUserFromContext(c)
 	if err != nil {
@@ -88,11 +113,17 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 /*
  * handleGetProjects retrieves all projects for a company.
  *
- * Security:
- * - Requires authenticated user
- * - Only returns projects for user's company
+ * processing:
+ * - authenticates the user
+ * - determines user permissions and filters projects accordingly
+ * - retrieves projects based on user role (admin vs regular user)
  *
- * Returns array of ProjectResponse with basic project details
+ * response:
+ * - returns array of projects with basic details
+ *
+ * security:
+ * - requires authenticated user
+ * - filters results based on user permissions
  */
 func (h *Handler) handleGetProjects(c echo.Context) error {
 	user, err := getUserFromContext(c)
@@ -134,11 +165,23 @@ func (h *Handler) handleGetProjects(c echo.Context) error {
 }
 
 /*
- * handleGetProject retrieves a single project by ID.
+ * handleGetProject retrieves detailed information for a single project.
  *
- * Security:
- * - Verifies project belongs to user's company
- * - Returns 404 if project not found or unauthorized
+ * input:
+ * - project id (from url parameter)
+ *
+ * processing:
+ * - verifies user has permission to access the project
+ * - retrieves project details including metadata and associated entities
+ * - formats data for client consumption
+ *
+ * response:
+ * - returns comprehensive project details
+ * - includes status, title, description, timestamps, and related items
+ *
+ * security:
+ * - filters based on user permissions (admin vs company owner)
+ * - ensures user can only access authorized projects
  */
 func (h *Handler) handleGetProject(c echo.Context) error {
 	user, err := getUserFromContext(c)
@@ -243,9 +286,7 @@ func (h *Handler) handleListCompanyProjects(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(200, map[string]interface{}{
-		"projects": response,
-	})
+	return c.JSON(200, response)
 }
 
 func (h *Handler) handleListAllProjects(c echo.Context) error {
@@ -347,12 +388,18 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 	for i, question := range questions {
 		// First two questions are the company name and date founded which are never filled
 		// by the user since they can't change through project form.
+		// only override if no answer exists already
 		switch i {
 		case 0:
-			question.Answer = company.Name
+			if question.Answer == "" {
+				question.Answer = company.Name
+			}
 		case 1:
-			question.Answer = time.Unix(company.DateFounded, 0).Format("2006-01-02")
+			if question.Answer == "" {
+				question.Answer = v1_common.FormatUnixTimeCustom(company.DateFounded, v1_common.DateOnlyFormat)
+			}
 		}
+
 		// Check if required question is answered
 		if question.Required {
 			if question.ConditionType.Valid {
@@ -480,6 +527,25 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 	})
 }
 
+/*
+ * handleCreateAnswer creates a new answer for a project question.
+ *
+ * input:
+ * - project id (from url parameter)
+ * - question id and content in request body
+ *
+ * processing:
+ * - verifies project ownership
+ * - validates answer content against question rules
+ * - creates the answer in the database
+ *
+ * validation:
+ * - validates answer content against question rules
+ * - returns validation errors if content invalid
+ *
+ * security:
+ * - verifies project belongs to user's company
+ */
 func (h *Handler) handleCreateAnswer(c echo.Context) error {
 	var req CreateAnswerRequest
 
@@ -552,4 +618,97 @@ func (h *Handler) handleUpdateProjectStatus(c echo.Context) error {
 	}
 
 	return v1_common.Success(c, http.StatusOK, "Project status updated")
+}
+
+/*
+ * handleGetNewProjects retrieves the most recently created projects.
+ *
+ * parameters (all optional):
+ * - count: Number of projects to return (default: 10)
+ * - status: Type of projects to return (draft, pending, verified, etc.). If not provided, returns projects of any status.
+ *
+ * security:
+ * - Public endpoint (no authentication required)
+ * - Only returns basic project information
+ *
+ * returns array of ExtendedProjectResponse objects ordered by creation date (newest first)
+ */
+func (h *Handler) handleGetNewProjects(c echo.Context) error {
+	var req GetNewProjectsRequest
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request parameters", err)
+	}
+
+	// set default count if not provided
+	count := 10
+	if req.Count > 0 {
+		count = req.Count
+	}
+
+	var projects []db.GetNewProjectsAnyStatusRow
+
+	// if no statuses provided, default to pending and verified
+	if len(req.Statuses) == 0 {
+		req.Statuses = []db.ProjectStatus{db.ProjectStatusPending, db.ProjectStatusVerified}
+	}
+
+	allProjects := []db.GetNewProjectsAnyStatusRow{}
+
+	// fetch projects for each requested status
+	for _, status := range req.Statuses {
+		statusProjects, err := h.server.GetQueries().GetNewProjectsByStatus(c.Request().Context(), db.GetNewProjectsByStatusParams{
+			Status: status,
+			Limit:  int32(count),
+		})
+
+		if err == nil {
+			for _, project := range statusProjects {
+				allProjects = append(allProjects, db.GetNewProjectsAnyStatusRow(project))
+			}
+		}
+	}
+
+	// sort by created_at in descending order (newest first)
+	sort.Slice(allProjects, func(i, j int) bool {
+		return allProjects[i].CreatedAt > allProjects[j].CreatedAt
+	})
+
+	// limit to requested count
+	if len(allProjects) > count {
+		allProjects = allProjects[:count]
+	}
+
+	projects = allProjects
+
+	// convert to response format
+	response := make([]ExtendedProjectResponse, 0, len(projects))
+	for _, project := range projects {
+		description := ""
+		if project.Description != nil {
+			description = *project.Description
+		}
+
+		companyName := ""
+		if project.CompanyName != nil {
+			companyName = *project.CompanyName
+		}
+
+		response = append(response, ExtendedProjectResponse{
+			ProjectResponse: ProjectResponse{
+				ID:          project.ID,
+				Title:       project.Title,
+				Description: description,
+				Status:      project.Status,
+				CreatedAt:   project.CreatedAt,
+				UpdatedAt:   project.UpdatedAt,
+			},
+			CompanyName:     companyName,
+			DocumentCount:   project.DocumentCount,
+			TeamMemberCount: project.TeamMemberCount,
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"projects": response,
+	})
 }

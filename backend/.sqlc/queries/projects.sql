@@ -294,3 +294,73 @@ LEFT JOIN team_members t ON t.company_id = p.company_id
 LEFT JOIN companies c on c.id = p.company_id
 GROUP BY p.id, c.name
 ORDER BY p.created_at DESC;
+
+-- name: GetNewProjectsByStatus :many
+SELECT 
+    p.id, 
+    p.company_id, 
+    COALESCE(
+        (SELECT pa.answer 
+         FROM project_answers pa
+         JOIN project_questions pq ON pa.question_id = pq.id
+         WHERE pa.project_id = p.id AND pq.question_key = 'company_name' AND pa.answer != ''
+         LIMIT 1),
+        p.title
+    ) as title,
+    p.description, 
+    p.status, 
+    p.created_at, 
+    p.updated_at,
+    c.name as company_name,
+    COUNT(d.id) as document_count,
+    COUNT(t.id) as team_member_count
+FROM 
+    projects p
+LEFT JOIN 
+    project_documents d ON d.project_id = p.id
+LEFT JOIN 
+    team_members t ON t.company_id = p.company_id
+LEFT JOIN 
+    companies c ON c.id = p.company_id
+WHERE 
+    p.status = $1
+GROUP BY 
+    p.id, c.name
+ORDER BY 
+    p.created_at DESC
+LIMIT 
+    $2;
+
+-- name: GetNewProjectsAnyStatus :many
+SELECT 
+    p.id, 
+    p.company_id, 
+    COALESCE(
+        (SELECT pa.answer 
+         FROM project_answers pa
+         JOIN project_questions pq ON pa.question_id = pq.id
+         WHERE pa.project_id = p.id AND pq.question_key = 'company_name' AND pa.answer != ''
+         LIMIT 1),
+        p.title
+    ) as title,
+    p.description, 
+    p.status, 
+    p.created_at, 
+    p.updated_at,
+    c.name as company_name,
+    COUNT(d.id) as document_count,
+    COUNT(t.id) as team_member_count
+FROM 
+    projects p
+LEFT JOIN 
+    project_documents d ON d.project_id = p.id
+LEFT JOIN 
+    team_members t ON t.company_id = p.company_id
+LEFT JOIN 
+    companies c ON c.id = p.company_id
+GROUP BY 
+    p.id, c.name
+ORDER BY 
+    p.created_at DESC
+LIMIT 
+    $1;
