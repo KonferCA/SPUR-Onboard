@@ -214,7 +214,7 @@ function RouteComponent() {
         ])
 
         setCompany(companyData)
-        setTeamMembers(teamData)
+        setTeamMembers(teamData.teamMembers)
 
         // Set project stats
         setProjectStats({
@@ -253,16 +253,17 @@ function RouteComponent() {
         })
 
         // Add team members joined events
-        if (teamData.length > 0) {
+        const members = teamData.teamMembers;
+        if (members.length > 0) {
           // Sort team members by creation date
-          const sortedTeam = [...teamData].sort((a, b) => b.created_at - a.created_at)
+          const sortedTeam = [...members].sort((a, b) => b.created_at - a.created_at)
           history.push({
             date: new Date(sortedTeam[0].created_at * 1000).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'long',
               day: 'numeric'
             }),
-            title: `${teamData.length} Team Member${teamData.length === 1 ? '' : 's'} Added`,
+            title: `${members.length} Team Member${members.length === 1 ? '' : 's'} Added`,
             icon: <FiMessageSquare className="w-5 h-5 text-gray-900" />
           })
         }
@@ -443,9 +444,9 @@ function RouteComponent() {
                       <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3">
                         <p className="font-medium">{member.firstName} {member.lastName}</p>
                         <p className="text-gray-300 text-xs mt-1">{member.title}</p>
-                        {member.linkedin && (
+                        {member.linkedinUrl && (
                           <a 
-                            href={member.linkedin}
+                            href={member.linkedinUrl}
                             target="_blank"
                             rel="noopener noreferrer" 
                             className="text-blue-400 hover:text-blue-300 mt-1 block"

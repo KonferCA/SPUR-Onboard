@@ -19,8 +19,6 @@ type UpdateUserDetailsRequest struct {
 	LastName  string `json:"lastName" validate:"required"`
 	Title     string `json:"title" validate:"required"`
 	Bio       string `json:"bio" validate:"required"`
-	// DEPRECATED: This field will me removed later but is here to keep old versions functioning
-	LinkedIn string       `json:"linkedin" validate:"omitnil,omitempty,url"`
 	Socials  []UserSocial `json:"socials" validate:"omitnil,omitempty,dive"`
 }
 
@@ -30,9 +28,8 @@ type UserDetailsResponse struct {
 	LastName  string          `json:"last_name"`
 	Title     string          `json:"title"`
 	Bio       string          `json:"bio"`
-	LinkedIn  string          `json:"linkedin_url"`
 	Socials   []db.UserSocial `json:"socials"`
-  ProfilePictureUrl *string `json:"profile_picture_url"`
+	ProfilePictureUrl *string `json:"profile_picture_url"`
 	CreatedAt string          `json:"created_at"`
 	UpdatedAt *string         `json:"updated_at,omitempty"`
 }

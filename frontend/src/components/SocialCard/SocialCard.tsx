@@ -10,6 +10,7 @@ import {
 import { RxLink2, RxCross2 } from 'react-icons/rx';
 import { FC, useMemo } from 'react';
 import { SocialLink } from '@/types';
+import { formatSocialDisplay } from '@/utils/social-links'; 
 
 export interface SocialCardProps {
     data: SocialLink;
@@ -40,29 +41,10 @@ export const SocialCard: FC<SocialCardProps> = ({
         return ['', ''];
     }, [platform]);
 
+    // use the centralized utility function to format display text
     const displayText = useMemo(() => {
-        let idx = -1;
-        switch (platform) {
-            case SocialPlatform.BlueSky:
-                idx = urlOrHandle.indexOf('.');
-                return urlOrHandle.substring(0, idx);
-            case SocialPlatform.Facebook:
-            case SocialPlatform.LinkedIn:
-                idx = urlOrHandle.lastIndexOf('/');
-                return urlOrHandle.substring(idx + 1);
-            case SocialPlatform.CustomUrl:
-                let domain = urlOrHandle
-                    .replace(/^https?:\/\//, '')
-                    .replace(/^www\./, '');
-                idx = domain.indexOf('/');
-                if (idx !== -1) {
-                    domain = domain.substring(0, idx);
-                }
-                return domain;
-            default:
-                return urlOrHandle;
-        }
-    }, [urlOrHandle]);
+        return formatSocialDisplay(platform, urlOrHandle);
+    }, [urlOrHandle, platform]);
 
     const Icon =
         platform !== SocialPlatform.CustomUrl ? (
