@@ -681,9 +681,9 @@ function ProjectFormPage() {
                                 </h1>
                             </div>
 
-                            <div className="flex-1 flex justify-center overflow-x-scroll px-6">
-                                <nav className="relative overflow-x-scroll">
-                                    <ul className="flex items-center space-x-8 overflow-x-scroll">
+                            <div className="flex-1 flex justify-center overflow-x-auto px-6">
+                                <nav className="relative overflow-x-auto">
+                                    <ul className="flex items-center space-x-8 overflow-x-auto">
                                         {groupedQuestions.map((group, idx) => (
                                             <li
                                                 key={`step_${group.section}`}
