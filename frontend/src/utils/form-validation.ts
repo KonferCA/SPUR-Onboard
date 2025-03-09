@@ -105,16 +105,19 @@ export function validateSocialLink(
     // special case for x/twitter
     if (social.platform === SocialPlatform.X) {
         const value = social.urlOrHandle.trim();
-        
+
         // for empty values
         if (!value) return false;
-        
+
         // handle full URLs properly
         if (value.startsWith('http://') || value.startsWith('https://')) {
             try {
                 const url = new URL(value);
                 // check if the host is exactly twitter.com
-                if (url.hostname === 'twitter.com' || url.hostname === 'www.twitter.com') {
+                if (
+                    url.hostname === 'twitter.com' ||
+                    url.hostname === 'www.twitter.com'
+                ) {
                     // extract username from path and validate it
                     const username = url.pathname.substring(1); // remove leading '/'
                     // apply the same validation rules as for handles
@@ -126,11 +129,11 @@ export function validateSocialLink(
                 return false;
             }
         }
-        
+
         // For @ handles or plain username, use the existing regex validation
         return X_USERNAME_REGEX.test(value);
     }
-    
+
     switch (social.platform) {
         case SocialPlatform.LinkedIn:
             return LINKEDIN_PROFILE_URL_REGEX.test(social.urlOrHandle);

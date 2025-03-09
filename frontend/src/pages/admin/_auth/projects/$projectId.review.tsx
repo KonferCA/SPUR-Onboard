@@ -101,7 +101,8 @@ function RouteComponent() {
                     (q) => q.id === question.dependentQuestionId
                 );
                 if (foundQuestion?.inputFields[0]?.value.value) {
-                    dependentAnswer = foundQuestion.inputFields[0].value.value as string | DropdownOption[];
+                    dependentAnswer = foundQuestion.inputFields[0].value
+                        .value as string | DropdownOption[];
                     break;
                 }
             }

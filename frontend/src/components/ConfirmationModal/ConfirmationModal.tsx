@@ -89,9 +89,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                                 </div>
 
                                 <div className="mt-8 flex items-center justify-between">
-                                    <div>
-                                        {additionalButtons}
-                                    </div>
+                                    <div>{additionalButtons}</div>
                                     <div className="flex gap-3">
                                         <button
                                             type="button"

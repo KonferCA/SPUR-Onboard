@@ -10,7 +10,7 @@ import {
 import { RxLink2, RxCross2 } from 'react-icons/rx';
 import { type FC, useMemo } from 'react';
 import type { SocialLink } from '@/types';
-import { formatSocialDisplay } from '@/utils/social-links'; 
+import { formatSocialDisplay } from '@/utils/social-links';
 
 export interface SocialCardProps {
     data: SocialLink;

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import type React from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
 import { FiX } from 'react-icons/fi';
 import { TextInput, TextArea } from '@components';
@@ -42,19 +43,21 @@ interface FormErrors {
 }
 
 // helper to create a consistent form data object from initial data
-const initializeFormData = (data: Partial<TeamMemberFormData> = {}): TeamMemberFormData => {
+const initializeFormData = (
+    data: Partial<TeamMemberFormData> = {}
+): TeamMemberFormData => {
     // process social links to ensure all have ids
     const socialLinks = data.socialLinks || [];
-    const processedSocialLinks = socialLinks.map(link => {
+    const processedSocialLinks = socialLinks.map((link) => {
         if (!link.id) {
             return {
                 ...link,
-                id: Math.random().toString(36).substring(2, 9)
+                id: Math.random().toString(36).substring(2, 9),
             };
         }
         return link;
     });
-    
+
     // return consistent form data with defaults
     return {
         first_name: data.first_name || '',
@@ -68,8 +71,10 @@ const initializeFormData = (data: Partial<TeamMemberFormData> = {}): TeamMemberF
         previous_work: data.previous_work || '',
         resume_external_url: data.resume_external_url || '',
         resume_internal_url: data.resume_internal_url || '',
-        founders_agreement_external_url: data.founders_agreement_external_url || '',
-        founders_agreement_internal_url: data.founders_agreement_internal_url || '',
+        founders_agreement_external_url:
+            data.founders_agreement_external_url || '',
+        founders_agreement_internal_url:
+            data.founders_agreement_internal_url || '',
         socialLinks: processedSocialLinks,
     };
 };
@@ -80,9 +85,11 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
     onSubmit,
     onRemove,
     initialData = {},
-    mode
+    mode,
 }) => {
-    const [formData, setFormData] = useState<TeamMemberFormData>(initializeFormData(initialData));
+    const [formData, setFormData] = useState<TeamMemberFormData>(
+        initializeFormData(initialData)
+    );
     const [errors, setErrors] = useState<FormErrors>({});
 
     // Update form data when initialData changes
@@ -94,12 +101,16 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
         const newErrors: FormErrors = {};
 
         // Required fields
-        if (!formData.first_name) newErrors.first_name = 'First name is required';
+        if (!formData.first_name)
+            newErrors.first_name = 'First name is required';
         if (!formData.last_name) newErrors.last_name = 'Last name is required';
         if (!formData.title) newErrors.title = 'Title is required';
-        if (!formData.detailed_biography) newErrors.detailed_biography = 'Bio is required';
-        if (!formData.introduction) newErrors.introduction = 'Introduction is required';
-        if (!formData.industry_experience) newErrors.industry_experience = 'Industry experience is required';
+        if (!formData.detailed_biography)
+            newErrors.detailed_biography = 'Bio is required';
+        if (!formData.introduction)
+            newErrors.introduction = 'Introduction is required';
+        if (!formData.industry_experience)
+            newErrors.industry_experience = 'Industry experience is required';
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -110,7 +121,7 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
         if (validateForm()) {
             // Get social links array from formData
             const socialLinks = formData.socialLinks ?? [];
-            
+
             // Set up submission data with the socialLinks array
             const submissionData: TeamMemberFormData = {
                 first_name: formData.first_name,
@@ -124,8 +135,10 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
                 previous_work: formData.previous_work || '',
                 resume_external_url: formData.resume_external_url || '',
                 resume_internal_url: formData.resume_internal_url || '',
-                founders_agreement_external_url: formData.founders_agreement_external_url || '',
-                founders_agreement_internal_url: formData.founders_agreement_internal_url || '',
+                founders_agreement_external_url:
+                    formData.founders_agreement_external_url || '',
+                founders_agreement_internal_url:
+                    formData.founders_agreement_internal_url || '',
                 is_account_owner: formData.is_account_owner,
             };
 
@@ -140,9 +153,15 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
                 <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-white shadow-xl">
                     <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
                         <Dialog.Title className="text-lg font-medium">
-                            {mode === 'add' ? 'Add member' : 'Editing ' + formData.first_name + ' ' + formData.last_name}
+                            {mode === 'add'
+                                ? 'Add member'
+                                : 'Editing ' +
+                                  formData.first_name +
+                                  ' ' +
+                                  formData.last_name}
                         </Dialog.Title>
                         <button
+                            type="button"
                             onClick={onClose}
                             className="text-gray-400 hover:text-gray-500"
                         >
@@ -150,8 +169,8 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
                         </button>
                     </div>
 
-                    <form 
-                        onSubmit={handleSubmit} 
+                    <form
+                        onSubmit={handleSubmit}
                         className="p-4 space-y-4"
                         onClick={(e) => e.stopPropagation()}
                         onKeyDown={(e) => {
@@ -167,12 +186,15 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
                                     required
                                     value={formData.first_name}
                                     onChange={(e) => {
-                                        setFormData(prev => ({
+                                        setFormData((prev) => ({
                                             ...prev,
-                                            first_name: e.target.value
+                                            first_name: e.target.value,
                                         }));
                                         if (errors.first_name) {
-                                            setErrors(prev => ({ ...prev, first_name: undefined }));
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                first_name: undefined,
+                                            }));
                                         }
                                     }}
                                     error={errors.first_name}
@@ -184,12 +206,15 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
                                     required
                                     value={formData.last_name}
                                     onChange={(e) => {
-                                        setFormData(prev => ({
+                                        setFormData((prev) => ({
                                             ...prev,
-                                            last_name: e.target.value
+                                            last_name: e.target.value,
                                         }));
                                         if (errors.last_name) {
-                                            setErrors(prev => ({ ...prev, last_name: undefined }));
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                last_name: undefined,
+                                            }));
                                         }
                                     }}
                                     error={errors.last_name}
@@ -202,12 +227,15 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
                             required
                             value={formData.title}
                             onChange={(e) => {
-                                setFormData(prev => ({
+                                setFormData((prev) => ({
                                     ...prev,
-                                    title: e.target.value
+                                    title: e.target.value,
                                 }));
                                 if (errors.title) {
-                                    setErrors(prev => ({ ...prev, title: undefined }));
+                                    setErrors((prev) => ({
+                                        ...prev,
+                                        title: undefined,
+                                    }));
                                 }
                             }}
                             error={errors.title}
@@ -219,12 +247,15 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
                                 required
                                 value={formData.detailed_biography}
                                 onChange={(e) => {
-                                    setFormData(prev => ({
+                                    setFormData((prev) => ({
                                         ...prev,
-                                        detailed_biography: e.target.value
+                                        detailed_biography: e.target.value,
                                     }));
                                     if (errors.detailed_biography) {
-                                        setErrors(prev => ({ ...prev, detailed_biography: undefined }));
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            detailed_biography: undefined,
+                                        }));
                                     }
                                 }}
                                 error={errors.detailed_biography}
@@ -238,12 +269,15 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
                                 required
                                 value={formData.introduction}
                                 onChange={(e) => {
-                                    setFormData(prev => ({
+                                    setFormData((prev) => ({
                                         ...prev,
-                                        introduction: e.target.value
+                                        introduction: e.target.value,
                                     }));
                                     if (errors.introduction) {
-                                        setErrors(prev => ({ ...prev, introduction: undefined }));
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            introduction: undefined,
+                                        }));
                                     }
                                 }}
                                 error={errors.introduction}
@@ -257,12 +291,15 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
                                 required
                                 value={formData.industry_experience}
                                 onChange={(e) => {
-                                    setFormData(prev => ({
+                                    setFormData((prev) => ({
                                         ...prev,
-                                        industry_experience: e.target.value
+                                        industry_experience: e.target.value,
                                     }));
                                     if (errors.industry_experience) {
-                                        setErrors(prev => ({ ...prev, industry_experience: undefined }));
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            industry_experience: undefined,
+                                        }));
                                     }
                                 }}
                                 error={errors.industry_experience}
@@ -271,23 +308,29 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <p className="block text-sm font-medium text-gray-700 mb-1">
                                 Social Media & Web Presence
-                            </label>
-                            <div onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                            }}>
+                            </p>
+                            <div
+                                onKeyUp={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                }}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                }}
+                            >
                                 <SocialLinks
                                     value={formData.socialLinks}
                                     onChange={(links: SocialLink[]) => {
-                                        setFormData(prev => ({
+                                        setFormData((prev) => ({
                                             ...prev,
-                                            socialLinks: links
+                                            socialLinks: links,
                                         }));
                                         // Clear any previous errors related to social links
-                                        setErrors(prev => ({
-                                            ...prev
+                                        setErrors((prev) => ({
+                                            ...prev,
                                         }));
                                     }}
                                 />
@@ -316,7 +359,9 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
                                     type="submit"
                                     className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800"
                                 >
-                                    {mode === 'add' ? 'Save Changes' : 'Save Changes'}
+                                    {mode === 'add'
+                                        ? 'Save Changes'
+                                        : 'Save Changes'}
                                 </button>
                             </div>
                         </div>
@@ -325,4 +370,4 @@ export const TeamMemberModal: React.FC<TeamMemberModalProps> = ({
             </div>
         </Dialog>
     );
-}; 
+};

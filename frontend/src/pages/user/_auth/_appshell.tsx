@@ -50,7 +50,9 @@ function RouteComponent() {
         navigate({ to: '/auth' });
     };
 
-    const userActions = user ? <UserDropdown user={user} onLogout={handleLogout} /> : null;
+    const userActions = user ? (
+        <UserDropdown user={user} onLogout={handleLogout} />
+    ) : null;
 
     const desktopSidebar = (
         <div className="hidden md:block w-48 bg-white border-r border-gray-200">

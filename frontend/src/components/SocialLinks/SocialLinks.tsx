@@ -12,10 +12,10 @@ import {
     getSocialInputLabel,
     getSocialInputPlaceholder,
 } from './helpers';
-import { 
-    getSocialPrefix, 
+import {
+    getSocialPrefix,
     validateSocialLink,
-    sanitizeSocialInput 
+    sanitizeSocialInput,
 } from '@/utils/social-links';
 
 const allPlatforms: SocialPlatform[] = [
@@ -81,15 +81,17 @@ export const SocialLinks: React.FC<SocialLinksProps> = ({
 
     const handleRemoveSocial = (socialToRemove: SocialLink) => {
         console.log('Removing social link:', socialToRemove);
-        
+
         // Filter out the social link to remove by platform
-        const updatedLinks = value.filter(social => social.platform !== socialToRemove.platform);
-        
+        const updatedLinks = value.filter(
+            (social) => social.platform !== socialToRemove.platform
+        );
+
         console.log('Updated links after removal:', updatedLinks);
-        
+
         // Call the parent's onChange with the updated list
         onChange(updatedLinks);
-        
+
         // Also call the onRemove callback if provided
         if (onRemove) {
             onRemove(socialToRemove);
@@ -98,30 +100,37 @@ export const SocialLinks: React.FC<SocialLinksProps> = ({
 
     const handleConfirmSocial = () => {
         if (!currentSocialPlatform) return;
-        
+
         // sanitize input to prevent XSS
         const sanitizedInput = sanitizeSocialInput(urlOrHandle);
-        
+
         const isValid = validateSocialLink({
             platform: currentSocialPlatform,
-            urlOrHandle: sanitizedInput
+            urlOrHandle: sanitizedInput,
         });
-        
+
         if (isValid) {
             const prefix = getSocialPrefix(currentSocialPlatform);
-            
+
             // properly handle URL prefixes to avoid duplication
             let finalUrl = sanitizedInput;
-            
+
             // check if input already has our prefix or common variants
-            const hasHttpPrefix = sanitizedInput.startsWith('http://') || sanitizedInput.startsWith('https://');
-            const isPlatformSpecific = currentSocialPlatform !== SocialPlatform.CustomUrl;
-            
+            const hasHttpPrefix =
+                sanitizedInput.startsWith('http://') ||
+                sanitizedInput.startsWith('https://');
+            const isPlatformSpecific =
+                currentSocialPlatform !== SocialPlatform.CustomUrl;
+
             // for URLs that need specific domain prefixes (linkedin, facebook, etc.)
             if (isPlatformSpecific && hasHttpPrefix) {
                 // already has http(s):// - use as is, the validation ensures it's correct
                 finalUrl = sanitizedInput;
-            } else if (isPlatformSpecific && !hasHttpPrefix && !sanitizedInput.startsWith('@')) {
+            } else if (
+                isPlatformSpecific &&
+                !hasHttpPrefix &&
+                !sanitizedInput.startsWith('@')
+            ) {
                 // check specific cases
                 switch (currentSocialPlatform) {
                     case SocialPlatform.LinkedIn:
@@ -147,7 +156,7 @@ export const SocialLinks: React.FC<SocialLinksProps> = ({
                 // for handles that need @ or custom URLs that need https://
                 finalUrl = prefix + sanitizedInput;
             }
-            
+
             onChange([
                 ...value,
                 {

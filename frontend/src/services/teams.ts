@@ -2,7 +2,10 @@ import type { TeamMember } from '@/types';
 import { getApiUrl, HttpStatusCode } from '@/utils';
 import { snakeToCamel } from '@/utils/object';
 import { ApiError } from './errors';
-import { processSocialLinksFromApi, processSocialLinksForApi } from '@/utils/social-links';
+import {
+    processSocialLinksFromApi,
+    processSocialLinksForApi,
+} from '@/utils/social-links';
 
 export interface TeamMemberData {
     companyId: string;
@@ -63,18 +66,16 @@ export async function addTeamMember(accessToken: string, data: TeamMemberData) {
             previous_work: data.member.previousWork,
             resume_external_url: data.member.resumeExternalUrl,
             resume_internal_url: data.member.resumeInternalUrl,
-            founders_agreement_external_url: data.member.founderAgreementExternalUrl,
-            founders_agreement_internal_url: data.member.founderAgreementInternalUrl,
+            founders_agreement_external_url:
+                data.member.founderAgreementExternalUrl,
+            founders_agreement_internal_url:
+                data.member.founderAgreementInternalUrl,
         }),
     });
 
     const json = await res.json();
     if (res.status !== HttpStatusCode.CREATED) {
-        throw new ApiError(
-            'Failed to add team member',
-            res.status,
-            json
-        );
+        throw new ApiError('Failed to add team member', res.status, json);
     }
 
     // Convert snake_case response to camelCase
@@ -123,29 +124,33 @@ export async function getTeamMembers(
     }
 
     // Transform the response
-    const teamMembers = (json.team_members || []).map((member: TeamMemberResponse) => {
-        return {
-            id: member.id,
-            companyId: member.company_id,
-            firstName: member.first_name,
-            lastName: member.last_name,
-            title: member.title,
-            detailedBiography: member.detailed_biography,
-            isAccountOwner: member.is_account_owner,
-            commitmentType: member.commitment_type || '',
-            introduction: member.introduction || '',
-            industryExperience: member.industry_experience || '',
-            previousWork: member.previous_work || '',
-            resumeExternalUrl: member.resume_external_url || '',
-            resumeInternalUrl: member.resume_internal_url || '',
-            founderAgreementExternalUrl: member.founders_agreement_external_url || '',
-            founderAgreementInternalUrl: member.founders_agreement_internal_url || '',
-            // Process social links using our shared utility
-            socialLinks: processSocialLinksFromApi(member.social_links),
-            createdAt: member.created_at,
-            updatedAt: member.updated_at,
-        };
-    });
+    const teamMembers = (json.team_members || []).map(
+        (member: TeamMemberResponse) => {
+            return {
+                id: member.id,
+                companyId: member.company_id,
+                firstName: member.first_name,
+                lastName: member.last_name,
+                title: member.title,
+                detailedBiography: member.detailed_biography,
+                isAccountOwner: member.is_account_owner,
+                commitmentType: member.commitment_type || '',
+                introduction: member.introduction || '',
+                industryExperience: member.industry_experience || '',
+                previousWork: member.previous_work || '',
+                resumeExternalUrl: member.resume_external_url || '',
+                resumeInternalUrl: member.resume_internal_url || '',
+                founderAgreementExternalUrl:
+                    member.founders_agreement_external_url || '',
+                founderAgreementInternalUrl:
+                    member.founders_agreement_internal_url || '',
+                // Process social links using our shared utility
+                socialLinks: processSocialLinksFromApi(member.social_links),
+                createdAt: member.created_at,
+                updatedAt: member.updated_at,
+            };
+        }
+    );
 
     return { teamMembers };
 }
@@ -201,7 +206,7 @@ export async function updateTeamMember(
 ) {
     const { companyId, member } = params;
     const memberId = member.id;
-    
+
     if (!memberId) {
         throw new Error('Member ID is required for update');
     }
@@ -209,24 +214,42 @@ export async function updateTeamMember(
     const url = getApiUrl(`/companies/${companyId}/team/${memberId}`);
 
     // Format social links using our shared utility
-    const socialLinks = member.socialLinks 
+    const socialLinks = member.socialLinks
         ? processSocialLinksForApi(member.socialLinks)
         : undefined;
 
-    const body: Record<string, any> = {};
+    const body: Record<
+        string,
+        | string
+        | boolean
+        | { platform: string; url_or_handle: string }[]
+        | undefined
+    > = {};
     if (member.firstName !== undefined) body.first_name = member.firstName;
     if (member.lastName !== undefined) body.last_name = member.lastName;
     if (member.title !== undefined) body.title = member.title;
-    if (member.detailedBiography !== undefined) body.detailed_biography = member.detailedBiography;
-    if (member.isAccountOwner !== undefined) body.is_account_owner = member.isAccountOwner;
-    if (member.commitmentType !== undefined) body.commitment_type = member.commitmentType;
-    if (member.introduction !== undefined) body.introduction = member.introduction;
-    if (member.industryExperience !== undefined) body.industry_experience = member.industryExperience;
-    if (member.previousWork !== undefined) body.previous_work = member.previousWork;
-    if (member.resumeExternalUrl !== undefined) body.resume_external_url = member.resumeExternalUrl;
-    if (member.resumeInternalUrl !== undefined) body.resume_internal_url = member.resumeInternalUrl;
-    if (member.founderAgreementExternalUrl !== undefined) body.founders_agreement_external_url = member.founderAgreementExternalUrl;
-    if (member.founderAgreementInternalUrl !== undefined) body.founders_agreement_internal_url = member.founderAgreementInternalUrl;
+    if (member.detailedBiography !== undefined)
+        body.detailed_biography = member.detailedBiography;
+    if (member.isAccountOwner !== undefined)
+        body.is_account_owner = member.isAccountOwner;
+    if (member.commitmentType !== undefined)
+        body.commitment_type = member.commitmentType;
+    if (member.introduction !== undefined)
+        body.introduction = member.introduction;
+    if (member.industryExperience !== undefined)
+        body.industry_experience = member.industryExperience;
+    if (member.previousWork !== undefined)
+        body.previous_work = member.previousWork;
+    if (member.resumeExternalUrl !== undefined)
+        body.resume_external_url = member.resumeExternalUrl;
+    if (member.resumeInternalUrl !== undefined)
+        body.resume_internal_url = member.resumeInternalUrl;
+    if (member.founderAgreementExternalUrl !== undefined)
+        body.founders_agreement_external_url =
+            member.founderAgreementExternalUrl;
+    if (member.founderAgreementInternalUrl !== undefined)
+        body.founders_agreement_internal_url =
+            member.founderAgreementInternalUrl;
     if (socialLinks !== undefined) body.social_links = socialLinks;
 
     const res = await fetch(url, {

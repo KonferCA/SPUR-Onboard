@@ -158,146 +158,21 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
-  const { projectId } = Route.useParams()
-  const { accessToken } = useAuth()
-  const wallet = useWallet()
-  const [company, setCompany] = useState<CompanyResponse | null>(null)
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
-  const [projectStats, setProjectStats] = useState<ProjectStats | null>(null)
-  const [projectHistory, setProjectHistory] = useState<ProjectHistory[]>([])
-  const [loading, setLoading] = useState(true)
-  const [isSendingFunds, setIsSendingFunds] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false);
+    const { projectId } = Route.useParams();
+    const { accessToken } = useAuth();
+    const wallet = useWallet();
+    const [company, setCompany] = useState<CompanyResponse | null>(null);
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+    const [projectStats, setProjectStats] = useState<ProjectStats | null>(null);
+    const [projectHistory, setProjectHistory] = useState<ProjectHistory[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isSendingFunds, setIsSendingFunds] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleFundProject = async (amount: string) => {
-    if (!wallet.connected) {
-      alert('Please connect your wallet first')
-      return
-    }
-
-    try {
-      setIsSendingFunds(true)
-
-      const client = new SuiClient({ url: 'https://fullnode.testnet.sui.io:443' });
-      const coins = await client.getCoins({
-        owner: wallet.account?.address || '',
-        coinType: '0x341290ce77d8cdd37c0ea13807e1cd6f4070a42c286adfc5340f438b7e8a1684::spurcoin::SPURCOIN'
-      });
-
-      if (!coins.data || coins.data.length === 0) {
-        alert('No SPUR coins found in wallet');
-        return;
-      }
-
-      const coinToUse = coins.data[0];
-      const tx = new Transaction();
-      tx.setGasBudget(100000000);
-
-      // amount is now in MIST (smallest unit)
-      const splitCoinTx = tx.splitCoins(
-        tx.object(coinToUse.coinObjectId),
-        [tx.pure.u64(amount)]
-      );
-
-      tx.transferObjects(
-        [splitCoinTx],
-        tx.pure.address(company?.wallet_address || '')
-      );
-
-      if (wallet.account?.address) {
-        tx.setSender(wallet.account.address);
-      }
-
-      const resData = await wallet.signAndExecuteTransaction({
-        transaction: tx
-      });
-
-      console.log('Transaction successful:', resData)
-      alert('Funding successful!')
-
-    } catch (error) {
-      console.error('Transaction failed:', error)
-      alert('Failed to send funds. Please try again.')
-    } finally {
-      setIsSendingFunds(false)
-    }
-  }
-
-  useEffect(() => {
-    async function fetchData() {
-      if (!accessToken || !projectId) return
-
-      try {
-        // First fetch project and company data since we need the company ID
-        const [projectData, companyData] = await Promise.all([
-          getProject(accessToken, projectId),
-          getCompanyByProjectId(accessToken, projectId)
-        ])
-
-        if (!companyData) {
-          throw new Error('Company not found')
-        }
-
-        // Then fetch remaining data in parallel using the company ID
-        const [teamData, documentsData, commentsData] = await Promise.all([
-          getTeamMembers(accessToken, companyData.id),
-          getProjectDocuments(accessToken, projectId),
-          getProjectComments(accessToken, projectId)
-        ])
-
-        setCompany(companyData)
-        setTeamMembers(teamData.teamMembers)
-
-        // Set project stats
-        setProjectStats({
-          status: projectData.status,
-          submittedDate: projectData.status === 'submitted' ? new Date(projectData.updatedAt * 1000).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          }) : undefined,
-          documentsCount: documentsData.documents.length
-        })
-
-        // Build project history
-        const history: ProjectHistory[] = []
-
-        // Add company creation event
-        history.push({
-          date: new Date(companyData.created_at * 1000).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          }),
-          title: 'Company Created',
-          icon: <FiGlobe className="w-5 h-5 text-gray-900" />
-        })
-
-        // Add project creation event
-        history.push({
-          date: new Date(projectData.createdAt * 1000).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          }),
-          title: 'Project Created',
-          icon: <FiFileText className="w-5 h-5 text-gray-900" />
-        })
-
-        // Add team members joined events
-        const members = teamData.teamMembers;
-        if (members.length > 0) {
-          // Sort team members by creation date
-          const sortedTeam = [...members].sort((a, b) => b.created_at - a.created_at)
-          history.push({
-            date: new Date(sortedTeam[0].created_at * 1000).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            }),
-            title: `${members.length} Team Member${members.length === 1 ? '' : 's'} Added`,
-            icon: <FiMessageSquare className="w-5 h-5 text-gray-900" />
-          })
+    const handleFundProject = async (amount: string) => {
+        if (!wallet.connected) {
+            alert('Please connect your wallet first');
+            return;
         }
 
         try {
@@ -374,7 +249,7 @@ function RouteComponent() {
                     ]);
 
                 setCompany(companyData);
-                setTeamMembers(teamData);
+                setTeamMembers(teamData.teamMembers);
 
                 // Set project stats
                 setProjectStats({
@@ -422,9 +297,10 @@ function RouteComponent() {
                 });
 
                 // Add team members joined events
-                if (teamData.length > 0) {
+                const members = teamData.teamMembers;
+                if (members.length > 0) {
                     // Sort team members by creation date
-                    const sortedTeam = [...teamData].sort(
+                    const sortedTeam = [...members].sort(
                         (a, b) => b.created_at - a.created_at
                     );
                     history.push({
@@ -435,7 +311,7 @@ function RouteComponent() {
                             month: 'long',
                             day: 'numeric',
                         }),
-                        title: `${teamData.length} Team Member${teamData.length === 1 ? '' : 's'} Added`,
+                        title: `${members.length} Team Member${members.length === 1 ? '' : 's'} Added`,
                         icon: (
                             <FiMessageSquare className="w-5 h-5 text-gray-900" />
                         ),
@@ -670,9 +546,11 @@ function RouteComponent() {
                                                 <p className="text-gray-300 text-xs mt-1">
                                                     {member.title}
                                                 </p>
-                                                {member.linkedin && (
+                                                {member.linkedinUrl && (
                                                     <a
-                                                        href={member.linkedin}
+                                                        href={
+                                                            member.linkedinUrl
+                                                        }
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="text-blue-400 hover:text-blue-300 mt-1 block"

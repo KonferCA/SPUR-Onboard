@@ -115,7 +115,9 @@ const ReviewQuestionInput: FC<ReviewQuestionInputProps> = ({
                         {field.label}
                     </span>
                 </div>
-                <div className="space-y-4">{renderInput(field) as React.ReactNode}</div>
+                <div className="space-y-4">
+                    {renderInput(field) as React.ReactNode}
+                </div>
                 {!disableCommentCreation && (
                     <button
                         type="button"

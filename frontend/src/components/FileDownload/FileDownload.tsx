@@ -15,7 +15,8 @@ export const FileDownload: FC<FileDownloadProps> = ({ docs }) => {
                     href={d.url}
                     download
                     target="_blank"
-                    className="px-6 py-4 rounded-lg border border-gray-300 bg-gray-100" rel="noreferrer"
+                    className="px-6 py-4 rounded-lg border border-gray-300 bg-gray-100"
+                    rel="noreferrer"
                 >
                     <div className="flex items-center justify-center gap-2">
                         <FaFile />
