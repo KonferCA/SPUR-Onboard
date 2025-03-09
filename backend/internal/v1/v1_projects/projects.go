@@ -286,7 +286,9 @@ func (h *Handler) handleListCompanyProjects(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(200, response)
+	return c.JSON(200, map[string]interface{}{
+		"projects": response,
+	})
 }
 
 func (h *Handler) handleListAllProjects(c echo.Context) error {
@@ -313,7 +315,7 @@ func (h *Handler) handleListAllProjects(c echo.Context) error {
 				CreatedAt:   project.CreatedAt,
 				UpdatedAt:   project.UpdatedAt,
 			},
-			CompanyName:     *project.CompanyName,
+			CompanyName:     project.CompanyName,
 			DocumentCount:   project.DocumentCount,
 			TeamMemberCount: project.TeamMemberCount,
 		}
