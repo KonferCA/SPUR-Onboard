@@ -89,7 +89,6 @@ export interface ProjectSection {
 
 export interface Project {
     id: string;
-    company_id: string;
     title: string;
     description: string | null;
     status: string;
@@ -137,16 +136,15 @@ export async function getProjectFormQuestions(
 // Transform backend response to frontend format
 const transformProject = (data: any): Project => {
     return {
-        id: data.ID,
-        company_id: data.CompanyID,
-        title: data.Title,
-        description: data.Description,
-        status: data.Status,
-        created_at: data.CreatedAt,
-        updated_at: data.UpdatedAt,
-        industry: data.Company?.Industry || null,
-        company_stage: data.Company?.CompanyStage || null,
-        founded_date: data.Company?.FoundedDate || null,
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        industry: null,
+        company_stage: null,
+        founded_date: null,
         documents: [], // todo: implement when backend supports
         sections: data.Sections || [],
     };
@@ -213,30 +211,6 @@ export async function listProjectsAll(accessToken: string) {
     }
 
     return snakeToCamel(body.projects) as ExtendedProjectResponse[];
-}
-
-export async function getProjects(accessToken: string): Promise<Project[]> {
-    const url = getApiUrl('/projects').replace(/([^:]\/)\/+/g, '$1');
-
-    const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-        },
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new ApiError(
-            'Failed to fetch projects',
-            response.status,
-            errorData || {}
-        );
-    }
-
-    const data = await response.json();
-    return data.map(transformProject);
 }
 
 export async function getProjectDetails(
