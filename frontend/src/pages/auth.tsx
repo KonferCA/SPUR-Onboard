@@ -58,9 +58,7 @@ function AuthPage() {
                 handleRedirect();
             }
         }
-    }, [user, companyId]);
-
-    useEffect(() => {}, [authLoading]);
+    }, [user]);
 
     const handleRedirect = () => {
         if (!user) return;
@@ -102,6 +100,7 @@ function AuthPage() {
                     handleRedirect();
                 }
             }
+            // biome-ignore lint/suspicious/noExplicitAny: allow type any for error
         } catch (error: any) {
             console.error('Auth error:', error);
             setErrors({
@@ -147,6 +146,7 @@ function AuthPage() {
             setTimeout(() => {
                 handleRedirect();
             }, 1000);
+            // biome-ignore lint/suspicious/noExplicitAny: allow type any for error
         } catch (error: any) {
             if (error.body) {
                 setErrors({

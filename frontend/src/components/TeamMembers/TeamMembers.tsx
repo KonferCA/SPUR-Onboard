@@ -117,7 +117,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         };
 
         initializeMembers();
-    }, [user, accessToken, initialValue]);
+    }, [user, accessToken, initialValue, notification.push]);
 
     const checkAllRequired = () => {
         return (
@@ -137,7 +137,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
     const saveToDatabase = async (member: LocalTeamMember) => {
         if (!accessToken || !companyId) {
             // remove member from the list
-            setMembers((prev) => prev.filter((m) => m.id != member.id));
+            setMembers((prev) => prev.filter((m) => m.id !== member.id));
             return;
         }
 
@@ -194,7 +194,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         } catch (e) {
             console.error(e);
             // remove member from the list
-            setMembers((prev) => prev.filter((m) => m.id != member.id));
+            setMembers((prev) => prev.filter((m) => m.id !== member.id));
             notification.update(notificationId, {
                 message: 'Failed to save team member',
                 level: 'error',
@@ -208,16 +208,25 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         if (checkAllRequired()) {
             const member: LocalTeamMember = {
                 id: Math.random().toString(36).substring(2, 9),
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 firstName: newMember.firstName!,
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 lastName: newMember.lastName!,
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 title: newMember.title!,
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 detailedBiography: newMember.detailedBiography!,
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 linkedin: newMember.linkedin!,
                 resumeExternalUrl: newMember.resumeExternalUrl || '',
                 resumeInternalUrl: newMember.resumeInternalUrl || '',
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 personalWebsite: newMember.personalWebsite!,
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 introduction: newMember.introduction!,
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 commitmentType: newMember.commitmentType!,
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 industryExperience: newMember.industryExperience!,
                 previousWork: newMember.previousWork || '',
                 founderAgreementExternalUrl:
@@ -275,7 +284,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         if (member.isAccountOwner) return;
 
         // optimistic removal
-        setMembers((prev) => prev.filter((m) => m.id != member.id));
+        setMembers((prev) => prev.filter((m) => m.id !== member.id));
         removeFromDatabase(member);
     };
 
@@ -314,6 +323,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                                 !disabled &&
                                 !member.isAccountOwner && (
                                     <button
+                                        type="button"
                                         onClick={() => handleRemove(member)}
                                         className="p-1 text-gray-400 hover:text-red-500"
                                     >

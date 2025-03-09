@@ -69,6 +69,7 @@ export const CommentCreate: React.FC<CommentCreateProps> = ({
 
                         <div className="flex gap-1 ml-auto">
                             <button
+                                type="button"
                                 onClick={() => formatText('[')}
                                 className="p-2 hover:bg-gray-100 rounded"
                                 aria-label="Insert link"
@@ -76,6 +77,7 @@ export const CommentCreate: React.FC<CommentCreateProps> = ({
                                 <BiLink className="w-5 h-5 text-gray-600" />
                             </button>
                             <button
+                                type="button"
                                 onClick={() => formatText('**')}
                                 className="p-2 hover:bg-gray-100 rounded"
                                 aria-label="Bold text"
@@ -83,6 +85,7 @@ export const CommentCreate: React.FC<CommentCreateProps> = ({
                                 <BiBold className="w-5 h-5 text-gray-600" />
                             </button>
                             <button
+                                type="button"
                                 onClick={() => formatText('_')}
                                 className="p-2 hover:bg-gray-100 rounded"
                                 aria-label="Italic text"
@@ -90,6 +93,7 @@ export const CommentCreate: React.FC<CommentCreateProps> = ({
                                 <BiItalic className="w-5 h-5 text-gray-600" />
                             </button>
                             <button
+                                type="button"
                                 onClick={() => formatText('- ')}
                                 className="p-2 hover:bg-gray-100 rounded"
                                 aria-label="Bullet list"
@@ -97,6 +101,7 @@ export const CommentCreate: React.FC<CommentCreateProps> = ({
                                 <BiListUl className="w-5 h-5 text-gray-600" />
                             </button>
                             <button
+                                type="button"
                                 onClick={() => formatText('1. ')}
                                 className="p-2 hover:bg-gray-100 rounded"
                                 aria-label="Numbered list"
@@ -104,6 +109,7 @@ export const CommentCreate: React.FC<CommentCreateProps> = ({
                                 <BiListOl className="w-5 h-5 text-gray-600" />
                             </button>
                             <button
+                                type="button"
                                 className="p-2 hover:bg-gray-100 rounded"
                                 aria-label="More options"
                             >
@@ -124,12 +130,14 @@ export const CommentCreate: React.FC<CommentCreateProps> = ({
 
                 <div className="flex justify-end gap-3 mt-4">
                     <button
+                        type="button"
                         onClick={onCancel}
                         className="text-sm px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md border border-gray-300"
                     >
                         Cancel
                     </button>
                     <button
+                        type="button"
                         onClick={handleSubmit}
                         className="text-sm px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
                     >

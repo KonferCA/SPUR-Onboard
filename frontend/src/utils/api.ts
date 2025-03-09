@@ -18,6 +18,7 @@ export enum HttpStatusCode {
  */
 export function getApiUrl(path = '') {
     // remove leading / if any
+    // biome-ignore lint: reassign param because it is better this way
     if (path.length > 0 && path[0] === '/') path = path.slice(1);
     const prefix = import.meta.env.VITE_API_URL;
     return `${prefix}/${path}`;

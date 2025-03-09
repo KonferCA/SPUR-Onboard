@@ -29,6 +29,7 @@ export function WithdrawProjectModal({
                             Withdraw Application?
                         </Dialog.Title>
                         <button
+                            type="button"
                             onClick={onClose}
                             className="text-gray-400 hover:text-gray-500"
                         >

@@ -80,6 +80,7 @@ export const RecommendedFields: React.FC<RecommendedFieldsProps> = ({
                     ([section, { count, fields }]) => (
                         <div key={section} className="mb-4 last:mb-0">
                             <button
+                                type="button"
                                 onClick={() => toggleSection(section)}
                                 className="w-full flex items-center justify-between text-left mb-2 group"
                             >
@@ -102,12 +103,13 @@ export const RecommendedFields: React.FC<RecommendedFieldsProps> = ({
 
                             {expandedSections.has(section) && (
                                 <div className="pl-4 space-y-2">
-                                    {fields.map((field, idx) => (
+                                    {fields.map((field) => (
                                         <div
-                                            key={idx}
+                                            key={`${field.section}-${field.subsection}`}
                                             className="border-l-2 border-gray-200 pl-3"
                                         >
                                             <button
+                                                type="button"
                                                 onClick={(e) =>
                                                     handleFieldClick(field, e)
                                                 }

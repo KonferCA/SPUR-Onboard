@@ -23,6 +23,7 @@ export function VerifyEmail({
     const cooldownRef = useRef<number | null>(null);
 
     useEffect(() => {
+        // biome-ignore lint/complexity/useOptionalChain: optional chain does not apply here because the check is for truthy values
         if (user && user.emailVerified) return;
 
         if (accessToken) {

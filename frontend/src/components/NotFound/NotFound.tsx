@@ -15,7 +15,7 @@ export const NotFound: FC = () => {
             <div
                 aria-hidden
                 className="fixed inset-0 -z-10 w-full h-full bg-gray-900/10"
-            ></div>
+            />
             <div className="space-y-4 2k:space-y-8 p-6 md:p-0">
                 <h1 className="font-bold text-4xl sm:text-6xl 2k:text-[7.5rem] text-[#DA1E28] text-center">
                     Page Not Found

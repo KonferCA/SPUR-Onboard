@@ -270,9 +270,9 @@ function PermissionsPage() {
                             </span>
                         </div>
                         <ul className="space-y-2">
-                            {role.permissions.map((permission, index) => (
+                            {role.permissions.map((permission) => (
                                 <li
-                                    key={index}
+                                    key={permission}
                                     className="text-sm text-gray-600"
                                 >
                                     • {permission}
@@ -310,7 +310,7 @@ function PermissionsPage() {
                             <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Role
                             </th>
-                            <th className="px-6 py-3 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                            <th className="px-6 py-3 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider" />
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -400,7 +400,10 @@ function PermissionsPage() {
                                         </select>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button className="text-gray-400 hover:text-gray-600">
+                                        <button
+                                            type="button"
+                                            className="text-gray-400 hover:text-gray-600"
+                                        >
                                             <FiMoreVertical />
                                         </button>
                                     </td>
@@ -414,6 +417,7 @@ function PermissionsPage() {
                 <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                     <div className="flex-1 flex justify-between sm:hidden">
                         <button
+                            type="button"
                             onClick={() =>
                                 setCurrentPage((prev) => Math.max(prev - 1, 1))
                             }
@@ -423,6 +427,7 @@ function PermissionsPage() {
                             Previous
                         </button>
                         <button
+                            type="button"
                             onClick={() => setCurrentPage((prev) => prev + 1)}
                             disabled={
                                 currentPage * ITEMS_PER_PAGE >= totalUsers
@@ -462,6 +467,7 @@ function PermissionsPage() {
                                 aria-label="Pagination"
                             >
                                 <button
+                                    type="button"
                                     onClick={() =>
                                         setCurrentPage((prev) =>
                                             Math.max(prev - 1, 1)
@@ -478,6 +484,8 @@ function PermissionsPage() {
                                     ),
                                 }).map((_, i) => (
                                     <button
+                                        type="button"
+                                        // biome-ignore lint: array does not have any defined value, so using index as key
                                         key={i}
                                         onClick={() => setCurrentPage(i + 1)}
                                         className={`relative inline-flex items-center px-4 py-2 border ${
@@ -490,6 +498,7 @@ function PermissionsPage() {
                                     </button>
                                 ))}
                                 <button
+                                    type="button"
                                     onClick={() =>
                                         setCurrentPage((prev) => prev + 1)
                                     }
@@ -515,18 +524,21 @@ function PermissionsPage() {
                         {selectedUsers.length > 1 ? 's' : ''} selected
                     </span>
                     <button
+                        type="button"
                         onClick={() => handleBulkRoleUpdate('admin')}
                         className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200"
                     >
                         Make Admin
                     </button>
                     <button
+                        type="button"
                         onClick={() => handleBulkRoleUpdate('investor')}
                         className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200"
                     >
                         Make Investor
                     </button>
                     <button
+                        type="button"
                         onClick={() => handleBulkRoleUpdate('regular')}
                         className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200"
                     >

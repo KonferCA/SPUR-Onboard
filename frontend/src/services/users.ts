@@ -67,7 +67,7 @@ export async function getUsers(
 
     const json = await res.json();
     return {
-        users: json.users.map((user: any) => snakeToCamel(user)),
+        users: json.users.map((user: unknown) => snakeToCamel(user)),
         total: json.total,
     };
 }
@@ -98,7 +98,7 @@ export async function updateUserRole(
     }
 
     const json = await res.json();
-    return snakeToCamel(json);
+    return snakeToCamel(json) as User;
 }
 
 export async function updateUsersRole(

@@ -24,7 +24,7 @@ export function SettingsPage({
                 <h1 className="text-3xl font-bold mb-3 sm:mb-0">
                     {title.split(' ').map((word, i) => (
                         <span
-                            key={i}
+                            key={word}
                             className={i === 0 ? 'text-button-primary-100' : ''}
                         >
                             {' '}

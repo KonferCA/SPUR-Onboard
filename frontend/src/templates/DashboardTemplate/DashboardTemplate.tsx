@@ -1,5 +1,5 @@
 import type React from 'react';
-import { type ReactNode, useState, useEffect } from 'react'
+import { type ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
 import { PageLayout } from '@layouts';
 import { LogoSVG } from '@assets';
@@ -54,6 +54,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: no need to declare all dependencies
     useEffect(() => {
         setIsMobileMenuOpen(false);
     }, [location.pathname]);
@@ -67,6 +68,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                         <div className="flex items-center">
                             {isMobile ? (
                                 <button
+                                    type="button"
                                     onClick={() =>
                                         setIsMobileMenuOpen(!isMobileMenuOpen)
                                     }
@@ -104,7 +106,10 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                                 </div>
                             )}
 
-                            <div onClick={(e) => e.stopPropagation()}>
+                            <div
+                                onKeyUp={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                            >
                                 {actions}
                             </div>
                         </div>
@@ -119,6 +124,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                 <div
                     className="fixed inset-0 z-40 bg-black bg-opacity-50"
                     onClick={() => setIsMobileMenuOpen(false)}
+                    onKeyUp={() => setIsMobileMenuOpen(false)}
                 />
             )}
 
@@ -131,6 +137,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                     <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
                         {logo}
                         <button
+                            type="button"
                             onClick={() => setIsMobileMenuOpen(false)}
                             className="p-2 text-gray-700 hover:text-gray-900 focus:outline-none"
                         >

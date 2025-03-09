@@ -93,13 +93,16 @@ function ProjectDecisionPage() {
                 </p>
 
                 <div className="space-y-3">
-                    <label className="block">
+                    <p className="block">
                         <div
                             className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                                 selectedStatus === ProjectStatusEnum.Verified
                                     ? 'border-green-500 bg-green-50'
                                     : 'border-gray-200 hover:border-gray-300'
                             }`}
+                            onKeyUp={() =>
+                                setSelectedStatus(ProjectStatusEnum.Verified)
+                            }
                             onClick={() =>
                                 setSelectedStatus(ProjectStatusEnum.Verified)
                             }
@@ -117,15 +120,18 @@ function ProjectDecisionPage() {
                                 </div>
                             </div>
                         </div>
-                    </label>
+                    </p>
 
-                    <label className="block">
+                    <p className="block">
                         <div
                             className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                                 selectedStatus === ProjectStatusEnum.Pending
                                     ? 'border-yellow-500 bg-yellow-50'
                                     : 'border-gray-200 hover:border-gray-300'
                             }`}
+                            onKeyUp={() =>
+                                setSelectedStatus(ProjectStatusEnum.Pending)
+                            }
                             onClick={() =>
                                 setSelectedStatus(ProjectStatusEnum.Pending)
                             }
@@ -145,15 +151,18 @@ function ProjectDecisionPage() {
                                 </div>
                             </div>
                         </div>
-                    </label>
+                    </p>
 
-                    <label className="block">
+                    <p className="block">
                         <div
                             className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                                 selectedStatus === ProjectStatusEnum.Declined
                                     ? 'border-red-500 bg-red-50'
                                     : 'border-gray-200 hover:border-gray-300'
                             }`}
+                            onKeyUp={() =>
+                                setSelectedStatus(ProjectStatusEnum.Declined)
+                            }
                             onClick={() =>
                                 setSelectedStatus(ProjectStatusEnum.Declined)
                             }
@@ -171,7 +180,7 @@ function ProjectDecisionPage() {
                                 </div>
                             </div>
                         </div>
-                    </label>
+                    </p>
                 </div>
             </div>
 

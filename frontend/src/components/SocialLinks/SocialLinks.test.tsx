@@ -2,11 +2,23 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SocialLinks } from './SocialLinks';
 import { SocialPlatform } from '@/types/auth';
+import type { UserSocial } from '@/types/auth';
+import type {
+    SocialCardProps,
+    SocialIconButtonProps,
+    TextInputProps,
+} from '@/components';
+import type { ConfirmationModalProps } from '@/components/ConfirmationModal';
 
 // Mock child components
 vi.mock('../SocialIconButton', () => ({
-    SocialIconButton: ({ platform, disabled, onClick }: any) => (
+    SocialIconButton: ({
+        platform,
+        disabled,
+        onClick,
+    }: SocialIconButtonProps) => (
         <button
+            type="button"
             onClick={() => onClick(platform)}
             disabled={disabled}
             data-testid={`social-icon-${platform}`}
@@ -17,10 +29,13 @@ vi.mock('../SocialIconButton', () => ({
 }));
 
 vi.mock('../SocialCard', () => ({
-    SocialCard: ({ data, onRemove }: any) => (
+    SocialCard: ({ data, onRemove }: SocialCardProps) => (
         <div data-testid={`social-card-${data.platform}`}>
             {data.urlOrHandle}
-            <button onClick={() => onRemove(data)}>Remove</button>
+            {/* biome-ignore lint/complexity/useOptionalChain: it is more intuative to use the && instead */}
+            <button type="button" onClick={() => onRemove && onRemove(data)}>
+                Remove
+            </button>
         </div>
     ),
 }));
@@ -33,16 +48,24 @@ vi.mock('../ConfirmationModal', () => ({
         primaryAction,
         title,
         description,
-    }: any) =>
+    }: ConfirmationModalProps) =>
         isOpen ? (
             <div data-testid="confirmation-modal">
                 <h2>{title}</h2>
                 <p>{description}</p>
                 {children}
-                <button onClick={primaryAction} data-testid="confirm-button">
+                <button
+                    type="button"
+                    onClick={primaryAction}
+                    data-testid="confirm-button"
+                >
                     Confirm
                 </button>
-                <button onClick={onClose} data-testid="cancel-button">
+                <button
+                    type="button"
+                    onClick={onClose}
+                    data-testid="cancel-button"
+                >
                     Cancel
                 </button>
             </div>
@@ -57,12 +80,13 @@ vi.mock('../TextInput', () => ({
         prefix,
         label,
         placeholder,
-    }: any) => (
+    }: TextInputProps) => (
         <div>
-            <label>{label}</label>
+            <label htmlFor="testinput">{label}</label>
             <div>
                 {prefix && <span>{prefix}</span>}
                 <input
+                    id="testinput"
                     value={value}
                     onChange={onChange}
                     placeholder={placeholder}
@@ -81,7 +105,9 @@ vi.mock('@/utils/random', () => ({
 
 // Mock form validation
 vi.mock('@/utils/form-validation', () => ({
-    validateSocialLink: ({ urlOrHandle }: any) => {
+    validateSocialLink: ({
+        urlOrHandle,
+    }: Pick<UserSocial, 'platform' | 'urlOrHandle'>) => {
         // Simple validation logic for testing
         return urlOrHandle.length > 0;
     },

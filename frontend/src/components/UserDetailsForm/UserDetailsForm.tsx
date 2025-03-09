@@ -131,11 +131,13 @@ export function UserDetailsForm({
 
                 <p className="text-gray-600 text-center text-sm mt-4">
                     By registering, you agree to our{' '}
+                    {/* biome-ignore lint: no link yet */}
                     <a href="#" className="text-blue-600">
                         Terms of Service
                     </a>{' '}
-                    and{' '}
+                    and {/* biome-ignore lint: no link yet */}
                     <a href="#" className="text-blue-600">
+                        {' '}
                         Privacy Policy
                     </a>
                     .

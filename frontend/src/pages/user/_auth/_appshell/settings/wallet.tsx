@@ -153,6 +153,7 @@ function WalletSettings() {
                                         </p>
 
                                         <button
+                                            type="button"
                                             onClick={handleCopyAddress}
                                             className="text-gray-500 hover:text-blue-600 p-1.5 rounded-md hover:bg-blue-50 ml-auto flex-shrink-0"
                                             aria-label="Copy address"

@@ -154,10 +154,11 @@ export function groupProjectQuestions(
                             value: c,
                         }));
                         break;
-                    case 'date':
+                    case 'date': {
                         const date = new Date(q.answer);
                         inputField.value.value = date;
                         break;
+                    }
                     default:
                         inputField.value.value = q.answer;
                         break;
@@ -173,8 +174,7 @@ export function groupProjectQuestions(
                 inputFields,
                 dependentQuestionId:
                     projectQuestion.dependentQuestionId || undefined,
-                conditionType:
-                    (projectQuestion.conditionType as any) || undefined,
+                conditionType: projectQuestion.conditionType || undefined,
                 conditionValue: projectQuestion.conditionValue || undefined,
                 questionOrder: projectQuestion.questionOrder,
                 description: projectQuestion.description || undefined,

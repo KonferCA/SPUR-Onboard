@@ -9,7 +9,7 @@ export interface ValidationError {
     questionText: string;
     inputType: string;
     required: boolean;
-    value: any;
+    value: unknown;
     reason: string;
 }
 
@@ -81,6 +81,7 @@ export const ProjectError: React.FC<ProjectErrorProps> = ({
                     ([section, { count, errors }]) => (
                         <div key={section} className="mb-4 last:mb-0">
                             <button
+                                type="button"
                                 onClick={() => toggleSection(section)}
                                 className="w-full flex items-center justify-between text-left mb-2 group"
                             >
@@ -102,12 +103,13 @@ export const ProjectError: React.FC<ProjectErrorProps> = ({
 
                             {expandedSections.has(section) && (
                                 <div className="pl-4 space-y-2">
-                                    {errors.map((error, idx) => (
+                                    {errors.map((error) => (
                                         <div
-                                            key={idx}
+                                            key={`error-${error.section}-${error.subsection}`}
                                             className="border-l-2 border-red-200 pl-3"
                                         >
                                             <button
+                                                type="button"
                                                 onClick={(e) =>
                                                     handleErrorClick(error, e)
                                                 }

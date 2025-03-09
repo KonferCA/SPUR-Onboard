@@ -109,11 +109,9 @@ function RouteComponent() {
                     (q) => q.id === question.dependentQuestionId
                 );
 
-                if (
-                    foundQuestion &&
-                    foundQuestion.inputFields[0]?.value.value
-                ) {
-                    dependentAnswer = foundQuestion.inputFields[0].value.value;
+                if (foundQuestion?.inputFields[0]?.value.value) {
+                    dependentAnswer = foundQuestion.inputFields[0].value
+                        .value as string | DropdownOption[];
                     break;
                 }
             }
@@ -138,21 +136,18 @@ function RouteComponent() {
                 default:
                     return true;
             }
-        } else {
-            switch (question.conditionType?.conditionTypeEnum) {
-                case 'empty':
-                    return !dependentAnswer;
-                case 'not_empty':
-                    return !!dependentAnswer;
-                case 'equals':
-                    return dependentAnswer === question.conditionValue;
-                case 'contains':
-                    return dependentAnswer.includes(
-                        question.conditionValue || ''
-                    );
-                default:
-                    return true;
-            }
+        }
+        switch (question.conditionType?.conditionTypeEnum) {
+            case 'empty':
+                return !dependentAnswer;
+            case 'not_empty':
+                return !!dependentAnswer;
+            case 'equals':
+                return dependentAnswer === question.conditionValue;
+            case 'contains':
+                return dependentAnswer.includes(question.conditionValue || '');
+            default:
+                return true;
         }
     };
 
@@ -220,7 +215,7 @@ function RouteComponent() {
                 </ul>
             </nav>
 
-            <div className="h-24"></div>
+            <div className="h-24" />
 
             <SectionedLayout
                 linkContainerClassnames="top-36"
@@ -236,6 +231,9 @@ function RouteComponent() {
                                         className={stepItemStyles({
                                             active: currentStep === idx,
                                         })}
+                                        onKeyUp={() => {
+                                            setCurrentStep(idx);
+                                        }}
                                         onClick={() => {
                                             setCurrentStep(idx);
                                         }}
@@ -243,7 +241,7 @@ function RouteComponent() {
                                         <span>{group.section}</span>
 
                                         {currentStep === idx ? (
-                                            <div className="absolute bottom-0 h-[2px] bg-gray-700 w-full"></div>
+                                            <div className="absolute bottom-0 h-[2px] bg-gray-700 w-full" />
                                         ) : null}
                                     </li>
                                 ))}

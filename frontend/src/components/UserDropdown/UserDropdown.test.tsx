@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { UserDropdown } from './UserDropdown';
+import type { User } from '@/types';
 
 vi.mock('@tanstack/react-router', async () => {
     const actual = await vi.importActual('@tanstack/react-router');
@@ -16,6 +17,7 @@ vi.mock('@tanstack/react-router', async () => {
             className: string;
         }) => (
             <button
+                type="button"
                 onClick={onClick}
                 className={className}
                 data-testid="mock-link"
@@ -57,8 +59,11 @@ vi.mock('framer-motion', () => ({
             ...props
         }: {
             children: React.ReactNode;
+            // biome-ignore lint/suspicious/noExplicitAny: skip getting prop types from motion
             animate?: any;
+            // biome-ignore lint/suspicious/noExplicitAny: skip getting prop types from motion
             initial?: any;
+            // biome-ignore lint/suspicious/noExplicitAny: skip getting prop types from motion
             transition?: any;
         }) => (
             <div data-animate={animate} data-transition={transition} {...props}>
@@ -73,7 +78,7 @@ describe('UserDropdown', () => {
         firstName: 'Nausher',
         lastName: 'Rao',
         profilePictureUrl: 'https://example.com/sherrao.jpg',
-    };
+    } as User;
 
     const mockOnLogout = vi.fn(() => Promise.resolve());
     const mockOnSettingsClick = vi.fn();
@@ -200,7 +205,7 @@ describe('UserDropdown', () => {
         const incompleteUser = {
             // no firstName or lastName
             profilePictureUrl: 'https://example.com/sherrao.jpg',
-        };
+        } as User;
 
         render(<UserDropdown user={incompleteUser} onLogout={mockOnLogout} />);
 

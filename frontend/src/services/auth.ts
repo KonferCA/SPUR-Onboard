@@ -45,7 +45,7 @@ export async function register(
     }
 
     const json = await res.json();
-    return snakeToCamel(json);
+    return snakeToCamel(json) as RegisterReponse;
 }
 
 /**
@@ -76,7 +76,7 @@ export async function signin(
     }
 
     const json = await res.json();
-    return snakeToCamel(json);
+    return snakeToCamel(json) as SigninResponse;
 }
 
 export async function refreshAccessToken(): Promise<AuthResponse> {
@@ -99,7 +99,7 @@ export async function refreshAccessToken(): Promise<AuthResponse> {
     }
 
     const json = await res.json();
-    return snakeToCamel(json);
+    return snakeToCamel(json) as AuthResponse;
 }
 
 /**

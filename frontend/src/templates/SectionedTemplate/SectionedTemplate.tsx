@@ -37,7 +37,7 @@ export const SectionedLayout: FC<SectionedLayoutProps> = ({
                 )}
             >
                 {asideDetails}
-                <div className="h-4"></div>
+                <div className="h-4" />
                 {/* TODO: Update anchor links to work better - currently offsets badly */}
                 <AnchorLinks links={links} />
             </nav>

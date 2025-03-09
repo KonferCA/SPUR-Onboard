@@ -27,6 +27,7 @@ const InfoCard: React.FC<InfoCardProps> = ({
             </div>
             {onRemove && (
                 <button
+                    type="button"
                     onClick={onRemove}
                     className="text-red-500 hover:text-red-700"
                     aria-label="remove"

@@ -26,6 +26,7 @@ const ScrollLink: FC<ScrollLinkProps> = ({ children, to, offset }) => {
         }
     };
 
+    // biome-ignore lint: have to use a link here instead of a button because it doesn't make sense to be a button
     return <a onClick={onClick}>{children}</a>;
 };
 

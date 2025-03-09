@@ -17,7 +17,7 @@ type KeyboardShortcut = {
 export const useKeyboardShortcut = (
     shortcut: KeyboardShortcut,
     callback: (event: KeyboardEvent) => void,
-    deps: any[] = []
+    deps: unknown[] = []
 ) => {
     // memoize the handler to prevent stale event listeners
     const handleKeyDown = useCallback(

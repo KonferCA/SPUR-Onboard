@@ -50,7 +50,7 @@ export const SocialCard: FC<SocialCardProps> = ({
             case SocialPlatform.LinkedIn:
                 idx = urlOrHandle.lastIndexOf('/');
                 return urlOrHandle.substring(idx + 1);
-            case SocialPlatform.CustomUrl:
+            case SocialPlatform.CustomUrl: {
                 let domain = urlOrHandle
                     .replace(/^https?:\/\//, '')
                     .replace(/^www\./, '');
@@ -59,10 +59,11 @@ export const SocialCard: FC<SocialCardProps> = ({
                     domain = domain.substring(0, idx);
                 }
                 return domain;
+            }
             default:
                 return urlOrHandle;
         }
-    }, [urlOrHandle]);
+    }, [platform, urlOrHandle]);
 
     const Icon =
         platform !== SocialPlatform.CustomUrl ? (

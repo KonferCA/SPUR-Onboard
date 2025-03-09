@@ -1,3 +1,4 @@
+import type { ReactNode, HTMLAttributes } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { CollapsibleSection } from './CollapsibleSection';
@@ -5,10 +6,15 @@ import userEvent from '@testing-library/user-event';
 
 vi.mock('framer-motion', () => ({
     motion: {
-        div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+        div: ({
+            children,
+            ...props
+        }: { children: ReactNode } & HTMLAttributes<HTMLDivElement>) => (
+            <div {...props}>{children}</div>
+        ),
     },
 
-    AnimatePresence: ({ children }: any) => children,
+    AnimatePresence: ({ children }: { children: ReactNode }) => children,
 }));
 
 describe('CollapsibleSection', () => {
@@ -35,6 +41,7 @@ describe('CollapsibleSection', () => {
         expect(screen.getByText('Test Content')).toBeInTheDocument();
 
         const header = screen.getByText('Test Section').parentElement;
+        expect(header).not.toBeNull();
         await user.click(header!);
         expect(screen.queryByText('Test Content')).toBeNull();
 

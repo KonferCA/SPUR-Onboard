@@ -10,6 +10,7 @@ const NewProjectPage = () => {
     const { accessToken } = useAuth();
     const hasTriggeredFetchRef = useRef(false);
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint has problem with navigate not being in the list of dependencies but the function never changes so it is ok to leave it out
     useEffect(() => {
         if (!accessToken || hasTriggeredFetchRef.current) return;
 

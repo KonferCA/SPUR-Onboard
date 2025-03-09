@@ -33,6 +33,7 @@ const StatusButton = ({
     onClick: () => void;
 }) => (
     <button
+        type="button"
         onClick={onClick}
         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
             ${
@@ -370,6 +371,7 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
                                                             <th
                                                                 key={header.id}
                                                                 className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900"
+                                                                onKeyUp={header.column.getToggleSortingHandler()}
                                                                 onClick={header.column.getToggleSortingHandler()}
                                                                 style={{
                                                                     cursor: 'pointer',
@@ -404,6 +406,11 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
                                             <tr
                                                 key={row.id}
                                                 className="hover:bg-gray-50 cursor-pointer"
+                                                onKeyUp={() =>
+                                                    handleRowClick(
+                                                        row.original.id
+                                                    )
+                                                }
                                                 onClick={() =>
                                                     handleRowClick(
                                                         row.original.id

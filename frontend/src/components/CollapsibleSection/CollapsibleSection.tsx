@@ -25,6 +25,7 @@ export const CollapsibleSection = ({
             <div>
                 <div
                     className="flex items-center justify-between mb-2 cursor-pointer group"
+                    onKeyUp={handleClick}
                     onClick={handleClick}
                 >
                     <h1 className="font-bold text-xl align-left">{title}</h1>

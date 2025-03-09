@@ -127,6 +127,7 @@ const UserProjectsPage: React.FC = () => {
                             { id: 'in_review', name: 'In Review' },
                         ].map((tab) => (
                             <button
+                                type="button"
                                 key={tab.id}
                                 onClick={() =>
                                     setActiveTab(tab.id as typeof activeTab)

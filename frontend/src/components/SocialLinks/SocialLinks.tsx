@@ -94,9 +94,10 @@ export const SocialLinks: React.FC<SocialLinksProps> = ({
             <div className="p-4 border border-gray-300 bg-white rounded-md">
                 <p className="mb-4">Select an account to add</p>
                 <div className="flex gap-2 flex-wrap">
-                    {allPlatforms.map((platform, idx) => (
+                    {allPlatforms.map((platform) => (
                         <SocialIconButton
-                            key={idx}
+                            // no duplicate keys since these are the buttons so all entries are unique
+                            key={platform}
                             platform={platform}
                             disabled={
                                 platform !== SocialPlatform.CustomUrl &&

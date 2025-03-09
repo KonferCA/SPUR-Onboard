@@ -62,6 +62,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                             <Dialog.Panel className="relative w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left shadow-xl transition-all">
                                 {showCloseButton && (
                                     <button
+                                        type="button"
                                         onClick={onClose}
                                         className="absolute right-6 top-6 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
                                     >

@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useRandomId } from '@/hooks/useRandomId';
 
 export interface DateInputProps {
     label?: string;
@@ -24,6 +25,7 @@ export const DateInput: React.FC<DateInputProps> = ({
     min,
     disabled,
 }) => {
+    const inputID = useRandomId();
     const formatDate = (date?: Date) => {
         if (!date) return '';
         try {
@@ -43,7 +45,10 @@ export const DateInput: React.FC<DateInputProps> = ({
         <div className="w-full">
             {label && (
                 <div className="flex justify-between items-center mb-1">
-                    <label className="block text-sm font-medium text-gray-900">
+                    <label
+                        htmlFor={inputID}
+                        className="block text-sm font-medium text-gray-900"
+                    >
                         {label}
                     </label>
                     {required && (
@@ -53,6 +58,7 @@ export const DateInput: React.FC<DateInputProps> = ({
             )}
             <div className="relative">
                 <input
+                    id={inputID}
                     type="date"
                     value={formatDate(value)}
                     onChange={handleChange}

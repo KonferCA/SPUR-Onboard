@@ -35,7 +35,7 @@ export async function getUserProfile(
 
     const body = await response.json();
 
-    return snakeToCamel(body);
+    return snakeToCamel(body) as ProfileResponse;
 }
 
 /**

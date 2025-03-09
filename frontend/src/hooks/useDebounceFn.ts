@@ -27,10 +27,10 @@ import { useCallback, useRef, useEffect } from 'react';
  *   );
  * }
  */
-export function useDebounceFn<T extends (...args: any[]) => any>(
+export function useDebounceFn<T extends (...args: unknown[]) => unknown>(
     callback: T,
     delay = 500,
-    deps: any[] = []
+    deps: unknown[] = []
 ): T {
     // use ref to store the timeout ID so it persists across renders
     const timeoutRef = useRef<number | null>(null);
@@ -44,6 +44,7 @@ export function useDebounceFn<T extends (...args: any[]) => any>(
         };
     }, []);
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: must spread dependencies because the number of dependencies is unknown
     return useCallback(
         (...args: Parameters<T>) => {
             // clear the previous timeout if it exists

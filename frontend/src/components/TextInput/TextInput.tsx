@@ -62,7 +62,7 @@ const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
                         )}
 
                         <Input
-                            ref={ref as any}
+                            ref={ref}
                             className={getInputStyles({
                                 className,
                                 prefix: !!prefix,

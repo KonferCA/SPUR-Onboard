@@ -65,6 +65,7 @@ export const WalletConnectButton = ({
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4">
                 {configuredWallets.map((wallet) => (
                     <button
+                        type="button"
                         key={wallet.name}
                         onClick={() => handleConnect(wallet.name)}
                         disabled={connecting}

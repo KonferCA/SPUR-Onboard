@@ -86,6 +86,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                             fill="none"
                             viewBox="0 0 24 24"
                         >
+                            <title className="sr-only">Loading Icon</title>
                             <circle
                                 className="opacity-25"
                                 cx="12"
