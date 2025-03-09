@@ -309,12 +309,12 @@ func TestProjectEndpoints(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		// Verify the response contains project data
-		var resp []interface{}
+		var resp map[string][]interface{}
 		err := json.NewDecoder(rec.Body).Decode(&resp)
 		assert.NoError(t, err)
 
 		// Verify at least one project is returned
-		assert.Greater(t, len(resp), 0, "Response should contain at least one project")
+		assert.Greater(t, len(resp["projects"]), 0, "Response should contain at least one project")
 	})
 
 	t.Run("Get Project", func(t *testing.T) {

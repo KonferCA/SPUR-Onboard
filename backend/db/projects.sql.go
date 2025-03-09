@@ -1120,24 +1120,44 @@ func (q *Queries) GetQuestionsByProjectAsAdmin(ctx context.Context, projectID st
 }
 
 const listAllProjects = `-- name: ListAllProjects :many
-SELECT p.id, p.company_id, p.title, p.description, p.status, p.created_at, p.updated_at, c.name as company_name, COUNT(d.id) as document_count, COUNT(t.id) as team_member_count
+SELECT
+    p.id,
+    p.company_id,
+    COALESCE(
+        c.name,
+        ''
+    ) as company_name,
+    COALESCE(
+        (SELECT pa.answer
+         FROM project_answers pa
+         JOIN project_questions pq ON pa.question_id = pq.id
+         WHERE pa.project_id = p.id AND pq.question_key = 'company_name' AND pa.answer != ''
+         LIMIT 1),
+        p.title
+    ) as title,
+    p.description,
+    p.status,
+    p.created_at,
+    p.updated_at,
+    COUNT(d.id) as document_count,
+    COUNT(t.id) as team_member_count
 FROM projects p
 LEFT JOIN project_documents d ON d.project_id = p.id
 LEFT JOIN team_members t ON t.company_id = p.company_id
-LEFT JOIN companies c on c.id = p.company_id
-GROUP BY p.id, c.name
+LEFT JOIN companies c ON c.id = p.company_id
+GROUP BY p.id, c.id, c.name
 ORDER BY p.created_at DESC
 `
 
 type ListAllProjectsRow struct {
 	ID              string        `json:"id"`
 	CompanyID       string        `json:"company_id"`
+	CompanyName     string        `json:"company_name"`
 	Title           string        `json:"title"`
 	Description     *string       `json:"description"`
 	Status          ProjectStatus `json:"status"`
 	CreatedAt       int64         `json:"created_at"`
 	UpdatedAt       int64         `json:"updated_at"`
-	CompanyName     *string       `json:"company_name"`
 	DocumentCount   int64         `json:"document_count"`
 	TeamMemberCount int64         `json:"team_member_count"`
 }
@@ -1154,12 +1174,12 @@ func (q *Queries) ListAllProjects(ctx context.Context) ([]ListAllProjectsRow, er
 		if err := rows.Scan(
 			&i.ID,
 			&i.CompanyID,
+			&i.CompanyName,
 			&i.Title,
 			&i.Description,
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.CompanyName,
 			&i.DocumentCount,
 			&i.TeamMemberCount,
 		); err != nil {
