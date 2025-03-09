@@ -38,7 +38,7 @@ describe('SocialCard', () => {
         render(<SocialCard data={data} />);
 
         expect(screen.getByAltText('Bluesky')).toBeInTheDocument();
-        expect(screen.getByText('handle')).toBeInTheDocument();
+        expect(screen.getByText('handle.bsky.social')).toBeInTheDocument();
     });
 
     it('renders Facebook social card with correct handle format', () => {
@@ -49,7 +49,7 @@ describe('SocialCard', () => {
         render(<SocialCard data={data} />);
 
         expect(screen.getByAltText('Facebook')).toBeInTheDocument();
-        expect(screen.getByText('username')).toBeInTheDocument();
+        expect(screen.getByText('@username')).toBeInTheDocument();
     });
 
     it('renders LinkedIn social card with correct handle format', () => {
@@ -134,5 +134,91 @@ describe('SocialCard', () => {
 
         // Should not throw error
         expect(() => fireEvent.click(removeButton)).not.toThrow();
+    });
+
+    // new tests for url extraction functionality
+    it('extracts handle from twitter url with www', () => {
+        const data = createTestData(
+            SocialPlatform.X,
+            'https://www.twitter.com/username'
+        );
+        render(<SocialCard data={data} />);
+
+        expect(screen.getByAltText('X')).toBeInTheDocument();
+        expect(screen.getByText('@username')).toBeInTheDocument();
+    });
+
+    it('extracts handle from twitter url without www', () => {
+        const data = createTestData(
+            SocialPlatform.X,
+            'https://twitter.com/username'
+        );
+        render(<SocialCard data={data} />);
+
+        expect(screen.getByAltText('X')).toBeInTheDocument();
+        expect(screen.getByText('@username')).toBeInTheDocument();
+    });
+
+    it('extracts handle from bluesky url', () => {
+        const data = createTestData(
+            SocialPlatform.BlueSky,
+            'https://bsky.app/profile/username.bsky.social'
+        );
+        render(<SocialCard data={data} />);
+
+        expect(screen.getByAltText('Bluesky')).toBeInTheDocument();
+        expect(screen.getByText('@username.bsky.social')).toBeInTheDocument();
+    });
+
+    it('extracts handle from linkedin url with different formats', () => {
+        // test with standard format
+        const data1 = createTestData(
+            SocialPlatform.LinkedIn,
+            'https://linkedin.com/in/username'
+        );
+        const { rerender } = render(<SocialCard data={data1} />);
+        expect(screen.getByText('username')).toBeInTheDocument();
+
+        // test with www prefix and dash in username
+        const data2 = createTestData(
+            SocialPlatform.LinkedIn,
+            'https://www.linkedin.com/in/username-with-dash'
+        );
+        rerender(<SocialCard data={data2} />);
+        expect(screen.getByText('username-with-dash')).toBeInTheDocument();
+    });
+
+    it('extracts username from instagram url', () => {
+        const data = createTestData(
+            SocialPlatform.Instagram,
+            'https://instagram.com/username'
+        );
+        render(<SocialCard data={data} />);
+
+        expect(screen.getByAltText('Instagram')).toBeInTheDocument();
+        expect(screen.getByText('@username')).toBeInTheDocument();
+    });
+
+    it('extracts username from facebook url', () => {
+        const data = createTestData(
+            SocialPlatform.Facebook,
+            'https://facebook.com/username'
+        );
+        render(<SocialCard data={data} />);
+
+        expect(screen.getByAltText('Facebook')).toBeInTheDocument();
+        expect(screen.getByText('@username')).toBeInTheDocument();
+    });
+
+    it('handles discord url format', () => {
+        const data = createTestData(
+            SocialPlatform.Discord,
+            'https://discord.com/users/123456789'
+        );
+        render(<SocialCard data={data} />);
+
+        expect(screen.getByAltText('Discord')).toBeInTheDocument();
+        // discord handles are shown with @ prefix
+        expect(screen.getByText('@123456789')).toBeInTheDocument();
     });
 });

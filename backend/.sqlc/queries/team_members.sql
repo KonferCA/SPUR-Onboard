@@ -5,10 +5,12 @@ INSERT INTO team_members (
     personal_website, commitment_type, introduction,
     industry_experience, detailed_biography, previous_work,
     resume_external_url, resume_internal_url,
-    founders_agreement_external_url, founders_agreement_internal_url
+    founders_agreement_external_url, founders_agreement_internal_url,
+    social_links
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8,
-    $9, $10, $11, $12, $13, $14, $15, $16
+    $9, $10, $11, $12, $13, $14, $15, $16,
+    $17
 )
 RETURNING *; 
 
@@ -35,8 +37,18 @@ SET
     first_name = COALESCE(NULLIF(@first_name::text, ''), first_name),
     last_name = COALESCE(NULLIF(@last_name::text, ''), last_name),
     title = COALESCE(NULLIF(@title::text, ''), title),
-    bio = COALESCE(NULLIF(@bio::text, ''), bio),
+    detailed_biography = COALESCE(NULLIF(@detailed_biography::text, ''), detailed_biography),
     linkedin_url = COALESCE(NULLIF(@linkedin_url::text, ''), linkedin_url),
+    social_links = COALESCE(@social_links::jsonb, social_links),
+    personal_website = NULLIF(@personal_website::text, ''),
+    commitment_type = COALESCE(NULLIF(@commitment_type::text, ''), commitment_type),
+    introduction = COALESCE(NULLIF(@introduction::text, ''), introduction),
+    industry_experience = COALESCE(NULLIF(@industry_experience::text, ''), industry_experience),
+    previous_work = NULLIF(@previous_work::text, ''),
+    resume_external_url = NULLIF(@resume_external_url::text, ''),
+    resume_internal_url = NULLIF(@resume_internal_url::text, ''),
+    founders_agreement_external_url = NULLIF(@founders_agreement_external_url::text, ''),
+    founders_agreement_internal_url = NULLIF(@founders_agreement_internal_url::text, ''),
     updated_at = extract(epoch from now())
 WHERE id = @id AND company_id = @company_id
 RETURNING *;
