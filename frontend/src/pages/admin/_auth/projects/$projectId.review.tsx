@@ -1,9 +1,9 @@
-import { Button, DropdownOption } from '@/components';
+import { Button, type DropdownOption } from '@/components';
 import { ReviewQuestions } from '@/components/ReviewQuestions/ReviewQuestions';
 import {
-    GroupedProjectQuestions,
+    type GroupedProjectQuestions,
     groupProjectQuestions,
-    Question,
+    type Question,
 } from '@/config/forms';
 import { useAuth } from '@/contexts';
 import { createProjectComment, getProjectComments } from '@/services/comment';
@@ -55,7 +55,7 @@ function RouteComponent() {
         // if this is not set  to infity, data is refetched on window focus
         // aka, when the mouse re-enters the browser window... which is dumb
         // and causes a lot of data transfer that is not needed.
-        staleTime: Infinity,
+        staleTime: Number.POSITIVE_INFINITY,
         refetchOnWindowFocus: false,
     });
     const { data: commentsData, isLoading: loadingComments } = useQuery({
@@ -66,7 +66,7 @@ function RouteComponent() {
             return data;
         },
         enabled: !!accessToken && !!projectId,
-        staleTime: Infinity,
+        staleTime: Number.POSITIVE_INFINITY,
         refetchOnWindowFocus: false,
     });
     const [groupedQuestions, setGroupedQuestions] = useState<
@@ -100,11 +100,9 @@ function RouteComponent() {
                 const foundQuestion = subSection.questions.find(
                     (q) => q.id === question.dependentQuestionId
                 );
-                if (
-                    foundQuestion &&
-                    foundQuestion.inputFields[0]?.value.value
-                ) {
-                    dependentAnswer = foundQuestion.inputFields[0].value.value;
+                if (foundQuestion?.inputFields[0]?.value.value) {
+                    dependentAnswer = foundQuestion.inputFields[0].value
+                        .value as string | DropdownOption[];
                     break;
                 }
             }
@@ -129,21 +127,18 @@ function RouteComponent() {
                 default:
                     return true;
             }
-        } else {
-            switch (question.conditionType?.conditionTypeEnum) {
-                case 'empty':
-                    return !dependentAnswer;
-                case 'not_empty':
-                    return !!dependentAnswer;
-                case 'equals':
-                    return dependentAnswer === question.conditionValue;
-                case 'contains':
-                    return dependentAnswer.includes(
-                        question.conditionValue || ''
-                    );
-                default:
-                    return true;
-            }
+        }
+        switch (question.conditionType?.conditionTypeEnum) {
+            case 'empty':
+                return !dependentAnswer;
+            case 'not_empty':
+                return !!dependentAnswer;
+            case 'equals':
+                return dependentAnswer === question.conditionValue;
+            case 'contains':
+                return dependentAnswer.includes(question.conditionValue || '');
+            default:
+                return true;
         }
     };
 
@@ -201,7 +196,7 @@ function RouteComponent() {
                     </li>
                 </ul>
             </nav>
-            <div className="h-24"></div>
+            <div className="h-24" />
             <SectionedLayout
                 linkContainerClassnames="top-36"
                 links={asideLinks}
@@ -216,13 +211,16 @@ function RouteComponent() {
                                         className={stepItemStyles({
                                             active: currentStep === idx,
                                         })}
+                                        onKeyUp={() => {
+                                            setCurrentStep(idx);
+                                        }}
                                         onClick={() => {
                                             setCurrentStep(idx);
                                         }}
                                     >
                                         <span>{group.section}</span>
                                         {currentStep === idx ? (
-                                            <div className="absolute bottom-0 h-[2px] bg-gray-700 w-full"></div>
+                                            <div className="absolute bottom-0 h-[2px] bg-gray-700 w-full" />
                                         ) : null}
                                     </li>
                                 ))}

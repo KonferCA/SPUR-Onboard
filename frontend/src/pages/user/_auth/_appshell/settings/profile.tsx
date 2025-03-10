@@ -9,7 +9,7 @@ import { profileValidationSchema } from '@/types/user';
 import type { UpdateProfileRequest } from '@/types/user';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProfilePictureUpload } from '@/components/ProfilePictureUpload/ProfilePictureUpload';
-import { SocialLink } from '@/types';
+import type { SocialLink } from '@/types';
 import { useNotification } from '@/contexts';
 
 export const Route = createFileRoute('/user/_auth/_appshell/settings/profile')({
@@ -191,4 +191,3 @@ function ProfileSettings() {
         </SettingsPage>
     );
 }
-

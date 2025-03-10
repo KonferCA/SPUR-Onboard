@@ -6,7 +6,7 @@ import { format, fromUnixTime } from 'date-fns';
  */
 export const formatUnixTimestamp = (
     timestamp: number,
-    formatStr: string = 'MMMM d, yyyy'
+    formatStr = 'MMMM d, yyyy'
 ): string => {
     try {
         // Convert Unix timestamp to Date object

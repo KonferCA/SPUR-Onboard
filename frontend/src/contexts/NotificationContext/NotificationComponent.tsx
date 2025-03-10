@@ -1,6 +1,7 @@
 // NotificationComponent.tsx
-import React, { useEffect, useRef, useState } from 'react';
-import { Notification } from './types';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { Notification } from './types';
 import { TbConfetti } from 'react-icons/tb';
 import { TbBellExclamation } from 'react-icons/tb';
 import { TbAlertTriangle } from 'react-icons/tb';

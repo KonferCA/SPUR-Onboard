@@ -1,8 +1,8 @@
-import { ExtendedProjectResponse } from '@/services/project';
+import type { ExtendedProjectResponse } from '@/services/project';
 import { formatUnixTimestamp } from '@/utils/date';
 import { Badge, Button, Card } from '@components';
-import { ReactNode, useNavigate } from '@tanstack/react-router';
-import { FC, useState, useEffect } from 'react';
+import { type ReactNode, useNavigate } from '@tanstack/react-router';
+import { type FC, useState, useEffect } from 'react';
 import { ProjectStatusEnum, updateProjectStatus } from '@/services/projects';
 import { WithdrawProjectModal } from '../WithdrawProjectModal/WithdrawProjectModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -110,9 +110,9 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
             });
 
             window.location.reload();
+            // biome-ignore lint: can't find the specific type for the error thrown by the fetch request
         } catch (error: any) {
             console.error('Failed to withdraw project:', error);
-
             if (error?.response?.status === 401) {
                 push({
                     message: 'Your session has expired. Please sign in again.',
@@ -204,6 +204,7 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
 
                     <div className="lg:hidden relative">
                         <button
+                            type="button"
                             id={`options-button-${data.id}`}
                             onClick={() => setShowOptionsMenu(!showOptionsMenu)}
                             className="p-2 text-gray-700 hover:text-gray-900 focus:outline-none"
@@ -218,6 +219,7 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                             >
                                 {canWithdraw && (
                                     <button
+                                        type="button"
                                         onClick={() => {
                                             setShowOptionsMenu(false);
                                             setShowWithdrawModal(true);
@@ -229,6 +231,7 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                                 )}
 
                                 <button
+                                    type="button"
                                     onClick={viewProject}
                                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                 >
