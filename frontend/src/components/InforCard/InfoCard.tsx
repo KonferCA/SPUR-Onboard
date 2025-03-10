@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { IoClose } from 'react-icons/io5';
 
 export interface InfoCardProps {
@@ -27,6 +27,7 @@ const InfoCard: React.FC<InfoCardProps> = ({
             </div>
             {onRemove && (
                 <button
+                    type="button"
                     onClick={onRemove}
                     className="text-red-500 hover:text-red-700"
                     aria-label="remove"
@@ -39,4 +40,3 @@ const InfoCard: React.FC<InfoCardProps> = ({
 };
 
 export { InfoCard };
-

@@ -1,6 +1,7 @@
 // NotificationContext.tsx
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Notification, NotificationInput } from './types';
+import type React from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
+import type { Notification, NotificationInput } from './types';
 import { NotificationComponent } from './NotificationComponent';
 
 type NotificationContextType = {

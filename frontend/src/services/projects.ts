@@ -80,7 +80,7 @@ export async function getProjectDocuments(
     const json = await res.json();
     return {
         documents: (json.documents || []).map(
-            (doc: any) => snakeToCamel(doc) as DocumentResponse
+            (doc: unknown) => snakeToCamel(doc) as DocumentResponse
         ),
     };
 }
@@ -105,7 +105,7 @@ export async function getProjectComments(
     const json = await res.json();
     return {
         comments: (json.comments || []).map(
-            (comment: any) => snakeToCamel(comment) as CommentResponse
+            (comment: unknown) => snakeToCamel(comment) as CommentResponse
         ),
     };
 }
@@ -141,4 +141,3 @@ export async function updateProjectStatus(
         );
     }
 }
-

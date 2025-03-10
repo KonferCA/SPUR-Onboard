@@ -1,5 +1,5 @@
 interface SampleDataConfig {
-    value: any;
+    value: unknown;
     type: 'text' | 'date' | 'select' | 'multiselect';
 }
 
@@ -177,7 +177,10 @@ const sampleAnswers: Record<string, SampleDataConfig> = {
     },
 };
 
-export const getSampleAnswer = (question: string, inputType: string): any => {
+export const getSampleAnswer = (
+    question: string,
+    inputType: string
+): unknown => {
     const config = sampleAnswers[question] || {
         value: `Sample answer for: ${question}. This is a detailed response that demonstrates understanding and expertise in this area.`,
         type: 'text',
@@ -198,6 +201,6 @@ export const getSampleAnswer = (question: string, inputType: string): any => {
         default:
             return typeof config.value === 'string'
                 ? config.value
-                : config.value[0];
+                : (config.value as string[])[0];
     }
 };

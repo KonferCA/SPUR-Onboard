@@ -1,7 +1,7 @@
-import type { UploadableFile } from '@/components';
-import { ZodTypeAny } from 'zod';
-import { UserSocial } from './auth';
-import { FundingStructureModel } from '@/components/FundingStructure';
+import type { DropdownOption, UploadableFile } from '@/components';
+import type { ZodTypeAny } from 'zod';
+import type { UserSocial } from './auth';
+import type { FundingStructureModel } from '@/components/FundingStructure';
 
 export type FormFieldType =
     | 'textinput'
@@ -17,7 +17,7 @@ export interface FormFieldValue {
     files?: UploadableFile[];
     teamMembers?: TeamMember[];
     fundingStructure?: FundingStructureModel;
-    value?: any;
+    value?: unknown;
 }
 
 export interface FormField {
@@ -28,16 +28,12 @@ export interface FormField {
     placeholder?: string;
     description?: string;
     rows?: number;
-    options?: Array<{
-        id: number;
-        label: string;
-        value: string;
-    }>;
+    options?: Array<DropdownOption>;
     validations?: ZodTypeAny[];
     value: FormFieldValue;
     invalid?: boolean;
     disabled?: boolean;
-    props?: any;
+    props?: object;
 }
 
 export interface FormSection {
@@ -71,5 +67,5 @@ export interface TeamMember {
 export type SocialLink = Pick<UserSocial, 'id' | 'urlOrHandle' | 'platform'>;
 
 export type FormData = {
-    [key: string]: any;
+    [key: string]: unknown;
 };

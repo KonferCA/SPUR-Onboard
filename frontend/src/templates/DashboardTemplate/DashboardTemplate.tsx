@@ -1,4 +1,5 @@
-import React, { ReactNode, useState, useEffect } from 'react';
+import type React from 'react';
+import { type ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
 import { PageLayout } from '@layouts';
 import { LogoSVG } from '@assets';
@@ -8,7 +9,7 @@ interface MenuItem {
     label: string;
     path: string;
     icon: ReactNode;
-};
+}
 
 interface DashboardTemplateProps {
     children: ReactNode;
@@ -20,7 +21,7 @@ interface DashboardTemplateProps {
     }>;
     actions?: ReactNode;
     customSidebar?: ReactNode;
-};
+}
 
 export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
     children,
@@ -53,6 +54,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: no need to declare all dependencies
     useEffect(() => {
         setIsMobileMenuOpen(false);
     }, [location.pathname]);
@@ -65,8 +67,11 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                     <div className="flex justify-between items-center h-16">
                         <div className="flex items-center">
                             {isMobile ? (
-                                <button 
-                                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setIsMobileMenuOpen(!isMobileMenuOpen)
+                                    }
                                     className="p-2 text-gray-700 hover:text-gray-900 focus:outline-none"
                                 >
                                     <FaBars size={20} />
@@ -81,7 +86,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                                 {logo}
                             </div>
                         )}
-                        
+
                         <div className="flex items-center">
                             {!isMobile && navTabs.length > 0 && (
                                 <div className="flex items-center mr-6">
@@ -100,8 +105,11 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                                     ))}
                                 </div>
                             )}
-                            
-                            <div onClick={(e) => e.stopPropagation()}>
+
+                            <div
+                                onKeyUp={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                            >
                                 {actions}
                             </div>
                         </div>
@@ -113,23 +121,30 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
             <div className="h-16" />
 
             {isMobile && isMobileMenuOpen && (
-                <div className="fixed inset-0 z-40 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)} />
+                <div
+                    className="fixed inset-0 z-40 bg-black bg-opacity-50"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    onKeyUp={() => setIsMobileMenuOpen(false)}
+                />
             )}
 
             {isMobile && (
-                <div className={`fixed top-0 left-0 h-full w-64 bg-white z-50 transform transition-transform duration-300 ease-in-out shadow-lg ${
-                    isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-                }`}>
+                <div
+                    className={`fixed top-0 left-0 h-full w-64 bg-white z-50 transform transition-transform duration-300 ease-in-out shadow-lg ${
+                        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                    }`}
+                >
                     <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
                         {logo}
-                        <button 
+                        <button
+                            type="button"
                             onClick={() => setIsMobileMenuOpen(false)}
                             className="p-2 text-gray-700 hover:text-gray-900 focus:outline-none"
                         >
                             <FaTimes size={20} />
                         </button>
                     </div>
-                    
+
                     {navTabs.length > 0 && (
                         <div className="border-b border-gray-200 py-2">
                             {navTabs.map((tab) => (
@@ -147,7 +162,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                             ))}
                         </div>
                     )}
-                    
+
                     <nav className="py-4">
                         {menuItems.map((item) => (
                             <Link
@@ -172,14 +187,15 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
 
             {/* main content area */}
             <div className="w-full min-h-[calc(100vh_-_4rem)] max-w-[1440px] mx-auto flex flex-1">
-                {!isMobile && (customSidebar || (
-                    <div className="w-40 bg-white border-r border-gray-200 flex-shrink-0">
-                        <nav className="sticky top-16 py-4">
-                            {menuItems.map((item) => (
-                                <Link
-                                    key={item.path}
-                                    to={item.path}
-                                    className={`
+                {!isMobile &&
+                    (customSidebar || (
+                        <div className="w-40 bg-white border-r border-gray-200 flex-shrink-0">
+                            <nav className="sticky top-16 py-4">
+                                {menuItems.map((item) => (
+                                    <Link
+                                        key={item.path}
+                                        to={item.path}
+                                        className={`
                                     flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap rounded-lg mx-1
                                     ${
                                         location.pathname === item.path
@@ -187,17 +203,17 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                                             : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                                     }
                                   `}
-                                >
-                                    {item.icon}
+                                    >
+                                        {item.icon}
 
-                                    <span className="truncate">
-                                        {item.label}
-                                    </span>
-                                </Link>
-                            ))}
-                        </nav>
-                    </div>
-                ))}
+                                        <span className="truncate">
+                                            {item.label}
+                                        </span>
+                                    </Link>
+                                ))}
+                            </nav>
+                        </div>
+                    ))}
 
                 {/* main content */}
                 <main className="flex-1 p-4 md:p-6 w-full h-full">

@@ -1,14 +1,14 @@
 import {
     CommentBubble,
-    DropdownOption,
+    type DropdownOption,
     FileDownload,
     TeamMembers,
 } from '@/components';
 import { BiSolidCommentAdd } from 'react-icons/bi';
-import { Question } from '@/config/forms';
-import { Comment } from '@/services/comment';
-import { FormField } from '@/types';
-import { FC, useState } from 'react';
+import type { Question } from '@/config/forms';
+import type { Comment } from '@/services/comment';
+import type { FormField } from '@/types';
+import { type FC, useState } from 'react';
 import { CommentCreate } from '../CommentCreate';
 import { FundingStructureModel } from '../FundingStructure';
 
@@ -57,22 +57,25 @@ const ReviewQuestionInput: FC<ReviewQuestionInputProps> = ({
             case 'textarea':
             case 'textinput':
                 return field.value.value;
-            case 'date':
+            case 'date': {
                 const date = field.value.value as Date;
                 return date.toISOString().split('T')[0];
+            }
             case 'multiselect':
             case 'select':
                 if (Array.isArray(field.value.value)) {
                     const value = field.value.value as DropdownOption[];
                     return value.map((v) => v.value).join(', ');
-                } else if (
+                }
+                if (
                     field.value.value !== null &&
                     field.value.value !== undefined
                 ) {
                     switch (typeof field.value.value) {
-                        case 'object':
+                        case 'object': {
                             const value = field.value.value as DropdownOption;
                             return value.value;
+                        }
                         case 'string':
                             return field.value.value;
                         default:
@@ -137,7 +140,9 @@ const ReviewQuestionInput: FC<ReviewQuestionInputProps> = ({
                         {field.label}
                     </span>
                 </div>
-                <div className="space-y-4">{renderInput(field)}</div>
+                <div className="space-y-4">
+                    {renderInput(field) as React.ReactNode}
+                </div>
                 {!disableCommentCreation && (
                     <button
                         type="button"

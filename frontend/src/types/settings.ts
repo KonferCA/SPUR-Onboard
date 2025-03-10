@@ -1,7 +1,7 @@
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react';
 
 export interface SettingsRoute {
-    path: string
-    label: string
-    icon: ReactNode
-} 
+    path: string;
+    label: string;
+    icon: ReactNode;
+}

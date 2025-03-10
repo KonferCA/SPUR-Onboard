@@ -124,6 +124,7 @@ describe('useDebounceFn', () => {
     });
 
     it('should preserve the latest callback reference', () => {
+        // biome-ignore lint: test variable, it can have implicity type
         let capturedCallback;
         const TestComponent = () => {
             const callback = vi.fn();

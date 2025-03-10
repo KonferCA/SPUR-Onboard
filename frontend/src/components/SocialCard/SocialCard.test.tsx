@@ -11,7 +11,7 @@ describe('SocialCard', () => {
     const createTestData = (
         platform: SocialPlatform,
         urlOrHandle: string,
-        id: string = '1'
+        id = '1'
     ): SocialLink => ({
         platform,
         urlOrHandle,
