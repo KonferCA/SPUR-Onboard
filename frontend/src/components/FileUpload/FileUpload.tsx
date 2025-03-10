@@ -1,11 +1,11 @@
 import {
-    ProjectDocument,
+    type ProjectDocument,
     uploadDocument,
     removeDocument,
 } from '@/services/project';
 import { useState, useRef } from 'react';
 import { FiUpload, FiX, FiLoader, FiCheck } from 'react-icons/fi';
-import { useDebounceFn } from '@/hooks';
+import { useDebounceFn, useRandomId } from '@/hooks';
 
 /**
  * UploadableFile is to be able to differentiate between newly added files and already uploaded files.
@@ -61,7 +61,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
     accessToken,
     accept = '.pdf,.png,.jpeg,.jpg',
     enableAutosave = false,
-    limit = Infinity,
+    limit = Number.POSITIVE_INFINITY,
 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [uploadedFiles, setUploadedFiles] =
@@ -76,6 +76,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
         adds: [],
         removes: [],
     });
+
+    const inputID = useRandomId();
 
     // Autosave function
     const autosave = useDebounceFn(
@@ -178,6 +180,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
     const handleFiles = (files: File[]) => {
         if (files.length > limit) {
             // truncate file list
+            // biome-ignore lint/style/noParameterAssign: reassigning it because it is better than creating a new variable in this case
             files = files.slice(0, limit);
         }
 
@@ -237,7 +240,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         <div className={`w-full ${className}`}>
             {label !== '' && (
                 <div className="mb-1">
-                    <label>{label}</label>
+                    <label htmlFor={inputID}>{label}</label>
                 </div>
             )}
             <div
@@ -276,6 +279,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                     </div>
                 )}
                 <input
+                    id={inputID}
                     type="file"
                     ref={fileInputRef}
                     onChange={handleFileSelect}
@@ -289,9 +293,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
             {/* File list */}
             {uploadedFiles.length > 0 && (
                 <div className="mt-4 space-y-2">
-                    {uploadedFiles.map((file, index) => (
+                    {uploadedFiles.map((file) => (
                         <div
-                            key={index}
+                            key={file.name}
                             className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
                         >
                             <div className="flex items-center gap-3">

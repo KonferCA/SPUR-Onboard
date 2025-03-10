@@ -148,7 +148,7 @@ export function AuthForm({
                             ) : (
                                 internalErrors.map((e, idx) => (
                                     <p
-                                        key={idx}
+                                        key={e}
                                         className="underline"
                                     >{`${idx + 1}. ${e}`}</p>
                                 ))

@@ -11,14 +11,14 @@ import { getCompany, updateCompany } from '@/services';
 
 export const Route = createFileRoute('/user/_auth/_appshell/settings/wallet')({
     component: WalletSettings,
-})
+});
 
 function WalletSettings() {
-    const [error, setError] = useState<string | null>(null)
-    const [copySuccess, setCopySuccess] = useState(false)
-    const { connected, address, disconnect } = useWallet()
-    const { accessToken } = useAuth()
-    const queryClient = useQueryClient()
+    const [error, setError] = useState<string | null>(null);
+    const [copySuccess, setCopySuccess] = useState(false);
+    const { connected, address, disconnect } = useWallet();
+    const { accessToken } = useAuth();
+    const queryClient = useQueryClient();
 
     // fetch company data
     const { data: company } = useQuery({
@@ -36,15 +36,17 @@ function WalletSettings() {
     // update company mutation
     const { mutate: updateWallet, isLoading: isUpdating } = useMutation({
         mutationFn: async () => {
-            if (!accessToken) { 
+            if (!accessToken) {
                 throw new Error('No access token');
             }
 
-            if (!address) { 
+            if (!address) {
                 throw new Error('No wallet address');
             }
 
-            return updateCompany(accessToken, { wallet_address: address || '' });
+            return updateCompany(accessToken, {
+                wallet_address: address || '',
+            });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['company'] });
@@ -57,7 +59,7 @@ function WalletSettings() {
                 setError('Failed to update wallet address');
             }
         },
-    })
+    });
 
     const handleCopyAddress = () => {
         if (address) {
@@ -65,8 +67,8 @@ function WalletSettings() {
 
             setCopySuccess(true);
             setTimeout(() => setCopySuccess(false), 2000);
-        };
-    }
+        }
+    };
 
     const handleDisconnectWallet = async () => {
         try {
@@ -80,13 +82,13 @@ function WalletSettings() {
         } catch (err) {
             setError('Failed to disconnect wallet');
         }
-    }
+    };
 
     const handleSaveWallet = async () => {
         if (connected && address) {
             updateWallet();
         }
-    }
+    };
 
     const isWalletSaved = company?.wallet_address === address;
 
@@ -101,13 +103,19 @@ function WalletSettings() {
                             </h1>
 
                             <p className="text-gray-600">
-                                Connect your Sui wallet to manage your account and participate in projects.
+                                Connect your Sui wallet to manage your account
+                                and participate in projects.
                             </p>
                         </div>
-                        
+
                         <div className="border-t border-gray-200 pt-6 -mx-6 px-6 sm:mx-0 sm:px-0 sm:border-t-0 sm:pt-0">
-                            <WalletConnectButton 
-                                onWalletConnected={(walletAddress) => console.log('Wallet connected:', walletAddress)} 
+                            <WalletConnectButton
+                                onWalletConnected={(walletAddress) =>
+                                    console.log(
+                                        'Wallet connected:',
+                                        walletAddress
+                                    )
+                                }
                             />
                         </div>
                     </div>
@@ -119,27 +127,33 @@ function WalletSettings() {
                             </h1>
 
                             <p className="text-gray-600">
-                                Your wallet is connected and ready to use with your account.
+                                Your wallet is connected and ready to use with
+                                your account.
                             </p>
                         </div>
-                        
+
                         <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-6 overflow-hidden">
                             <div className="p-4 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
                                 <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <img src="/sui-logo.svg" alt="Sui" className="w-9 h-9" />
+                                    <img
+                                        src="/sui-logo.svg"
+                                        alt="Sui"
+                                        className="w-9 h-9"
+                                    />
                                 </div>
-                            
+
                                 <div className="min-w-0 flex-1 w-full text-center sm:text-left">
                                     <h3 className="text-xl font-semibold mb-3">
                                         Sui wallet
                                     </h3>
-                                    
+
                                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2 flex items-center">
                                         <p className="text-gray-700 text-sm font-mono truncate mr-2">
                                             {address}
                                         </p>
 
                                         <button
+                                            type="button"
                                             onClick={handleCopyAddress}
                                             className="text-gray-500 hover:text-blue-600 p-1.5 rounded-md hover:bg-blue-50 ml-auto flex-shrink-0"
                                             aria-label="Copy address"
@@ -147,18 +161,18 @@ function WalletSettings() {
                                         >
                                             {copySuccess ? (
                                                 <FiCheck className="w-5 h-5 text-green-500" />
-                                                ) : (
+                                            ) : (
                                                 <FiCopy className="w-5 h-5" />
                                             )}
                                         </button>
                                     </div>
-                                    
+
                                     {copySuccess && (
                                         <p className="text-green-600 text-xs mb-4">
                                             Address copied to clipboard!
                                         </p>
                                     )}
-                                    
+
                                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-4">
                                         {!isWalletSaved ? (
                                             <Button
@@ -166,7 +180,9 @@ function WalletSettings() {
                                                 disabled={isUpdating}
                                                 className="w-full py-2.5 text-base"
                                             >
-                                                {isUpdating ? 'Saving...' : 'Save Wallet Address'}
+                                                {isUpdating
+                                                    ? 'Saving...'
+                                                    : 'Save Wallet Address'}
                                             </Button>
                                         ) : (
                                             <div className="flex items-center justify-center sm:justify-start text-green-600 bg-green-50 px-4 py-2.5 rounded-lg w-full sm:w-auto">
@@ -193,4 +209,4 @@ function WalletSettings() {
             </div>
         </SettingsPage>
     );
-};
+}

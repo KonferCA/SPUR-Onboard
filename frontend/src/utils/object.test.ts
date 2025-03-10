@@ -129,7 +129,17 @@ describe('Test Object Utilities', () => {
                 nested_object: { inner_key: 'value' },
             };
 
-            const result = snakeToCamel(input);
+            const result = snakeToCamel(input) as {
+                stringValue: string;
+                numberValue: number;
+                booleanValue: boolean;
+                nullValue: null;
+                undefinedValue: undefined;
+                dateValue: Date;
+                regexValue: RegExp;
+                arrayValue: number[];
+                nestedObject: { innerKey: string };
+            };
 
             expect(typeof result.stringValue).toBe('string');
             expect(typeof result.numberValue).toBe('number');

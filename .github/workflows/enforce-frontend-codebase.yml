@@ -1,0 +1,32 @@
+name: Enforce Proper Frontend Codebase
+on:
+  pull_request:
+    branches: ['main', 'staging', 'production']
+jobs:
+  check-format:
+    name: Check Frontend Codebase
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check code formatting
+        run: pnpm format
+      - name: Check linting
+        run: pnpm lint
+      - name: Check TypeScript
+        run: tsc -b

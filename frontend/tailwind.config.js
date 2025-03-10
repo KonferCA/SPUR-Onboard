@@ -5,8 +5,8 @@ export default {
     theme: {
         extend: {
             colors: {
-                'button-primary-25': "#FCDFCB",
-                'button-primary-50': "#F9B98D",
+                'button-primary-25': '#FCDFCB',
+                'button-primary-50': '#F9B98D',
                 'button-primary-100': '#F4802F',
                 'button-primary-200': '#D2691F',
                 'button-secondary-100': '#154261',

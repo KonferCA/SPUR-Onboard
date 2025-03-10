@@ -8,7 +8,7 @@ describe('Test Card Component', () => {
             <Card>
                 <div>
                     <span>Card content</span>
-                    <button>My button</button>
+                    <button type="button">My button</button>
                 </div>
             </Card>
         );
@@ -19,7 +19,7 @@ describe('Test Card Component', () => {
     });
 
     it('should render nothing as children', () => {
-        const { container } = render(<Card></Card>);
+        const { container } = render(<Card />);
         const elements = container.querySelectorAll('*');
         // only the root/Card component
         expect(elements.length).toEqual(1);

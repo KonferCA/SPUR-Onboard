@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import type { ComponentProps } from '@/types/common';
 
 export interface FormContainerProps extends ComponentProps {

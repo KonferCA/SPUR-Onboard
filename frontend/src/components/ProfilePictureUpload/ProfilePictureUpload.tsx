@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts';
 import { useNotification } from '@/contexts/NotificationContext';
 import { Button } from '@components';
-import { FC, useRef, useState } from 'react';
+import { type FC, useRef, useState } from 'react';
 import { ProfilePicture } from '../ProfilePicture/ProfilePicture';
 
 interface ProfilePictureUploadProps {
@@ -10,7 +10,9 @@ interface ProfilePictureUploadProps {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
-export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({ onUpload }) => {
+export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({
+    onUpload,
+}) => {
     const { user, accessToken, setUser } = useAuth();
     const { push } = useNotification();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -26,13 +28,16 @@ export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({ onUpload }
 
         try {
             setIsUploading(true);
-            const response = await fetch(`${API_BASE_URL}/users/${user.id}/profile-picture`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                },
-                body: formData
-            });
+            const response = await fetch(
+                `${API_BASE_URL}/users/${user.id}/profile-picture`,
+                {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: formData,
+                }
+            );
 
             if (!response.ok) {
                 throw new Error('Failed to upload profile picture');
@@ -42,11 +47,11 @@ export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({ onUpload }
             onUpload?.(data.url);
             setUser({
                 ...user,
-                profilePictureUrl: data.url
+                profilePictureUrl: data.url,
             });
             push({
                 message: 'Profile picture updated successfully',
-                level: 'success'
+                level: 'success',
             });
             // Clear preview and selected file after successful upload
             setPreviewUrl(null);
@@ -55,7 +60,7 @@ export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({ onUpload }
             console.error('Upload error:', error);
             push({
                 message: 'Failed to upload profile picture',
-                level: 'error'
+                level: 'error',
             });
         } finally {
             setIsUploading(false);
@@ -70,7 +75,7 @@ export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({ onUpload }
         if (!['image/jpeg', 'image/png'].includes(file.type)) {
             push({
                 message: 'Please upload a JPEG or PNG image',
-                level: 'error'
+                level: 'error',
             });
             return;
         }
@@ -79,7 +84,7 @@ export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({ onUpload }
         if (file.size > 5 * 1024 * 1024) {
             push({
                 message: 'File size must be less than 5MB',
-                level: 'error'
+                level: 'error',
             });
             return;
         }
@@ -98,12 +103,15 @@ export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({ onUpload }
 
         try {
             setIsUploading(true);
-            const response = await fetch(`${API_BASE_URL}/users/${user.id}/profile-picture`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
+            const response = await fetch(
+                `${API_BASE_URL}/users/${user.id}/profile-picture`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
                 }
-            });
+            );
 
             if (!response.ok) {
                 throw new Error('Failed to remove profile picture');
@@ -112,11 +120,11 @@ export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({ onUpload }
             onUpload?.('');
             setUser({
                 ...user,
-                profilePictureUrl: null
+                profilePictureUrl: null,
             });
             push({
                 message: 'Profile picture removed successfully',
-                level: 'success'
+                level: 'success',
             });
             // Clear preview and selected file after removal
             setPreviewUrl(null);
@@ -125,7 +133,7 @@ export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({ onUpload }
             console.error('Remove error:', error);
             push({
                 message: 'Failed to remove profile picture',
-                level: 'error'
+                level: 'error',
             });
         } finally {
             setIsUploading(false);
@@ -140,21 +148,25 @@ export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({ onUpload }
         }
     };
 
-    const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : 'N';
+    const initials = user
+        ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+        : 'N';
 
     return (
         <div className="flex items-center gap-3">
-            <ProfilePicture 
-                url={previewUrl || user?.profilePictureUrl} 
+            <ProfilePicture
+                url={previewUrl || user?.profilePictureUrl}
                 initials={initials}
-                size="lg" 
+                size="lg"
             />
-            
+
             <div className="flex gap-2">
                 {previewUrl ? (
                     <>
                         <Button
-                            onClick={() => selectedFile && handleUpload(selectedFile)}
+                            onClick={() =>
+                                selectedFile && handleUpload(selectedFile)
+                            }
                             isLoading={isUploading}
                             variant="primary"
                             size="sm"
@@ -203,4 +215,4 @@ export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({ onUpload }
             />
         </div>
     );
-}; 
+};
