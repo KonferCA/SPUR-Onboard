@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { Listbox, Transition } from '@headlessui/react';
 import { FiChevronDown } from 'react-icons/fi';
+import { useRandomId } from '@/hooks/useRandomId';
 
 export interface DropdownOption {
     id: string | number;
@@ -29,19 +30,23 @@ const Dropdown: React.FC<DropdownProps> = ({
     multiple,
     error,
 }) => {
+    const dropdownID = useRandomId();
+
     const renderSelectedValue = () => {
         if (Array.isArray(value) && value.length > 0) {
             return (
                 <span className="block truncate text-base">
-                    {value.map(v => v.label).join(', ')}
+                    {value.map((v) => v.label).join(', ')}
                 </span>
             );
         }
-        
+
         if (!Array.isArray(value) && value?.label) {
-            return <span className="block truncate text-base">{value.label}</span>;
+            return (
+                <span className="block truncate text-base">{value.label}</span>
+            );
         }
-        
+
         return (
             <span className="block truncate text-base text-gray-400">
                 {placeholder}
@@ -53,7 +58,10 @@ const Dropdown: React.FC<DropdownProps> = ({
         <div className="w-full">
             {label && (
                 <div className="flex justify-between items-center mb-1">
-                    <label className="block text-sm font-medium text-gray-900">
+                    <label
+                        htmlFor={dropdownID}
+                        className="block text-sm font-medium text-gray-900"
+                    >
                         {label}
                     </label>
                     {required && (
@@ -63,11 +71,14 @@ const Dropdown: React.FC<DropdownProps> = ({
             )}
             <Listbox value={value} onChange={onChange} multiple={multiple}>
                 <div className="relative">
-                    <Listbox.Button 
+                    <Listbox.Button
+                        id={dropdownID}
                         className={`relative w-full py-4 px-4 text-left bg-white rounded-lg border ${
                             error ? 'border-red-500' : 'border-gray-300'
                         } cursor-pointer focus:outline-none focus-visible:ring-2 ${
-                            error ? 'focus-visible:ring-red-500' : 'focus-visible:ring-blue-500'
+                            error
+                                ? 'focus-visible:ring-red-500'
+                                : 'focus-visible:ring-blue-500'
                         }`}
                     >
                         {renderSelectedValue()}
@@ -115,11 +126,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                     </Transition>
                 </div>
             </Listbox>
-            {error && (
-                <p className="mt-1 text-sm text-red-500">
-                    {error}
-                </p>
-            )}
+            {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
         </div>
     );
 };

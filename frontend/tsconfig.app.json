@@ -22,7 +22,6 @@
             "@services": ["./src/services/index"]
         },
 
-        /* Bundler mode */
         "moduleResolution": "Bundler",
         "allowImportingTsExtensions": true,
         "isolatedModules": true,
@@ -30,18 +29,13 @@
         "noEmit": true,
         "jsx": "react-jsx",
 
-        /* Linting */
         "strict": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
         "noUncheckedSideEffectImports": true
     },
-    
+
     "include": ["src"],
-    "exclude": [
-        "node_moddules",
-        // "src/**/*.test.ts",
-        // "src/**/*.test.tsx",
-    ]
+    "exclude": ["node_moddules"]
 }

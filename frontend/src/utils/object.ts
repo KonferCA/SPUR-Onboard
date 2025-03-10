@@ -13,20 +13,20 @@
  * const output = snakeToCamel(input);
  * // Result: { userName: "john_doe", contactInfo: { phoneNumber: "123" } }
  */
-export function snakeToCamel(obj: any): any {
+export function snakeToCamel(obj: unknown): unknown {
     // Handle null or undefined
     if (obj === null || obj === undefined) {
-        return obj as any;
+        return obj;
     }
 
     // Handle arrays
     if (Array.isArray(obj)) {
-        return obj.map((item) => snakeToCamel(item)) as any;
+        return obj.map((item) => snakeToCamel(item));
     }
 
     // Handle non-objects, strictly instances that are not {}
     if (typeof obj !== 'object' || obj.constructor !== Object) {
-        return obj as any;
+        return obj;
     }
 
     const result = Object.fromEntries(
@@ -55,5 +55,5 @@ export function snakeToCamel(obj: any): any {
         })
     );
 
-    return result as any;
+    return result;
 }

@@ -4,7 +4,7 @@ import { ProjectCard } from './ProjectCard';
 import { ProjectStatusEnum } from '@/services/projects';
 import * as router from '@tanstack/react-router';
 import { AuthProvider, NotificationProvider } from '@/contexts';
-import { ExtendedProjectResponse } from '@/services/project';
+import type { ExtendedProjectResponse } from '@/services/project';
 
 // mock the router hook
 vi.mock('@tanstack/react-router', async () => {
@@ -169,4 +169,3 @@ describe('Test ProjectCard Component', () => {
         expect(screen.queryByText('Withdraw')).not.toBeInTheDocument();
     });
 });
-

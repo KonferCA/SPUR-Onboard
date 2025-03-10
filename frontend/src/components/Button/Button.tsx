@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { Button as HeadlessButton } from '@headlessui/react';
-import { ReactNode } from '@tanstack/react-router';
+import type { ReactNode } from '@tanstack/react-router';
 
 // define size variants
 const sizeClasses = {
@@ -86,6 +86,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                             fill="none"
                             viewBox="0 0 24 24"
                         >
+                            <title className="sr-only">Loading Icon</title>
                             <circle
                                 className="opacity-25"
                                 cx="12"
@@ -110,7 +111,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                                 {icon}
                             </span>
                         )}
-                        
+
                         {children}
                     </>
                 )}

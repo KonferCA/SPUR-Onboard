@@ -7,15 +7,22 @@ describe('AutoSaveIndicator', () => {
         idle: 'Your answers will be autosaved as you complete your application',
         saving: 'Autosaving...',
         success: 'All changes saved',
-        error: 'Failed to save changes'
+        error: 'Failed to save changes',
     };
 
     it('should render with default messages for each status', () => {
-        const statuses: ('idle' | 'saving' | 'success' | 'error')[] = ['idle', 'saving', 'success', 'error'];
-        
-        statuses.forEach(status => {
+        const statuses: ('idle' | 'saving' | 'success' | 'error')[] = [
+            'idle',
+            'saving',
+            'success',
+            'error',
+        ];
+
+        statuses.forEach((status) => {
             const { rerender } = render(<AutoSaveIndicator status={status} />);
-            expect(screen.getByText(defaultMessages[status])).toBeInTheDocument();
+            expect(
+                screen.getByText(defaultMessages[status])
+            ).toBeInTheDocument();
             rerender(<div />);
         });
     });

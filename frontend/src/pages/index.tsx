@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 
 const Landing: React.FC = () => {
-    return <div></div>;
+    return <div />;
 };
 
 export const Route = createFileRoute('/')({

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BiChevronUp } from 'react-icons/bi';
 
@@ -7,27 +8,29 @@ export interface CollapsibleSectionProps {
     children: React.ReactNode;
 }
 
-export const CollapsibleSection = ({ title, children }: CollapsibleSectionProps) => {
+export const CollapsibleSection = ({
+    title,
+    children,
+}: CollapsibleSectionProps) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     const handleClick = () => {
         const newValue = !isCollapsed;
-               
+
         setIsCollapsed(newValue);
     };
 
     return (
         <div className="w-full">
             <div>
-                <div 
+                <div
                     className="flex items-center justify-between mb-2 cursor-pointer group"
+                    onKeyUp={handleClick}
                     onClick={handleClick}
                 >
-                    <h1 className="font-bold text-xl align-left">
-                        {title}
-                    </h1>
+                    <h1 className="font-bold text-xl align-left">{title}</h1>
 
-                    <motion.div 
+                    <motion.div
                         className="text-gray-500 group-hover:text-gray-700"
                         initial={{ rotate: 0 }}
                         animate={{ rotate: isCollapsed ? 180 : 0 }}
@@ -36,7 +39,7 @@ export const CollapsibleSection = ({ title, children }: CollapsibleSectionProps)
                         <BiChevronUp size={24} />
                     </motion.div>
                 </div>
-                
+
                 <div className="my-4 bg-gray-400 w-full h-[2px]" />
             </div>
 
@@ -44,12 +47,12 @@ export const CollapsibleSection = ({ title, children }: CollapsibleSectionProps)
                 {!isCollapsed && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
+                        animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ 
-                            duration: 0.3, 
-                            ease: "easeInOut",
-                            opacity: { duration: 0.2 }
+                        transition={{
+                            duration: 0.3,
+                            ease: 'easeInOut',
+                            opacity: { duration: 0.2 },
                         }}
                     >
                         {children}
