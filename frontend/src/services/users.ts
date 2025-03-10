@@ -58,12 +58,16 @@ export async function getUsers(
     });
 
     if (res.status !== HttpStatusCode.OK) {
-        throw new ApiError('Failed to fetch users', res.status, await res.json());
+        throw new ApiError(
+            'Failed to fetch users',
+            res.status,
+            await res.json()
+        );
     }
 
     const json = await res.json();
     return {
-        users: json.users.map((user: any) => snakeToCamel(user)),
+        users: json.users.map((user: unknown) => snakeToCamel(user)),
         total: json.total,
     };
 }
@@ -86,11 +90,15 @@ export async function updateUserRole(
     });
 
     if (res.status !== HttpStatusCode.OK) {
-        throw new ApiError('Failed to update user role', res.status, await res.json());
+        throw new ApiError(
+            'Failed to update user role',
+            res.status,
+            await res.json()
+        );
     }
 
     const json = await res.json();
-    return snakeToCamel(json);
+    return snakeToCamel(json) as User;
 }
 
 export async function updateUsersRole(
@@ -112,6 +120,10 @@ export async function updateUsersRole(
     });
 
     if (res.status !== HttpStatusCode.OK) {
-        throw new ApiError('Failed to update user roles', res.status, await res.json());
+        throw new ApiError(
+            'Failed to update user roles',
+            res.status,
+            await res.json()
+        );
     }
-} 
+}

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import type React from 'react';
+import { useState, useEffect } from 'react';
 import { FiPlus, FiEdit } from 'react-icons/fi';
 import {
     TextArea,
     TextInput,
-    UploadableFile,
+    type UploadableFile,
     SocialLinks,
     Button,
 } from '@components';
@@ -36,11 +37,14 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
 }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [editingMember, setEditingMember] = useState<LocalTeamMember | null>(null);
+    const [editingMember, setEditingMember] = useState<LocalTeamMember | null>(
+        null
+    );
     const [newMember, setNewMember] = useState<Partial<LocalTeamMember>>({});
     const [members, setMembers] = useState<LocalTeamMember[]>([]);
     const [resumeFile, setResumeFile] = useState<UploadableFile | null>(null);
-    const [foundersAgreementFile, setFoundersAgreementFile] = useState<UploadableFile | null>(null);
+    const [foundersAgreementFile, setFoundersAgreementFile] =
+        useState<UploadableFile | null>(null);
     const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
 
     const { accessToken, companyId, user } = useAuth();
@@ -50,8 +54,11 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         const initializeMembers = async () => {
             if (user && accessToken) {
                 try {
-                    const userProfile = await getUserProfile(accessToken, user.id);
-                    
+                    const userProfile = await getUserProfile(
+                        accessToken,
+                        user.id
+                    );
+
                     const accountOwner: LocalTeamMember = {
                         id: user.id,
                         firstName: user.firstName || user.email.split('@')[0],
@@ -73,11 +80,8 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                     };
 
                     const otherMembers = initialValue
-                        .filter(member => !member.isAccountOwner)
-                        .map(member => ({
-                            ...member,
-                            isLoading: false
-                        }));
+                        .filter((member) => !member.isAccountOwner)
+                        .map((member) => ({ ...member, isLoading: false }));
 
                     setMembers([accountOwner, ...otherMembers]);
                 } catch (e) {
@@ -88,42 +92,12 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         autoClose: true,
                         duration: 2000,
                     });
-
-                    // still add the account owner even if profile fetch fails, but with minimal info
-                    const accountOwner: LocalTeamMember = {
-                        id: user.id,
-                        firstName: user.firstName || user.email.split('@')[0],
-                        lastName: user.lastName || '',
-                        title: 'Account Owner',
-                        detailedBiography: '',
-                        socialLinks: [],
-                        resumeExternalUrl: '',
-                        resumeInternalUrl: '',
-                        introduction: '',
-                        commitmentType: 'Full-time',
-                        industryExperience: '',
-                        previousWork: '',
-                        founderAgreementExternalUrl: '',
-                        founderAgreementInternalUrl: '',
-                        isAccountOwner: true,
-                        isLoading: false,
-                        created_at: Date.now(),
-                    };
-
-                    const otherMembers = initialValue
-                        .filter(member => !member.isAccountOwner)
-                        .map(member => ({
-                            ...member,
-                            isLoading: false
-                        }));
-
-                    setMembers([accountOwner, ...otherMembers]);
                 }
             }
         };
 
         initializeMembers();
-    }, [user, accessToken, initialValue]);
+    }, [user, accessToken, initialValue, notification.push]);
 
     // Add a cleanup effect when forms are closed
     useEffect(() => {
@@ -145,7 +119,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
     const saveToDatabase = async (member: LocalTeamMember) => {
         if (!accessToken || !companyId) {
             // remove member from the list
-            setMembers((prev) => prev.filter((m) => m.id != member.id));
+            setMembers((prev) => prev.filter((m) => m.id !== member.id));
             return;
         }
 
@@ -158,24 +132,29 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             const res = await addTeamMember(accessToken, {
                 companyId,
                 member: {
-                    ...member
+                    ...member,
                 },
             });
             const originalId = member.id;
 
             // upload files
-            if (resumeFile) {
+            if (resumeFile && res && typeof res === 'object' && 'id' in res) {
                 await uploadTeamMemberDocument(accessToken, {
-                    memberId: res.id,
+                    memberId: res.id as string,
                     docType: 'resume',
                     companyId,
                     file: resumeFile,
                 });
             }
 
-            if (foundersAgreementFile) {
+            if (
+                foundersAgreementFile &&
+                res &&
+                typeof res === 'object' &&
+                'id' in res
+            ) {
                 await uploadTeamMemberDocument(accessToken, {
-                    memberId: res.id,
+                    memberId: res.id as string,
                     docType: 'founders_agreement',
                     companyId,
                     file: foundersAgreementFile,
@@ -184,10 +163,12 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
 
             // Update the member id to the response id
             // the response has the permament id generated by the backend
-            Object.assign(member, {
-                id: res.id,
-                isLoading: false,
-            });
+            if (res && typeof res === 'object' && 'id' in res) {
+                Object.assign(member, {
+                    id: res.id as string,
+                    isLoading: false,
+                });
+            }
 
             setTimeout(() => {
                 notification.update(notificationId, {
@@ -204,7 +185,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         } catch (e) {
             console.error(e);
             // remove member from the list
-            setMembers((prev) => prev.filter((m) => m.id != member.id));
+            setMembers((prev) => prev.filter((m) => m.id !== member.id));
             notification.update(notificationId, {
                 message: 'Failed to save team member',
                 level: 'error',
@@ -218,12 +199,17 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         if (checkAllRequired()) {
             const member: LocalTeamMember = {
                 id: randomId(),
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 firstName: newMember.firstName!,
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 lastName: newMember.lastName!,
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 title: newMember.title!,
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 detailedBiography: newMember.detailedBiography!,
                 resumeExternalUrl: '',
                 resumeInternalUrl: '',
+                // biome-ignore lint/style/noNonNullAssertion: null assertion doesn't apply here since checkAllRequired validates the newMember object
                 introduction: newMember.detailedBiography!,
                 commitmentType: 'Full-time',
                 industryExperience: '',
@@ -283,40 +269,49 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         if (member.isAccountOwner) return;
 
         // optimistic removal
-        setMembers((prev) => prev.filter((m) => m.id != member.id));
+        setMembers((prev) => prev.filter((m) => m.id !== member.id));
         removeFromDatabase(member);
     };
 
     const handleStartEdit = (member: LocalTeamMember) => {
         setEditingMember(member);
         setIsEditing(true);
-        
-        console.log('Starting edit for member with social links:', member.socialLinks);
-        
+
+        console.log(
+            'Starting edit for member with social links:',
+            member.socialLinks
+        );
+
         // Set the socialLinks array from the member's data
         // Ensure each link has a unique ID
-        const links = (member.socialLinks || []).map(link => ({
+        const links = (member.socialLinks || []).map((link) => ({
             ...link,
-            id: link.id || randomId()
+            id: link.id || randomId(),
         }));
-        
+
         console.log('Initialized social links for editing:', links);
-        
+
         setSocialLinks(links);
     };
 
     const handleEdit = async () => {
         if (!editingMember) return;
-        
+
         console.log('Starting handleEdit with socialLinks:', socialLinks);
-        
+
         // Helper function to format URLs
-        const formatUrl = (handle: string, platform: SocialPlatform): string => {
+        const formatUrl = (
+            handle: string,
+            platform: SocialPlatform
+        ): string => {
             if (!handle) return '';
             // if it's already a url, return it
-            if (handle.startsWith('http://') || handle.startsWith('https://')) return handle;
+            if (handle.startsWith('http://') || handle.startsWith('https://'))
+                return handle;
             // if it starts with @, remove it
-            const cleanHandle = handle.startsWith('@') ? handle.substring(1) : handle;
+            const cleanHandle = handle.startsWith('@')
+                ? handle.substring(1)
+                : handle;
             switch (platform) {
                 case SocialPlatform.X:
                     return `https://twitter.com/${cleanHandle}`; // TODO: change to x.com? This works for now
@@ -340,10 +335,14 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             firstName: newMember.firstName || editingMember.firstName,
             lastName: newMember.lastName || editingMember.lastName,
             title: newMember.title || editingMember.title,
-            detailedBiography: newMember.detailedBiography || editingMember.detailedBiography,
-            socialLinks: socialLinks.map(link => ({
+            detailedBiography:
+                newMember.detailedBiography || editingMember.detailedBiography,
+            socialLinks: socialLinks.map((link) => ({
                 ...link,
-                urlOrHandle: formatUrl(link.urlOrHandle, link.platform as SocialPlatform)
+                urlOrHandle: formatUrl(
+                    link.urlOrHandle,
+                    link.platform as SocialPlatform
+                ),
             })),
             isLoading: false,
             resumeExternalUrl: editingMember.resumeExternalUrl,
@@ -352,16 +351,18 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             commitmentType: editingMember.commitmentType,
             industryExperience: editingMember.industryExperience,
             previousWork: editingMember.previousWork,
-            founderAgreementExternalUrl: editingMember.founderAgreementExternalUrl,
-            founderAgreementInternalUrl: editingMember.founderAgreementInternalUrl,
+            founderAgreementExternalUrl:
+                editingMember.founderAgreementExternalUrl,
+            founderAgreementInternalUrl:
+                editingMember.founderAgreementInternalUrl,
             isAccountOwner: editingMember.isAccountOwner,
             created_at: editingMember.created_at,
             updated_at: editingMember.updated_at,
         };
-        
+
         console.log('Updated member:', {
             id: updatedMember.id,
-            socials: updatedMember.socialLinks
+            socials: updatedMember.socialLinks,
         });
 
         // Update in database
@@ -374,10 +375,12 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
 
             console.log('About to call updateTeamMember with member:', {
                 ...updatedMember,
-                socialLinks: updatedMember.socialLinks
+                socialLinks: updatedMember.socialLinks,
             });
 
+            // biome-ignore lint/style/noNonNullAssertion:
             await updateTeamMember(accessToken!, {
+                // biome-ignore lint/style/noNonNullAssertion:
                 companyId: companyId!,
                 member: updatedMember,
             });
@@ -392,7 +395,9 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             }, 1000);
 
             // Update local state
-            setMembers(prev => prev.map(m => m.id === updatedMember.id ? updatedMember : m));
+            setMembers((prev) =>
+                prev.map((m) => (m.id === updatedMember.id ? updatedMember : m))
+            );
             setIsEditing(false);
             setEditingMember(null);
             setNewMember({});
@@ -418,15 +423,17 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         className="relative bg-white rounded-lg shadow-sm border border-gray-200 w-32 h-32 p-3"
                     >
                         {/* Edit button */}
-                        {!member.isLoading && !disabled && !member.isAccountOwner && (
-                            <button
-                                type="button"
-                                onClick={() => handleStartEdit(member)}
-                                className="absolute top-1 right-1 p-1 text-gray-400 hover:text-gray-600"
-                            >
-                                <FiEdit size={12} />
-                            </button>
-                        )}
+                        {!member.isLoading &&
+                            !disabled &&
+                            !member.isAccountOwner && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleStartEdit(member)}
+                                    className="absolute top-1 right-1 p-1 text-gray-400 hover:text-gray-600"
+                                >
+                                    <FiEdit size={12} />
+                                </button>
+                            )}
 
                         {/* Content wrapper */}
                         <div className="h-full flex flex-col items-center justify-between">
@@ -437,10 +444,18 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
 
                             {/* Info */}
                             <div className="w-full">
-                                <div className="font-medium text-gray-900 truncate text-center text-sm" style={{ width: '90px', margin: '0 auto' }}>
-                                    {[member.firstName, member.lastName].join(' ')}
+                                <div
+                                    className="font-medium text-gray-900 truncate text-center text-sm"
+                                    style={{ width: '90px', margin: '0 auto' }}
+                                >
+                                    {[member.firstName, member.lastName].join(
+                                        ' '
+                                    )}
                                 </div>
-                                <div className="text-sm text-gray-500 truncate text-center" style={{ width: '90px', margin: '0 auto' }}>
+                                <div
+                                    className="text-sm text-gray-500 truncate text-center"
+                                    style={{ width: '90px', margin: '0 auto' }}
+                                >
                                     {member.title}
                                 </div>
                             </div>
@@ -459,8 +474,12 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         }}
                         className="w-32 h-32 rounded-lg bg-[#154261] hover:bg-[#2B4A67] flex flex-col items-center justify-center space-y-2"
                     >
-                        <span className="text-md font-medium text-white">Add new</span>
-                        <span className="text-md font-medium text-white">member</span>
+                        <span className="text-md font-medium text-white">
+                            Add new
+                        </span>
+                        <span className="text-md font-medium text-white">
+                            member
+                        </span>
                         <FiPlus size={24} className="text-white mt-1" />
                     </Button>
                 )}
@@ -507,7 +526,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                             required
                         />
                     </div>
-                    
+
                     <TextInput
                         label="Position / Title"
                         value={newMember.title || ''}
@@ -574,7 +593,11 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                     <div className="flex items-start gap-4">
                         <TextInput
                             label="First name"
-                            value={newMember.firstName || (editingMember?.firstName || '')}
+                            value={
+                                newMember.firstName ||
+                                editingMember?.firstName ||
+                                ''
+                            }
                             onChange={(e) =>
                                 setNewMember((prev) => ({
                                     ...prev,
@@ -585,7 +608,11 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                         />
                         <TextInput
                             label="Last name"
-                            value={newMember.lastName || (editingMember?.lastName || '')}
+                            value={
+                                newMember.lastName ||
+                                editingMember?.lastName ||
+                                ''
+                            }
                             onChange={(e) =>
                                 setNewMember((prev) => ({
                                     ...prev,
@@ -595,10 +622,10 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
                             required
                         />
                     </div>
-                    
+
                     <TextInput
                         label="Position / Title"
-                        value={newMember.title || (editingMember?.title || '')}
+                        value={newMember.title || editingMember?.title || ''}
                         onChange={(e) =>
                             setNewMember((prev) => ({
                                 ...prev,
@@ -610,7 +637,11 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
 
                     <TextArea
                         label="Brief Bio & Expertise"
-                        value={newMember.detailedBiography || (editingMember?.detailedBiography || '')}
+                        value={
+                            newMember.detailedBiography ||
+                            editingMember?.detailedBiography ||
+                            ''
+                        }
                         onChange={(e) =>
                             setNewMember((prev) => ({
                                 ...prev,

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { UserSocial } from './auth';
-import { SocialLink } from './form';
+import type { SocialLink } from './form';
 
 // Base user type from auth
 export type UserRole = 'startup_owner' | 'admin';

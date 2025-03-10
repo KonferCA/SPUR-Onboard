@@ -1,5 +1,5 @@
-import { cva, VariantProps } from 'class-variance-authority';
-import { ClassProp } from 'class-variance-authority/types';
+import { cva, type VariantProps } from 'class-variance-authority';
+import type { ClassProp } from 'class-variance-authority/types';
 
 const inputStyles = cva(
     [
@@ -19,10 +19,7 @@ const inputStyles = cva(
                 true: ['outline-red-500'],
             },
             disabled: {
-                true: [
-                    'bg-gray-100 text-gray-400',
-                    'cursor-not-allowed',
-                ],
+                true: ['bg-gray-100 text-gray-400', 'cursor-not-allowed'],
             },
         },
         compoundVariants: [

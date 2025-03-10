@@ -1,20 +1,22 @@
-import React, { useState, useEffect, useRef, FC } from 'react';
+import type React from 'react';
+import { useState, useEffect, useRef, type FC } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ProfilePicture } from '@/components/ProfilePicture/ProfilePicture';
-import { IoSettingsOutline, IoLogOutOutline } from "react-icons/io5";
-import { BiChevronDown } from "react-icons/bi";
+import { IoSettingsOutline, IoLogOutOutline } from 'react-icons/io5';
+import { BiChevronDown } from 'react-icons/bi';
 import { motion } from 'framer-motion';
+import type { User } from '@/types';
 
 export interface UserDropdownProps {
-    user: any;
+    user?: User;
     onLogout: () => Promise<void>;
     onSettingsClick?: () => void;
 }
 
-export const UserDropdown: FC<UserDropdownProps> = ({ 
-    user, 
+export const UserDropdown: FC<UserDropdownProps> = ({
+    user,
     onLogout,
-    onSettingsClick 
+    onSettingsClick,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -23,9 +25,9 @@ export const UserDropdown: FC<UserDropdownProps> = ({
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
-                dropdownRef.current && 
-                buttonRef.current && 
-                !dropdownRef.current.contains(event.target as Node) && 
+                dropdownRef.current &&
+                buttonRef.current &&
+                !dropdownRef.current.contains(event.target as Node) &&
                 !buttonRef.current.contains(event.target as Node)
             ) {
                 setIsOpen(false);
@@ -65,6 +67,7 @@ export const UserDropdown: FC<UserDropdownProps> = ({
     return (
         <div className="relative">
             <button
+                type="button"
                 ref={buttonRef}
                 onClick={handleButtonClick}
                 className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none"
@@ -99,6 +102,7 @@ export const UserDropdown: FC<UserDropdownProps> = ({
                     </Link>
 
                     <button
+                        type="button"
                         onClick={handleLogoutClick}
                         className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                     >
