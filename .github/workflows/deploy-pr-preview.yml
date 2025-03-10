@@ -32,8 +32,6 @@ jobs:
       PR_NUMBER: ${{ github.event.pull_request.number }}
       PR_TITLE: ${{ github.event.pull_request.title }}
       SUBDOMAIN: ${{ secrets.APP_NAME }}-pr-${{ github.event.pull_request.number }}
-      # For DB container - using different port ranges for each PR to avoid conflicts
-      DB_PORT: ${{ 5432 + github.event.pull_request.number }}
       # For backend container - using different port ranges for each PR to avoid conflicts
       BACKEND_PORT: ${{ 8000 + github.event.pull_request.number }}
       # For frontend static directory
@@ -55,26 +53,26 @@ jobs:
         working-directory: backend
         run: |
           cat << EOF > .env
-          APP_ENV=preview
-          APP_NAME=${{ env.SUBDOMAIN }}
+          APP_ENV=${{ secrets.APP_ENV }}
+          APP_NAME=${{ secrets.APP_NAME }}
           AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_REGION=${{ secrets.AWS_REGION }}
           AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}
           AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
           BACKEND_URL=https://${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}
           FRONTEND_URL=https://${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}
-          DB_HOST=localhost
-          DB_NAME=spur_pr_${{ env.PR_NUMBER }}
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_NAME=${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }}
           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          DB_PORT=${{ env.DB_PORT }}
-          DB_SSLMODE=disable
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_SSLMODE=${{ secrets.DB_SSLMODE }}
           DB_USER=${{ secrets.DB_USER }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           JWT_SECRET_VERIFY_EMAIL=${{ secrets.JWT_SECRET_VERIFY_EMAIL }}
           NOREPLY_EMAIL=${{ secrets.NOREPLY_EMAIL }}
           PORT=8000
           POSTGRES_USER=${{ secrets.DB_USER }}
-          POSTGRES_DB=spur_pr_${{ env.PR_NUMBER }}
+          POSTGRES_DB=${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }}
           POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
           RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
           EOF
@@ -84,29 +82,33 @@ jobs:
         run: |
           docker build -t ${{ secrets.APP_NAME }}-pr-${{ env.PR_NUMBER }}:latest .
           docker save -o backend-image.tar ${{ secrets.APP_NAME }}-pr-${{ env.PR_NUMBER }}:latest
-      # Create a Postgres Docker Compose file for this PR
-      - name: Create Docker Compose file for DB
+      # Create a script to setup database for this PR
+      - name: Create database setup script
         run: |
-          cat << EOF > docker-compose-db-pr-${{ env.PR_NUMBER }}.yml
-          version: '3.8'
-          services:
-            postgres:
-              image: postgres:16-alpine
-              container_name: postgres-pr-${{secrets.APP_NAME}}-${{ env.PR_NUMBER }}
-              restart: always
-              environment:
-                POSTGRES_USER: ${{ secrets.DB_USER }}
-                POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
-                POSTGRES_DB: spur_pr_${{ env.PR_NUMBER }}
-              ports:
-                - "${{ env.DB_PORT }}:5432"
-              volumes:
-                - postgres-data-pr-${{ env.PR_NUMBER }}:/var/lib/postgresql/data
-              command: postgres -c max_connections=200
+          cat << EOF > setup-db-pr-${{ env.PR_NUMBER }}.sh
+          #!/bin/bash
+          set -e
 
-          volumes:
-            postgres-data-pr-${{ env.PR_NUMBER }}:
+          DB_NAME=${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }}
+
+          # Use PGPASSWORD environment variable for authentication
+          export PGPASSWORD='${{ secrets.DB_PASSWORD }}'
+
+          # Check if database already exists
+          echo "Checking if database $DB_NAME already exists..."
+          if psql -h ${{ secrets.DB_HOST }} -U ${{ secrets.DB_USER }} -p ${{ secrets.DB_PORT }} -lqt | cut -d \| -f 1 | grep -qw $DB_NAME; then
+            echo "Database $DB_NAME already exists, skipping creation"
+          else
+            echo "Creating database $DB_NAME..."
+            psql -h ${{ secrets.DB_HOST }} -U ${{ secrets.DB_USER }} -p ${{ secrets.DB_PORT }} -c "CREATE DATABASE $DB_NAME;"
+            echo "Database created successfully"
+          fi
+
+          # Clean up password from environment
+          unset PGPASSWORD
           EOF
+
+          chmod +x setup-db-pr-${{ env.PR_NUMBER }}.sh
       # Setup filesystem on the VPS
       - name: Setup VPS File System Tree
         uses: appleboy/ssh-action@v1.0.3
@@ -123,10 +125,10 @@ jobs:
             mkdir -p "$HOME/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/nginx"
             mkdir -p "${{ secrets.STATIC_FILES_DIR }}/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}"
       # Upload files to VPS
-      - name: Upload backend env and Docker Compose
+      - name: Upload backend env and DB setup script
         run: |
           rsync -avz --progress backend/.env ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/
-          rsync -avz --progress docker-compose-db-pr-${{ env.PR_NUMBER }}.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/
+          rsync -avz --progress setup-db-pr-${{ env.PR_NUMBER }}.sh ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/
           rsync -avz --delete --progress backend/.sqlc/migrations/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/migrations/
           rsync -avz --progress backend/.sqlc/seeds/pr-preview-seed-data.sql ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/
           rsync -avz --progress backend/backend-image.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/
@@ -170,7 +172,7 @@ jobs:
               
               # Proxy API requests to backend
               location /api {
-                  proxy_pass http://127.0.0.1:${{ env.BACKEND_PORT }}/api/;
+                  proxy_pass http://127.0.0.1:${{ env.BACKEND_PORT }}/api;
                   proxy_set_header Host \$host;
                   proxy_set_header X-Real-IP \$remote_addr;
                   proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -204,7 +206,7 @@ jobs:
           # Create frontend env file
           cat << EOF > .env
           VITE_API_URL=https://${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}/api/v1
-          VITE_APP_ENV=preview
+          VITE_APP_ENV=${{ secrets.APP_ENV }}
           EOF
 
           # Build frontend
@@ -212,7 +214,7 @@ jobs:
 
           # Upload frontend files
           rsync -avz --progress dist/* "${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:${{ secrets.STATIC_FILES_DIR }}/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}"
-      # Start Postgres container, run migrations, and start backend
+      # Setup database, run migrations, and prepare backend
       - name: Deploy PR environment on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -225,21 +227,17 @@ jobs:
 
             cd ~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}
 
-            echo "Starting PostgreSQL container..."
-            docker compose -f docker-compose-db-pr-${{ env.PR_NUMBER }}.yml up -d
-
-            # Wait for PostgreSQL to be ready
-            echo "Waiting for PostgreSQL to be ready..."
-            sleep 10
+            echo "Setting up database for PR..."
+            ./setup-db-pr-${{ env.PR_NUMBER }}.sh
 
             # Run migrations
             echo "Running database migrations..."
             /opt/go/bin/goose -dir "migrations" postgres \
-              "postgres://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@localhost:${{ env.DB_PORT }}/spur_pr_${{ env.PR_NUMBER }}?sslmode=disable" up --allow-missing
+              "postgres://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.DB_HOST }}:${{ secrets.DB_PORT }}/${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }}?sslmode=${{ secrets.DB_SSLMODE }}" up --allow-missing
               
             # Apply seed data for PR preview
             echo "Applying seed data for PR preview environment..."
-            PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql -h localhost -p ${{ env.DB_PORT }} -U ${{ secrets.DB_USER }} -d spur_pr_${{ env.PR_NUMBER }} -f pr-preview-seed-data.sql
+            PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql -h ${{ secrets.DB_HOST }} -p ${{ secrets.DB_PORT }} -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }} -f pr-preview-seed-data.sql
             echo "Seed data applied successfully - Users: admin@example.com, startup@example.com, investor@example.com (passwords match username prefix)"
 
             echo "Stopping and removing existing backend container if present..."
@@ -268,11 +266,11 @@ jobs:
         id: create_dns
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_KEY }}
           command: |
             echo 'Creating DNS record for ${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}'
             curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records" \
-              -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+              -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_KEY }}" \
               -H "Content-Type: application/json" \
               -d '{
                 "type": "A",
@@ -336,13 +334,27 @@ This environment will be automatically cleaned up when the PR is closed.`
             #!/usr/bin/env bash
             set -e
 
-            echo "Stopping and removing containers..."
+            echo "Stopping and removing backend container..."
             BACKEND_CONTAINER="${{ secrets.APP_NAME }}-pr-${{ env.PR_NUMBER }}"
             docker stop $BACKEND_CONTAINER || true
             docker rm $BACKEND_CONTAINER || true
 
-            echo "Stopping and removing database container..."
-            docker compose -f ~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/docker-compose-db-pr-${{ env.PR_NUMBER }}.yml down -v
+            echo "Dropping database for this PR..."
+            DB_NAME="${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }}"
+            export PGPASSWORD="${{ secrets.DB_PASSWORD }}"
+
+            # Check if database exists
+            if psql -h ${{ secrets.DB_HOST }} -U ${{ secrets.DB_USER }} -p ${{ secrets.DB_PORT }} -lqt | cut -d \| -f 1 | grep -qw $DB_NAME; then
+              echo "Dropping database $DB_NAME..."
+              # First terminate any active connections to the database
+              psql -h ${{ secrets.DB_HOST }} -U ${{ secrets.DB_USER }} -p ${{ secrets.DB_PORT }} -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$DB_NAME' AND pid <> pg_backend_pid();"
+              # Then drop the database
+              psql -h ${{ secrets.DB_HOST }} -U ${{ secrets.DB_USER }} -p ${{ secrets.DB_PORT }} -c "DROP DATABASE $DB_NAME;"
+              echo "Database dropped successfully"
+            else
+              echo "Database $DB_NAME does not exist, skipping drop"
+            fi
+            unset PGPASSWORD
 
             echo "Removing Nginx configuration..."
             sudo rm -f /etc/nginx/sites-enabled/nginx-pr-${{ env.PR_NUMBER }}.conf
@@ -357,18 +369,18 @@ This environment will be automatically cleaned up when the PR is closed.`
       - name: Delete DNS Record
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_KEY }}
           command: |
             echo 'Deleting DNS record for ${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}'
             # First get the record ID
             RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records?name=${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}" \
-              -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+              -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_KEY }}" \
               -H "Content-Type: application/json" | jq -r '.result[0].id')
 
             # Then delete the record
             if [ "$RECORD_ID" != "null" ]; then
               curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records/$RECORD_ID" \
-                -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+                -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_KEY }}" \
                 -H "Content-Type: application/json"
             fi
       # Comment on the PR about cleanup
