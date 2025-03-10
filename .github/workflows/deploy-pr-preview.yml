@@ -82,34 +82,6 @@ jobs:
         run: |
           docker build -t ${{ secrets.APP_NAME }}-pr-${{ env.PR_NUMBER }}:latest .
           docker save -o backend-image.tar ${{ secrets.APP_NAME }}-pr-${{ env.PR_NUMBER }}:latest
-      # Create a script to setup database for this PR
-      - name: Create database setup script
-        run: |
-          cat << EOF > setup-db-pr-${{ env.PR_NUMBER }}.sh
-          #!/bin/bash
-          set -e
-
-          export DB_NAME=${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }}
-
-          # Use PGPASSWORD environment variable for authentication
-          export PGPASSWORD='${{ secrets.DB_PASSWORD }}'
-
-          # Check if database already exists
-          echo "Checking if database $DB_NAME already exists..."
-          if psql -h ${{ secrets.DB_HOST }} -U ${{ secrets.DB_USER }} -p ${{ secrets.DB_PORT }} -lqt | cut -d \| -f 1 | grep -qw $DB_NAME; then
-            echo "Database $DB_NAME already exists, skipping creation"
-          else
-            echo "Creating database $DB_NAME..."
-            psql -h ${{ secrets.DB_HOST }} -U ${{ secrets.DB_USER }} -p ${{ secrets.DB_PORT }} -c "CREATE DATABASE $DB_NAME;"
-            echo "Database created successfully"
-          fi
-
-          # Clean up password from environment
-          unset PGPASSWORD
-          unset DB_NAME
-          EOF
-
-          chmod +x setup-db-pr-${{ env.PR_NUMBER }}.sh
       # Setup filesystem on the VPS
       - name: Setup VPS File System Tree
         uses: appleboy/ssh-action@v1.0.3
@@ -129,7 +101,6 @@ jobs:
       - name: Upload backend env and DB setup script
         run: |
           rsync -avz --progress backend/.env ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/
-          rsync -avz --progress setup-db-pr-${{ env.PR_NUMBER }}.sh ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/
           rsync -avz --delete --progress backend/.sqlc/migrations/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/migrations/
           rsync -avz --progress backend/.sqlc/seeds/pr-preview-seed-data.sql ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/
           rsync -avz --progress backend/backend-image.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/
@@ -230,7 +201,21 @@ jobs:
             cd ~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}
 
             echo "Setting up database for PR..."
-            ./setup-db-pr-${{ env.PR_NUMBER }}.sh
+            # Use PGPASSWORD environment variable for authentication
+            export PGPASSWORD='${{ secrets.DB_PASSWORD }}'
+
+            # Check if database already exists
+            echo "Checking if database ${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }} already exists..."
+            if psql -h ${{ secrets.DB_HOST }} -U ${{ secrets.DB_USER }} -p ${{ secrets.DB_PORT }} -lqt | cut -d \| -f 1 | grep -qw ${{ secrets.DB_NAME }}_${{ env.PR_NUMBER}}; then
+              echo "Database ${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }} already exists, skipping creation"
+            else
+              echo "Creating database $DB_NAME..."
+              psql -h ${{ secrets.DB_HOST }} -U ${{ secrets.DB_USER }} -p ${{ secrets.DB_PORT }} -c "CREATE DATABASE ${{ secrets.DB_NAME}}_${{ env.PR_NUMBER }};"
+              echo "Database created successfully"
+            fi
+
+            # Clean up password from environment
+            unset PGPASSWORD
 
             # Run migrations
             echo "Running database migrations..."
