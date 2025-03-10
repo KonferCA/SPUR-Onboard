@@ -1,0 +1,385 @@
+name: Deploy PR Preview
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: ['main']
+  pull_request_target:
+    types: [closed]
+    branches: ['main']
+jobs:
+  # Checks if all required workflows pass before proceeding
+  check-required-workflows:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for 'Build Check' workflows to succeed
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: 'Build Check'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+  # Deploy preview environment when PR is opened or updated
+  deploy-preview:
+    if: github.event.action != 'closed'
+    needs: check-required-workflows
+    runs-on: ubuntu-latest
+    environment: pr_preview
+    concurrency:
+      group: pr-preview-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      SUBDOMAIN: ${{ secrets.APP_NAME }}-pr-${{ github.event.pull_request.number }}
+      # For DB container - using different port ranges for each PR to avoid conflicts
+      DB_PORT: ${{ 5432 + github.event.pull_request.number }}
+      # For backend container - using different port ranges for each PR to avoid conflicts
+      BACKEND_PORT: ${{ 8000 + github.event.pull_request.number }}
+      # For frontend static directory
+      STATIC_DIR: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      # Setup for SSH access to EC2 instance
+      - name: Setup VPS fingerprint
+        run: |
+         mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan "${{ secrets.VPS_IP }}" > ~/.ssh/known_hosts
+      - name: Setup Rsync
+        uses: GuillaumeFalourd/setup-rsync@v1.2
+      # Create environment variables for backend
+      - name: Create backend env file
+        working-directory: backend
+        run: |
+          cat << EOF > .env
+          APP_ENV=preview
+          APP_NAME=${{ env.SUBDOMAIN }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_REGION=${{ secrets.AWS_REGION }}
+          AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          BACKEND_URL=https://${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}
+          FRONTEND_URL=https://${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}
+          DB_HOST=localhost
+          DB_NAME=spur_pr_${{ env.PR_NUMBER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_PORT=${{ env.DB_PORT }}
+          DB_SSLMODE=disable
+          DB_USER=${{ secrets.DB_USER }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_SECRET_VERIFY_EMAIL=${{ secrets.JWT_SECRET_VERIFY_EMAIL }}
+          NOREPLY_EMAIL=${{ secrets.NOREPLY_EMAIL }}
+          PORT=8000
+          POSTGRES_USER=${{ secrets.DB_USER }}
+          POSTGRES_DB=spur_pr_${{ env.PR_NUMBER }}
+          POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
+          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+          EOF
+      # Build backend Docker image
+      - name: Build Backend Docker Image
+        working-directory: backend
+        run: |
+          docker build -t ${{ secrets.APP_NAME }}-pr-${{ env.PR_NUMBER }}:latest .
+          docker save -o backend-image.tar ${{ secrets.APP_NAME }}-pr-${{ env.PR_NUMBER }}:latest
+      # Create a Postgres Docker Compose file for this PR
+      - name: Create Docker Compose file for DB
+        run: |
+          cat << EOF > docker-compose-db-pr-${{ env.PR_NUMBER }}.yml
+          version: '3.8'
+          services:
+            postgres:
+              image: postgres:16-alpine
+              container_name: postgres-pr-${{secrets.APP_NAME}}-${{ env.PR_NUMBER }}
+              restart: always
+              environment:
+                POSTGRES_USER: ${{ secrets.DB_USER }}
+                POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+                POSTGRES_DB: spur_pr_${{ env.PR_NUMBER }}
+              ports:
+                - "${{ env.DB_PORT }}:5432"
+              volumes:
+                - postgres-data-pr-${{ env.PR_NUMBER }}:/var/lib/postgresql/data
+              command: postgres -c max_connections=200
+
+          volumes:
+            postgres-data-pr-${{ env.PR_NUMBER }}:
+          EOF
+      # Setup filesystem on the VPS
+      - name: Setup VPS File System Tree
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          script: |
+            #!/usr/bin/env bash
+            set -e
+
+            # Create directory structure for PR
+            mkdir -p "$HOME/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/migrations"
+            mkdir -p "$HOME/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/nginx"
+            mkdir -p "${{ secrets.STATIC_FILES_DIR }}/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}"
+      # Upload files to VPS
+      - name: Upload backend env and Docker Compose
+        run: |
+          rsync -avz --progress backend/.env ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/
+          rsync -avz --progress docker-compose-db-pr-${{ env.PR_NUMBER }}.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/
+          rsync -avz --delete --progress backend/.sqlc/migrations/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/migrations/
+          rsync -avz --progress backend/.sqlc/seeds/pr-preview-seed-data.sql ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/
+          rsync -avz --progress backend/backend-image.tar ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/
+      # Create Nginx configuration for the PR subdomain
+      - name: Create Nginx config
+        run: |
+          cat << EOF > nginx-pr-${{ env.PR_NUMBER }}.conf
+          server {
+              listen 80;
+              server_name ${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }};
+              
+              # SSL configuration
+              listen 443 ssl;
+              ssl_certificate /etc/ssl/${{ secrets.APP_NAME}}/pr/cert.pem;
+              ssl_certificate_key /etc/ssl/${{ secrets.APP_NAME }}/pr/key.pem;
+              ssl_protocols TLSv1.2 TLSv1.3;
+              ssl_prefer_server_ciphers on;
+
+              gzip on;
+              gzip_vary on;
+              gzip_proxied expired no-cache no-store private auth;
+              gzip_types text/plain text/css text/xml text/javascript application/javascript application/x-javascript application/xml;
+              gzip_disable "MSIE [1-6]\.";
+              
+              # Serve frontend static files
+              location / {
+                  root ${{ secrets.STATIC_FILES_DIR }}/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }};
+                  try_files \$uri \$uri/ /index.html;
+                  
+                  # Cache static assets
+                  location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+                      expires 30d;
+                      add_header Cache-Control "public, no-transform";
+                  }
+
+                  # Security headers
+                  add_header X-Frame-Options "SAMEORIGIN";
+                  add_header X-XSS-Protection "1; mode=block";
+                  add_header X-Content-Type-Options "nosniff";
+              }
+              
+              # Proxy API requests to backend
+              location /api {
+                  proxy_pass http://127.0.0.1:${{ env.BACKEND_PORT }}/api/;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+                  proxy_set_header X-App-Name ${{ secrets.APP_NAME }};
+                  proxy_set_header X-App-Env pr-${{ env.PR_NUMBER }};
+                  
+                  # Timeout settings
+                  proxy_connect_timeout 60s;
+                  proxy_send_timeout 60s;
+                  proxy_read_timeout 60s;
+              }
+              
+              # Redirect HTTP to HTTPS
+              if (\$scheme != "https") {
+                  return 301 https://\$host\$request_uri;
+              }
+          }
+          EOF
+          
+          # Upload Nginx config to VPS
+          rsync -avz --progress nginx-pr-${{ env.PR_NUMBER }}.conf ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/nginx/
+      # Setup frontend environment
+      - name: Build frontend environment
+        working-directory: frontend
+        run: |
+          # Setup pnpm
+          npm install -g pnpm
+          pnpm install --frozen-lockfile
+
+          # Create frontend env file
+          cat << EOF > .env
+          VITE_API_URL=https://${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}/api/v1
+          VITE_APP_ENV=preview
+          EOF
+
+          # Build frontend
+          pnpm build
+
+          # Upload frontend files
+          rsync -avz --progress dist/* "${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:${{ secrets.STATIC_FILES_DIR }}/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}"
+      # Start Postgres container, run migrations, and start backend
+      - name: Deploy PR environment on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          script: |
+            #!/usr/bin/env bash
+            set -e
+
+            cd ~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}
+
+            echo "Starting PostgreSQL container..."
+            docker compose -f docker-compose-db-pr-${{ env.PR_NUMBER }}.yml up -d
+
+            # Wait for PostgreSQL to be ready
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 10
+
+            # Run migrations
+            echo "Running database migrations..."
+            /opt/go/bin/goose -dir "migrations" postgres \
+              "postgres://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@localhost:${{ env.DB_PORT }}/spur_pr_${{ env.PR_NUMBER }}?sslmode=disable" up --allow-missing
+              
+            # Apply seed data for PR preview
+            echo "Applying seed data for PR preview environment..."
+            PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql -h localhost -p ${{ env.DB_PORT }} -U ${{ secrets.DB_USER }} -d spur_pr_${{ env.PR_NUMBER }} -f pr-preview-seed-data.sql
+            echo "Seed data applied successfully - Users: admin@example.com, startup@example.com, investor@example.com (passwords match username prefix)"
+
+            echo "Stopping and removing existing backend container if present..."
+            CONTAINER="${{ secrets.APP_NAME }}-pr-${{ env.PR_NUMBER }}"
+            docker stop $CONTAINER || true
+            docker rm $CONTAINER || true
+
+            echo "Loading pre-built docker image..."
+            docker load -i backend-image.tar
+
+            echo "Starting new application container..."
+            docker run -d \
+              --name $CONTAINER \
+              --env-file ".env" \
+              -p "${{ env.BACKEND_PORT }}:8000" \
+              "${{ secrets.APP_NAME }}-pr-${{ env.PR_NUMBER }}:latest"
+
+            # Enable Nginx configuration
+            echo "Enabling Nginx configuration..."
+            sudo ln -sf ~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/nginx/nginx-pr-${{ env.PR_NUMBER }}.conf /etc/nginx/sites-enabled/
+            sudo nginx -t && sudo systemctl reload nginx
+
+            echo "PR preview environment deployed successfully!"
+      # Create DNS record using Cloudflare API
+      - name: Create DNS Record
+        id: create_dns
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: |
+            echo 'Creating DNS record for ${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}'
+            curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records" \
+              -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "type": "A",
+                "name": "${{ env.SUBDOMAIN }}",
+                "content": "${{ secrets.VPS_IP }}",
+                "ttl": 1,
+                "proxied": true
+              }'
+      # Comment on the PR with the preview URL
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.pull_request.number }},
+              body: `🚀 PR Preview Environment Deployed!
+
+**Preview URL:** https://${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}
+
+**Test Accounts:**
+- Admin: admin@example.com / admin123
+- Startup Owner: startup@example.com / startup123  
+- Investor: investor@example.com / investor123
+
+This environment will be automatically cleaned up when the PR is closed.`
+            });
+  # Cleanup preview environment when PR is closed
+  cleanup-preview:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    environment: pr_preview
+    concurrency:
+      group: pr-preview-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      SUBDOMAIN: ${{ secrets.APP_NAME }}-pr-${{ github.event.pull_request.number }}
+      # For DB container - using different port ranges for each PR to avoid conflicts
+      DB_PORT: ${{ 5432 + github.event.pull_request.number }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      # Setup for SSH access to EC2 instance
+      - name: Setup VPS fingerprint
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan "${{ secrets.VPS_IP }}" > ~/.ssh/known_hosts
+      # Cleanup resources on the VPS
+      - name: Cleanup PR environment on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          script: |
+            #!/usr/bin/env bash
+            set -e
+
+            echo "Stopping and removing containers..."
+            BACKEND_CONTAINER="${{ secrets.APP_NAME }}-pr-${{ env.PR_NUMBER }}"
+            docker stop $BACKEND_CONTAINER || true
+            docker rm $BACKEND_CONTAINER || true
+
+            echo "Stopping and removing database container..."
+            docker compose -f ~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/docker-compose-db-pr-${{ env.PR_NUMBER }}.yml down -v
+
+            echo "Removing Nginx configuration..."
+            sudo rm -f /etc/nginx/sites-enabled/nginx-pr-${{ env.PR_NUMBER }}.conf
+            sudo nginx -t && sudo systemctl reload nginx
+
+            echo "Removing files..."
+            rm -rf ~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}
+            rm -rf ${{ secrets.STATIC_FILES_DIR }}/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}
+
+            echo "PR preview environment cleaned up successfully!"
+      # Delete DNS record using Cloudflare API
+      - name: Delete DNS Record
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: |
+            echo 'Deleting DNS record for ${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}'
+            # First get the record ID
+            RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records?name=${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}" \
+              -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+              -H "Content-Type: application/json" | jq -r '.result[0].id')
+
+            # Then delete the record
+            if [ "$RECORD_ID" != "null" ]; then
+              curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records/$RECORD_ID" \
+                -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+                -H "Content-Type: application/json"
+            fi
+      # Comment on the PR about cleanup
+      - name: Comment on PR about cleanup
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |-
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.pull_request.number }},
+              body: `🧹 PR Preview Environment has been cleaned up and all resources have been removed.`
+            });
