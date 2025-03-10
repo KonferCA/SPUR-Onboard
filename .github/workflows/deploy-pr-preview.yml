@@ -2,10 +2,10 @@ name: Deploy PR Preview
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: ['main']
+    branches: ["main"]
   pull_request_target:
     types: [closed]
-    branches: ['main']
+    branches: ["main"]
 jobs:
   # Checks if all required workflows pass before proceeding
   check-required-workflows:
@@ -16,7 +16,7 @@ jobs:
         uses: lewagon/wait-on-check-action@v1.3.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          check-name: 'Build Check'
+          check-name: "Build Check"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
   # Deploy preview environment when PR is opened or updated
@@ -42,10 +42,10 @@ jobs:
       # Setup for SSH access to EC2 instance
       - name: Setup VPS fingerprint
         run: |
-         mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan "${{ secrets.VPS_IP }}" > ~/.ssh/known_hosts
+          mkdir -p ~/.ssh
+           echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
+           chmod 600 ~/.ssh/id_rsa
+           ssh-keyscan "${{ secrets.VPS_IP }}" > ~/.ssh/known_hosts
       - name: Setup Rsync
         uses: GuillaumeFalourd/setup-rsync@v1.2
       # Create environment variables for backend
@@ -89,7 +89,7 @@ jobs:
           #!/bin/bash
           set -e
 
-          DB_NAME=${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }}
+          export DB_NAME=${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }}
 
           # Use PGPASSWORD environment variable for authentication
           export PGPASSWORD='${{ secrets.DB_PASSWORD }}'
@@ -106,6 +106,7 @@ jobs:
 
           # Clean up password from environment
           unset PGPASSWORD
+          unset DB_NAME
           EOF
 
           chmod +x setup-db-pr-${{ env.PR_NUMBER }}.sh
@@ -193,7 +194,7 @@ jobs:
               }
           }
           EOF
-          
+
           # Upload Nginx config to VPS
           rsync -avz --progress nginx-pr-${{ env.PR_NUMBER }}.conf ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}:~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/nginx/
       # Setup frontend environment
@@ -325,12 +326,13 @@ jobs:
             set -e
 
             echo "Stopping and removing backend container..."
-            BACKEND_CONTAINER="${{ secrets.APP_NAME }}-pr-${{ env.PR_NUMBER }}"
+            export BACKEND_CONTAINER="${{ secrets.APP_NAME }}-pr-${{ env.PR_NUMBER }}"
             docker stop $BACKEND_CONTAINER || true
             docker rm $BACKEND_CONTAINER || true
+            unset BACKEND_CONTAINER
 
             echo "Dropping database for this PR..."
-            DB_NAME="${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }}"
+            export DB_NAME="${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }}"
             export PGPASSWORD="${{ secrets.DB_PASSWORD }}"
 
             # Check if database exists
@@ -345,6 +347,7 @@ jobs:
               echo "Database $DB_NAME does not exist, skipping drop"
             fi
             unset PGPASSWORD
+            unset DB_NAME
 
             echo "Removing Nginx configuration..."
             sudo rm -f /etc/nginx/sites-enabled/nginx-pr-${{ env.PR_NUMBER }}.conf
