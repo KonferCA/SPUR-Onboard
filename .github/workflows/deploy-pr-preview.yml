@@ -352,7 +352,7 @@ jobs:
 
             echo "Removing Nginx configuration..."
             sudo rm -f /etc/nginx/sites-enabled/nginx-pr-${{ env.PR_NUMBER }}.conf
-            sudo nginx -t && sudo systemctl reload nginx
+            sudo nginx -t && sudo nginx -s reload
 
             echo "Removing files..."
             rm -rf ~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}
