@@ -39,18 +39,18 @@ export interface AnchorLinksProps {
      * are desired on top of scrolling to the target.
      */
     onClick?:
-    | ((
-        link: ControlledLink,
-        event:
-            | React.MouseEvent<HTMLLIElement, MouseEvent>
-            | React.KeyboardEvent<HTMLLIElement>
-    ) => void)
-    | ((
-        link: ControlledLink,
-        event:
-            | React.MouseEvent<HTMLLIElement, MouseEvent>
-            | React.KeyboardEvent<HTMLLIElement>
-    ) => Promise<void>);
+        | ((
+              link: ControlledLink,
+              event:
+                  | React.MouseEvent<HTMLLIElement, MouseEvent>
+                  | React.KeyboardEvent<HTMLLIElement>
+          ) => void)
+        | ((
+              link: ControlledLink,
+              event:
+                  | React.MouseEvent<HTMLLIElement, MouseEvent>
+                  | React.KeyboardEvent<HTMLLIElement>
+          ) => Promise<void>);
     /*
      * Sets the scrolling to manual. Use the onClick prop to handle.
      */

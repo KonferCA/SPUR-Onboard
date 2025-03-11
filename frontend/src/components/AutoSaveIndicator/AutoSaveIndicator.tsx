@@ -49,10 +49,10 @@ export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
         status === 'saving'
             ? 'saving'
             : status === 'error'
-                ? 'error'
-                : showSuccess
-                    ? 'success'
-                    : 'idle';
+              ? 'error'
+              : showSuccess
+                ? 'success'
+                : 'idle';
 
     const defaultMessages = {
         idle: 'Your answers will be autosaved as you complete your application',

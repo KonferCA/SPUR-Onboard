@@ -85,11 +85,13 @@ const Dropdown: React.FC<DropdownProps> = ({
                 <div className="relative">
                     <ListboxButton
                         id={dropdownID}
-                        className={`relative w-full py-4 px-4 text-left bg-white rounded-lg border ${error ? 'border-red-500' : 'border-gray-300'
-                            } cursor-pointer focus:outline-none focus-visible:ring-2 ${error
+                        className={`relative w-full py-4 px-4 text-left bg-white rounded-lg border ${
+                            error ? 'border-red-500' : 'border-gray-300'
+                        } cursor-pointer focus:outline-none focus-visible:ring-2 ${
+                            error
                                 ? 'focus-visible:ring-red-500'
                                 : 'focus-visible:ring-blue-500'
-                            }`}
+                        }`}
                     >
                         {renderSelectedValue()}
                         <span className="absolute inset-y-0 right-0 flex items-center pr-4">
@@ -111,9 +113,10 @@ const Dropdown: React.FC<DropdownProps> = ({
                                 <ListboxOption
                                     key={option.id}
                                     className={({ focus, selected }) =>
-                                        `cursor-pointer select-none relative py-3 px-4 ${focus || selected
-                                            ? 'bg-gray-100'
-                                            : 'text-gray-900'
+                                        `cursor-pointer select-none relative py-3 px-4 ${
+                                            focus || selected
+                                                ? 'bg-gray-100'
+                                                : 'text-gray-900'
                                         }`
                                     }
                                     value={option}
@@ -124,10 +127,11 @@ const Dropdown: React.FC<DropdownProps> = ({
                                                 <RxCheck className="w-4 h-4 text-green-500" />
                                             )}
                                             <span
-                                                className={`block truncate ${selected
-                                                    ? 'font-medium'
-                                                    : 'font-normal'
-                                                    }`}
+                                                className={`block truncate ${
+                                                    selected
+                                                        ? 'font-medium'
+                                                        : 'font-normal'
+                                                }`}
                                             >
                                                 {option.label}
                                             </span>

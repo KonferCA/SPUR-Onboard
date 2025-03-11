@@ -1,5 +1,5 @@
-import { cva, VariantProps } from 'class-variance-authority';
-import { ClassProp } from 'class-variance-authority/types';
+import { cva, type VariantProps } from 'class-variance-authority';
+import type { ClassProp } from 'class-variance-authority/types';
 
 const rootListStyles = cva('flex flex-col', {
     variants: {

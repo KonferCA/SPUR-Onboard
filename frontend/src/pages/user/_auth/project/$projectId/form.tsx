@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
-    AnchorLinkItem,
+    type AnchorLinkItem,
     AnchorLinks,
     Button,
     SectionDrawer,
@@ -18,7 +18,7 @@ import {
 import {
     type GroupedProjectQuestions,
     groupProjectQuestions,
-    SectionMetadata,
+    type SectionMetadata,
     type Question,
 } from '@/config/forms';
 import { cva } from 'class-variance-authority';
@@ -34,7 +34,7 @@ import { RecommendedFields } from '@/components/RecommendedFields';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
 import { AutoSaveIndicator } from '@/components/AutoSaveIndicator';
-import { RecommendedField } from '@/types';
+import type { RecommendedField } from '@/types';
 import { isValid as isValidDate } from 'date-fns';
 import { scrollToTop } from '@/utils';
 
@@ -740,21 +740,20 @@ function ProjectFormPage() {
                                                     fileUploadProps={
                                                         accessToken
                                                             ? {
-                                                                projectId:
-                                                                    currentProjectId,
-                                                                questionId:
-                                                                    q.id,
-                                                                section:
-                                                                    groupedQuestions[
-                                                                        currentStep
-                                                                    ].section,
-                                                                subSection:
-                                                                    subsection.name,
-                                                                accessToken:
-                                                                    accessToken,
-                                                                enableAutosave:
-                                                                    true,
-                                                            }
+                                                                  projectId:
+                                                                      currentProjectId,
+                                                                  questionId:
+                                                                      q.id,
+                                                                  section:
+                                                                      groupedQuestions[
+                                                                          currentStep
+                                                                      ].section,
+                                                                  subSection:
+                                                                      subsection.name,
+                                                                  accessToken:
+                                                                      accessToken,
+                                                                  enableAutosave: true,
+                                                              }
                                                             : undefined
                                                     }
                                                 />

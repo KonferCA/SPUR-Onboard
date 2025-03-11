@@ -19,7 +19,7 @@ export function scrollToTop() {
  */
 export function scrollToWithOffset(
     target: HTMLElement,
-    offset: number = 0,
+    offset = 0,
     offsetType: 'before' | 'after' | 'default' = 'default'
 ) {
     const targetPosition = target.getBoundingClientRect().top;

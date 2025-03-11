@@ -1,6 +1,6 @@
 import type { AnchorLinkItem } from '@components';
 import type { ValidationError } from '@/components/ProjectError';
-import { RecommendedField } from '@/types';
+import type { RecommendedField } from '@/types';
 
 export type SectionDrawerLinkItem = AnchorLinkItem & {
     missingRequiredCount?: number;

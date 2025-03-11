@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo, useState } from 'react';
+import { type FC, useEffect, useMemo, useState } from 'react';
 import {
     Drawer,
     DrawerTrigger,
@@ -12,7 +12,7 @@ import type {
     SectionDrawerLinkItem,
     SectionDrawerProps,
 } from './SectionDrawer.types';
-import { AnchorLinks, ControlledLink } from '@components';
+import { AnchorLinks, type ControlledLink } from '@components';
 import { IoIosAlert, IoIosCheckmarkCircle } from 'react-icons/io';
 import { isElementInView, scrollToWithOffset } from '@/utils';
 import clsx from 'clsx';
