@@ -245,27 +245,24 @@ jobs:
             # Enable Nginx configuration
             echo "Enabling Nginx configuration..."
             sudo ln -sf ~/${{ secrets.APP_NAME }}/pr-${{ env.PR_NUMBER }}/nginx/nginx-pr-${{ env.PR_NUMBER }}.conf /etc/nginx/sites-enabled/
-            sudo nginx -t && sudo systemctl reload nginx
+            sudo nginx -t && sudo nginx -s reload
 
             echo "PR preview environment deployed successfully!"
       # Create DNS record using Cloudflare API
       - name: Create DNS Record
         id: create_dns
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_KEY }}
-          command: |
-            echo 'Creating DNS record for ${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}'
-            curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records" \
-              -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_KEY }}" \
-              -H "Content-Type: application/json" \
-              -d '{
-                "type": "A",
-                "name": "${{ env.SUBDOMAIN }}",
-                "content": "${{ secrets.VPS_IP }}",
-                "ttl": 1,
-                "proxied": true
-              }'
+        run: |
+          echo 'Creating DNS record for ${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}'
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records" \
+          -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_KEY }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+          "type": "A",
+          "name": "${{ env.SUBDOMAIN }}",
+          "content": "${{ secrets.VPS_IP }}",
+          "ttl": 1,
+          "proxied": true
+          }'
       # Comment on the PR with the preview URL
       - name: Comment on PR
         uses: actions/github-script@v7
@@ -345,22 +342,19 @@ jobs:
             echo "PR preview environment cleaned up successfully!"
       # Delete DNS record using Cloudflare API
       - name: Delete DNS Record
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_KEY }}
-          command: |
-            echo 'Deleting DNS record for ${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}'
-            # First get the record ID
-            RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records?name=${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}" \
-              -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_KEY }}" \
-              -H "Content-Type: application/json" | jq -r '.result[0].id')
+        run: |
+          echo 'Deleting DNS record for ${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}'
+          # First get the record ID
+          RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records?type=A&name=${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_KEY }}" \
+            -H "Content-Type: application/json" | jq -r '.result[0].id')
 
-            # Then delete the record
-            if [ "$RECORD_ID" != "null" ]; then
-              curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records/$RECORD_ID" \
-                -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_KEY }}" \
-                -H "Content-Type: application/json"
-            fi
+          # Then delete the record
+          if [ "$RECORD_ID" != "null" ]; then
+            curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records/$RECORD_ID" \
+              -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_KEY }}" \
+              -H "Content-Type: application/json"
+          fi
       # Comment on the PR about cleanup
       - name: Comment on PR about cleanup
         uses: actions/github-script@v7
