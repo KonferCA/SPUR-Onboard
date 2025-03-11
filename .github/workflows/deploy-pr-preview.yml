@@ -214,18 +214,26 @@ jobs:
               echo "Database created successfully"
             fi
 
-            # Clean up password from environment
-            unset PGPASSWORD
-
             # Run migrations
             echo "Running database migrations..."
             /opt/go/bin/goose -dir "migrations" postgres \
               "postgres://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.DB_HOST }}:${{ secrets.DB_PORT }}/${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }}?sslmode=${{ secrets.DB_SSLMODE }}" up --allow-missing
               
-            # Apply seed data for PR preview
-            echo "Applying seed data for PR preview environment..."
-            PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql -h ${{ secrets.DB_HOST }} -p ${{ secrets.DB_PORT }} -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }} -f pr-preview-seed-data.sql
-            echo "Seed data applied successfully - Users: admin@example.com, startup@example.com, investor@example.com (passwords match username prefix)"
+            # Apply seed data for PR preview only if it hasn't been applied before
+            echo "Checking if seed data needs to be applied..."
+            # Check if seed data has been applied by checking if admin@example.com user exists
+            if ! psql -h ${{ secrets.DB_HOST }} -p ${{ secrets.DB_PORT }} -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }} -t -c "SELECT COUNT(*) FROM users WHERE email = 'admin@example.com';" | grep -q '[^0]'; then
+              echo "Seed data not found. Applying seed data for PR preview environment..."
+              psql -h ${{ secrets.DB_HOST }} -p ${{ secrets.DB_PORT }} -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }} -f pr-preview-seed-data.sql
+              echo "Seed data applied successfully - Users: admin@example.com, startup@example.com, investor@example.com"
+            elso
+            # Clean up password from environment
+            unset PGPASSWORD
+              echo "Seed data already exists, skipping application"
+            fi
+
+            # Clean up password from environment
+            unset PGPASSWORD
 
             echo "Stopping and removing existing backend container if present..."
             CONTAINER="${{ secrets.APP_NAME }}-pr-${{ env.PR_NUMBER }}"
