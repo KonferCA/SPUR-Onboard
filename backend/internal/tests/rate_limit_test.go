@@ -118,8 +118,8 @@ func TestRateLimiter(t *testing.T) {
 		limiter := middleware.NewRateLimiter(&middleware.RateLimiterConfig{
 			Requests:    1,
 			Window:      100 * time.Millisecond,
-				BlockPeriod: 50 * time.Millisecond,
-				MaxBlocks:   2,
+			BlockPeriod: 50 * time.Millisecond,
+			MaxBlocks:   2,
 		})
 
 		handler := func(c echo.Context) error {

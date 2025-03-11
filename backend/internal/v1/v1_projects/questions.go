@@ -96,7 +96,7 @@ func (h *Handler) handleGetQuestions(c echo.Context) error {
 	for _, member := range teamMembers {
 		// Process thhe social links with the common helper function
 		socialLinks := v1_common.ProcessSocialLinks(member)
-		
+
 		// convert nullable fields to strings
 		previousWorkStr := ""
 		if member.PreviousWork != nil {
