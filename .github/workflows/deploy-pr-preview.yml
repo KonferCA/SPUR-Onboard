@@ -273,7 +273,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: ${{ github.event.pull_request.number }},
-              body: '🚀 PR Preview Environment Deployed!\n\n**Preview URL:** https://${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}\n**Test Accounts:**\n- Admin: admin@example.com / admin123\n- Startup Owner: startup@example.com / startup123\n- Investor: investor@example.com / investor123\n\nThis environment will be automatically cleaned up when the PR is closed.'
+              body: '🚀 PR Preview Environment Deployed!\n\n**Preview URL:** https://${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}\n\nThis environment will be automatically cleaned up when the PR is closed.'
             });
   # Cleanup preview environment when PR is closed
   cleanup-preview:
