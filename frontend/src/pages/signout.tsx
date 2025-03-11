@@ -4,7 +4,7 @@ export const Route = createFileRoute('/signout')({
     component: RouteComponent,
     beforeLoad: async ({ context }) => {
         // Only logout if user is logged in
-        if (context.auth && context.auth.user) {
+        if (context?.auth?.user) {
             await context.auth.clearAuth();
         }
         throw redirect({ to: '/auth' });

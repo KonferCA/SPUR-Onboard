@@ -4,22 +4,22 @@ import {
     AnchorLinkItem,
     AnchorLinks,
     Button,
-    DropdownOption,
     SectionDrawer,
-    UploadableFile,
+    type DropdownOption,
+    type UploadableFile,
 } from '@components';
 import { IoMdArrowRoundBack } from 'react-icons/io';
 import {
     getProjectFormQuestions,
-    ProjectDraft,
+    type ProjectDraft,
     saveProjectDraft,
     submitProject,
 } from '@/services/project';
 import {
-    GroupedProjectQuestions,
+    type GroupedProjectQuestions,
     groupProjectQuestions,
-    Question,
     SectionMetadata,
+    type Question,
 } from '@/config/forms';
 import { cva } from 'class-variance-authority';
 import { sanitizeHtmlId } from '@/utils/html';
@@ -29,7 +29,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useDebounceFn } from '@/hooks';
 import { useAuth, useNotification } from '@/contexts';
 import { useNavigate } from '@tanstack/react-router';
-import { ValidationError, ProjectError } from '@/components/ProjectError';
+import { type ValidationError, ProjectError } from '@/components/ProjectError';
 import { RecommendedFields } from '@/components/RecommendedFields';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
@@ -56,7 +56,7 @@ const stepItemStyles = cva(
 const questionGroupContainerStyles = cva('');
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
-const isEmptyValue = (value: any, type: string): boolean => {
+const isEmptyValue = (value: unknown, type: string): boolean => {
     if (value === null || value === undefined) {
         return true;
     }
@@ -64,10 +64,10 @@ const isEmptyValue = (value: any, type: string): boolean => {
     switch (type) {
         case 'textinput':
         case 'textarea':
-            return value.trim() === '';
+            return (value as string).trim() === '';
         case 'select':
         case 'multiselect':
-            return value.length === 0;
+            return (value as string).length === 0;
         case 'date':
             return isValidDate(value);
         default:
@@ -192,15 +192,7 @@ function ProjectFormPage() {
         } finally {
             setIsSaving(false);
         }
-    }, [
-        accessToken,
-        companyId,
-        currentProjectId,
-        isSaving,
-        dirtyInputRef,
-        saveProjectDraft,
-        setAutosaveStatus,
-    ]);
+    }, [accessToken, companyId, currentProjectId, isSaving]);
 
     // use the keyboard shortcut hook
     useKeyboardShortcut({ key: 's', ctrlKey: true }, handleManualSave, [
@@ -210,7 +202,7 @@ function ProjectFormPage() {
     const handleChange = (
         questionId: string,
         inputFieldKey: string,
-        value: any
+        value: unknown
     ) => {
         setGroupedQuestions((prevGroups) => {
             const newGroups = prevGroups.map((group, idx) => {
@@ -299,11 +291,11 @@ function ProjectFormPage() {
                                             return field;
                                         }
 
-                                        let newValue = value;
+                                        const newValue = value;
 
                                         switch (field.type) {
                                             case 'select':
-                                            case 'multiselect':
+                                            case 'multiselect': {
                                                 const choices =
                                                     value as DropdownOption[];
                                                 dirtyInputRef.current.set(
@@ -316,8 +308,8 @@ function ProjectFormPage() {
                                                     }
                                                 );
                                                 break;
-
-                                            case 'date':
+                                            }
+                                            case 'date': {
                                                 const date = value as Date;
 
                                                 dirtyInputRef.current.set(
@@ -330,13 +322,16 @@ function ProjectFormPage() {
                                                     }
                                                 );
                                                 break;
+                                            }
 
                                             default:
                                                 dirtyInputRef.current.set(
                                                     questionId,
                                                     {
                                                         question_id: questionId,
-                                                        answer: value,
+                                                        answer: value as
+                                                            | string
+                                                            | string[],
                                                     }
                                                 );
                                                 break;
@@ -448,11 +443,9 @@ function ProjectFormPage() {
                     (q) => q.id === question.dependentQuestionId
                 );
 
-                if (
-                    foundQuestion &&
-                    foundQuestion.inputFields[0]?.value.value
-                ) {
-                    dependentAnswer = foundQuestion.inputFields[0].value.value;
+                if (foundQuestion?.inputFields[0]?.value.value) {
+                    dependentAnswer = foundQuestion.inputFields[0].value
+                        .value as string | DropdownOption[];
                     break;
                 }
             }
@@ -477,21 +470,18 @@ function ProjectFormPage() {
                 default:
                     return true;
             }
-        } else {
-            switch (question.conditionType?.conditionTypeEnum) {
-                case 'empty':
-                    return !dependentAnswer;
-                case 'not_empty':
-                    return !!dependentAnswer;
-                case 'equals':
-                    return dependentAnswer === question.conditionValue;
-                case 'contains':
-                    return dependentAnswer.includes(
-                        question.conditionValue || ''
-                    );
-                default:
-                    return true;
-            }
+        }
+        switch (question.conditionType?.conditionTypeEnum) {
+            case 'empty':
+                return !dependentAnswer;
+            case 'not_empty':
+                return !!dependentAnswer;
+            case 'equals':
+                return dependentAnswer === question.conditionValue;
+            case 'contains':
+                return dependentAnswer.includes(question.conditionValue || '');
+            default:
+                return true;
         }
     };
 
@@ -507,8 +497,7 @@ function ProjectFormPage() {
                     // if question is dependent on previous and it should be rendered
                     // then we check the answer of this input
                     if (
-                        question.conditionType &&
-                        question.conditionType.valid &&
+                        question.conditionType?.valid &&
                         !shouldRenderQuestion(question, subsection.questions)
                     ) {
                         return;
@@ -690,6 +679,9 @@ function ProjectFormPage() {
                                                 className={stepItemStyles({
                                                     active: currentStep === idx,
                                                 })}
+                                                onKeyUp={() =>
+                                                    setCurrentStep(idx)
+                                                }
                                                 onClick={() =>
                                                     setCurrentStep(idx)
                                                 }
@@ -748,21 +740,21 @@ function ProjectFormPage() {
                                                     fileUploadProps={
                                                         accessToken
                                                             ? {
-                                                                  projectId:
-                                                                      currentProjectId,
-                                                                  questionId:
-                                                                      q.id,
-                                                                  section:
-                                                                      groupedQuestions[
-                                                                          currentStep
-                                                                      ].section,
-                                                                  subSection:
-                                                                      subsection.name,
-                                                                  accessToken:
-                                                                      accessToken,
-                                                                  enableAutosave:
-                                                                      true,
-                                                              }
+                                                                projectId:
+                                                                    currentProjectId,
+                                                                questionId:
+                                                                    q.id,
+                                                                section:
+                                                                    groupedQuestions[
+                                                                        currentStep
+                                                                    ].section,
+                                                                subSection:
+                                                                    subsection.name,
+                                                                accessToken:
+                                                                    accessToken,
+                                                                enableAutosave:
+                                                                    true,
+                                                            }
                                                             : undefined
                                                     }
                                                 />

@@ -44,7 +44,9 @@ describe('AnchorLinks', () => {
     it('should render all provided links using rendering function', () => {
         render(
             <AnchorLinks links={links}>
-                {(link: ControlledLink) => <button>{link.label}</button>}
+                {(link: ControlledLink) => (
+                    <button type="button">{link.label}</button>
+                )}
             </AnchorLinks>
         );
         links.forEach((link) => {

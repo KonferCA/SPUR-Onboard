@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { IoMdClose } from 'react-icons/io';
@@ -64,6 +64,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                             <Dialog.Panel className="relative w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left shadow-xl transition-all">
                                 {showCloseButton && (
                                     <button
+                                        type="button"
                                         onClick={onClose}
                                         className="absolute right-6 top-6 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
                                     >
@@ -88,9 +89,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                                 </div>
 
                                 <div className="mt-8 flex items-center justify-between">
-                                    <div>
-                                        {additionalButtons}
-                                    </div>
+                                    <div>{additionalButtons}</div>
                                     <div className="flex gap-3">
                                         <button
                                             type="button"

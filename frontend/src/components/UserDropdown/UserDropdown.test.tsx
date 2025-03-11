@@ -1,17 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { UserDropdown } from './UserDropdown';
+import type { User } from '@/types';
 
 vi.mock('@tanstack/react-router', async () => {
     const actual = await vi.importActual('@tanstack/react-router');
     return {
         ...actual,
-        Link: ({ children, onClick, className }: { 
-            children: React.ReactNode, 
-            onClick: () => void,
-            className: string 
+        Link: ({
+            children,
+            onClick,
+            className,
+        }: {
+            children: React.ReactNode;
+            onClick: () => void;
+            className: string;
         }) => (
-            <button onClick={onClick} className={className} data-testid="mock-link">
+            <button
+                type="button"
+                onClick={onClick}
+                className={className}
+                data-testid="mock-link"
+            >
                 {children}
             </button>
         ),
@@ -23,8 +33,17 @@ vi.mock('@tanstack/react-router', async () => {
 });
 
 vi.mock('@/components/ProfilePicture/ProfilePicture', () => ({
-    ProfilePicture: ({ url, initials, size }: { url: string, initials: string, size: string }) => (
-        <div data-testid="profile-picture-mock" data-url={url} data-initials={initials} data-size={size}>
+    ProfilePicture: ({
+        url,
+        initials,
+        size,
+    }: { url: string; initials: string; size: string }) => (
+        <div
+            data-testid="profile-picture-mock"
+            data-url={url}
+            data-initials={initials}
+            data-size={size}
+        >
             ProfilePicture
         </div>
     ),
@@ -32,11 +51,20 @@ vi.mock('@/components/ProfilePicture/ProfilePicture', () => ({
 
 vi.mock('framer-motion', () => ({
     motion: {
-        div: ({ children, animate, initial, transition, ...props }: { 
-            children: React.ReactNode, 
-            animate?: any, 
-            initial?: any, 
-            transition?: any 
+        div: ({
+            children,
+            animate,
+            initial,
+            transition,
+            ...props
+        }: {
+            children: React.ReactNode;
+            // biome-ignore lint/suspicious/noExplicitAny: skip getting prop types from motion
+            animate?: any;
+            // biome-ignore lint/suspicious/noExplicitAny: skip getting prop types from motion
+            initial?: any;
+            // biome-ignore lint/suspicious/noExplicitAny: skip getting prop types from motion
+            transition?: any;
         }) => (
             <div data-animate={animate} data-transition={transition} {...props}>
                 {children}
@@ -50,7 +78,7 @@ describe('UserDropdown', () => {
         firstName: 'Nausher',
         lastName: 'Rao',
         profilePictureUrl: 'https://example.com/sherrao.jpg',
-    };
+    } as User;
 
     const mockOnLogout = vi.fn(() => Promise.resolve());
     const mockOnSettingsClick = vi.fn();
@@ -61,10 +89,10 @@ describe('UserDropdown', () => {
 
     it('should render with user information', () => {
         render(
-            <UserDropdown 
-            user={mockUser} 
-            onLogout={mockOnLogout} 
-            onSettingsClick={mockOnSettingsClick} 
+            <UserDropdown
+                user={mockUser}
+                onLogout={mockOnLogout}
+                onSettingsClick={mockOnSettingsClick}
             />
         );
 
@@ -75,16 +103,16 @@ describe('UserDropdown', () => {
 
     it('should open dropdown when button is clicked', () => {
         render(
-            <UserDropdown 
-                user={mockUser} 
-                onLogout={mockOnLogout} 
-                onSettingsClick={mockOnSettingsClick} 
+            <UserDropdown
+                user={mockUser}
+                onLogout={mockOnLogout}
+                onSettingsClick={mockOnSettingsClick}
             />
         );
-    
+
         const button = screen.getByRole('button');
         fireEvent.click(button);
-        
+
         expect(screen.getByText('Settings')).toBeInTheDocument();
         expect(screen.getByText('Log Out')).toBeInTheDocument();
     });
@@ -92,14 +120,12 @@ describe('UserDropdown', () => {
     it('should close dropdown when clicking outside', async () => {
         render(
             <div>
-                <div data-testid="outside-element">
-                    Outside Element
-                </div>
+                <div data-testid="outside-element">Outside Element</div>
 
-                <UserDropdown 
-                    user={mockUser} 
-                    onLogout={mockOnLogout} 
-                    onSettingsClick={mockOnSettingsClick} 
+                <UserDropdown
+                    user={mockUser}
+                    onLogout={mockOnLogout}
+                    onSettingsClick={mockOnSettingsClick}
                 />
             </div>
         );
@@ -120,13 +146,13 @@ describe('UserDropdown', () => {
             expect(screen.queryByText('Settings')).not.toBeInTheDocument();
         });
     });
-  
+
     it('should call onSettingsClick when settings is clicked', () => {
         render(
-            <UserDropdown 
-                user={mockUser} 
-                onLogout={mockOnLogout} 
-                onSettingsClick={mockOnSettingsClick} 
+            <UserDropdown
+                user={mockUser}
+                onLogout={mockOnLogout}
+                onSettingsClick={mockOnSettingsClick}
             />
         );
 
@@ -144,10 +170,10 @@ describe('UserDropdown', () => {
 
     it('should call onLogout when logout is clicked', async () => {
         render(
-            <UserDropdown 
-                user={mockUser} 
-                onLogout={mockOnLogout} 
-                onSettingsClick={mockOnSettingsClick} 
+            <UserDropdown
+                user={mockUser}
+                onLogout={mockOnLogout}
+                onSettingsClick={mockOnSettingsClick}
             />
         );
 
@@ -164,12 +190,7 @@ describe('UserDropdown', () => {
     });
 
     it('should work without onSettingsClick prop', () => {
-        render(
-            <UserDropdown 
-                user={mockUser} 
-                onLogout={mockOnLogout} 
-            />
-        );
+        render(<UserDropdown user={mockUser} onLogout={mockOnLogout} />);
 
         // open the dropdown
         const button = screen.getByRole('button');
@@ -184,26 +205,16 @@ describe('UserDropdown', () => {
         const incompleteUser = {
             // no firstName or lastName
             profilePictureUrl: 'https://example.com/sherrao.jpg',
-        };
+        } as User;
 
-        render(
-            <UserDropdown 
-                user={incompleteUser} 
-                onLogout={mockOnLogout} 
-            />
-        );
+        render(<UserDropdown user={incompleteUser} onLogout={mockOnLogout} />);
 
         // should still render without errors
         expect(screen.getByRole('button')).toBeInTheDocument();
     });
 
     it('should toggle dropdown when button is clicked multiple times', () => {
-        render(
-            <UserDropdown 
-                user={mockUser} 
-                onLogout={mockOnLogout} 
-            />
-        );
+        render(<UserDropdown user={mockUser} onLogout={mockOnLogout} />);
 
         const button = screen.getByRole('button');
 

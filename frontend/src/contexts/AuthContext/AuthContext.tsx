@@ -1,4 +1,5 @@
-import React, {
+import type React from 'react';
+import {
     createContext,
     useContext,
     useState,
@@ -35,15 +36,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const intervalRef = useRef<number | null>(null);
 
-    const setAuth = useCallback((
-        newUser: User | null,
-        token: string | null,
-        newCompanyId: string | null = null
-    ) => {
-        setUser(newUser);
-        setAccessToken(token);
-        setCompanyId(newCompanyId);
-    }, []);
+    const setAuth = useCallback(
+        (
+            newUser: User | null,
+            token: string | null,
+            newCompanyId: string | null = null
+        ) => {
+            setUser(newUser);
+            setAccessToken(token);
+            setCompanyId(newCompanyId);
+        },
+        []
+    );
 
     const clearAuth = useCallback(async () => {
         try {
@@ -64,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try {
                 const response = await refreshAccessToken();
                 if (response) {
-                    setUser(snakeToCamel(response.user));
+                    setUser(snakeToCamel(response.user) as User);
                     setAccessToken(response.accessToken);
                     setCompanyId(response.companyId);
 

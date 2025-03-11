@@ -38,10 +38,14 @@ export async function createProjectComment(
             target_id: data.targetId,
         }),
     });
-    
+
     const body = await res.json();
     if (res.status !== HttpStatusCode.CREATED) {
-        throw new ApiError('Failed to create project question', res.status, body);
+        throw new ApiError(
+            'Failed to create project question',
+            res.status,
+            body
+        );
     }
 
     return snakeToCamel(body) as Comment;
@@ -64,6 +68,6 @@ export async function getProjectComments(
     if (res.status !== HttpStatusCode.OK) {
         throw new ApiError('Failed to get project questions', res.status, body);
     }
-    
+
     return snakeToCamel(body.comments) as Comment[];
 }

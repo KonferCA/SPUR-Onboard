@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button, TextInput, TextArea, SocialLinks } from '@/components';
 import type { UserDetailsFormProps, UserDetailsData } from '@/types/auth';
 import { validateSocialLink } from '@/utils/form-validation';
-import { SocialLink } from '@/types';
+import type { SocialLink } from '@/types';
 
 export function UserDetailsForm({
     onSubmit,
@@ -131,11 +131,13 @@ export function UserDetailsForm({
 
                 <p className="text-gray-600 text-center text-sm mt-4">
                     By registering, you agree to our{' '}
+                    {/* biome-ignore lint: no link yet */}
                     <a href="#" className="text-blue-600">
                         Terms of Service
                     </a>{' '}
-                    and{' '}
+                    and {/* biome-ignore lint: no link yet */}
                     <a href="#" className="text-blue-600">
+                        {' '}
                         Privacy Policy
                     </a>
                     .
@@ -144,4 +146,3 @@ export function UserDetailsForm({
         </div>
     );
 }
-

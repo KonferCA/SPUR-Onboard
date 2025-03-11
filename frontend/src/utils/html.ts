@@ -3,7 +3,7 @@ export function sanitizeHtmlId(str: string) {
     if (!str.length) return str;
 
     // Convert to string in case we receive a number or other type
-    let id = String(str)
+    const id = String(str)
         // Convert to lowercase
         .toLowerCase()
         // Replace spaces and underscores with hyphens

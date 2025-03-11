@@ -1,4 +1,11 @@
-import React, { FC, ReactNode, useEffect, useState } from 'react';
+import type React from 'react';
+import {
+    type FC,
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useState,
+} from 'react';
 import { ScrollLink } from '@components';
 import { isAtEndOfPage, isElementInView } from '@utils';
 import clsx from 'clsx';
@@ -32,14 +39,18 @@ export interface AnchorLinksProps {
      * are desired on top of scrolling to the target.
      */
     onClick?:
-        | ((
-              link: ControlledLink,
-              event: React.MouseEvent<HTMLLIElement>
-          ) => void)
-        | ((
-              link: ControlledLink,
-              event: React.MouseEvent<HTMLLIElement>
-          ) => Promise<void>);
+    | ((
+        link: ControlledLink,
+        event:
+            | React.MouseEvent<HTMLLIElement, MouseEvent>
+            | React.KeyboardEvent<HTMLLIElement>
+    ) => void)
+    | ((
+        link: ControlledLink,
+        event:
+            | React.MouseEvent<HTMLLIElement, MouseEvent>
+            | React.KeyboardEvent<HTMLLIElement>
+    ) => Promise<void>);
     /*
      * Sets the scrolling to manual. Use the onClick prop to handle.
      */
@@ -86,11 +97,12 @@ const AnchorLinks: FC<AnchorLinksProps> = ({
         if (visibleLinks.length) {
             const closest: ControlledLink = visibleLinks.reduce(
                 (closest, current) => {
+                    if (!closest.el || !current.el) return current;
                     const closestDistance = Math.abs(
-                        closest.el!.getBoundingClientRect().top
+                        closest.el.getBoundingClientRect().top
                     );
                     const currentDistance = Math.abs(
-                        current.el!.getBoundingClientRect().top
+                        current.el.getBoundingClientRect().top
                     );
                     return currentDistance < closestDistance
                         ? current
@@ -131,11 +143,12 @@ const AnchorLinks: FC<AnchorLinksProps> = ({
                         // get the visible section closest to the top of page
                         const closest: ControlledLink = visibleLinks.reduce(
                             (closest, current) => {
+                                if (!closest.el || !current.el) return current;
                                 const closestDistance = Math.abs(
-                                    closest.el!.getBoundingClientRect().top
+                                    closest.el.getBoundingClientRect().top
                                 );
                                 const currentDistance = Math.abs(
-                                    current.el!.getBoundingClientRect().top
+                                    current.el.getBoundingClientRect().top
                                 );
                                 return currentDistance < closestDistance
                                     ? current
@@ -159,12 +172,26 @@ const AnchorLinks: FC<AnchorLinksProps> = ({
         };
     }, []);
 
+    const handleClick = useCallback(
+        (link: ControlledLink) => {
+            return async (
+                e:
+                    | React.MouseEvent<HTMLLIElement, MouseEvent>
+                    | React.KeyboardEvent<HTMLLIElement>
+            ) => {
+                onClick && (await onClick(link, e));
+            };
+        },
+        [onClick]
+    );
+
     return (
         <ul className={getRootListStyles({ yGap })}>
             {controlledLinks.map((link, idx) => (
                 <li
                     key={link.label}
-                    onClick={async (e) => onClick && (await onClick(link, e))}
+                    onKeyUp={handleClick(link)}
+                    onClick={handleClick(link)}
                     className="cursor-pointer"
                 >
                     {manualScroll ? (

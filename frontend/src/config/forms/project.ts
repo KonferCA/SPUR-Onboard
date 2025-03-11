@@ -1,10 +1,10 @@
-import { createUploadableFile, UploadableFile } from '@/components';
-import {
+import { createUploadableFile, type UploadableFile } from '@/components';
+import type {
     ConditionType,
     ProjectQuestion,
     ProjectQuestionsData,
 } from '@/services/project';
-import { FormField, FormFieldType } from '@/types';
+import type { FormField, FormFieldType } from '@/types';
 import { createZodSchema } from '@/utils/form-validation';
 
 export interface GroupedProjectQuestions {
@@ -159,10 +159,11 @@ export function groupProjectQuestions(
                             value: c,
                         }));
                         break;
-                    case 'date':
+                    case 'date': {
                         const date = new Date(q.answer);
                         inputField.value.value = date;
                         break;
+                    }
                     default:
                         inputField.value.value = q.answer;
                         break;
@@ -178,8 +179,7 @@ export function groupProjectQuestions(
                 inputFields,
                 dependentQuestionId:
                     projectQuestion.dependentQuestionId || undefined,
-                conditionType:
-                    (projectQuestion.conditionType as any) || undefined,
+                conditionType: projectQuestion.conditionType || undefined,
                 conditionValue: projectQuestion.conditionValue || undefined,
                 questionOrder: projectQuestion.questionOrder,
                 description: projectQuestion.description || undefined,

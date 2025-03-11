@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { cva } from 'class-variance-authority';
 
 const indicatorStyles = cva(
@@ -48,10 +49,10 @@ export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
         status === 'saving'
             ? 'saving'
             : status === 'error'
-              ? 'error'
-              : showSuccess
-                ? 'success'
-                : 'idle';
+                ? 'error'
+                : showSuccess
+                    ? 'success'
+                    : 'idle';
 
     const defaultMessages = {
         idle: 'Your answers will be autosaved as you complete your application',
