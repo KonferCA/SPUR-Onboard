@@ -97,13 +97,15 @@ describe('AnchorLinks', () => {
     });
 
     it('should use custom rendering for both manual and automatic scrolling', () => {
-        const customRenderer = (link: ControlledLink) => (
-            <span data-testid={`custom-${link.label}`}>{link.label}</span>
-        );
-
         // Test with manualScroll=true
         const { rerender } = render(
-            <AnchorLinks links={links} manualScroll children={customRenderer} />
+            <AnchorLinks links={links} manualScroll>
+                {(link: ControlledLink) => (
+                    <span data-testid={`custom-${link.label}`}>
+                        {link.label}
+                    </span>
+                )}
+            </AnchorLinks>
         );
 
         links.forEach((link) => {
@@ -113,7 +115,15 @@ describe('AnchorLinks', () => {
         });
 
         // Test with manualScroll=false
-        rerender(<AnchorLinks links={links} children={customRenderer} />);
+        rerender(
+            <AnchorLinks links={links}>
+                {(link: ControlledLink) => (
+                    <span data-testid={`custom-${link.label}`}>
+                        {link.label}
+                    </span>
+                )}
+            </AnchorLinks>
+        );
 
         links.forEach((link) => {
             expect(

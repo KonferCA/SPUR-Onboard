@@ -32,8 +32,6 @@ export function scrollToWithOffset(
             // Stop scrolling before reaching the target
             offsetPosition = currentScrollPosition + targetPosition + offset;
             break;
-        case 'after':
-        // Stop scrolling after passing the target
         default:
             // Original behavior - typically used for header offsets
             offsetPosition = currentScrollPosition + targetPosition - offset;

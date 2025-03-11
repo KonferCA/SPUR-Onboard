@@ -195,6 +195,7 @@ const AnchorLinks: FC<AnchorLinksProps> = ({
                     className="cursor-pointer"
                 >
                     {manualScroll ? (
+                        // biome-ignore lint:
                         <a>
                             {typeof children === 'function' ? (
                                 children(link, idx)

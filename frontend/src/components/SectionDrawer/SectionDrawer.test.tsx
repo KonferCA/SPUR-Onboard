@@ -37,11 +37,14 @@ vi.mock('@/utils', () => ({
 
 vi.mock('framer-motion', () => ({
     motion: {
+        // biome-ignore lint: mocking props
         div: ({ children, ...props }: any) => (
             <div data-testid={props['data-testid']} {...props}>
                 {children}
             </div>
         ),
+
+        // biome-ignore lint: mocking props
         span: ({ children, ...props }: any) => (
             <span data-testid={props['data-testid']} {...props}>
                 {children}

@@ -60,7 +60,7 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                 }, 500);
             }
         }
-    }, [validationErrors]);
+    }, [validationErrors, onRequestChangeSection]);
 
     const controlledLinks = useMemo(() => {
         const errors = validationErrors.filter(
@@ -124,9 +124,11 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                 const closest: ControlledLink = visibleLinks.reduce(
                     (closest, current) => {
                         const closestDistance = Math.abs(
+                            // biome-ignore lint/style/noNonNullAssertion: element is always defined in this case
                             closest.el!.getBoundingClientRect().top
                         );
                         const currentDistance = Math.abs(
+                            // biome-ignore lint/style/noNonNullAssertion: element is always defined in this case
                             current.el!.getBoundingClientRect().top
                         );
                         return currentDistance < closestDistance
@@ -157,7 +159,7 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
             <DrawerTrigger asChild>
                 <div className="fixed bottom-0 inset-x-0 md:max-w-3xl md:mx-auto p-6 rounded-tl-2xl rounded-tr-2xl bg-white outline outline-1 outline-gray-300 shadow-2xl">
                     <button
-                        aria-description="Open drawer for sub section links"
+                        aria-label="Open drawer for sub section links"
                         type="button"
                         className="absolute inset-0 rounded-tr-2xl rounded-tl-2xl"
                     >

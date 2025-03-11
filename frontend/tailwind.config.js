@@ -63,8 +63,6 @@ export default {
             screens: {
                 '1.5xl': '1360px',
                 '3xl': '1756px',
-            },
-            screens: {
                 '2k': '2048px',
             },
         },
