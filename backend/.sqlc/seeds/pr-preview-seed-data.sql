@@ -12,10 +12,8 @@ INSERT INTO users (
     'a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6',
     'Admin', 'User',
     'admin@example.com',
-    -- This is a bcrypt hash for password: admin123
-    '$2a$10$lTUyQgRYGlrQW7FbG9IdpelDzXEKLHVYadtJrYKk6zYHnGp2zGDC.',
-    -- PermAdmin value (2783 = binary 0101011011111)
-    2783,
+    '$2a$10$KnsWpRiit26mIl/9U64Cu.n0sTlgvyKUlsXjLIQV//Wr/aQVqruu6                                                                                                                                                                                                    ',
+    1327,
     true,
     'Administrator for the preview deployment with experience in managing technology projects and overseeing platform operations.',
     'System Administrator',
@@ -26,10 +24,8 @@ INSERT INTO users (
     'b2c3d4e5-f6a7-48b9-c0d1-e2f3a4b5c6d7',
     'Startup', 'Owner',
     'startup@example.com',
-    -- This is a bcrypt hash for password: startup123
-    '$2a$10$M4JILbCocvAMKcf.FS/I2.Mz.9NmKFNEFdGHCz7DWK9eYCQtAAkF6',
-    -- PermStartupOwner value (1552 = binary 0011000010000)
-    1552,
+    '$2a$10$1nNTXfDrLc/kx05U5WtvLeRh9PjOnYEwYr8w4TvBLsZWADssw2.Bu                                                                                                                                                                                                    ',
+    688,
     true,
     'Serial entrepreneur with 10+ years experience in tech startups. Previously founded two successful companies with exits to major tech firms. Passionate about sustainable technology and creating impactful solutions.',
     'Founder & CEO',
@@ -40,10 +36,8 @@ INSERT INTO users (
     'c3d4e5f6-a7b8-49c0-d1e2-f3a4b5c6d7e8',
     'Angel', 'Investor',
     'investor@example.com',
-    -- This is a bcrypt hash for password: investor123
-    '$2a$10$Qpx1cUdFy9uikymsv3SOReQcFLBbNcyXiSBH1p4TLk9QvuCNw2QQG',
-    -- PermInvestor value (1091 = binary 0010001000011)
-    1091,
+    '$2a$10$Ub4N749drxyefzUxndvxHuL4UHUi48SRblZGk3lGweEFiZquKWubO                                                                                                                                                                                                    ',
+    97,
     true,
     'Angel investor with portfolio of 25+ early-stage startups. Previous exits include Series B and C rounds. Focused on sustainable technology, blockchain solutions, and healthcare innovation. Former VP at Goldman Sachs technology division.',
     'Principal Investor',
