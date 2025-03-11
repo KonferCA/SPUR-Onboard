@@ -6,8 +6,8 @@ import (
 
 // AuthConfig holds the configuration for the Auth middleware
 type AuthConfig struct {
-	AcceptTokenType      string
-	RequiredPermissions  []uint32
+	AcceptTokenType     string
+	RequiredPermissions []uint32
 }
 
 // AuthClaims represents the claims we'll store in the context

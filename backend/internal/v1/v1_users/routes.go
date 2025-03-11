@@ -33,9 +33,9 @@ func SetupUserRoutes(e *echo.Group, s interfaces.CoreServer) {
 		h.handleUploadProfilePicture,
 		middleware.Auth(s.GetDB()),
 		middleware.FileCheck(middleware.FileConfig{
-			MinSize:        1024,             // 1KB minimum
-			MaxSize:        5 * 1024 * 1024,  // 5MB maximum
-			AllowedTypes:    []string{"image/jpeg", "image/png"},
+			MinSize:          1024,            // 1KB minimum
+			MaxSize:          5 * 1024 * 1024, // 5MB maximum
+			AllowedTypes:     []string{"image/jpeg", "image/png"},
 			StrictValidation: true,
 		}),
 	)

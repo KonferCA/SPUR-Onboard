@@ -10,13 +10,14 @@ import (
 	"testing"
 	"time"
 
+	"KonferCA/SPUR/internal/jwt"
+	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/server"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
-	"KonferCA/SPUR/internal/jwt"
-	"KonferCA/SPUR/internal/permissions"
-	"KonferCA/SPUR/internal/server"
 )
 
 /*
@@ -89,7 +90,7 @@ Returns companyID, error
 */
 func createTestCompany(ctx context.Context, s *server.Server, userID string) (string, error) {
 	companyID := uuid.New().String()
-	
+
 	_, err := s.DBPool.Exec(ctx, `
 		INSERT INTO companies (
 			id,
@@ -100,7 +101,7 @@ func createTestCompany(ctx context.Context, s *server.Server, userID string) (st
 		)
 		VALUES ($1, $2, $3, $4, $5)`,
 		companyID, "Test Company", "0x123", "https://linkedin.com/test", userID)
-	
+
 	return companyID, err
 }
 
@@ -114,7 +115,7 @@ func removeTestCompany(ctx context.Context, companyID string, s *server.Server) 
 
 func createTestAdmin(ctx context.Context, s *server.Server) (string, string, string, error) {
 	// Create admin user with all permissions
-	perms := permissions.PermAdmin | permissions.PermManageUsers | permissions.PermViewAllProjects | 
+	perms := permissions.PermAdmin | permissions.PermManageUsers | permissions.PermViewAllProjects |
 		permissions.PermManageTeam | permissions.PermCommentOnProjects | permissions.PermSubmitProject | permissions.PermIsAdmin
 
 	// Generate random email and password
@@ -132,7 +133,7 @@ func createTestAdmin(ctx context.Context, s *server.Server) (string, string, str
 	_, err = s.GetDB().Exec(ctx, `
 		INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
 		VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
-	`, userID, email, string(hashedPassword), 
+	`, userID, email, string(hashedPassword),
 		int32(perms), true)
 	if err != nil {
 		return "", "", "", fmt.Errorf("failed to create admin user: %w", err)
@@ -143,18 +144,18 @@ func createTestAdmin(ctx context.Context, s *server.Server) (string, string, str
 
 func loginAndGetToken(t *testing.T, s *server.Server, email, password string) string {
 	loginBody := fmt.Sprintf(`{"email":"%s","password":"%s"}`, email, password)
-	
+
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(loginBody))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	s.GetEcho().ServeHTTP(rec, req)
-	
+
 	assert.Equal(t, http.StatusOK, rec.Code, "Login should succeed")
 
 	var loginResp map[string]interface{}
 	err := json.NewDecoder(rec.Body).Decode(&loginResp)
 	assert.NoError(t, err, "Should decode login response")
-	
+
 	accessToken, ok := loginResp["access_token"].(string)
 	assert.True(t, ok, "Response should contain access_token")
 	assert.NotEmpty(t, accessToken, "Access token should not be empty")

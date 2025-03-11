@@ -27,6 +27,9 @@ migration:
 sql:
 	@sqlc generate
 
+format-fix:
+	@./scripts/format.sh
+
 seed:
 	@echo "Running development seed data..."
 	@cat .sqlc/seeds/development_seed.sql | docker exec -i spur-postgres psql -U postgres -d postgres
