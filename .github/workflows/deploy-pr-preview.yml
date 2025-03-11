@@ -256,21 +256,32 @@ jobs:
             sudo nginx -t && sudo nginx -s reload
 
             echo "PR preview environment deployed successfully!"
-      # Create DNS record using Cloudflare API
+      # Create DNS record using Cloudflare API if it doesn't exist
       - name: Create DNS Record
         id: create_dns
         run: |
-          echo 'Creating DNS record for ${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}'
-          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records" \
-          -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_KEY }}" \
-          -H "Content-Type: application/json" \
-          -d '{
-          "type": "A",
-          "name": "${{ env.SUBDOMAIN }}",
-          "content": "${{ secrets.VPS_IP }}",
-          "ttl": 1,
-          "proxied": true
-          }'
+          echo 'Checking if DNS record for ${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }} exists'
+
+          # Check if record already exists
+          RECORD_EXISTS=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records?type=A&name=${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_KEY }}" \
+            -H "Content-Type: application/json" | jq -r '.result | length')
+
+          if [ "$RECORD_EXISTS" -eq "0" ]; then
+            echo 'Creating DNS record for ${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}'
+            curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+            "type": "A",
+            "name": "${{ env.SUBDOMAIN }}",
+            "content": "${{ secrets.VPS_IP }}",
+            "ttl": 1,
+            "proxied": true
+            }'
+          else
+            echo 'DNS record already exists, skipping creation'
+          fi
       # Comment on the PR with the preview URL
       - name: Comment on PR
         uses: actions/github-script@v7
