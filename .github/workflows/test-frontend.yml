@@ -2,12 +2,8 @@ name: Test Frontend Code
 on:
   push:
     branches: ['main', 'staging', 'production']
-    paths:
-      - 'frontend/**'
   pull_request:
     branches: ['main', 'staging', 'production']
-    paths:
-      - 'frontend/**'
 jobs:
   test-frontend:
     name: Test Frontend
