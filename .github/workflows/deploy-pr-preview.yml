@@ -222,13 +222,11 @@ jobs:
             # Apply seed data for PR preview only if it hasn't been applied before
             echo "Checking if seed data needs to be applied..."
             # Check if seed data has been applied by checking if admin@example.com user exists
-            if ! psql -h ${{ secrets.DB_HOST }} -p ${{ secrets.DB_PORT }} -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }} -t -c "SELECT COUNT(*) FROM users WHERE email = 'admin@example.com';" | grep -q '[^0]'; then
+            if [ "$(psql -h ${{ secrets.DB_HOST }} -p ${{ secrets.DB_PORT }} -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }} -t -c "SELECT COUNT(*) FROM users WHERE email = 'admin@example.com';" | tr -d ' ')" = "0" ]; then
               echo "Seed data not found. Applying seed data for PR preview environment..."
               psql -h ${{ secrets.DB_HOST }} -p ${{ secrets.DB_PORT }} -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }}_${{ env.PR_NUMBER }} -f pr-preview-seed-data.sql
               echo "Seed data applied successfully - Users: admin@example.com, startup@example.com, investor@example.com"
-            elso
-            # Clean up password from environment
-            unset PGPASSWORD
+            else
               echo "Seed data already exists, skipping application"
             fi
 
