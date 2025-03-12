@@ -8,14 +8,15 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/labstack/echo/v4"
-	"github.com/stretchr/testify/assert"
 	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/server"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestJWTMiddleware(t *testing.T) {
@@ -58,7 +59,7 @@ func TestJWTMiddleware(t *testing.T) {
 			token_salt
 		)
 		VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
-	`, userID, "test@example.com", "hashedpassword", 
+	`, userID, "test@example.com", "hashedpassword",
 		int32(permissions.PermSubmitProject|permissions.PermManageTeam), true)
 	if err != nil {
 		t.Fatalf("failed to create test user: %v", err)
@@ -68,7 +69,7 @@ func TestJWTMiddleware(t *testing.T) {
 	s, err := server.New()
 	assert.NoError(t, err)
 	middlewareConfig := middleware.AuthConfig{
-		AcceptTokenType: jwt.ACCESS_TOKEN_TYPE,
+		AcceptTokenType:     jwt.ACCESS_TOKEN_TYPE,
 		RequiredPermissions: []uint32{permissions.PermSubmitProject},
 	}
 	s.Echo.Use(middleware.AuthWithConfig(middlewareConfig, dbPool))
@@ -138,4 +139,3 @@ func TestJWTMiddleware(t *testing.T) {
 		t.Fatalf("failed to clean up test user: %v", err)
 	}
 }
-

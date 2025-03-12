@@ -8,4 +8,4 @@ import (
 // RequestID returns a middleware that adds a request ID to the request context
 func RequestID() echo.MiddlewareFunc {
 	return middleware.RequestID()
-} 
+}
