@@ -7,7 +7,7 @@
   </a>
   <br>
   
-  ![Website](https://img.shields.io/website?url=https%3A%2F%2Fonboard.spuric.com%2F&style=flat-square) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/KonferCA/SPUR?filename=%2Fbackend%2Fgo.mod&style=flat-square) ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/KonferCA/SPUR?style=flat-square) ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr/KonferCA/SPUR?style=flat-square)
+  ![Website](https://img.shields.io/website?url=https%3A%2F%2Fonboard.spuric.com%2F&style=flat-square) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/KonferCA/SPUR-Onboard?filename=%2Fbackend%2Fgo.mod&style=flat-square) ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/KonferCA/SPUR-Onboard?style=flat-square) ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr/KonferCA/SPUR-Onboard?style=flat-square)
 </h1>
 <p align="center">
   <em> <b>SPUR</b> needs a streamlined digital platform to manage startup on-boarding, review, and funding processes. The current system relies on fragmented communication channels, creating inefficiencies for both SPUR administrators and startup applicants. </em>
@@ -17,8 +17,8 @@
 
 ## 🔨 Builds & Deployments
 
-[![Deploy Backend to AWS - Preview](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-backend.yml/badge.svg?branch=main)](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-backend.yml)
-[![Deploy Frontend to AWS - Preview](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-frontend.yml/badge.svg?branch=main)](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-frontend.yml)
+[![Deploy Backend to AWS - Preview](https://github.com/KonferCA/SPUR-Onboard/actions/workflows/deploy-aws-preview-backend.yml/badge.svg?branch=main)](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-backend.yml)
+[![Deploy Frontend to AWS - Preview](https://github.com/KonferCA/SPUR-Onboard/actions/workflows/deploy-aws-preview-frontend.yml/badge.svg?branch=main)](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-frontend.yml)
 
 ## ⚡ Quickstart
 >[!NOTE]
@@ -26,7 +26,7 @@
 
 > Clone the repo
 ```console
-git clone https://github.com/KonferCA/SPUR.git
+git clone https://github.com/KonferCA/SPUR-Onboard.git
 ```
 
 > From your terminal, navigate to the root path of your clone
