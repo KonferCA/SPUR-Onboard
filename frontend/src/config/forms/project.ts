@@ -141,6 +141,20 @@ export function groupProjectQuestions(
                     case 'team':
                         inputField.value.teamMembers = teamMembers ?? [];
                         break;
+                    case 'fundingstructure':
+                        try {
+                            if (q.answer) {
+                                inputField.value.fundingStructure = JSON.parse(
+                                    q.answer
+                                );
+                            }
+                        } catch (err) {
+                            console.error(
+                                'Failed to parse funding structure:',
+                                err
+                            );
+                        }
+                        break;
                     case 'multiselect':
                     case 'select':
                         inputField.options = q.options?.map((opt, idx) => ({

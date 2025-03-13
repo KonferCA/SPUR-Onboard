@@ -11,6 +11,9 @@ import type { Question } from '@/config/forms';
 import type { FormField } from '@/types';
 import type { FC } from 'react';
 import { cva } from 'class-variance-authority';
+import FundingStructure, {
+    type FundingStructureModel,
+} from '../FundingStructure';
 
 const legendStyles = cva('block text-md font-normal', {
     variants: {
@@ -64,6 +67,7 @@ interface QuestionInputsProps {
             | DropdownOption
             | DropdownOption[]
             | UploadableFile[]
+            | FundingStructureModel
     ) => void;
     className?: string;
     fileUploadProps?: {
@@ -171,6 +175,18 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         })}
                         {...field.props}
                     />
+                );
+
+            case 'fundingstructure':
+                return (
+                    <div className="w-full">
+                        <FundingStructure
+                            value={field.value.fundingStructure}
+                            onChange={(structure) =>
+                                onChange(question.id, field.key, structure)
+                            }
+                        />
+                    </div>
                 );
 
             case 'multiselect':
