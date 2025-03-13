@@ -10,7 +10,7 @@ import type { Comment } from '@/services/comment';
 import type { FormField } from '@/types';
 import { type FC, useState } from 'react';
 import { CommentCreate } from '../CommentCreate';
-import { FundingStructureModel } from '../FundingStructure';
+import type { FundingStructureModel } from '../FundingStructure';
 
 interface ReviewQuestionsProps {
     question: Question;
@@ -84,10 +84,11 @@ const ReviewQuestionInput: FC<ReviewQuestionInputProps> = ({
                 }
                 return null;
 
-            case 'fundingstructure':
-                const structure = field.value.fundingStructure as FundingStructureModel;
+            case 'fundingstructure': {
+                const structure = field.value
+                    .fundingStructure as FundingStructureModel;
                 if (!structure) return 'No funding structure defined';
-                
+
                 let structureInfo = '';
                 switch (structure.type) {
                     case 'target':
@@ -100,13 +101,18 @@ const ReviewQuestionInput: FC<ReviewQuestionInputProps> = ({
                         structureInfo = `Tiered funding with ${structure.tiers?.length || 0} tiers`;
                         break;
                 }
-                
+
                 return (
                     <div className="p-2 bg-gray-50 rounded-md">
-                        <h4 className="font-medium">{structure.type.charAt(0).toUpperCase() + structure.type.slice(1)} Funding Structure</h4>
+                        <h4 className="font-medium">
+                            {structure.type.charAt(0).toUpperCase() +
+                                structure.type.slice(1)}{' '}
+                            Funding Structure
+                        </h4>
                         <p className="text-sm text-gray-600">{structureInfo}</p>
                     </div>
                 );
+            }
 
             case 'file':
                 if (Array.isArray(field.value.files)) {

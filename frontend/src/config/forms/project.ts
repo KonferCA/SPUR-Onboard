@@ -144,10 +144,15 @@ export function groupProjectQuestions(
                     case 'fundingstructure':
                         try {
                             if (q.answer) {
-                                inputField.value.fundingStructure = JSON.parse(q.answer);
+                                inputField.value.fundingStructure = JSON.parse(
+                                    q.answer
+                                );
                             }
                         } catch (err) {
-                            console.error('Failed to parse funding structure:', err);
+                            console.error(
+                                'Failed to parse funding structure:',
+                                err
+                            );
                         }
                         break;
                     case 'multiselect':
