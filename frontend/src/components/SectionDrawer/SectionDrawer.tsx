@@ -47,6 +47,7 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
         }
     };
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: onRequestChangeSection in dependencies causes drawer to always navigate back to first section with error and open.
     useEffect(() => {
         if (validationErrors.length) {
             const firstSectionWithError = validationErrors[0].section;
@@ -60,7 +61,7 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                 }, 500);
             }
         }
-    }, [validationErrors, onRequestChangeSection]);
+    }, [validationErrors]);
 
     const controlledLinks = useMemo(() => {
         const errors = validationErrors.filter(
