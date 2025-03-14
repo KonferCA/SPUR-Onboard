@@ -9,12 +9,14 @@ import {
 import { ScrollLink } from '@components';
 import { isAtEndOfPage, isElementInView } from '@utils';
 import clsx from 'clsx';
+import { getRootListStyles } from './AnchorLinks.styles';
 
 export interface AnchorLinkItem {
     label: string;
     // provide the id of the target, or a query selector
     target: string;
     offset?: number;
+    offsetType?: 'after' | 'before' | 'default';
 }
 
 export type ControlledLink = AnchorLinkItem & {
@@ -31,7 +33,7 @@ export interface AnchorLinksProps {
      * should look. This also allows the usage of stateful components as children
      * that are controlled by the page using the AnchorLinks component.
      */
-    children?: (link: ControlledLink) => ReactNode;
+    children?: (link: ControlledLink, idx: number) => ReactNode;
     /*
      * onClick handler for when a link item is clicked. Pass this if additional operations
      * are desired on top of scrolling to the target.
@@ -49,9 +51,23 @@ export interface AnchorLinksProps {
                   | React.MouseEvent<HTMLLIElement, MouseEvent>
                   | React.KeyboardEvent<HTMLLIElement>
           ) => Promise<void>);
+    /*
+     * Sets the scrolling to manual. Use the onClick prop to handle.
+     */
+    manualScroll?: boolean;
+    /*
+     * Sets the gap in the y-axis between links.
+     */
+    yGap?: 'sm' | 'md' | 'lg' | 'default';
 }
 
-const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
+const AnchorLinks: FC<AnchorLinksProps> = ({
+    links,
+    manualScroll,
+    yGap = 'default',
+    children,
+    onClick,
+}) => {
     const [controlledLinks, setControlledLinks] = useState<ControlledLink[]>(
         []
     );
@@ -170,20 +186,40 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
     );
 
     return (
-        <div>
-            <ul className="flex flex-col gap-2">
-                {controlledLinks.map((link, idx) => (
-                    <li
-                        key={link.label}
-                        onKeyUp={handleClick(link)}
-                        onClick={handleClick(link)}
-                    >
+        <ul className={getRootListStyles({ yGap })}>
+            {controlledLinks.map((link, idx) => (
+                <li
+                    key={link.label}
+                    onKeyUp={handleClick(link)}
+                    onClick={handleClick(link)}
+                    className="cursor-pointer"
+                >
+                    {manualScroll ? (
+                        // biome-ignore lint:
+                        <a>
+                            {typeof children === 'function' ? (
+                                children(link, idx)
+                            ) : (
+                                <span
+                                    className={clsx(
+                                        'flex gap-2 transition hover:text-gray-800 hover:cursor-pointer',
+                                        link.active && 'text-black',
+                                        !link.active && 'text-gray-400'
+                                    )}
+                                >
+                                    <span>{idx + 1}.</span>
+                                    <span>{link.label}</span>
+                                </span>
+                            )}
+                        </a>
+                    ) : (
                         <ScrollLink
                             to={link.el ?? link.target}
                             offset={link.offset}
+                            offsetType={link.offsetType}
                         >
                             {typeof children === 'function' ? (
-                                children(link)
+                                children(link, idx)
                             ) : (
                                 <span
                                     className={clsx(
@@ -197,10 +233,10 @@ const AnchorLinks: FC<AnchorLinksProps> = ({ links, children, onClick }) => {
                                 </span>
                             )}
                         </ScrollLink>
-                    </li>
-                ))}
-            </ul>
-        </div>
+                    )}
+                </li>
+            ))}
+        </ul>
     );
 };
 

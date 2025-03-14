@@ -69,7 +69,7 @@ export const ProjectError: React.FC<ProjectErrorProps> = ({
     };
 
     return (
-        <div className="fixed top-48 right-8 w-80 bg-white border border-dashed border-red-600 rounded-lg overflow-hidden">
+        <div className="w-full bg-white border border-dashed border-red-600 rounded-lg overflow-hidden">
             <div className="bg-red-50 p-4 border-b border-red-100">
                 <div className="text-red-600 text-lg font-semibold">
                     Oops! You're missing information

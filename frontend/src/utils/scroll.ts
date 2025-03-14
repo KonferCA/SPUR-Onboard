@@ -11,9 +11,31 @@ export function scrollToTop() {
     });
 }
 
-export function scrollToWithOffset(target: HTMLElement, offset: number) {
-    const targetPos = target.getBoundingClientRect().top;
-    const offsetPosition = targetPos + window.screenY - offset;
+/**
+ * Scrolls to an element with an offset
+ * @param target The HTML element to scroll to
+ * @param offset The offset in pixels
+ * @param offsetType 'before' to stop before target (offset subtracted), 'after' to stop after target (offset added), 'default' for standard behavior
+ */
+export function scrollToWithOffset(
+    target: HTMLElement,
+    offset = 0,
+    offsetType: 'before' | 'after' | 'default' = 'default'
+) {
+    const targetPosition = target.getBoundingClientRect().top;
+    const currentScrollPosition = document.documentElement.scrollTop;
+
+    let offsetPosition: number;
+
+    switch (offsetType) {
+        case 'before':
+            // Stop scrolling before reaching the target
+            offsetPosition = currentScrollPosition + targetPosition + offset;
+            break;
+        default:
+            // Original behavior - typically used for header offsets
+            offsetPosition = currentScrollPosition + targetPosition - offset;
+    }
 
     window.scrollTo({
         top: offsetPosition,

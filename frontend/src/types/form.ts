@@ -69,3 +69,10 @@ export type SocialLink = Pick<UserSocial, 'id' | 'urlOrHandle' | 'platform'>;
 export type FormData = {
     [key: string]: unknown;
 };
+
+export interface RecommendedField {
+    section: string;
+    subsection: string;
+    questionText: string;
+    inputType: string;
+}

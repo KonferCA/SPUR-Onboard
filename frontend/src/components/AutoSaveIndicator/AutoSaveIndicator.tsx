@@ -61,19 +61,38 @@ export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
         error: 'Failed to save changes',
     };
 
+    const mobileMessages = {
+        idle: 'Answers are autosaved',
+        saving: 'Autosaving...',
+        success: 'All changes saved',
+        error: 'Failed to save changes',
+    };
+
     const displayMessage = message || defaultMessages[indicatorStatus];
+    const mobileDisplayMessage = message || mobileMessages[indicatorStatus];
 
     return (
         <div
             className={indicatorStyles({ status: indicatorStatus, className })}
         >
-            <div className="flex items-center gap-2">
+            <div className="flex px-6 lg:px-0 justify-center items-center gap-2">
                 {status === 'saving' && (
                     <div className="w-4 h-4 relative">
                         <div className="absolute inset-0 border-2 border-blue-700 border-solid rounded-full border-r-transparent animate-spin" />
                     </div>
                 )}
-                <span>{displayMessage}</span>
+                <span
+                    data-testid="desktop-autosaveindicator-text"
+                    className="hidden md:inline text-sm sm:text-base"
+                >
+                    {displayMessage}
+                </span>
+                <span
+                    data-testid="mobile-autosaveindicator-text"
+                    className="inline md:hidden text-sm sm:text-base"
+                >
+                    {mobileDisplayMessage}
+                </span>
             </div>
         </div>
     );

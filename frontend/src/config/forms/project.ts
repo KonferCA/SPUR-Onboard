@@ -33,6 +33,11 @@ export interface Question {
     answer?: string;
 }
 
+export interface SectionMetadata {
+    name: string;
+    subSections: string[];
+}
+
 /*
  * This will sort based on the sections order array and group the questions that belong
  * to the same section together. The questions in a section will also be sorted based on their
