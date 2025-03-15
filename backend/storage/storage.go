@@ -91,4 +91,3 @@ func (s *Storage) DeleteFile(ctx context.Context, key string) error {
 
 	return nil
 }
-

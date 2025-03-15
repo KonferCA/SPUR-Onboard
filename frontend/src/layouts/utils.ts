@@ -1,4 +1,4 @@
-import { Spacing, Width, Gap } from './types';
+import type { Spacing, Width, Gap } from './types';
 
 export const spacing: Record<Spacing, string> = {
     none: '0',

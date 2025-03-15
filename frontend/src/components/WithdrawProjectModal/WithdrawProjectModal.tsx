@@ -8,11 +8,11 @@ interface WithdrawProjectModalProps {
     isLoading: boolean;
 }
 
-export function WithdrawProjectModal({ 
-    isOpen, 
-    onClose, 
-    onConfirm, 
-    isLoading
+export function WithdrawProjectModal({
+    isOpen,
+    onClose,
+    onConfirm,
+    isLoading,
 }: WithdrawProjectModalProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,6 +29,7 @@ export function WithdrawProjectModal({
                             Withdraw Application?
                         </Dialog.Title>
                         <button
+                            type="button"
                             onClick={onClose}
                             className="text-gray-400 hover:text-gray-500"
                         >
@@ -38,7 +39,9 @@ export function WithdrawProjectModal({
 
                     <div className="p-4">
                         <p className="text-gray-600">
-                            Your application will be withdrawn from consideration for funding and you will no longer be able to make any changes.
+                            Your application will be withdrawn from
+                            consideration for funding and you will no longer be
+                            able to make any changes.
                         </p>
 
                         <div className="mt-6 flex justify-end gap-3">
@@ -55,7 +58,9 @@ export function WithdrawProjectModal({
                                 disabled={isLoading}
                                 className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800 disabled:bg-gray-400"
                             >
-                                {isLoading ? 'Processing...' : 'Yes, withdraw it'}
+                                {isLoading
+                                    ? 'Processing...'
+                                    : 'Yes, withdraw it'}
                             </button>
                         </div>
                     </div>
@@ -63,4 +68,4 @@ export function WithdrawProjectModal({
             </div>
         </Dialog>
     );
-} 
+}

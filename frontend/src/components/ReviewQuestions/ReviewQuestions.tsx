@@ -1,15 +1,16 @@
 import {
     CommentBubble,
-    DropdownOption,
+    type DropdownOption,
     FileDownload,
     TeamMembers,
 } from '@/components';
 import { BiSolidCommentAdd } from 'react-icons/bi';
-import { Question } from '@/config/forms';
-import { Comment } from '@/services/comment';
-import { FormField } from '@/types';
-import { FC, useState } from 'react';
+import type { Question } from '@/config/forms';
+import type { Comment } from '@/services/comment';
+import type { FormField } from '@/types';
+import { type FC, useState } from 'react';
 import { CommentCreate } from '../CommentCreate';
+import type { FundingStructureModel } from '../FundingStructure';
 
 interface ReviewQuestionsProps {
     question: Question;
@@ -56,22 +57,25 @@ const ReviewQuestionInput: FC<ReviewQuestionInputProps> = ({
             case 'textarea':
             case 'textinput':
                 return field.value.value;
-            case 'date':
+            case 'date': {
                 const date = field.value.value as Date;
                 return date.toISOString().split('T')[0];
+            }
             case 'multiselect':
             case 'select':
                 if (Array.isArray(field.value.value)) {
                     const value = field.value.value as DropdownOption[];
                     return value.map((v) => v.value).join(', ');
-                } else if (
+                }
+                if (
                     field.value.value !== null &&
                     field.value.value !== undefined
                 ) {
                     switch (typeof field.value.value) {
-                        case 'object':
+                        case 'object': {
                             const value = field.value.value as DropdownOption;
                             return value.value;
+                        }
                         case 'string':
                             return field.value.value;
                         default:
@@ -79,6 +83,36 @@ const ReviewQuestionInput: FC<ReviewQuestionInputProps> = ({
                     }
                 }
                 return null;
+
+            case 'fundingstructure': {
+                const structure = field.value
+                    .fundingStructure as FundingStructureModel;
+                if (!structure) return 'No funding structure defined';
+
+                let structureInfo = '';
+                switch (structure.type) {
+                    case 'target':
+                        structureInfo = `Target funding: $${structure.amount} CAD for ${structure.equityPercentage}% equity`;
+                        break;
+                    case 'minimum':
+                        structureInfo = `Minimum funding: $${structure.minAmount || 0} to $${structure.maxAmount || 0} CAD for ${structure.equityPercentage}% equity`;
+                        break;
+                    case 'tiered':
+                        structureInfo = `Tiered funding with ${structure.tiers?.length || 0} tiers`;
+                        break;
+                }
+
+                return (
+                    <div className="p-2 bg-gray-50 rounded-md">
+                        <h4 className="font-medium">
+                            {structure.type.charAt(0).toUpperCase() +
+                                structure.type.slice(1)}{' '}
+                            Funding Structure
+                        </h4>
+                        <p className="text-sm text-gray-600">{structureInfo}</p>
+                    </div>
+                );
+            }
 
             case 'file':
                 if (Array.isArray(field.value.files)) {
@@ -112,7 +146,9 @@ const ReviewQuestionInput: FC<ReviewQuestionInputProps> = ({
                         {field.label}
                     </span>
                 </div>
-                <div className="space-y-4">{renderInput(field)}</div>
+                <div className="space-y-4">
+                    {renderInput(field) as React.ReactNode}
+                </div>
                 {!disableCommentCreation && (
                     <button
                         type="button"

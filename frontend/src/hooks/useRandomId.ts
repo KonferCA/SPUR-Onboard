@@ -20,6 +20,6 @@ import { useMemo } from 'react';
  *   );
  * }
  */
-export function useRandomId(prefix: string = '') {
+export function useRandomId(prefix = '') {
     return useMemo(() => randomId(prefix), [prefix]);
 }

@@ -8,6 +8,7 @@ import (
 )
 
 type contextKey string
+
 const loggerContextKey contextKey = "logger"
 
 /*
@@ -16,10 +17,11 @@ It automatically includes request context (request ID, path, method) in all log 
 while providing a clean interface for developers.
 
 Usage in handlers:
-    logger := middleware.GetLogger(c)
-    logger.Info("starting process")
-    logger.Error(err, "process failed")
-    logger.Warn("suspicious activity", optionalError)
+
+	logger := middleware.GetLogger(c)
+	logger.Info("starting process")
+	logger.Error(err, "process failed")
+	logger.Warn("suspicious activity", optionalError)
 */
 type Logger struct {
 	baseLogger *zerolog.Logger
@@ -82,4 +84,4 @@ func LoggerMiddleware() echo.MiddlewareFunc {
 			return next(c)
 		}
 	}
-} 
+}

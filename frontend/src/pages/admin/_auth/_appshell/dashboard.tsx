@@ -11,7 +11,6 @@ const transformToProject = (
     company: CompanyResponse | null
 ): Project => ({
     id: project.id,
-    company_id: '',
     title: project.title,
     description: project.description || null,
     status: project.status,
