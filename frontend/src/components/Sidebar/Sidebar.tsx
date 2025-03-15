@@ -1,16 +1,16 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
-import { 
-    FiFolder, 
-    FiSettings, 
-    FiUser, 
-    FiCreditCard, 
-    FiBarChart2, 
-    FiDollarSign, 
-    FiShield, 
+import {
+    FiFolder,
+    FiSettings,
+    FiUser,
+    FiCreditCard,
+    FiBarChart2,
+    FiDollarSign,
+    FiShield,
     FiHeadphones,
     FiSearch,
-    FiBook
+    FiBook,
 } from 'react-icons/fi';
 import { IoLogOutOutline } from 'react-icons/io5';
 import { isAdmin, isInvestor } from '@/utils/permissions';
@@ -34,11 +34,11 @@ export interface MenuItem {
     isSectionTitle?: boolean;
 }
 
-export const Sidebar = ({ 
-    userPermissions, 
+export const Sidebar = ({
+    userPermissions,
     isMobile = false,
-    user, 
-    onLogout 
+    user,
+    onLogout,
 }: SidebarProps) => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -110,28 +110,28 @@ export const Sidebar = ({
         },
     ];
 
-    let sections = [
+    const sections = [
         {
-            title: "MAIN",
-            items: [...userItems]
-        }
+            title: 'MAIN',
+            items: [...userItems],
+        },
     ];
-  
+
     if (isInvestor(userPermissions) || isAdmin(userPermissions)) {
         sections.push({
-            title: "INVESTOR",
-            items: [...investorItems]
+            title: 'INVESTOR',
+            items: [...investorItems],
         });
     }
-  
+
     if (isAdmin(userPermissions)) {
         sections.push({
-            title: "ADMIN",
-            items: [...adminItems]
+            title: 'ADMIN',
+            items: [...adminItems],
         });
     }
-  
-    let navItems: MenuItem[] = [];
+
+    const navItems: MenuItem[] = [];
 
     if (isMobile) {
         sections.forEach((section) => {
@@ -140,18 +140,20 @@ export const Sidebar = ({
                     path: '',
                     label: section.title,
                     icon: null,
-                    isSectionTitle: true
+                    isSectionTitle: true,
                 });
             }
-            
+
             navItems.push(...section.items);
         });
 
         const isSettingsPage = location.pathname.includes('/settings');
-        
+
         if (isSettingsPage) {
-            const settingsIndex = navItems.findIndex(item => item.path === '/user/settings/profile');
-            
+            const settingsIndex = navItems.findIndex(
+                (item) => item.path === '/user/settings/profile'
+            );
+
             if (settingsIndex !== -1) {
                 navItems.splice(settingsIndex + 1, 0, ...settingsItems);
             }
@@ -159,15 +161,18 @@ export const Sidebar = ({
     }
 
     const getNavItemClass = (item: MenuItem) => {
-        let baseClass = 'flex items-center gap-3 text-sm font-medium rounded-lg';
+        let baseClass =
+            'flex items-center gap-3 text-sm font-medium rounded-lg';
 
         if (item.isSubmenu) {
             baseClass += ' pl-8';
         }
 
-        const isActive = 
-            (item.path === '/user/dashboard' && location.pathname.startsWith('/user/dashboard')) ||
-            (item.path === '/user/settings/profile' && location.pathname.startsWith('/user/settings')) ||
+        const isActive =
+            (item.path === '/user/dashboard' &&
+                location.pathname.startsWith('/user/dashboard')) ||
+            (item.path === '/user/settings/profile' &&
+                location.pathname.startsWith('/user/settings')) ||
             location.pathname === item.path;
 
         if (isActive) {
@@ -186,41 +191,50 @@ export const Sidebar = ({
     };
 
     return (
-        <div className={`${isMobile ? 'w-64' : 'w-60'} bg-white border-r border-gray-200 fixed h-[calc(100vh-4rem)] flex flex-col`}>
+        <div
+            className={`${isMobile ? 'w-64' : 'w-60'} bg-white border-r border-gray-200 fixed h-[calc(100vh-4rem)] flex flex-col`}
+        >
             <div className="flex flex-col h-full">
                 <div className="flex-1 overflow-y-auto">
                     {isMobile ? (
                         <>
-                            {navItems.filter(item => !commonItems.includes(item)).map((item, index) => {
-                                if (item.isSectionTitle) {
+                            {navItems
+                                .filter((item) => !commonItems.includes(item))
+                                .map((item, index) => {
+                                    if (item.isSectionTitle) {
+                                        return (
+                                            <div
+                                                key={`section-${index}`}
+                                                className="text-sm font-bold text-gray-900 px-6 pt-6 pb-2"
+                                            >
+                                                {item.label}
+                                            </div>
+                                        );
+                                    }
+
+                                    if (item.isSeparator) {
+                                        return (
+                                            <div
+                                                key={`separator-${index}`}
+                                                className="border-t border-gray-200 my-2"
+                                            />
+                                        );
+                                    }
+
                                     return (
-                                        <div 
-                                            key={`section-${index}`} 
-                                            className="text-sm font-bold text-gray-900 px-6 pt-6 pb-2"
+                                        <Link
+                                            key={item.path || `item-${index}`}
+                                            to={item.path}
+                                            className={getNavItemClass(item)}
                                         >
-                                            {item.label}
-                                        </div>
+                                            {item.icon}
+
+                                            <span className="truncate">
+                                                {item.label}
+                                            </span>
+                                        </Link>
                                     );
-                                }
-                                
-                                if (item.isSeparator) {
-                                    return <div key={`separator-${index}`} className="border-t border-gray-200 my-2"></div>;
-                                }
-                                
-                                return (
-                                    <Link
-                                        key={item.path || `item-${index}`}
-                                        to={item.path}
-                                        className={getNavItemClass(item)}
-                                    >
-                                        {item.icon}
-                                        
-                                        <span className="truncate">
-                                            {item.label}
-                                        </span>
-                                    </Link>
-                                );
-                            })}
+                                })}
                         </>
                     ) : (
                         <>
@@ -231,38 +245,52 @@ export const Sidebar = ({
                                             {section.title}
                                         </div>
                                     )}
-                                    
+
                                     <div>
-                                        {section.items.map((item, itemIndex) => {
-                                            if (commonItems.includes(item)) {
-                                                return null;
+                                        {section.items.map(
+                                            (item, itemIndex) => {
+                                                if (
+                                                    commonItems.includes(item)
+                                                ) {
+                                                    return null;
+                                                }
+
+                                                if (item.isSeparator) {
+                                                    return (
+                                                        <div
+                                                            key={`separator-${sectionIndex}-${itemIndex}`}
+                                                            className="border-t border-gray-200 my-2"
+                                                        />
+                                                    );
+                                                }
+
+                                                return (
+                                                    <Link
+                                                        key={
+                                                            item.path ||
+                                                            `item-${sectionIndex}-${itemIndex}`
+                                                        }
+                                                        to={item.path}
+                                                        className={getNavItemClass(
+                                                            item
+                                                        )}
+                                                    >
+                                                        {item.icon}
+
+                                                        <span className="truncate">
+                                                            {item.label}
+                                                        </span>
+                                                    </Link>
+                                                );
                                             }
-                                            
-                                            if (item.isSeparator) {
-                                                return <div key={`separator-${sectionIndex}-${itemIndex}`} className="border-t border-gray-200 my-2"></div>;
-                                            }
-                                            
-                                            return (
-                                                <Link
-                                                    key={item.path || `item-${sectionIndex}-${itemIndex}`}
-                                                    to={item.path}
-                                                    className={getNavItemClass(item)}
-                                                >
-                                                    {item.icon}
-                                                    
-                                                    <span className="truncate">
-                                                        {item.label}
-                                                    </span>
-                                                </Link>
-                                            );
-                                        })}
+                                        )}
                                     </div>
                                 </div>
                             ))}
                         </>
                     )}
                 </div>
-            
+
                 <div className="pt-2 mb-4">
                     {commonItems.map((item, index) => (
                         <Link
@@ -272,9 +300,7 @@ export const Sidebar = ({
                         >
                             {item.icon}
 
-                            <span className="truncate">
-                                {item.label}
-                            </span>
+                            <span className="truncate">{item.label}</span>
                         </Link>
                     ))}
 
@@ -296,12 +322,16 @@ export const Sidebar = ({
                                 </div>
                             </div>
 
-                            <Button 
+                            <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={async () => {
                                     // todo: implement nice modal here
-                                    if(window.confirm('Are you sure you want to logout?')) {
+                                    if (
+                                        window.confirm(
+                                            'Are you sure you want to logout?'
+                                        )
+                                    ) {
                                         if (onLogout) {
                                             await onLogout();
                                         } else {
@@ -313,7 +343,7 @@ export const Sidebar = ({
                                 icon={<IoLogOutOutline className="w-6 h-6" />}
                             />
                         </div>
-                    )} 
+                    )}
                 </div>
             </div>
         </div>
