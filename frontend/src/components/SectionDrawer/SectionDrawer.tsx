@@ -26,26 +26,14 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
     validationErrors,
     recommendedFields,
     onRequestChangeSection,
+    onErrorClick,
+    onRecommendedFieldClick,
 }) => {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [activeSubSection, setActiveSubSection] = useState('');
     const [isRecommendedFieldsCollapse, setIsRecommendedFieldsCollapse] =
         useState(false);
     const [isSubSectionsCollapse, setIsSubSectionsCollapse] = useState(false);
-
-    const handleLinkClick = (link: ControlledLink) => {
-        setDrawerOpen(false);
-
-        if (link.el) {
-            setTimeout(() => {
-                scrollToWithOffset(
-                    link.el as HTMLElement,
-                    link.offset,
-                    link.offsetType
-                );
-            }, 500);
-        }
-    };
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: onRequestChangeSection in dependencies causes drawer to always navigate back to first section with error and open.
     useEffect(() => {
@@ -155,6 +143,50 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
         };
     }, [subSectionLinks]);
 
+    // For validation errors (subsections with errors)
+    const handleErrorLinkClick = (
+        link: ControlledLink & SectionDrawerLinkItem
+    ) => {
+        setDrawerOpen(false);
+
+        if (link.el) {
+            setTimeout(() => {
+                scrollToWithOffset(
+                    link.el as HTMLElement,
+                    link.offset,
+                    link.offsetType
+                );
+
+                // If there's an error click handler, call it
+                if (onErrorClick && link.hasErrors) {
+                    onErrorClick(activeSection, link.label);
+                }
+            }, 500);
+        }
+    };
+
+    // For recommended fields
+    const handleRecommendedLinkClick = (
+        link: ControlledLink & SectionDrawerLinkItem
+    ) => {
+        setDrawerOpen(false);
+
+        if (link.el) {
+            setTimeout(() => {
+                scrollToWithOffset(
+                    link.el as HTMLElement,
+                    link.offset,
+                    link.offsetType
+                );
+
+                // If there's a recommended field click handler, call it
+                if (onRecommendedFieldClick) {
+                    onRecommendedFieldClick(activeSection, link.label);
+                }
+            }, 500);
+        }
+    };
+
     return (
         <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
             <DrawerTrigger asChild>
@@ -255,7 +287,7 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                             <AnchorLinks
                                 manualScroll
                                 links={controlledLinks}
-                                onClick={handleLinkClick}
+                                onClick={handleErrorLinkClick}
                             >
                                 {(
                                     link: ControlledLink &
@@ -352,7 +384,7 @@ export const SectionDrawer: FC<SectionDrawerProps> = ({
                                 <AnchorLinks
                                     manualScroll
                                     links={controlledRecommendedFields}
-                                    onClick={handleLinkClick}
+                                    onClick={handleRecommendedLinkClick}
                                 >
                                     {(
                                         link: ControlledLink &
