@@ -219,7 +219,10 @@ export const Sidebar = ({
                                     if (item.isSectionTitle) {
                                         return (
                                             <div
-                                                key={item.id || `section-${item.label}`}
+                                                key={
+                                                    item.id ||
+                                                    `section-${item.label}`
+                                                }
                                                 className="text-sm font-bold text-gray-900 px-6 pt-6 pb-2"
                                             >
                                                 {item.label}
@@ -230,7 +233,10 @@ export const Sidebar = ({
                                     if (item.isSeparator) {
                                         return (
                                             <div
-                                                key={item.id || `separator-${item.label}`}
+                                                key={
+                                                    item.id ||
+                                                    `separator-${item.label}`
+                                                }
                                                 className="border-t border-gray-200 my-2"
                                             />
                                         );
@@ -238,7 +244,11 @@ export const Sidebar = ({
 
                                     return (
                                         <Link
-                                            key={item.path || item.id || `item-${item.label}`}  
+                                            key={
+                                                item.path ||
+                                                item.id ||
+                                                `item-${item.label}`
+                                            }
                                             to={item.path}
                                             className={getNavItemClass(item)}
                                         >
@@ -254,7 +264,11 @@ export const Sidebar = ({
                     ) : (
                         <>
                             {sections.map((section) => (
-                                <div key={section.id || `section-${section.title}`}>
+                                <div
+                                    key={
+                                        section.id || `section-${section.title}`
+                                    }
+                                >
                                     {section.title && (
                                         <div className="text-sm font-bold text-gray-900 px-4 pt-6 pb-2">
                                             {section.title}
@@ -262,40 +276,43 @@ export const Sidebar = ({
                                     )}
 
                                     <div>
-                                        {section.items.map(
-                                            (item) => {
-                                                if (
-                                                    commonItems.includes(item)
-                                                ) {
-                                                    return null;
-                                                }
+                                        {section.items.map((item) => {
+                                            if (commonItems.includes(item)) {
+                                                return null;
+                                            }
 
-                                                if (item.isSeparator) {
-                                                    return (
-                                                        <div
-                                                            key={item.id || `separator-${item.label}`}
-                                                            className="border-t border-gray-200 my-2"
-                                                        />
-                                                    );
-                                                }
-
+                                            if (item.isSeparator) {
                                                 return (
-                                                    <Link
-                                                        key={item.path || item.id || `item-${item.label}`}
-                                                        to={item.path}
-                                                        className={getNavItemClass(
-                                                            item
-                                                        )}
-                                                    >
-                                                        {item.icon}
-
-                                                        <span className="truncate">
-                                                            {item.label}
-                                                        </span>
-                                                    </Link>
+                                                    <div
+                                                        key={
+                                                            item.id ||
+                                                            `separator-${item.label}`
+                                                        }
+                                                        className="border-t border-gray-200 my-2"
+                                                    />
                                                 );
                                             }
-                                        )}
+
+                                            return (
+                                                <Link
+                                                    key={
+                                                        item.path ||
+                                                        item.id ||
+                                                        `item-${item.label}`
+                                                    }
+                                                    to={item.path}
+                                                    className={getNavItemClass(
+                                                        item
+                                                    )}
+                                                >
+                                                    {item.icon}
+
+                                                    <span className="truncate">
+                                                        {item.label}
+                                                    </span>
+                                                </Link>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             ))}
