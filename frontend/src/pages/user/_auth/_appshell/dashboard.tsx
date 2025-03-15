@@ -20,8 +20,8 @@ const navButtonStyles = cva(
             },
         },
         defaultVariants: {
-            active: false
-        }
+            active: false,
+        },
     }
 );
 
@@ -76,16 +76,13 @@ function RouteComponent() {
                     </div>
 
                     <div className="hidden md:block">
-                        <Button 
-                            onClick={handleCreateProject}
-                            variant="primary"
-                        >
+                        <Button onClick={handleCreateProject} variant="primary">
                             Create a New Project
                         </Button>
                     </div>
                 </nav>
             </div>
-            
+
             <div className="h-[1px] bg-gray-300 my-6" />
 
             <div className="flex-1">
@@ -122,7 +119,7 @@ function RouteComponent() {
             </div>
 
             <div className="md:hidden p-4 mt-auto">
-                <Button 
+                <Button
                     onClick={handleCreateProject}
                     variant="primary"
                     size="lg"
@@ -133,4 +130,4 @@ function RouteComponent() {
             </div>
         </div>
     );
-};
+}

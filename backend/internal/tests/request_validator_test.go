@@ -1,9 +1,10 @@
 package tests
 
 import (
-	"testing"
 	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/permissions"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 )
 

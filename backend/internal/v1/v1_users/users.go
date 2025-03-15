@@ -11,7 +11,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -45,7 +44,7 @@ func (h *Handler) handleUpdateUserDetails(c echo.Context) error {
 		LastName:  &req.LastName,
 		Title:     &req.Title,
 		Bio:       &req.Bio,
-		Linkedin:  &req.LinkedIn,
+		Linkedin:  nil,
 		ID:        userID,
 	})
 	if err != nil {
@@ -123,10 +122,10 @@ func (h *Handler) handleGetUserDetails(c echo.Context) error {
 	}
 
 	// Format timestamps
-	createdAt := time.Unix(details.CreatedAt, 0).Format(time.RFC3339)
+	createdAt := v1_common.FormatUnixTime(details.CreatedAt)
 	var updatedAt *string
 	if details.UpdatedAt != 0 {
-		formatted := time.Unix(details.UpdatedAt, 0).Format(time.RFC3339)
+		formatted := v1_common.FormatUnixTime(details.UpdatedAt)
 		updatedAt = &formatted
 	}
 
@@ -141,7 +140,6 @@ func (h *Handler) handleGetUserDetails(c echo.Context) error {
 		LastName:          details.LastName,
 		Title:             details.Title,
 		Bio:               details.Bio,
-		LinkedIn:          details.Linkedin,
 		ProfilePictureUrl: details.ProfilePictureUrl,
 		Socials:           socials,
 		CreatedAt:         createdAt,
@@ -228,10 +226,10 @@ func (h *Handler) handleListUsers(c echo.Context) error {
 		}
 
 		// Format timestamps as RFC3339
-		dateJoined := time.Unix(user.CreatedAt, 0).Format(time.RFC3339)
+		dateJoined := v1_common.FormatUnixTime(user.CreatedAt)
 		var lastUpdated *string
 		if updatedAt != nil {
-			formatted := time.Unix(*updatedAt, 0).Format(time.RFC3339)
+			formatted := v1_common.FormatUnixTime(*updatedAt)
 			lastUpdated = &formatted
 		}
 

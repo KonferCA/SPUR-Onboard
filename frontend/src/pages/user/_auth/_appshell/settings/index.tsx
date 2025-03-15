@@ -5,7 +5,7 @@ export const Route = createFileRoute('/user/_auth/_appshell/settings/')({
         // redirect to the profile settings page when accessing just /settings
         throw redirect({
             to: '/user/settings/profile',
-            replace: true
+            replace: true,
         });
     },
 });

@@ -193,7 +193,7 @@ func (h *Handler) handleGetCompany(c echo.Context) error {
 	companyID := c.Param("id")
 	if companyID != "" {
 		// Check if user has admin permissions to view any company
-		if !permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermViewAllProjects) {
+		if !permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermAdmin) {
 			return v1_common.NewForbiddenError("not authorized to access this company")
 		}
 

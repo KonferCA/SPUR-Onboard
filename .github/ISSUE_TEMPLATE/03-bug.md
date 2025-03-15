@@ -1,11 +1,12 @@
 ---
 name: Issue, Bug, or Error
 about: A bug pertaining to the backend AND frontend.
-title: "[Bug] Describe what to fix here"
+title: "Describe what to fix here"
 labels: backend, frontend, bug
 assignees: ''
-
+type: "Bug"
 ---
+
 ## Description
 Replace this text with a brief description of the issue.
 
@@ -13,11 +14,11 @@ Replace this text with a brief description of the issue.
 1. Replace this with a list of steps to reproduce the issue.
 2. ...
 
+## Blocked by
+If this feature is blocked by another issue, list it here.
+
 ## Screenshots
 If applicable add screenshots, otherwise delete this section.
-
-## Additional Information
-If applicable add any other information, otherwise, delete this section.
 
 ## Checklist
 Before submitting this ticket, make sure this ticket:

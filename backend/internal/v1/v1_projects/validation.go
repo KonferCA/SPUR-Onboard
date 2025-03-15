@@ -39,6 +39,11 @@ type validationType struct {
 var validationTypes = map[string]validationType{
 	"url": {
 		Validate: func(answer string, _ string) bool {
+			// require http:// or https:// prefix for proper URL validation
+			if !strings.HasPrefix(strings.ToLower(answer), "http://") &&
+				!strings.HasPrefix(strings.ToLower(answer), "https://") {
+				return false
+			}
 			_, err := url.ParseRequestURI(answer)
 			return err == nil
 		},
@@ -70,7 +75,7 @@ var validationTypes = map[string]validationType{
 			}
 			return len(answer) >= minLen
 		},
-		Message: "Must be at least %s characters long",
+		Message: "Must be at least %s characters long to provide sufficient detail",
 	},
 	"max": {
 		Validate: func(answer string, param string) bool {

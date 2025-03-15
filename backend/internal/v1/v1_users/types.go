@@ -15,26 +15,23 @@ type UserSocial struct {
 }
 
 type UpdateUserDetailsRequest struct {
-	FirstName string `json:"firstName" validate:"required"`
-	LastName  string `json:"lastName" validate:"required"`
-	Title     string `json:"title" validate:"required"`
-	Bio       string `json:"bio" validate:"required"`
-	// DEPRECATED: This field will me removed later but is here to keep old versions functioning
-	LinkedIn string       `json:"linkedin" validate:"omitnil,omitempty,url"`
-	Socials  []UserSocial `json:"socials" validate:"omitnil,omitempty,dive"`
+	FirstName string       `json:"firstName" validate:"required"`
+	LastName  string       `json:"lastName" validate:"required"`
+	Title     string       `json:"title" validate:"required"`
+	Bio       string       `json:"bio" validate:"required"`
+	Socials   []UserSocial `json:"socials" validate:"omitnil,omitempty,dive"`
 }
 
 type UserDetailsResponse struct {
-	ID        string          `json:"id"`
-	FirstName string          `json:"first_name"`
-	LastName  string          `json:"last_name"`
-	Title     string          `json:"title"`
-	Bio       string          `json:"bio"`
-	LinkedIn  string          `json:"linkedin_url"`
-	Socials   []db.UserSocial `json:"socials"`
-  ProfilePictureUrl *string `json:"profile_picture_url"`
-	CreatedAt string          `json:"created_at"`
-	UpdatedAt *string         `json:"updated_at,omitempty"`
+	ID                string          `json:"id"`
+	FirstName         string          `json:"first_name"`
+	LastName          string          `json:"last_name"`
+	Title             string          `json:"title"`
+	Bio               string          `json:"bio"`
+	Socials           []db.UserSocial `json:"socials"`
+	ProfilePictureUrl *string         `json:"profile_picture_url"`
+	CreatedAt         string          `json:"created_at"`
+	UpdatedAt         *string         `json:"updated_at,omitempty"`
 }
 
 type ListUsersRequest struct {

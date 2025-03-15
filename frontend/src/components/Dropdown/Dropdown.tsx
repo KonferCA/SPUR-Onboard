@@ -1,6 +1,15 @@
 import { Fragment } from 'react';
-import { Listbox, Transition } from '@headlessui/react';
+import {
+    Listbox,
+    ListboxButton,
+    ListboxOption,
+    ListboxOptions,
+    Transition,
+} from '@headlessui/react';
 import { FiChevronDown } from 'react-icons/fi';
+import { RxCheck } from 'react-icons/rx';
+import { Badge } from '@/components';
+import { useRandomId } from '@/hooks/useRandomId';
 
 export interface DropdownOption {
     id: string | number;
@@ -29,19 +38,27 @@ const Dropdown: React.FC<DropdownProps> = ({
     multiple,
     error,
 }) => {
+    const dropdownID = useRandomId();
+
     const renderSelectedValue = () => {
         if (Array.isArray(value) && value.length > 0) {
             return (
-                <span className="block truncate text-base">
-                    {value.map(v => v.label).join(', ')}
-                </span>
+                <ul className="flex flex-wrap gap-2">
+                    {value.map((v) => (
+                        <li key={v.id}>
+                            <Badge text={v.label} />
+                        </li>
+                    ))}
+                </ul>
             );
         }
-        
+
         if (!Array.isArray(value) && value?.label) {
-            return <span className="block truncate text-base">{value.label}</span>;
+            return (
+                <span className="block truncate text-base">{value.label}</span>
+            );
         }
-        
+
         return (
             <span className="block truncate text-base text-gray-400">
                 {placeholder}
@@ -50,10 +67,13 @@ const Dropdown: React.FC<DropdownProps> = ({
     };
 
     return (
-        <div className="w-full">
+        <div className="w-full max-w-full">
             {label && (
                 <div className="flex justify-between items-center mb-1">
-                    <label className="block text-sm font-medium text-gray-900">
+                    <label
+                        htmlFor={dropdownID}
+                        className="block text-sm font-medium text-gray-900"
+                    >
                         {label}
                     </label>
                     {required && (
@@ -63,11 +83,14 @@ const Dropdown: React.FC<DropdownProps> = ({
             )}
             <Listbox value={value} onChange={onChange} multiple={multiple}>
                 <div className="relative">
-                    <Listbox.Button 
+                    <ListboxButton
+                        id={dropdownID}
                         className={`relative w-full py-4 px-4 text-left bg-white rounded-lg border ${
                             error ? 'border-red-500' : 'border-gray-300'
                         } cursor-pointer focus:outline-none focus-visible:ring-2 ${
-                            error ? 'focus-visible:ring-red-500' : 'focus-visible:ring-blue-500'
+                            error
+                                ? 'focus-visible:ring-red-500'
+                                : 'focus-visible:ring-blue-500'
                         }`}
                     >
                         {renderSelectedValue()}
@@ -77,7 +100,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                                 aria-hidden="true"
                             />
                         </span>
-                    </Listbox.Button>
+                    </ListboxButton>
 
                     <Transition
                         as={Fragment}
@@ -85,13 +108,13 @@ const Dropdown: React.FC<DropdownProps> = ({
                         leaveFrom="opacity-100"
                         leaveTo="opacity-0"
                     >
-                        <Listbox.Options className="absolute w-full py-1 mt-1 overflow-auto bg-white rounded-lg shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
+                        <ListboxOptions className="absolute w-full py-1 mt-1 overflow-auto bg-white rounded-lg shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
                             {options.map((option) => (
-                                <Listbox.Option
+                                <ListboxOption
                                     key={option.id}
-                                    className={({ active, selected }) =>
+                                    className={({ focus, selected }) =>
                                         `cursor-pointer select-none relative py-3 px-4 ${
-                                            active || selected
+                                            focus || selected
                                                 ? 'bg-gray-100'
                                                 : 'text-gray-900'
                                         }`
@@ -99,27 +122,28 @@ const Dropdown: React.FC<DropdownProps> = ({
                                     value={option}
                                 >
                                     {({ selected }) => (
-                                        <span
-                                            className={`block truncate ${
-                                                selected
-                                                    ? 'font-medium'
-                                                    : 'font-normal'
-                                            }`}
-                                        >
-                                            {option.label}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            {selected && (
+                                                <RxCheck className="w-4 h-4 text-green-500" />
+                                            )}
+                                            <span
+                                                className={`block truncate ${
+                                                    selected
+                                                        ? 'font-medium'
+                                                        : 'font-normal'
+                                                }`}
+                                            >
+                                                {option.label}
+                                            </span>
+                                        </div>
                                     )}
-                                </Listbox.Option>
+                                </ListboxOption>
                             ))}
-                        </Listbox.Options>
+                        </ListboxOptions>
                     </Transition>
                 </div>
             </Listbox>
-            {error && (
-                <p className="mt-1 text-sm text-red-500">
-                    {error}
-                </p>
-            )}
+            {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
         </div>
     );
 };

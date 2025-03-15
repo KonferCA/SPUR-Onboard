@@ -8,7 +8,7 @@ import {
 } from '@/assets';
 import { SocialPlatform } from '@/types/auth';
 import { RxLink2 } from 'react-icons/rx';
-import { FC, useMemo } from 'react';
+import { type FC, useMemo } from 'react';
 import { cva } from 'class-variance-authority';
 
 const buttonStyles = cva('p-2 bg-blue-50 rounded-md', {

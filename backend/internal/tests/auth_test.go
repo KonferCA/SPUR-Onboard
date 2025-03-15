@@ -11,9 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/bcrypt"
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/jwt"
 	"KonferCA/SPUR/internal/middleware"
@@ -21,6 +18,10 @@ import (
 	"KonferCA/SPUR/internal/server"
 	"KonferCA/SPUR/internal/v1/v1_auth"
 	"KonferCA/SPUR/internal/v1/v1_common"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func TestAuthEndpoints(t *testing.T) {
@@ -159,7 +160,7 @@ func TestAuthEndpoints(t *testing.T) {
 							assert.True(t, cookie.HttpOnly)
 							assert.True(t, cookie.Secure)
 							assert.Equal(t, http.SameSiteStrictMode, cookie.SameSite)
-							assert.Equal(t, "/api/v1/auth/verify", cookie.Path)
+							assert.Equal(t, "/api/v1/", cookie.Path)
 						}
 					}
 					assert.True(t, foundRefreshToken)

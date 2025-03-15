@@ -6,10 +6,14 @@ import {
     TeamMembers,
     DateInput,
 } from '@/components';
-import { Question } from '@/config/forms';
-import { FormField } from '@/types';
-import { FC } from 'react';
+import type { DropdownOption, UploadableFile } from '@/components';
+import type { Question } from '@/config/forms';
+import type { FormField } from '@/types';
+import type { FC } from 'react';
 import { cva } from 'class-variance-authority';
+import FundingStructure, {
+    type FundingStructureModel,
+} from '../FundingStructure';
 
 const legendStyles = cva('block text-md font-normal', {
     variants: {
@@ -53,7 +57,18 @@ const headerContainerStyles = cva('flex justify-between items-center mb-1');
 
 interface QuestionInputsProps {
     question: Question;
-    onChange: (questionID: string, inputTypeID: string, value: any) => void;
+    onChange: (
+        questionID: string,
+        inputTypeID: string,
+        value:
+            | string
+            | string[]
+            | Date
+            | DropdownOption
+            | DropdownOption[]
+            | UploadableFile[]
+            | FundingStructureModel
+    ) => void;
     className?: string;
     fileUploadProps?: {
         projectId?: string;
@@ -122,7 +137,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                 return (
                     <TextInput
                         placeholder={field.placeholder}
-                        value={field.value.value || ''}
+                        value={(field.value.value as string) || ''}
                         onChange={(e) =>
                             onChange(question.id, field.key, e.target.value)
                         }
@@ -137,7 +152,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                 return (
                     <TextArea
                         placeholder={field.placeholder}
-                        value={field.value.value || ''}
+                        value={(field.value.value as string) || ''}
                         onChange={(e) =>
                             onChange(question.id, field.key, e.target.value)
                         }
@@ -162,13 +177,28 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     />
                 );
 
+            case 'fundingstructure':
+                return (
+                    <div className="w-full">
+                        <FundingStructure
+                            value={field.value.fundingStructure}
+                            onChange={(structure) =>
+                                onChange(question.id, field.key, structure)
+                            }
+                        />
+                    </div>
+                );
+
             case 'multiselect':
-            case 'select':
+            case 'select': {
                 const selectedOption =
                     field.type === 'multiselect'
                         ? field.value.value
                         : field.options?.find(
-                              (opt) => opt.value === field.value.value[0]?.value
+                              (opt) =>
+                                  opt.value ===
+                                  ((field.value.value as DropdownOption[])[0]
+                                      ?.value as string)
                           ) || {
                               id: -1,
                               label: '',
@@ -178,7 +208,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                 return (
                     <Dropdown
                         options={field.options ?? []}
-                        value={selectedOption}
+                        value={selectedOption as DropdownOption}
                         onChange={(selected) =>
                             onChange(
                                 question.id,
@@ -191,6 +221,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         {...field.props}
                     />
                 );
+            }
 
             case 'team':
                 return (
@@ -203,7 +234,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
             case 'date':
                 return (
                     <DateInput
-                        value={field.value.value}
+                        value={field.value.value as Date}
                         onChange={(v) => onChange(question.id, field.key, v)}
                         disabled={field.disabled}
                         error={errorMessage}

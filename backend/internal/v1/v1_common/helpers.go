@@ -3,10 +3,27 @@ package v1_common
 import (
 	"KonferCA/SPUR/internal/permissions"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
+
+// Common time format constants
+const (
+	DateOnlyFormat = "2006-01-02"
+)
+
+// FormatUnixTime converts a Unix timestamp to RFC3339 format
+func FormatUnixTime(t int64) string {
+	return time.Unix(t, 0).Format(time.RFC3339)
+}
+
+// FormatUnixTimeCustom converts a Unix timestamp to a custom format
+// For example, use DateOnlyFormat for YYYY-MM-DD format
+func FormatUnixTimeCustom(t int64, layout string) string {
+	return time.Unix(t, 0).Format(layout)
+}
 
 /*
 Basic helper that response with the basic response json.

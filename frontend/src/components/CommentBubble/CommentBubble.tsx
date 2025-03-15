@@ -1,6 +1,6 @@
-import { Comment } from '@/services/comment';
+import type { Comment } from '@/services/comment';
 import { cva } from 'class-variance-authority';
-import { FC, useState } from 'react';
+import { type FC, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { FaXmark } from 'react-icons/fa6';
 
