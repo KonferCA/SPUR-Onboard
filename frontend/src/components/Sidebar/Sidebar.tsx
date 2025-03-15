@@ -32,6 +32,7 @@ export interface MenuItem {
     isSeparator?: boolean;
     isSubmenu?: boolean;
     isSectionTitle?: boolean;
+    id?: string;
 }
 
 export const Sidebar = ({
@@ -48,16 +49,19 @@ export const Sidebar = ({
             path: '/user/dashboard',
             label: 'My Projects',
             icon: <FiFolder className="w-5 h-5" />,
+            id: 'my-projects',
         },
         {
             path: '/user/browse',
             label: 'Browse Projects',
             icon: <FiSearch className="w-5 h-5" />,
+            id: 'browse-projects',
         },
         {
             path: '/user/resources',
             label: 'Resources',
             icon: <FiBook className="w-5 h-5" />,
+            id: 'resources',
         },
     ];
 
@@ -66,11 +70,13 @@ export const Sidebar = ({
             path: '/user/investor/investments',
             label: 'My Investments',
             icon: <FiDollarSign className="w-5 h-5" />,
+            id: 'investments',
         },
         {
             path: '/user/investor/statistics',
             label: 'Statistics',
             icon: <FiBarChart2 className="w-5 h-5" />,
+            id: 'statistics',
         },
     ];
 
@@ -79,6 +85,7 @@ export const Sidebar = ({
             path: '/user/admin/permissions',
             label: 'Manage Permissions',
             icon: <FiShield className="w-5 h-5" />,
+            id: 'permissions',
         },
     ];
 
@@ -87,11 +94,13 @@ export const Sidebar = ({
             path: '/user/settings/profile',
             label: 'Settings',
             icon: <FiSettings className="w-5 h-5" />,
+            id: 'settings',
         },
         {
             path: '/user/support',
             label: 'Support',
             icon: <FiHeadphones className="w-5 h-5" />,
+            id: 'support',
         },
     ];
 
@@ -101,18 +110,21 @@ export const Sidebar = ({
             label: 'Profile',
             icon: <FiUser className="w-5 h-5" />,
             isSubmenu: true,
+            id: 'profile',
         },
         {
             path: '/user/settings/wallet',
             label: 'Wallet',
             icon: <FiCreditCard className="w-5 h-5" />,
             isSubmenu: true,
+            id: 'wallet',
         },
     ];
 
     const sections = [
         {
             title: 'MAIN',
+            id: 'main',
             items: [...userItems],
         },
     ];
@@ -120,6 +132,7 @@ export const Sidebar = ({
     if (isInvestor(userPermissions) || isAdmin(userPermissions)) {
         sections.push({
             title: 'INVESTOR',
+            id: 'investor',
             items: [...investorItems],
         });
     }
@@ -127,6 +140,7 @@ export const Sidebar = ({
     if (isAdmin(userPermissions)) {
         sections.push({
             title: 'ADMIN',
+            id: 'admin',
             items: [...adminItems],
         });
     }
@@ -141,6 +155,7 @@ export const Sidebar = ({
                     label: section.title,
                     icon: null,
                     isSectionTitle: true,
+                    id: `section-${section.id}`,
                 });
             }
 
@@ -204,7 +219,7 @@ export const Sidebar = ({
                                     if (item.isSectionTitle) {
                                         return (
                                             <div
-                                                key={`section-${index}`}
+                                                key={item.id || `section-${item.label}`}
                                                 className="text-sm font-bold text-gray-900 px-6 pt-6 pb-2"
                                             >
                                                 {item.label}
@@ -215,7 +230,7 @@ export const Sidebar = ({
                                     if (item.isSeparator) {
                                         return (
                                             <div
-                                                key={`separator-${index}`}
+                                                key={item.id || `separator-${item.label}`}
                                                 className="border-t border-gray-200 my-2"
                                             />
                                         );
@@ -223,7 +238,7 @@ export const Sidebar = ({
 
                                     return (
                                         <Link
-                                            key={item.path || `item-${index}`}
+                                            key={item.path || item.id || `item-${item.label}`}  
                                             to={item.path}
                                             className={getNavItemClass(item)}
                                         >
@@ -238,8 +253,8 @@ export const Sidebar = ({
                         </>
                     ) : (
                         <>
-                            {sections.map((section, sectionIndex) => (
-                                <div key={`section-${sectionIndex}`}>
+                            {sections.map((section) => (
+                                <div key={section.id || `section-${section.title}`}>
                                     {section.title && (
                                         <div className="text-sm font-bold text-gray-900 px-4 pt-6 pb-2">
                                             {section.title}
@@ -248,7 +263,7 @@ export const Sidebar = ({
 
                                     <div>
                                         {section.items.map(
-                                            (item, itemIndex) => {
+                                            (item) => {
                                                 if (
                                                     commonItems.includes(item)
                                                 ) {
@@ -258,7 +273,7 @@ export const Sidebar = ({
                                                 if (item.isSeparator) {
                                                     return (
                                                         <div
-                                                            key={`separator-${sectionIndex}-${itemIndex}`}
+                                                            key={item.id || `separator-${item.label}`}
                                                             className="border-t border-gray-200 my-2"
                                                         />
                                                     );
@@ -266,10 +281,7 @@ export const Sidebar = ({
 
                                                 return (
                                                     <Link
-                                                        key={
-                                                            item.path ||
-                                                            `item-${sectionIndex}-${itemIndex}`
-                                                        }
+                                                        key={item.path || item.id || `item-${item.label}`}
                                                         to={item.path}
                                                         className={getNavItemClass(
                                                             item
@@ -292,9 +304,9 @@ export const Sidebar = ({
                 </div>
 
                 <div className="pt-2 mb-4">
-                    {commonItems.map((item, index) => (
+                    {commonItems.map((item) => (
                         <Link
-                            key={item.path || `common-${index}`}
+                            key={item.path || item.id || `common-${item.label}`}
                             to={item.path}
                             className={getNavItemClass(item)}
                         >
