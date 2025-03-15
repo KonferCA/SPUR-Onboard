@@ -9,6 +9,8 @@ interface MenuItem {
     label: string;
     path: string;
     icon: ReactNode;
+    isSeparator?: boolean;
+    isSubmenu?: boolean;
 }
 
 interface DashboardTemplateProps {
@@ -21,6 +23,7 @@ interface DashboardTemplateProps {
     }>;
     actions?: ReactNode;
     customSidebar?: ReactNode;
+    customMobileSidebar?: ReactNode;
 }
 
 export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
@@ -34,6 +37,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
     navTabs = [],
     actions,
     customSidebar,
+    customMobileSidebar,
 }) => {
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -60,7 +64,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
     }, [location.pathname]);
 
     return (
-        <PageLayout className="bg-gray-50">
+        <PageLayout className="bg-gray-50 min-h-screen flex flex-col">
             {/* top navbar - fixed */}
             <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
                 <div className="max-w-[1440px] mx-auto px-4 md:px-6">
@@ -163,60 +167,85 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                         </div>
                     )}
 
-                    <nav className="py-4">
-                        {menuItems.map((item) => (
-                            <Link
-                                key={item.path}
-                                to={item.path}
-                                className={`
-                                flex items-center gap-3 px-6 py-2 text-sm whitespace-nowrap
-                                ${
-                                    location.pathname === item.path
-                                        ? 'text-gray-900 bg-gray-100 font-medium [&>svg]:text-button-primary-100'
-                                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                                }
-                              `}
-                            >
-                                {item.icon}
-                                <span>{item.label}</span>
-                            </Link>
-                        ))}
-                    </nav>
+                    {/* custom mobile sidebar */}
+                    <div className="h-[calc(100%-4rem)] overflow-y-auto">
+                        {customMobileSidebar ? (
+                            customMobileSidebar
+                        ) : (
+                            <nav className="py-4">
+                                {menuItems.map((item, index) => {
+                                    if (item.isSeparator) {
+                                        return <div key={`separator-${index}`} className="border-t border-gray-200 my-4"></div>;
+                                    }
+                                    
+                                    return (
+                                        <Link
+                                            key={item.path || `item-${index}`}
+                                            to={item.path}
+                                            className={`
+                                            flex items-center gap-3 px-6 py-2 text-sm whitespace-nowrap
+                                            ${item.isSubmenu ? 'pl-10' : ''}
+                                            ${
+                                                location.pathname === item.path
+                                                    ? 'text-gray-900 bg-gray-100 font-medium [&>svg]:text-button-primary-100'
+                                                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                                            }
+                                        `}
+                                        >
+                                            {item.icon}
+                                            <span>{item.label}</span>
+                                        </Link>
+                                    );
+                                })}
+                            </nav>
+                        )}
+                    </div>
                 </div>
             )}
 
             {/* main content area */}
-            <div className="w-full min-h-[calc(100vh_-_4rem)] max-w-[1440px] mx-auto flex flex-1">
-                {!isMobile &&
-                    (customSidebar || (
-                        <div className="w-40 bg-white border-r border-gray-200 flex-shrink-0">
-                            <nav className="sticky top-16 py-4">
-                                {menuItems.map((item) => (
-                                    <Link
-                                        key={item.path}
-                                        to={item.path}
-                                        className={`
-                                    flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap rounded-lg mx-1
-                                    ${
-                                        location.pathname === item.path
-                                            ? 'bg-gray-100 text-gray-900 font-medium [&>svg]:text-button-primary-100'
-                                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                                    }
-                                  `}
-                                    >
-                                        {item.icon}
-
-                                        <span className="truncate">
-                                            {item.label}
-                                        </span>
-                                    </Link>
-                                ))}
-                            </nav>
-                        </div>
-                    ))}
+            <div className="w-full flex-grow max-w-[1440px] mx-auto flex flex-1">
+                {!isMobile && (
+                    <div className="flex-shrink-0">
+                        {customSidebar || (
+                            <div className="w-40 bg-white border-r border-gray-200 sticky top-16 h-[calc(100vh-4rem)]">
+                                <nav className="py-4 h-full flex flex-col">
+                                    <div className="flex-1 overflow-y-auto">
+                                        {menuItems.map((item, index) => {
+                                            if (item.isSeparator) {
+                                                return <div key={`separator-${index}`} className="border-t border-gray-200 my-4"></div>;
+                                            }
+                                            
+                                            return (
+                                                <Link
+                                                    key={item.path || `item-${index}`}
+                                                    to={item.path}
+                                                    className={`
+                                                    flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap rounded-lg mx-1
+                                                    ${
+                                                        location.pathname === item.path
+                                                            ? 'bg-gray-100 text-gray-900 font-medium [&>svg]:text-button-primary-100'
+                                                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                                                    }
+                                                `}
+                                                >
+                                                    {item.icon}
+                                                    
+                                                    <span className="truncate">
+                                                        {item.label}
+                                                    </span>
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                </nav>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* main content */}
-                <main className="flex-1 p-4 md:p-6 w-full h-full">
+                <main className="flex-1 p-4 md:p-6 w-full min-h-[calc(100vh-4rem)]">
                     {children}
                 </main>
             </div>
