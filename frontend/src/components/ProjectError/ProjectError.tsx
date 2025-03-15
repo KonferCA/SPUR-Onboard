@@ -23,7 +23,11 @@ interface ErrorsBySection {
 
 export interface ProjectErrorProps {
     errors: ValidationError[];
-    onErrorClick: (section: string, subsectionId: string, questionId?: string) => void;
+    onErrorClick: (
+        section: string,
+        subsectionId: string,
+        questionId?: string
+    ) => void;
 }
 
 export const ProjectError: React.FC<ProjectErrorProps> = ({
@@ -66,7 +70,11 @@ export const ProjectError: React.FC<ProjectErrorProps> = ({
 
     const handleErrorClick = (error: ValidationError, e: React.MouseEvent) => {
         e.preventDefault();
-        onErrorClick(error.section, sanitizeHtmlId(error.subsection), error.questionId);
+        onErrorClick(
+            error.section,
+            sanitizeHtmlId(error.subsection),
+            error.questionId
+        );
     };
 
     return (

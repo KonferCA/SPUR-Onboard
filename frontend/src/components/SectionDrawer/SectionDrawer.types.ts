@@ -19,4 +19,20 @@ export interface SectionDrawerProps {
      * a boolean to indicate whether the request was accepted or not.
      */
     onRequestChangeSection: (section: string) => boolean;
+    /*
+     * Optional handler for when an error item is clicked
+     */
+    onErrorClick?: (
+        section: string,
+        subsection: string,
+        questionId?: string
+    ) => void;
+    /*
+     * Optional handler for when a recommended field item is clicked
+     */
+    onRecommendedFieldClick?: (
+        section: string,
+        subsection: string,
+        questionId?: string
+    ) => void;
 }

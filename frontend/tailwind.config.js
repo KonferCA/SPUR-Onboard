@@ -67,22 +67,37 @@ export default {
             },
             keyframes: {
                 blink: {
-                  '0%': { 
-                      backgroundColor: 'rgba(239, 68, 68, 0)',
-                      boxShadow: '0 0 0 2px rgba(239, 68, 68, 0)'
-                  },
-                  '50%': { 
-                      backgroundColor: 'rgba(254, 242, 242, 0.8)', 
-                      boxShadow: '0 0 0 2px rgba(239, 68, 68, 0.5)'
-                  },
-                  '100%': { 
-                      backgroundColor: 'rgba(239, 68, 68, 0)',
-                      boxShadow: '0 0 0 2px rgba(239, 68, 68, 0)'
-                  }
-                }
+                    '0%': {
+                        backgroundColor: 'rgba(239, 68, 68, 0)',
+                        boxShadow: '0 0 0 2px rgba(239, 68, 68, 0)',
+                    },
+                    '50%': {
+                        backgroundColor: 'rgba(254, 242, 242, 0.8)',
+                        boxShadow: '0 0 0 2px rgba(239, 68, 68, 0.5)',
+                    },
+                    '100%': {
+                        backgroundColor: 'rgba(239, 68, 68, 0)',
+                        boxShadow: '0 0 0 2px rgba(239, 68, 68, 0)',
+                    },
+                },
+                neutralBlink: {
+                    '0%': {
+                        backgroundColor: 'rgba(59, 130, 246, 0)',
+                        boxShadow: '0 0 0 2px rgba(59, 130, 246, 0)',
+                    },
+                    '50%': {
+                        backgroundColor: 'rgba(239, 246, 255, 0.8)',
+                        boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.5)',
+                    },
+                    '100%': {
+                        backgroundColor: 'rgba(59, 130, 246, 0)',
+                        boxShadow: '0 0 0 2px rgba(59, 130, 246, 0)',
+                    },
+                },
             },
             animation: {
                 blink: 'blink 1.2s ease-in-out 1',
+                neutralBlink: 'neutralBlink 1.2s ease-in-out 1',
             },
         },
     },

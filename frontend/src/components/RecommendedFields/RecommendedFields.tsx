@@ -20,7 +20,11 @@ interface FieldsBySection {
 
 export interface RecommendedFieldsProps {
     fields: RecommendedField[];
-    onFieldClick: (section: string, subsectionId: string, questionId?: string) => void;
+    onFieldClick: (
+        section: string,
+        subsectionId: string,
+        questionId?: string
+    ) => void;
 }
 
 export const RecommendedFields: React.FC<RecommendedFieldsProps> = ({
@@ -63,7 +67,11 @@ export const RecommendedFields: React.FC<RecommendedFieldsProps> = ({
 
     const handleFieldClick = (field: RecommendedField, e: React.MouseEvent) => {
         e.preventDefault();
-        onFieldClick(field.section, sanitizeHtmlId(field.subsection), field.questionId);
+        onFieldClick(
+            field.section,
+            sanitizeHtmlId(field.subsection),
+            field.questionId
+        );
     };
 
     return (

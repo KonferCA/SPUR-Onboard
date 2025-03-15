@@ -9,7 +9,7 @@ import {
 import type { DropdownOption, UploadableFile } from '@/components';
 import type { Question } from '@/config/forms';
 import type { FormField } from '@/types';
-import { FC, useRef, useEffect } from 'react';
+import { type FC, useRef, useEffect } from 'react';
 import { cva } from 'class-variance-authority';
 import FundingStructure, {
     type FundingStructureModel,
@@ -54,7 +54,8 @@ const requiredTextStyles = cva('text-sm', {
 const fieldsetStyles = cva('space-y-4 rounded-lg p-3 mb-2', {
     variants: {
         highlight: {
-            true: 'animate-blink',
+            error: 'animate-blink',
+            neutral: 'animate-neutralBlink',
             false: '',
         },
     },
@@ -88,7 +89,7 @@ interface QuestionInputsProps {
         accessToken?: string;
         enableAutosave?: boolean;
     };
-    shouldHighlight?: boolean;
+    shouldHighlight?: boolean | 'error' | 'neutral';
 }
 
 export const QuestionInputs: FC<QuestionInputsProps> = ({
@@ -101,18 +102,23 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     const isQuestionRequired = question.inputFields.some(
         (field) => field.required
     );
-    
-    // reference to the first input field
-    const inputRef = useRef<HTMLInputElement | null>(null);
-    
+
+    // references to the first input fields of different types
+    const textInputRef = useRef<HTMLInputElement | null>(null);
+    const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+
     // auto-focus when highlighted
     useEffect(() => {
-        if (shouldHighlight && inputRef.current) {
+        if (shouldHighlight) {
             // slight delay to ensure focus happens after scroll and DOM is ready
             const timer = setTimeout(() => {
-                inputRef.current?.focus();
+                if (textInputRef.current) {
+                    textInputRef.current.focus();
+                } else if (textAreaRef.current) {
+                    textAreaRef.current.focus();
+                }
             }, 300);
-            
+
             return () => clearTimeout(timer);
         }
     }, [shouldHighlight]);
@@ -158,9 +164,16 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
 
     const renderInput = (field: FormField, isFirstInput = false) => {
         const errorMessage = getErrorMessage(field);
-        
-        // ref for the first input field
-        const ref = isFirstInput ? inputRef : undefined;
+
+        // set appropriate ref for the first input field based on type
+        const inputProps: Record<string, unknown> = {};
+        if (isFirstInput) {
+            if (field.type === 'textinput') {
+                inputProps.ref = textInputRef;
+            } else if (field.type === 'textarea') {
+                inputProps.ref = textAreaRef;
+            }
+        }
 
         switch (field.type) {
             case 'textinput':
@@ -174,7 +187,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         error={errorMessage}
                         required={field.required}
                         disabled={field.disabled}
-                        ref={ref}
+                        {...inputProps}
                         {...field.props}
                     />
                 );
@@ -191,7 +204,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         rows={field.rows || 4}
                         error={errorMessage}
                         disabled={field.disabled}
-                        ref={ref}
+                        {...inputProps}
                         {...field.props}
                     />
                 );
@@ -280,7 +293,16 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     };
 
     return (
-        <fieldset id={question.id} className={fieldsetStyles({ highlight: shouldHighlight })}>
+        <fieldset
+            id={question.id}
+            className={fieldsetStyles({
+                highlight: shouldHighlight
+                    ? shouldHighlight === true
+                        ? 'error'
+                        : shouldHighlight
+                    : false,
+            })}
+        >
             <div className={headerContainerStyles()}>
                 <legend className={legendStyles({ hasError: hasInvalidField })}>
                     {question.question}
