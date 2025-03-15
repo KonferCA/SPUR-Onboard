@@ -91,7 +91,7 @@ function RouteComponent() {
                 });
             }
         }
-    }, [location.pathname, notification, navigate]);
+    }, [location.pathname, location.state, notification, navigate]);
 
     const handleLogout = async () => {
         await clearAuth();
