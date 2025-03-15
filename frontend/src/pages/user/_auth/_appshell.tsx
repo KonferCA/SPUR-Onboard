@@ -70,7 +70,7 @@ function RouteComponent() {
 
         if (!routeExists) {
             notification.push({
-                message: `This page is coming soon!`,
+                message: 'This page is coming soon!',
                 level: 'info',
                 autoClose: true,
                 duration: 5000,
