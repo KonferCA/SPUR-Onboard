@@ -215,7 +215,7 @@ export const Sidebar = ({
                         <>
                             {navItems
                                 .filter((item) => !commonItems.includes(item))
-                                .map((item, index) => {
+                                .map((item) => {
                                     if (item.isSectionTitle) {
                                         return (
                                             <div
