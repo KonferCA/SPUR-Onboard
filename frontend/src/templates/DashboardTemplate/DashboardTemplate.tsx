@@ -98,7 +98,11 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                                 <div className="flex items-center mr-6">
                                     {navTabs.map((tab) => (
                                         <Link
-                                            key={tab.id || `nav-${tab.path}` || `tab-${tab.label}`}
+                                            key={
+                                                tab.id ||
+                                                `nav-${tab.path}` ||
+                                                `tab-${tab.label}`
+                                            }
                                             to={tab.path}
                                             className={`px-4 py-2 text-sm font-medium ${
                                                 location.pathname === tab.path
@@ -155,7 +159,11 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                         <div className="border-b border-gray-200 py-2">
                             {navTabs.map((tab) => (
                                 <Link
-                                    key={tab.id || `nav-${tab.path}` || `tab-${tab.label}`}
+                                    key={
+                                        tab.id ||
+                                        `nav-${tab.path}` ||
+                                        `tab-${tab.label}`
+                                    }
                                     to={tab.path}
                                     className={`block px-6 py-2 text-sm font-medium ${
                                         location.pathname === tab.path
@@ -179,7 +187,10 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                                     if (item.isSeparator) {
                                         return (
                                             <div
-                                                key={item.id || `separator-${item.label || item.path}`}
+                                                key={
+                                                    item.id ||
+                                                    `separator-${item.label || item.path}`
+                                                }
                                                 className="border-t border-gray-200 my-4"
                                             />
                                         );
@@ -187,7 +198,11 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
 
                                     return (
                                         <Link
-                                            key={item.id || item.path || `item-${item.label}`}
+                                            key={
+                                                item.id ||
+                                                item.path ||
+                                                `item-${item.label}`
+                                            }
                                             to={item.path}
                                             className={`
                                             flex items-center gap-3 px-6 py-2 text-sm whitespace-nowrap
@@ -222,7 +237,10 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                                             if (item.isSeparator) {
                                                 return (
                                                     <div
-                                                        key={item.id || `separator-${item.label || item.path}`}
+                                                        key={
+                                                            item.id ||
+                                                            `separator-${item.label || item.path}`
+                                                        }
                                                         className="border-t border-gray-200 my-4"
                                                     />
                                                 );
@@ -230,7 +248,11 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
 
                                             return (
                                                 <Link
-                                                    key={item.id || item.path || `item-${item.label}`}
+                                                    key={
+                                                        item.id ||
+                                                        item.path ||
+                                                        `item-${item.label}`
+                                                    }
                                                     to={item.path}
                                                     className={`
                                                     flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap rounded-lg mx-1
