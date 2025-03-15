@@ -175,9 +175,14 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                             <nav className="py-4">
                                 {menuItems.map((item, index) => {
                                     if (item.isSeparator) {
-                                        return <div key={`separator-${index}`} className="border-t border-gray-200 my-4"></div>;
+                                        return (
+                                            <div
+                                                key={`separator-${index}`}
+                                                className="border-t border-gray-200 my-4"
+                                            />
+                                        );
                                     }
-                                    
+
                                     return (
                                         <Link
                                             key={item.path || `item-${index}`}
@@ -213,24 +218,33 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                                     <div className="flex-1 overflow-y-auto">
                                         {menuItems.map((item, index) => {
                                             if (item.isSeparator) {
-                                                return <div key={`separator-${index}`} className="border-t border-gray-200 my-4"></div>;
+                                                return (
+                                                    <div
+                                                        key={`separator-${index}`}
+                                                        className="border-t border-gray-200 my-4"
+                                                    />
+                                                );
                                             }
-                                            
+
                                             return (
                                                 <Link
-                                                    key={item.path || `item-${index}`}
+                                                    key={
+                                                        item.path ||
+                                                        `item-${index}`
+                                                    }
                                                     to={item.path}
                                                     className={`
                                                     flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap rounded-lg mx-1
                                                     ${
-                                                        location.pathname === item.path
+                                                        location.pathname ===
+                                                        item.path
                                                             ? 'bg-gray-100 text-gray-900 font-medium [&>svg]:text-button-primary-100'
                                                             : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                                                     }
                                                 `}
                                                 >
                                                     {item.icon}
-                                                    
+
                                                     <span className="truncate">
                                                         {item.label}
                                                     </span>
