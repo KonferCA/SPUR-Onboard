@@ -1,4 +1,4 @@
-import { SocialLink } from './form';
+import type { SocialLink } from './form';
 
 export type RegistrationStep =
     | 'login-register'

@@ -10,11 +10,12 @@ import (
 	"testing"
 	"time"
 
+	"KonferCA/SPUR/internal/permissions"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"KonferCA/SPUR/internal/permissions"
 )
 
 // CommentResponse represents the response format for comment operations
@@ -38,7 +39,7 @@ func TestCommentEndpoints(t *testing.T) {
 	ctx := context.Background()
 
 	// Create test user with project owner permissions
-	userID, email, password, err := createTestUser(ctx, s, permissions.PermSubmitProject | permissions.PermCommentOnProjects)
+	userID, email, password, err := createTestUser(ctx, s, permissions.PermSubmitProject|permissions.PermCommentOnProjects)
 	assert.NoError(t, err)
 	defer removeTestUser(ctx, email, s)
 
@@ -57,7 +58,7 @@ func TestCommentEndpoints(t *testing.T) {
 			SET permissions = $1,
 					email_verified = true
 		WHERE id = $2
-	`, int32(permissions.PermAdmin | permissions.PermSubmitProject | permissions.PermCommentOnProjects), userID)
+	`, int32(permissions.PermAdmin|permissions.PermSubmitProject|permissions.PermCommentOnProjects), userID)
 	require.NoError(t, err)
 
 	// Create test company with the user as owner
@@ -140,7 +141,7 @@ func TestCommentEndpoints(t *testing.T) {
 			{
 				name: "valid comment",
 				body: map[string]interface{}{
-					"comment":    "This is a test comment",
+					"comment":   "This is a test comment",
 					"target_id": targetID.String(),
 				},
 				projectID:    projectID.String(),
@@ -150,7 +151,7 @@ func TestCommentEndpoints(t *testing.T) {
 			{
 				name: "empty comment",
 				body: map[string]interface{}{
-					"comment":    "",
+					"comment":   "",
 					"target_id": targetID.String(),
 				},
 				projectID:    projectID.String(),
@@ -161,7 +162,7 @@ func TestCommentEndpoints(t *testing.T) {
 			{
 				name: "invalid project ID",
 				body: map[string]interface{}{
-					"comment":    "Test comment",
+					"comment":   "Test comment",
 					"target_id": targetID.String(),
 				},
 				projectID:    uuid.New().String(),
@@ -390,17 +391,17 @@ func TestCommentEndpoints(t *testing.T) {
 		// Delete comments first
 		_, err = s.GetDB().Exec(ctx, `DELETE FROM project_comments WHERE project_id = $1`, projectID)
 		require.NoError(t, err)
-		
+
 		// Delete project
 		_, err = s.GetDB().Exec(ctx, `DELETE FROM projects WHERE id = $1`, projectID)
 		require.NoError(t, err)
-		
+
 		// Delete company
 		_, err = s.GetDB().Exec(ctx, `DELETE FROM companies WHERE id = $1`, companyID)
 		require.NoError(t, err)
-		
+
 		// Delete user last
 		_, err = s.GetDB().Exec(ctx, `DELETE FROM users WHERE id = $1`, userID)
 		require.NoError(t, err)
 	}()
-} 
+}

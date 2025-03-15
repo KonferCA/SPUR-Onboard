@@ -1,2 +1,5 @@
 export { RecommendedFields } from './RecommendedFields';
-export type { RecommendedField, RecommendedFieldsProps } from './RecommendedFields';
+export type {
+    RecommendedField,
+    RecommendedFieldsProps,
+} from './RecommendedFields';

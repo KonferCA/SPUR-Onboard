@@ -1,10 +1,10 @@
-import { createUploadableFile, UploadableFile } from '@/components';
-import {
+import { createUploadableFile, type UploadableFile } from '@/components';
+import type {
     ConditionType,
     ProjectQuestion,
     ProjectQuestionsData,
 } from '@/services/project';
-import { FormField, FormFieldType } from '@/types';
+import type { FormField, FormFieldType } from '@/types';
 import { createZodSchema } from '@/utils/form-validation';
 
 export interface GroupedProjectQuestions {
@@ -31,6 +31,11 @@ export interface Question {
     questionOrder: number;
     description?: string;
     answer?: string;
+}
+
+export interface SectionMetadata {
+    name: string;
+    subSections: string[];
 }
 
 /*
@@ -141,6 +146,20 @@ export function groupProjectQuestions(
                     case 'team':
                         inputField.value.teamMembers = teamMembers ?? [];
                         break;
+                    case 'fundingstructure':
+                        try {
+                            if (q.answer) {
+                                inputField.value.fundingStructure = JSON.parse(
+                                    q.answer
+                                );
+                            }
+                        } catch (err) {
+                            console.error(
+                                'Failed to parse funding structure:',
+                                err
+                            );
+                        }
+                        break;
                     case 'multiselect':
                     case 'select':
                         inputField.options = q.options?.map((opt, idx) => ({
@@ -154,10 +173,11 @@ export function groupProjectQuestions(
                             value: c,
                         }));
                         break;
-                    case 'date':
+                    case 'date': {
                         const date = new Date(q.answer);
                         inputField.value.value = date;
                         break;
+                    }
                     default:
                         inputField.value.value = q.answer;
                         break;
@@ -173,8 +193,7 @@ export function groupProjectQuestions(
                 inputFields,
                 dependentQuestionId:
                     projectQuestion.dependentQuestionId || undefined,
-                conditionType:
-                    (projectQuestion.conditionType as any) || undefined,
+                conditionType: projectQuestion.conditionType || undefined,
                 conditionValue: projectQuestion.conditionValue || undefined,
                 questionOrder: projectQuestion.questionOrder,
                 description: projectQuestion.description || undefined,

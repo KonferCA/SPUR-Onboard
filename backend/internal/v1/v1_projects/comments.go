@@ -5,8 +5,9 @@ import (
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"database/sql"
-	"github.com/labstack/echo/v4"
 	"net/http"
+
+	"github.com/labstack/echo/v4"
 )
 
 /*

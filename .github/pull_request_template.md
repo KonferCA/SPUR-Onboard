@@ -8,12 +8,21 @@ Replace this with a summary of the changes and the related issues. Please also i
 - Replace this with a list of test files covering all the PR changes.
 - ...
 
-## Checklist
+## Reviewer Checklist
+When reviewing this PR, make sure to keep the following in mind:
+- This PR should not span too many unrelated tickets or changes.
+  - If it does, consider breaking it up into smaller PRs.
+- Is the code coverage acceptable?
+- Does the preview deployment work as expected?
+- Does this PR pass all tests?
+- Does this PR have a clear list of issues that it closes?
+- Does the code follow the style guidelines of the project?
+
+## Author Checklist
 Before opening this PR, make sure the PR:
 - [ ] Has an **assignee or group of assignees**.
 - [ ] Has a **reviewer or a group of reviewers**.
 - [ ] Is **labelled properly**.
-- [ ] Has the **SPUR project assigned to it**.
 - [ ] Has an **assigned milestone**.
 
 Additionally, make sure that:

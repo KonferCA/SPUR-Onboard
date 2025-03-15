@@ -9,6 +9,7 @@ import (
 
 	"KonferCA/SPUR/common"
 	"KonferCA/SPUR/internal/server"
+
 	"github.com/joho/godotenv"
 )
 

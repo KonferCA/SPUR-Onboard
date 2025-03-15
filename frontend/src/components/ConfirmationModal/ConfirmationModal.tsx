@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { IoMdClose } from 'react-icons/io';
@@ -15,6 +15,7 @@ export interface ConfirmationModalProps {
     primaryButtonClassName?: string;
     secondaryButtonClassName?: string;
     showCloseButton?: boolean;
+    additionalButtons?: React.ReactNode;
 }
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -29,6 +30,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     primaryButtonClassName = '',
     secondaryButtonClassName = '',
     showCloseButton = true,
+    additionalButtons,
 }) => {
     return (
         <Transition appear show={isOpen} as={Fragment}>
@@ -62,6 +64,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                             <Dialog.Panel className="relative w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left shadow-xl transition-all">
                                 {showCloseButton && (
                                     <button
+                                        type="button"
                                         onClick={onClose}
                                         className="absolute right-6 top-6 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
                                     >
@@ -85,22 +88,25 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                                     {children}
                                 </div>
 
-                                <div className="mt-8 flex justify-end gap-3">
-                                    <button
-                                        type="button"
-                                        className={`rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 ${secondaryButtonClassName}`}
-                                        onClick={onClose}
-                                    >
-                                        {secondaryActionText}
-                                    </button>
+                                <div className="mt-8 flex items-center justify-between">
+                                    <div>{additionalButtons}</div>
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            className={`rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 ${secondaryButtonClassName}`}
+                                            onClick={onClose}
+                                        >
+                                            {secondaryActionText}
+                                        </button>
 
-                                    <button
-                                        type="button"
-                                        className={`rounded-lg bg-gray-500 px-4 py-2 text-white hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 ${primaryButtonClassName}`}
-                                        onClick={primaryAction}
-                                    >
-                                        {primaryActionText}
-                                    </button>
+                                        <button
+                                            type="button"
+                                            className={`rounded-lg bg-gray-500 px-4 py-2 text-white hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 ${primaryButtonClassName}`}
+                                            onClick={primaryAction}
+                                        >
+                                            {primaryActionText}
+                                        </button>
+                                    </div>
                                 </div>
                             </Dialog.Panel>
                         </Transition.Child>

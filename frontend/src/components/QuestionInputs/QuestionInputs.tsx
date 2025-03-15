@@ -6,10 +6,14 @@ import {
     TeamMembers,
     DateInput,
 } from '@/components';
-import { Question } from '@/config/forms';
-import { FormField } from '@/types';
-import { FC } from 'react';
+import type { DropdownOption, UploadableFile } from '@/components';
+import type { Question } from '@/config/forms';
+import type { FormField } from '@/types';
+import { type FC, useRef, useEffect } from 'react';
 import { cva } from 'class-variance-authority';
+import FundingStructure, {
+    type FundingStructureModel,
+} from '../FundingStructure';
 
 const legendStyles = cva('block text-md font-normal', {
     variants: {
@@ -47,13 +51,35 @@ const requiredTextStyles = cva('text-sm', {
     },
 });
 
-const fieldsetStyles = cva('space-y-4');
+const fieldsetStyles = cva('space-y-4 rounded-lg p-3 mb-2', {
+    variants: {
+        highlight: {
+            error: 'animate-blink',
+            neutral: 'animate-neutralBlink',
+            false: '',
+        },
+    },
+    defaultVariants: {
+        highlight: false,
+    },
+});
 
 const headerContainerStyles = cva('flex justify-between items-center mb-1');
 
 interface QuestionInputsProps {
     question: Question;
-    onChange: (questionID: string, inputTypeID: string, value: any) => void;
+    onChange: (
+        questionID: string,
+        inputTypeID: string,
+        value:
+            | string
+            | string[]
+            | Date
+            | DropdownOption
+            | DropdownOption[]
+            | UploadableFile[]
+            | FundingStructureModel
+    ) => void;
     className?: string;
     fileUploadProps?: {
         projectId?: string;
@@ -63,17 +89,39 @@ interface QuestionInputsProps {
         accessToken?: string;
         enableAutosave?: boolean;
     };
+    shouldHighlight?: boolean | 'error' | 'neutral';
 }
 
 export const QuestionInputs: FC<QuestionInputsProps> = ({
     question,
     onChange,
     fileUploadProps,
+    shouldHighlight = false,
 }) => {
     const hasInvalidField = question.inputFields.some((field) => field.invalid);
     const isQuestionRequired = question.inputFields.some(
         (field) => field.required
     );
+
+    // references to the first input fields of different types
+    const textInputRef = useRef<HTMLInputElement | null>(null);
+    const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+
+    // auto-focus when highlighted
+    useEffect(() => {
+        if (shouldHighlight) {
+            // slight delay to ensure focus happens after scroll and DOM is ready
+            const timer = setTimeout(() => {
+                if (textInputRef.current) {
+                    textInputRef.current.focus();
+                } else if (textAreaRef.current) {
+                    textAreaRef.current.focus();
+                }
+            }, 300);
+
+            return () => clearTimeout(timer);
+        }
+    }, [shouldHighlight]);
 
     const getErrorMessage = (field: FormField): string => {
         if (!field.invalid) return '';
@@ -114,21 +162,32 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
         return 'This field is required';
     };
 
-    const renderInput = (field: FormField) => {
+    const renderInput = (field: FormField, isFirstInput = false) => {
         const errorMessage = getErrorMessage(field);
+
+        // set appropriate ref for the first input field based on type
+        const inputProps: Record<string, unknown> = {};
+        if (isFirstInput) {
+            if (field.type === 'textinput') {
+                inputProps.ref = textInputRef;
+            } else if (field.type === 'textarea') {
+                inputProps.ref = textAreaRef;
+            }
+        }
 
         switch (field.type) {
             case 'textinput':
                 return (
                     <TextInput
                         placeholder={field.placeholder}
-                        value={field.value.value || ''}
+                        value={(field.value.value as string) || ''}
                         onChange={(e) =>
                             onChange(question.id, field.key, e.target.value)
                         }
                         error={errorMessage}
                         required={field.required}
                         disabled={field.disabled}
+                        {...inputProps}
                         {...field.props}
                     />
                 );
@@ -137,7 +196,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                 return (
                     <TextArea
                         placeholder={field.placeholder}
-                        value={field.value.value || ''}
+                        value={(field.value.value as string) || ''}
                         onChange={(e) =>
                             onChange(question.id, field.key, e.target.value)
                         }
@@ -145,6 +204,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         rows={field.rows || 4}
                         error={errorMessage}
                         disabled={field.disabled}
+                        {...inputProps}
                         {...field.props}
                     />
                 );
@@ -162,13 +222,28 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     />
                 );
 
+            case 'fundingstructure':
+                return (
+                    <div className="w-full">
+                        <FundingStructure
+                            value={field.value.fundingStructure}
+                            onChange={(structure) =>
+                                onChange(question.id, field.key, structure)
+                            }
+                        />
+                    </div>
+                );
+
             case 'multiselect':
-            case 'select':
+            case 'select': {
                 const selectedOption =
                     field.type === 'multiselect'
                         ? field.value.value
                         : field.options?.find(
-                              (opt) => opt.value === field.value.value[0]?.value
+                              (opt) =>
+                                  opt.value ===
+                                  ((field.value.value as DropdownOption[])[0]
+                                      ?.value as string)
                           ) || {
                               id: -1,
                               label: '',
@@ -178,7 +253,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                 return (
                     <Dropdown
                         options={field.options ?? []}
-                        value={selectedOption}
+                        value={selectedOption as DropdownOption}
                         onChange={(selected) =>
                             onChange(
                                 question.id,
@@ -191,6 +266,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         {...field.props}
                     />
                 );
+            }
 
             case 'team':
                 return (
@@ -203,7 +279,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
             case 'date':
                 return (
                     <DateInput
-                        value={field.value.value}
+                        value={field.value.value as Date}
                         onChange={(v) => onChange(question.id, field.key, v)}
                         disabled={field.disabled}
                         error={errorMessage}
@@ -217,7 +293,16 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     };
 
     return (
-        <fieldset className={fieldsetStyles()}>
+        <fieldset
+            id={question.id}
+            className={fieldsetStyles({
+                highlight: shouldHighlight
+                    ? shouldHighlight === true
+                        ? 'error'
+                        : shouldHighlight
+                    : false,
+            })}
+        >
             <div className={headerContainerStyles()}>
                 <legend className={legendStyles({ hasError: hasInvalidField })}>
                     {question.question}
@@ -242,9 +327,9 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                 )}
             </div>
             <div className="space-y-4">
-                {question.inputFields.map((field) => (
+                {question.inputFields.map((field, index) => (
                     <div key={field.key} className="w-full">
-                        {renderInput(field)}
+                        {renderInput(field, index === 0)}
                     </div>
                 ))}
             </div>

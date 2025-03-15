@@ -1,0 +1,23 @@
+name: Enforce Successful Backend Build
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: ['main', 'staging', 'production']
+jobs:
+  build-check:
+    name: Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+      - name: Build
+        run: |
+          #!/bin/bash
+          set -e
+          cd backend
+          CGO_ENABLED=0 GOOS=linux go build -o app

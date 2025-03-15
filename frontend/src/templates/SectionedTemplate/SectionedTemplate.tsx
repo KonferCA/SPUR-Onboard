@@ -1,6 +1,6 @@
-import { FC } from 'react';
-import { AnchorLinkItem, AnchorLinks } from '@/components';
-import { ReactNode } from '@tanstack/react-router';
+import type { FC } from 'react';
+import { type AnchorLinkItem, AnchorLinks } from '@/components';
+import type { ReactNode } from '@tanstack/react-router';
 import { twMerge } from 'tailwind-merge';
 
 export interface SectionedLayoutProps {
@@ -32,16 +32,19 @@ export const SectionedLayout: FC<SectionedLayoutProps> = ({
             <nav
                 data-testid="sectioned-layout-aside"
                 className={twMerge(
-                    'fixed bottom-0 left-0 top-12 px-6 w-64',
+                    'hidden lg:block fixed bottom-0 left-0 top-12 px-6 w-64',
                     linkContainerClassnames
                 )}
             >
                 {asideDetails}
-                <div className="h-4"></div>
+                <div className="h-4" />
                 {/* TODO: Update anchor links to work better - currently offsets badly */}
-                <AnchorLinks links={links} /> 
+                <AnchorLinks links={links} />
             </nav>
-            <div data-testid="sectione-layout-main" className="pt-12 px-64">
+            <div
+                data-testid="sectione-layout-main"
+                className="pt-12 px-6 lg:px-64"
+            >
                 {children}
             </div>
         </div>

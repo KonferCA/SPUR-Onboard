@@ -7,9 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"KonferCA/SPUR/common"
+
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
-	"KonferCA/SPUR/common"
 )
 
 /*
@@ -90,7 +91,7 @@ func (rl *RateLimiter) RateLimit() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			var ip string
-			
+
 			env := os.Getenv("APP_ENV")
 			if env == common.TEST_ENV || env == common.DEVELOPMENT_ENV {
 				ip = c.Request().Header.Get("CF-Connecting-IP")
