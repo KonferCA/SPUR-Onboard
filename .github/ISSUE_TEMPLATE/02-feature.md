@@ -1,19 +1,20 @@
 ---
 name: Feature
 about: An addition, change, or refactor to the backend AND frontend.
-title: "[Feat] Describe what to add here"
+title: "Describe what to add here"
 labels: backend, frontend, enhancement
-assignees: ''
-
+assigneets: ''
+type: "Feature"
 ---
+
 ## Description
 Replace this text with a brief description of the feature.
 
+## Blocked by
+If this feature is blocked by another issue, list it here.
+
 ## Screenshots
 If applicable add screenshots, otherwise delete this section.
-
-## Additional Information
-If applicable add any other information, otherwise, delete this section.
 
 ## Checklist
 Before submitting this ticket, make sure this ticket:

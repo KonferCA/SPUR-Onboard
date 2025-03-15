@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	"KonferCA/SPUR/internal/middleware"
-	"KonferCA/SPUR/internal/v1/v1_common"
 	"KonferCA/SPUR/internal/permissions"
 	"KonferCA/SPUR/internal/server"
+	"KonferCA/SPUR/internal/v1/v1_common"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -315,7 +315,7 @@ func TestAdminChecks(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test admin check with actual permissions
-		isAdmin := permissions.HasAllPermissions(uint32(userPerms), 
+		isAdmin := permissions.HasAllPermissions(uint32(userPerms),
 			permissions.PermViewAllProjects,
 			permissions.PermReviewProjects,
 			permissions.PermManageUsers,
@@ -337,7 +337,7 @@ func TestAdminChecks(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test admin check with actual permissions
-		isAdmin := permissions.HasAllPermissions(uint32(userPerms), 
+		isAdmin := permissions.HasAllPermissions(uint32(userPerms),
 			permissions.PermViewAllProjects,
 			permissions.PermReviewProjects,
 			permissions.PermManageUsers,
@@ -380,7 +380,7 @@ func TestCreateTestAdmin(t *testing.T) {
 	setupEnv()
 	s, err := server.New()
 	require.NoError(t, err)
-	
+
 	ctx := context.Background()
 	adminID, email, password, err := createTestAdmin(ctx, s)
 	require.NoError(t, err)
@@ -392,9 +392,9 @@ func TestCreateTestAdmin(t *testing.T) {
 	var adminPerms int32
 	err = s.GetDB().QueryRow(ctx, "SELECT permissions FROM users WHERE id = $1", adminID).Scan(&adminPerms)
 	require.NoError(t, err)
-	
+
 	// Compare with all expected admin permissions
-	expectedPerms := int32(permissions.PermAdmin | permissions.PermManageUsers | permissions.PermViewAllProjects | 
+	expectedPerms := int32(permissions.PermAdmin | permissions.PermManageUsers | permissions.PermViewAllProjects |
 		permissions.PermManageTeam | permissions.PermCommentOnProjects | permissions.PermSubmitProject)
 	require.Equal(t, expectedPerms, adminPerms)
 }
@@ -403,7 +403,7 @@ func TestLoginAndGetToken(t *testing.T) {
 	setupEnv()
 	s, err := server.New()
 	require.NoError(t, err)
-	
+
 	ctx := context.Background()
 	userID, email, password, err := createTestUser(ctx, s, permissions.PermStartupOwner)
 	require.NoError(t, err)

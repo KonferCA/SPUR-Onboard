@@ -4,6 +4,7 @@ import (
 	"KonferCA/SPUR/internal/interfaces"
 	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/permissions"
+
 	"github.com/labstack/echo/v4"
 )
 

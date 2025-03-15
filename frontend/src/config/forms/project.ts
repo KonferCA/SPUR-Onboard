@@ -33,6 +33,11 @@ export interface Question {
     answer?: string;
 }
 
+export interface SectionMetadata {
+    name: string;
+    subSections: string[];
+}
+
 /*
  * This will sort based on the sections order array and group the questions that belong
  * to the same section together. The questions in a section will also be sorted based on their
@@ -140,6 +145,20 @@ export function groupProjectQuestions(
                         break;
                     case 'team':
                         inputField.value.teamMembers = teamMembers ?? [];
+                        break;
+                    case 'fundingstructure':
+                        try {
+                            if (q.answer) {
+                                inputField.value.fundingStructure = JSON.parse(
+                                    q.answer
+                                );
+                            }
+                        } catch (err) {
+                            console.error(
+                                'Failed to parse funding structure:',
+                                err
+                            );
+                        }
                         break;
                     case 'multiselect':
                     case 'select':

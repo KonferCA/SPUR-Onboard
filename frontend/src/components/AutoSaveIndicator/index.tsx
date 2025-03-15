@@ -1,2 +1,2 @@
-export { AutoSaveIndicator } from './AutosaveIndicator';
-export type { AutoSaveIndicatorProps } from './AutosaveIndicator';
+export { AutoSaveIndicator } from './AutoSaveIndicator';
+export type { AutoSaveIndicatorProps } from './AutoSaveIndicator';

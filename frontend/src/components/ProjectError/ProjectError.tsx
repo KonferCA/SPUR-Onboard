@@ -11,6 +11,7 @@ export interface ValidationError {
     required: boolean;
     value: unknown;
     reason: string;
+    questionId?: string;
 }
 
 interface ErrorsBySection {
@@ -22,7 +23,11 @@ interface ErrorsBySection {
 
 export interface ProjectErrorProps {
     errors: ValidationError[];
-    onErrorClick: (section: string, subsectionId: string) => void;
+    onErrorClick: (
+        section: string,
+        subsectionId: string,
+        questionId?: string
+    ) => void;
 }
 
 export const ProjectError: React.FC<ProjectErrorProps> = ({
@@ -65,11 +70,15 @@ export const ProjectError: React.FC<ProjectErrorProps> = ({
 
     const handleErrorClick = (error: ValidationError, e: React.MouseEvent) => {
         e.preventDefault();
-        onErrorClick(error.section, sanitizeHtmlId(error.subsection));
+        onErrorClick(
+            error.section,
+            sanitizeHtmlId(error.subsection),
+            error.questionId
+        );
     };
 
     return (
-        <div className="fixed top-48 right-8 w-80 bg-white border border-dashed border-red-600 rounded-lg overflow-hidden">
+        <div className="w-full bg-white border border-dashed border-red-600 rounded-lg overflow-hidden">
             <div className="bg-red-50 p-4 border-b border-red-100">
                 <div className="text-red-600 text-lg font-semibold">
                     Oops! You're missing information
