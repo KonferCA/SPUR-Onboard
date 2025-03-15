@@ -32,7 +32,7 @@ export const SectionedLayout: FC<SectionedLayoutProps> = ({
             <nav
                 data-testid="sectioned-layout-aside"
                 className={twMerge(
-                    'fixed bottom-0 left-0 top-12 px-6 w-64',
+                    'hidden lg:block fixed bottom-0 left-0 top-12 px-6 w-64',
                     linkContainerClassnames
                 )}
             >
@@ -41,7 +41,10 @@ export const SectionedLayout: FC<SectionedLayoutProps> = ({
                 {/* TODO: Update anchor links to work better - currently offsets badly */}
                 <AnchorLinks links={links} />
             </nav>
-            <div data-testid="sectione-layout-main" className="pt-12 px-64">
+            <div
+                data-testid="sectione-layout-main"
+                className="pt-12 px-6 lg:px-64"
+            >
                 {children}
             </div>
         </div>
