@@ -78,12 +78,12 @@ function RouteComponent() {
                 message: 'This page is coming soon!',
                 level: 'info',
                 autoClose: true,
-                duration: 5000
+                duration: 5000,
             });
-            
+
             navigate({
-                to: lastValidPathRef.current, 
-                replace: true 
+                to: lastValidPathRef.current,
+                replace: true,
             });
         }
     }, [location.pathname, notification, navigate]);
