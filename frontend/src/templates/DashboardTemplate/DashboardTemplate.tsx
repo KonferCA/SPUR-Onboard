@@ -11,6 +11,7 @@ interface MenuItem {
     icon: ReactNode;
     isSeparator?: boolean;
     isSubmenu?: boolean;
+    id?: string;
 }
 
 interface DashboardTemplateProps {
@@ -20,6 +21,7 @@ interface DashboardTemplateProps {
     navTabs?: Array<{
         label: string;
         path: string;
+        id?: string;
     }>;
     actions?: ReactNode;
     customSidebar?: ReactNode;
@@ -96,7 +98,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                                 <div className="flex items-center mr-6">
                                     {navTabs.map((tab) => (
                                         <Link
-                                            key={tab.path}
+                                            key={tab.id || `nav-${tab.path}` || `tab-${tab.label}`}
                                             to={tab.path}
                                             className={`px-4 py-2 text-sm font-medium ${
                                                 location.pathname === tab.path
@@ -153,7 +155,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                         <div className="border-b border-gray-200 py-2">
                             {navTabs.map((tab) => (
                                 <Link
-                                    key={tab.path}
+                                    key={tab.id || `nav-${tab.path}` || `tab-${tab.label}`}
                                     to={tab.path}
                                     className={`block px-6 py-2 text-sm font-medium ${
                                         location.pathname === tab.path
@@ -173,11 +175,11 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                             customMobileSidebar
                         ) : (
                             <nav className="py-4">
-                                {menuItems.map((item, index) => {
+                                {menuItems.map((item) => {
                                     if (item.isSeparator) {
                                         return (
                                             <div
-                                                key={`separator-${index}`}
+                                                key={item.id || `separator-${item.label || item.path}`}
                                                 className="border-t border-gray-200 my-4"
                                             />
                                         );
@@ -185,7 +187,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
 
                                     return (
                                         <Link
-                                            key={item.path || `item-${index}`}
+                                            key={item.id || item.path || `item-${item.label}`}
                                             to={item.path}
                                             className={`
                                             flex items-center gap-3 px-6 py-2 text-sm whitespace-nowrap
@@ -216,11 +218,11 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                             <div className="w-40 bg-white border-r border-gray-200 sticky top-16 h-[calc(100vh-4rem)]">
                                 <nav className="py-4 h-full flex flex-col">
                                     <div className="flex-1 overflow-y-auto">
-                                        {menuItems.map((item, index) => {
+                                        {menuItems.map((item) => {
                                             if (item.isSeparator) {
                                                 return (
                                                     <div
-                                                        key={`separator-${index}`}
+                                                        key={item.id || `separator-${item.label || item.path}`}
                                                         className="border-t border-gray-200 my-4"
                                                     />
                                                 );
@@ -228,10 +230,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
 
                                             return (
                                                 <Link
-                                                    key={
-                                                        item.path ||
-                                                        `item-${index}`
-                                                    }
+                                                    key={item.id || item.path || `item-${item.label}`}
                                                     to={item.path}
                                                     className={`
                                                     flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap rounded-lg mx-1
