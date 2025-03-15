@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     createFileRoute,
     Outlet,
@@ -50,6 +50,7 @@ function RouteComponent() {
     const notification = useNotification();
     const { user, clearAuth } = useAuth();
     const [isMobile, setIsMobile] = useState(false);
+    const lastValidPathRef = useRef<string>('/user/dashboard');
 
     useEffect(() => {
         const handleResize = () => {
@@ -68,30 +69,24 @@ function RouteComponent() {
             currentPath as keyof typeof AVAILABLE_ROUTES
         );
 
+        if (routeExists && currentPath !== '/user/_auth/_appshell') {
+            lastValidPathRef.current = currentPath;
+        }
+
         if (!routeExists) {
             notification.push({
-                message: 'This page is coming soon!',
+                message: `This page is coming soon!`,
                 level: 'info',
                 autoClose: true,
-                duration: 5000,
+                duration: 5000
             });
-
-            // stay on last page
+            
             navigate({
-                to:
-                    (location.state as { prevPath?: string })?.prevPath ||
-                    '/user/dashboard',
-                replace: true,
+                to: lastValidPathRef.current, 
+                replace: true 
             });
-        } else {
-            if (routeExists) {
-                navigate({
-                    to: currentPath,
-                    replace: true,
-                });
-            }
         }
-    }, [location.pathname, location.state, notification, navigate]);
+    }, [location.pathname, notification, navigate]);
 
     const handleLogout = async () => {
         await clearAuth();
