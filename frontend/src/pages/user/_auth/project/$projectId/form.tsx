@@ -7,6 +7,7 @@ import {
     SectionDrawer,
     type DropdownOption,
     type UploadableFile,
+    ScrollButton,
 } from '@components';
 import { IoMdArrowRoundBack } from 'react-icons/io';
 import {
@@ -973,6 +974,9 @@ function ProjectFormPage() {
                     </div>
                 </form>
             </div>
+
+            {/* scroll to top/bottom button */}
+            <ScrollButton />
 
             {isMobile && (
                 <SectionDrawer
