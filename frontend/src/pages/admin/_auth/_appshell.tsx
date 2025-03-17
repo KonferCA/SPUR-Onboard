@@ -33,7 +33,6 @@ function RouteComponent() {
     return (
         <DashboardTemplate
             menuItems={adminMenuItems}
-            logo={<h1 className="text-xl font-bold">Admin Panel</h1>}
         >
             <Outlet />
         </DashboardTemplate>
