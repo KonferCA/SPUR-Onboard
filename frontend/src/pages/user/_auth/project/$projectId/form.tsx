@@ -388,7 +388,7 @@ function ProjectFormPage() {
 
     useEffect(() => {
         const handleResize = () => {
-            setIsMobile(window.innerWidth < 1536);
+            setIsMobile(window.innerWidth < 1024);
         };
         setTimeout(() => {
             scrollToTop();
@@ -875,7 +875,7 @@ function ProjectFormPage() {
             </div>
 
             <div className="pt-52">
-                <div className="hidden 2xl:block fixed w-60 3xl:w-80 max-h-96 overflow-y-auto left-12">
+                <div className="hidden lg:block fixed w-44 xl:w-56 2xl:w-80 max-h-96 overflow-y-auto left-8 xl:left-12">
                     <AnchorLinks
                         links={asideLinks}
                         onClick={(link) =>
@@ -883,7 +883,7 @@ function ProjectFormPage() {
                         }
                     />
                 </div>
-                <div className="hidden 2xl:block fixed w-60 3xl:w-80 right-12">
+                <div className="hidden lg:block fixed w-44 xl:w-56 2xl:w-80 right-8 xl:right-12">
                     {validationErrors.length > 0 && (
                         <ProjectError
                             errors={validationErrors}
@@ -892,7 +892,7 @@ function ProjectFormPage() {
                     )}
                 </div>
 
-                <form className="space-y-12 p-4 lg:p-0 lg:max-w-4xl lg:mx-auto">
+                <form className="space-y-12 p-4 lg:p-0 lg:max-w-xl xl:max-w-2xl 3xl:max-w-4xl lg:mx-auto">
                     {groupedQuestions[currentStep].subSections.map(
                         (subsection) => (
                             <div
