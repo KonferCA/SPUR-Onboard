@@ -16,6 +16,7 @@ import { IoLogOutOutline } from 'react-icons/io5';
 import { isAdmin, isInvestor } from '@/utils/permissions';
 import { Button } from '@/components';
 import type { User } from '@/types';
+import { LogoSVG } from '@/assets';
 
 export interface SidebarProps {
     userPermissions: number;
@@ -207,8 +208,21 @@ export const Sidebar = ({
 
     return (
         <div
-            className={`${isMobile ? 'w-64' : 'w-60'} bg-white border-r border-gray-200 fixed h-[calc(100vh-4rem)] flex flex-col`}
+            className={`${isMobile ? 'w-64' : 'w-60'} bg-white border-r border-gray-200 fixed h-screen flex flex-col`}
         >
+            <div className="flex justify-center items-center py-4">
+                <Link
+                    to="/user/dashboard"
+                    className="flex items-center justify-center"
+                >
+                    <img 
+                        src={LogoSVG}
+                        alt="Logo" 
+                        className="h-8 w-auto" 
+                    />
+                </Link>
+            </div>
+
             <div className="flex flex-col h-full">
                 <div className="flex-1 overflow-y-auto">
                     {isMobile ? (
@@ -329,7 +343,9 @@ export const Sidebar = ({
                         >
                             {item.icon}
 
-                            <span className="truncate">{item.label}</span>
+                            <span className="truncate">
+                                {item.label}
+                            </span>
                         </Link>
                     ))}
 
