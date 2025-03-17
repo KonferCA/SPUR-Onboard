@@ -45,7 +45,7 @@ function RouteComponent() {
 
     return (
         <div className="flex flex-col h-full p-6">
-            <div className="mb-6">                
+            <div className="mb-6">
                 <nav className="flex justify-between items-center">
                     <div>
                         <ul className="flex items-center gap-3">
