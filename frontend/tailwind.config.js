@@ -14,6 +14,7 @@ export default {
                 'button-primary-200': '#D2691F',
                 'button-secondary-100': '#154261',
                 'button-secondary-200': '#1C262D',
+                'button-primary-text-100': '#B54A00',
                 background: 'hsl(var(--background))',
                 foreground: 'hsl(var(--foreground))',
                 card: {
