@@ -210,7 +210,7 @@ export const Sidebar = ({
         <div
             className={`${isMobile ? 'w-64' : 'w-60'} bg-white border-r border-gray-200 fixed h-screen flex flex-col`}
         >
-            <div className="flex justify-center items-center py-4">
+            <div className="flex justify-center items-center py-4 mt-2">
                 <Link
                     to="/user/dashboard"
                     className="flex items-center justify-center"
@@ -218,7 +218,7 @@ export const Sidebar = ({
                     <img 
                         src={LogoSVG}
                         alt="Logo" 
-                        className="h-8 w-auto" 
+                        className="h-10 w-auto" 
                     />
                 </Link>
             </div>
