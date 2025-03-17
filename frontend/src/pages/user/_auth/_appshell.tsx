@@ -8,7 +8,6 @@ import {
 import { DashboardTemplate } from '@/templates';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotification } from '@/contexts';
-import { UserDropdown } from '@/components/UserDropdown';
 import { Sidebar } from '@/components/Sidebar';
 
 const AVAILABLE_ROUTES = {
@@ -94,10 +93,6 @@ function RouteComponent() {
         navigate({ to: '/auth' });
     };
 
-    const userActions = user ? (
-        <UserDropdown user={user} onLogout={handleLogout} />
-    ) : null;
-
     const customSidebar = user ? (
         <div className="relative">
             <Sidebar
@@ -129,11 +124,10 @@ function RouteComponent() {
     return (
         <DashboardTemplate
             menuItems={getMobileMenuItems()}
-            actions={userActions}
             customSidebar={customSidebar}
             customMobileSidebar={customMobileSidebar}
         >
-            <div className={`${!isMobile ? 'pl-60' : ''}`}>
+            <div className={`${!isMobile ? 'ml-60' : ''}`}>
                 <Outlet />
             </div>
         </DashboardTemplate>
