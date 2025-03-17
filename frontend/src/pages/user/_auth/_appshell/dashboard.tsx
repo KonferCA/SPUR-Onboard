@@ -15,7 +15,7 @@ const navButtonStyles = cva(
     {
         variants: {
             active: {
-                true: 'bg-[#FFC298] text-[#B54A00] border-2 border-[#F4802F]',
+                true: 'bg-[#FFC298] text-button-primary-text-100 border-2 border-[#F4802F]',
                 false: 'hover:bg-gray-100',
             },
         },
@@ -44,8 +44,8 @@ function RouteComponent() {
     };
 
     return (
-        <div className="flex flex-col h-full">
-            <div>
+        <div className="flex flex-col h-full p-6">
+            <div className="mb-6">                
                 <nav className="flex justify-between items-center">
                     <div>
                         <ul className="flex items-center gap-3">
@@ -83,19 +83,23 @@ function RouteComponent() {
                 </nav>
             </div>
 
-            <div className="h-[1px] bg-gray-300 my-6" />
+            <div className="h-[1px] bg-gray-300 mb-6" />
 
             <div className="flex-1">
                 <main>
                     {isLoading && (
-                        <div className="w-full flex items-center justify-center">
+                        <div className="w-full flex items-center justify-center py-12">
                             <p>Loading projects...</p>
                         </div>
                     )}
 
                     {!isLoading && projects && projects.length < 1 && (
-                        <div className="w-full flex items-center justify-center">
-                            <p>You currently have no projects</p>
+                        <div className="w-full flex items-center justify-center py-12">
+                            <div className="text-center">
+                                <p className="text-md text-black mb-4 mt-52">
+                                    You currently have no projects
+                                </p>
+                            </div>
                         </div>
                     )}
 
