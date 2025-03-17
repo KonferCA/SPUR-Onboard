@@ -31,9 +31,7 @@ function RouteComponent() {
     // );
 
     return (
-        <DashboardTemplate
-            menuItems={adminMenuItems}
-        >
+        <DashboardTemplate menuItems={adminMenuItems}>
             <Outlet />
         </DashboardTemplate>
     );
