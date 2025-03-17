@@ -215,11 +215,7 @@ export const Sidebar = ({
                     to="/user/dashboard"
                     className="flex items-center justify-center"
                 >
-                    <img 
-                        src={LogoSVG}
-                        alt="Logo" 
-                        className="h-10 w-auto" 
-                    />
+                    <img src={LogoSVG} alt="Logo" className="h-10 w-auto" />
                 </Link>
             </div>
 
@@ -343,9 +339,7 @@ export const Sidebar = ({
                         >
                             {item.icon}
 
-                            <span className="truncate">
-                                {item.label}
-                            </span>
+                            <span className="truncate">{item.label}</span>
                         </Link>
                     ))}
 
