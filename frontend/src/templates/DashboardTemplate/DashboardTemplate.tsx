@@ -135,12 +135,12 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
 
             <div className="w-full flex-grow max-w-screen mx-auto flex flex-1">
                 {!isMobile && (
-                    <div className="flex-shrink-0">
-                        {customSidebar}
-                    </div>
+                    <div className="flex-shrink-0">{customSidebar}</div>
                 )}
 
-                <main className={`flex-1 w-full min-h-screen ${!isMobile ? '' : ''}`}>
+                <main
+                    className={`flex-1 w-full min-h-screen ${!isMobile ? '' : ''}`}
+                >
                     {children}
                 </main>
             </div>
