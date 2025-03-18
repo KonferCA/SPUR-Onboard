@@ -119,5 +119,6 @@ WHERE
 
 -- +goose Down
 -- +goose StatementBegin
+-- this is the first migration that creates snapshots, so for down migration, all snapshots should be deleted
 DELETE FROM project_snapshots;
 -- +goose StatementEnd
