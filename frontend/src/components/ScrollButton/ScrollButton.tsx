@@ -78,7 +78,7 @@ export const ScrollButton = () => {
             {isVisible && (
                 <motion.button
                     type="button"
-                    className="fixed bottom-8 right-8 z-40 p-3 w-14 h-14 rounded-full bg-gray-700 text-white opacity-70 hover:opacity-90 shadow-lg transition-opacity flex items-center justify-center"
+                    className="fixed bottom-8 right-8 z-40 p-3 w-14 h-14 rounded-full bg-gray-700 text-white opacity-70 hover:opacity-90 shadow-lg flex items-center justify-center"
                     onClick={handleClick}
                     aria-label={
                         isTopButton ? 'Scroll to top' : 'Scroll to bottom'
