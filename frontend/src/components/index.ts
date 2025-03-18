@@ -21,6 +21,8 @@ export type { FormContainerProps } from './FormContainer';
 export { ScrollLink } from './ScrollLink';
 export type { ScrollLinkProps } from './ScrollLink';
 
+export { ScrollButton } from './ScrollButton';
+
 export { AnchorLinks } from './AnchorLinks';
 export type {
     AnchorLinksProps,
