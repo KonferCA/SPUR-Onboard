@@ -238,3 +238,45 @@ func TestCORSIntegration(t *testing.T) {
 		})
 	}
 }
+
+func TestGetEnvCORS(t *testing.T) {
+
+	tests := []struct {
+		name     string
+		envSetup func()
+		initial  []string
+		expected []string
+	}{
+		{
+			name: "Should included the domains from CORS env",
+			envSetup: func() {
+				os.Setenv("CORS", "https://test.domain.com;https://test2.domain.com;")
+			},
+			initial:  []string{},
+			expected: []string{"https://test.domain.com", "https://test2.domain.com"},
+		},
+		{
+			name: "Should combine initial and CORS env",
+			envSetup: func() {
+				os.Setenv("CORS", "https://test.domain.com;https://test2.domain.com;")
+			},
+			initial:  []string{"https://initial.com"},
+			expected: []string{"https://initial.com", "https://test.domain.com", "https://test2.domain.com"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.envSetup()
+
+			result := getEnvCORS(tc.initial)
+			assert.Equal(t, len(tc.expected), len(result))
+			for _, domain := range tc.expected {
+				assert.Contains(t, result, domain)
+			}
+
+			// reset
+			os.Setenv("CORS", "")
+		})
+	}
+}
