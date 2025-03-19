@@ -41,7 +41,7 @@ func TestAuthEndpoints(t *testing.T) {
 	s.GetEcho().Validator = middleware.NewRequestValidator()
 
 	// Create test user with permissions
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("testpassword123"), bcrypt.DefaultCost)
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("TestPassword123!"), bcrypt.DefaultCost)
 	userID := uuid.New()
 	testUser := db.User{
 		ID:            userID.String(),
@@ -79,7 +79,7 @@ func TestAuthEndpoints(t *testing.T) {
 				name: "Valid Login",
 				payload: v1_auth.AuthRequest{
 					Email:    "test@example.com",
-					Password: "testpassword123",
+					Password: "TestPassword123!",
 				},
 				expectedStatus: http.StatusOK,
 				checkResponse:  true,
@@ -88,7 +88,7 @@ func TestAuthEndpoints(t *testing.T) {
 				name: "Invalid Password",
 				payload: v1_auth.AuthRequest{
 					Email:    "test@example.com",
-					Password: "wrongpassword",
+					Password: "WrongPassword123!",
 				},
 				expectedStatus: http.StatusUnauthorized,
 				expectedError: &struct {
@@ -103,7 +103,7 @@ func TestAuthEndpoints(t *testing.T) {
 				name: "Invalid Email",
 				payload: v1_auth.AuthRequest{
 					Email:    "nonexistent@example.com",
-					Password: "testpassword123",
+					Password: "TestPassword123!",
 				},
 				expectedStatus: http.StatusUnauthorized,
 				expectedError: &struct {
@@ -118,7 +118,67 @@ func TestAuthEndpoints(t *testing.T) {
 				name: "Invalid Email Format",
 				payload: v1_auth.AuthRequest{
 					Email:    "invalid-email",
-					Password: "testpassword123",
+					Password: "TestPassword123!",
+				},
+				expectedStatus: http.StatusBadRequest,
+				expectedError: &struct {
+					errorType    v1_common.ErrorType
+					errorMessage string
+				}{
+					errorType:    v1_common.ErrorTypeBadRequest,
+					errorMessage: "Validation failed",
+				},
+			},
+			{
+				name: "Password Missing Uppercase",
+				payload: v1_auth.AuthRequest{
+					Email:    "test@example.com",
+					Password: "password123!",
+				},
+				expectedStatus: http.StatusBadRequest,
+				expectedError: &struct {
+					errorType    v1_common.ErrorType
+					errorMessage string
+				}{
+					errorType:    v1_common.ErrorTypeBadRequest,
+					errorMessage: "Validation failed",
+				},
+			},
+			{
+				name: "Password Missing Number",
+				payload: v1_auth.AuthRequest{
+					Email:    "test@example.com",
+					Password: "Password!",
+				},
+				expectedStatus: http.StatusBadRequest,
+				expectedError: &struct {
+					errorType    v1_common.ErrorType
+					errorMessage string
+				}{
+					errorType:    v1_common.ErrorTypeBadRequest,
+					errorMessage: "Validation failed",
+				},
+			},
+			{
+				name: "Password Missing Special Character",
+				payload: v1_auth.AuthRequest{
+					Email:    "test@example.com",
+					Password: "Password123",
+				},
+				expectedStatus: http.StatusBadRequest,
+				expectedError: &struct {
+					errorType    v1_common.ErrorType
+					errorMessage string
+				}{
+					errorType:    v1_common.ErrorTypeBadRequest,
+					errorMessage: "Validation failed",
+				},
+			},
+			{
+				name: "Password Too Short",
+				payload: v1_auth.AuthRequest{
+					Email:    "test@example.com",
+					Password: "Pas1!",
 				},
 				expectedStatus: http.StatusBadRequest,
 				expectedError: &struct {

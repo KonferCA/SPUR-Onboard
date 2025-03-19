@@ -121,6 +121,191 @@ describe('AuthForm', () => {
         ).not.toBeInTheDocument();
     });
 
+    it('should show password requirements in register mode', () => {
+        render(<AuthForm {...defaultProps} mode="register" />);
+
+        const passwordInput = screen.getByLabelText('Password');
+
+        // type something to trigger validation
+        fireEvent.change(passwordInput, {
+            target: { name: 'password', value: 'a' },
+        });
+
+        // password requirements should be visible
+        expect(screen.getByText('Password must contain:')).toBeInTheDocument();
+        expect(screen.getByText('At least 8 characters')).toBeInTheDocument();
+        expect(
+            screen.getByText('At least one uppercase letter')
+        ).toBeInTheDocument();
+        expect(screen.getByText('At least one number')).toBeInTheDocument();
+        expect(
+            screen.getByText('At least one special character')
+        ).toBeInTheDocument();
+    });
+
+    it('should validate minimum length requirement', () => {
+        render(<AuthForm {...defaultProps} mode="register" />);
+
+        const passwordInput = screen.getByLabelText('Password');
+
+        // type short password that will trigger requirements to display
+        // since it's not fully valid
+        fireEvent.change(passwordInput, {
+            target: { name: 'password', value: 'A1!' },
+        });
+
+        // wait for requirements to appear and verify the length requirement is not met (not green)
+        const lengthRequirement = screen
+            .getByText('At least 8 characters')
+            .closest('li');
+        expect(lengthRequirement?.className || '').not.toContain(
+            'text-green-600'
+        );
+
+        // type longer password that still has missing requirements (missing uppercase)
+        // to keep the requirements list visible
+        fireEvent.change(passwordInput, {
+            target: { name: 'password', value: 'abcdefg1!' },
+        });
+
+        // length requirement should be met (green)
+        const updatedLengthRequirement = screen
+            .getByText('At least 8 characters')
+            .closest('li');
+        expect(updatedLengthRequirement?.className || '').toContain(
+            'text-green-600'
+        );
+    });
+
+    it('should validate uppercase letter requirement', () => {
+        render(<AuthForm {...defaultProps} mode="register" />);
+
+        const passwordInput = screen.getByLabelText('Password');
+
+        // type password without uppercase but with some requirements not met
+        // so requirements stay visible
+        fireEvent.change(passwordInput, {
+            target: { name: 'password', value: 'abcdefg1!' },
+        });
+
+        // uppercase requirement should not be met (not green)
+        const uppercaseRequirement = screen
+            .getByText('At least one uppercase letter')
+            .closest('li');
+        expect(uppercaseRequirement?.className || '').not.toContain(
+            'text-green-600'
+        );
+
+        // type password with uppercase still missing some requirements
+        fireEvent.change(passwordInput, {
+            target: { name: 'password', value: 'Abcdef!' },
+        });
+
+        // uppercase requirement should be met (green)
+        const updatedUppercaseRequirement = screen
+            .getByText('At least one uppercase letter')
+            .closest('li');
+        expect(updatedUppercaseRequirement?.className || '').toContain(
+            'text-green-600'
+        );
+    });
+
+    it('should validate number requirement', () => {
+        render(<AuthForm {...defaultProps} mode="register" />);
+
+        const passwordInput = screen.getByLabelText('Password');
+
+        // type password without number but with some requirements not met
+        fireEvent.change(passwordInput, {
+            target: { name: 'password', value: 'Abcdefg!' },
+        });
+
+        // number requirement should not be met (not green)
+        const numberRequirement = screen
+            .getByText('At least one number')
+            .closest('li');
+        expect(numberRequirement?.className || '').not.toContain(
+            'text-green-600'
+        );
+
+        // type password with number still missing some requirements
+        fireEvent.change(passwordInput, {
+            target: { name: 'password', value: 'Abcde1' },
+        });
+
+        // number requirement should be met (green)
+        const updatedNumberRequirement = screen
+            .getByText('At least one number')
+            .closest('li');
+        expect(updatedNumberRequirement?.className || '').toContain(
+            'text-green-600'
+        );
+    });
+
+    it('should validate special character requirement', () => {
+        render(<AuthForm {...defaultProps} mode="register" />);
+
+        const passwordInput = screen.getByLabelText('Password');
+
+        // type password without special character but with some requirements not met
+        fireEvent.change(passwordInput, {
+            target: { name: 'password', value: 'Abcdefg1' },
+        });
+
+        // special character requirement should not be met (not green)
+        const specialCharRequirement = screen
+            .getByText('At least one special character')
+            .closest('li');
+        expect(specialCharRequirement?.className || '').not.toContain(
+            'text-green-600'
+        );
+
+        // type password with special character still missing some requirements
+        fireEvent.change(passwordInput, {
+            target: { name: 'password', value: 'Abc!' },
+        });
+
+        // special character requirement should be met (green)
+        const updatedSpecialCharRequirement = screen
+            .getByText('At least one special character')
+            .closest('li');
+        expect(updatedSpecialCharRequirement?.className || '').toContain(
+            'text-green-600'
+        );
+    });
+
+    it('should disable submit button if password requirements are not met', () => {
+        render(<AuthForm {...defaultProps} mode="register" />);
+
+        const emailInput = screen.getByLabelText('Email');
+        const passwordInput = screen.getByLabelText('Password');
+        const confirmPasswordInput = screen.getByLabelText('Confirm Password');
+        const submitButton = screen.getByRole('button', {
+            name: 'Create Account',
+        });
+
+        // fill email
+        fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+
+        // fill password that doesn't meet all requirements (missing uppercase)
+        fireEvent.change(passwordInput, { target: { value: 'password1!' } });
+        fireEvent.change(confirmPasswordInput, {
+            target: { value: 'password1!' },
+        });
+
+        // button should be disabled
+        expect(submitButton).toBeDisabled();
+
+        // update password to meet all requirements
+        fireEvent.change(passwordInput, { target: { value: 'Password1!' } });
+        fireEvent.change(confirmPasswordInput, {
+            target: { value: 'Password1!' },
+        });
+
+        // button should be enabled
+        expect(submitButton).not.toBeDisabled();
+    });
+
     it('should show correct logo positioning based on screen size', () => {
         render(<AuthForm {...defaultProps} />);
 

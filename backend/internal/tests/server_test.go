@@ -128,7 +128,7 @@ func TestServer(t *testing.T) {
 
 			// create request body with unique email
 			email := fmt.Sprintf("test-register-%s@mail.com", uuid.New().String())
-			password := "mypassword"
+			password := "TestPassword123!"
 			reqBody := map[string]string{
 				"email":    email,
 				"password": password,
@@ -198,7 +198,7 @@ func TestServer(t *testing.T) {
 
 			// create request body
 			email := "test"
-			password := "short"
+			password := "Short1!"
 			reqBody := map[string]string{
 				"email":    email,
 				"password": password,
@@ -223,7 +223,7 @@ func TestServer(t *testing.T) {
 
 			// create request body with unique email
 			email := fmt.Sprintf("test-verify-%s@mail.com", uuid.New().String())
-			password := "mypassword"
+			password := "TestPassword123!"
 
 			reqBody := map[string]string{
 				"email":    email,
@@ -294,7 +294,7 @@ func TestServer(t *testing.T) {
 
 			// Create unique email
 			email := fmt.Sprintf("test-verify-expire-%s@mail.com", uuid.New().String())
-			password := "testpassword123"
+			password := "TestPassword123!"
 
 			// Register user first
 			reqBody := map[string]string{
@@ -500,7 +500,7 @@ func TestServer(t *testing.T) {
 		t.Run("/api/v1/auth/logout - 200 OK - successfully logout", func(t *testing.T) {
 			// Register user with unique email
 			email := fmt.Sprintf("test-logout-%s@mail.com", uuid.New().String())
-			password := "testpassword123"
+			password := "TestPassword123!"
 			authReq := v1_auth.AuthRequest{
 				Email:    email,
 				Password: password,

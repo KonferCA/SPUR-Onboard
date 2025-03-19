@@ -72,17 +72,19 @@ func TestTeamEndpoints(t *testing.T) {
 	otherOwnerSalt := []byte("other-owner-salt")
 
 	// Create owner user
+	ownerEmail := fmt.Sprintf("team-owner-%s@test.com", uuid.New().String())
 	_, err := s.GetDB().Exec(ctx, `
 		INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
 		VALUES ($1, $2, $3, $4, $5, $6)
-	`, ownerID, "owner@test.com", "hashedpass", int32(permissions.PermStartupOwner|permissions.PermViewAllProjects), true, ownerSalt)
+	`, ownerID, ownerEmail, "TestPassword123!", int32(permissions.PermStartupOwner|permissions.PermViewAllProjects), true, ownerSalt)
 	require.NoError(t, err)
 
 	// Create other owner user
+	otherOwnerEmail := fmt.Sprintf("team-other-owner-%s@test.com", uuid.New().String())
 	_, err = s.GetDB().Exec(ctx, `
 		INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
 		VALUES ($1, $2, $3, $4, $5, $6)
-	`, otherOwnerID, "other-owner@test.com", "hashedpass", int32(permissions.PermStartupOwner|permissions.PermViewAllProjects), true, otherOwnerSalt)
+	`, otherOwnerID, otherOwnerEmail, "TestPassword123!", int32(permissions.PermStartupOwner|permissions.PermViewAllProjects), true, otherOwnerSalt)
 	require.NoError(t, err)
 
 	// Create test companies

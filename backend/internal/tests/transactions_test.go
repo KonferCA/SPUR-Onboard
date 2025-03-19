@@ -34,7 +34,7 @@ func TestTransactionEndpoints(t *testing.T) {
 	// Create test user
 	userID := uuid.New().String()
 	email := fmt.Sprintf("test-%s@example.com", uuid.New().String())
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("testpass123"), bcrypt.DefaultCost)
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("TestPassword123!"), bcrypt.DefaultCost)
 	_, err = s.GetDB().Exec(ctx, `
         INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
         VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
@@ -64,7 +64,7 @@ func TestTransactionEndpoints(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Get access token
-	accessToken := loginAndGetToken(t, s, email, "testpass123")
+	accessToken := loginAndGetToken(t, s, email, "TestPassword123!")
 
 	t.Run("Create Transaction", func(t *testing.T) {
 		testCases := []struct {
