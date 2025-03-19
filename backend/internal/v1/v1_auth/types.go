@@ -21,7 +21,7 @@ type EmailVerifiedStatusResponse struct {
  * These define the API contract for auth-related operations.
  */
 type AuthRequest struct {
-	Email    string `json:"email" validate:"required,email"`    // user's email
+	Email    string `json:"email" validate:"required,email"`                                                    // user's email
 	Password string `json:"password" validate:"required,min=8,contains_upper,contains_number,contains_special"` // user's password
 }
 
