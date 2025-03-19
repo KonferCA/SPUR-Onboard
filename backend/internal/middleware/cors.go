@@ -4,6 +4,7 @@ import (
 	"KonferCA/SPUR/common"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	em "github.com/labstack/echo/v4/middleware"
@@ -98,16 +99,29 @@ func getCORSConfigByEnv() em.CORSConfig {
 	// where the wrong APP_ENV was set for produciton.
 	// In this order, at least production won't break.
 	return em.CORSConfig{
-		AllowOrigins: []string{
+		AllowOrigins: getEnvCORS([]string{
 			fe_url,
 			"https://spuric.com",
 			"http://spuric.com",
 			"https://konfer.ca",
 			"http://konfer.ca",
-		},
+		}),
 		AllowMethods:     allowMethods,
 		AllowHeaders:     []string{"*"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}
+}
+
+// getEnvCORS read the CORS environment variable and combines it with any initial cors
+func getEnvCORS(initial []string) []string {
+	envCORS := os.Getenv("CORS")
+	parts := strings.Split(envCORS, ";")
+
+	for _, p := range parts {
+		if p != "" {
+			initial = append(initial, p)
+		}
+	}
+	return initial
 }
