@@ -52,12 +52,11 @@ func TestCompanyEndpoints(t *testing.T) {
 	investorID := uuid.New()
 	adminID := uuid.New()
 
-	randomSuffix := uuid.New().String()
 	testUsers := []testUser{
-		{ownerID, fmt.Sprintf("company-owner-%s@test.com", randomSuffix), permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
-		{otherOwnerID, fmt.Sprintf("company-other-%s@test.com", randomSuffix), permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
-		{investorID, fmt.Sprintf("company-investor-%s@test.com", randomSuffix), permissions.PermInvestor, nil, ""},
-		{adminID, fmt.Sprintf("company-admin-%s@test.com", randomSuffix), permissions.PermAdmin | permissions.PermManageUsers | permissions.PermViewAllProjects | permissions.PermManageTeam, nil, ""},
+		{ownerID, "owner@test.com", permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
+		{otherOwnerID, "other@test.com", permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
+		{investorID, "investor@test.com", permissions.PermInvestor, nil, ""},
+		{adminID, "admin@test.com", permissions.PermAdmin | permissions.PermManageUsers | permissions.PermViewAllProjects | permissions.PermManageTeam, nil, ""},
 	}
 
 	for i := range testUsers {
