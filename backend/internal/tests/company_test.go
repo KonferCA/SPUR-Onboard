@@ -52,11 +52,12 @@ func TestCompanyEndpoints(t *testing.T) {
 	investorID := uuid.New()
 	adminID := uuid.New()
 
+	randomSuffix := uuid.New().String()
 	testUsers := []testUser{
-		{ownerID, "owner@test.com", permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
-		{otherOwnerID, "other@test.com", permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
-		{investorID, "investor@test.com", permissions.PermInvestor, nil, ""},
-		{adminID, "admin@test.com", permissions.PermAdmin | permissions.PermManageUsers | permissions.PermViewAllProjects | permissions.PermManageTeam, nil, ""},
+		{ownerID, fmt.Sprintf("company-owner-%s@test.com", randomSuffix), permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
+		{otherOwnerID, fmt.Sprintf("company-other-%s@test.com", randomSuffix), permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
+		{investorID, fmt.Sprintf("company-investor-%s@test.com", randomSuffix), permissions.PermInvestor, nil, ""},
+		{adminID, fmt.Sprintf("company-admin-%s@test.com", randomSuffix), permissions.PermAdmin | permissions.PermManageUsers | permissions.PermViewAllProjects | permissions.PermManageTeam, nil, ""},
 	}
 
 	for i := range testUsers {
@@ -68,7 +69,7 @@ func TestCompanyEndpoints(t *testing.T) {
 				RETURNING token_salt
 			)
 			SELECT token_salt FROM inserted
-		`, testUsers[i].id, testUsers[i].email, "hashedpass", int32(testUsers[i].permissions), true).Scan(&salt)
+		`, testUsers[i].id, testUsers[i].email, "TestPassword123!", int32(testUsers[i].permissions), true).Scan(&salt)
 		require.NoError(t, err)
 
 		testUsers[i].salt = salt
