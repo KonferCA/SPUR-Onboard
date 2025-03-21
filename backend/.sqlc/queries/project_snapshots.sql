@@ -111,3 +111,6 @@ WHERE p.id = $1;
 
 -- name: CountProjectSnapshots :one
 SELECT count(id) FROM project_snapshots WHERE project_id = $1;
+
+-- name: GetLatestProjectSnapshot :one
+SELECT * FROM project_snapshots WHERE project_id = $1 ORDER BY created_at DESC LIMIT 1;

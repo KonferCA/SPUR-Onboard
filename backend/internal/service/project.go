@@ -14,6 +14,8 @@ func CreateProjectSnapshot(queries *db.Queries, ctx context.Context, projectID s
 	return queries.CreateProjectSnapshot(ctx, db.CreateProjectSnapshotParams{ID: projectID, VersionNumber: int32(count) + 1})
 }
 
+// SubmitProject sets the status of a project as "pending", updates the project's title according to company_name question and
+// creates a snapshot for the project.
 func SubmitProject(queries *db.Queries, ctx context.Context, projectID string) error {
 	// Update project status to pending
 	err := queries.UpdateProjectStatus(ctx, db.UpdateProjectStatusParams{
@@ -32,4 +34,13 @@ func SubmitProject(queries *db.Queries, ctx context.Context, projectID string) e
 
 	// Create a new snapshot
 	return CreateProjectSnapshot(queries, ctx, projectID)
+}
+
+// GetLatestProjectSnapshot gets the latest project snapshot based on the created_at timestamp.
+func GetLatestProjectSnapshot(queries *db.Queries, ctx context.Context, projectID string) (db.ProjectSnapshot, error) {
+	snapshot, err := queries.GetLatestProjectSnapshot(ctx, projectID)
+	if err != nil {
+		return db.ProjectSnapshot{}, err
+	}
+	return snapshot, nil
 }

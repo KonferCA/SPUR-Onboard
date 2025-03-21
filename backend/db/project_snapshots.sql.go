@@ -141,3 +141,23 @@ func (q *Queries) CreateProjectSnapshot(ctx context.Context, arg CreateProjectSn
 	_, err := q.db.Exec(ctx, createProjectSnapshot, arg.ID, arg.VersionNumber)
 	return err
 }
+
+const getLatestProjectSnapshot = `-- name: GetLatestProjectSnapshot :one
+SELECT id, project_id, data, version_number, title, description, parent_snapshot_id, created_at FROM project_snapshots WHERE project_id = $1 ORDER BY created_at DESC LIMIT 1
+`
+
+func (q *Queries) GetLatestProjectSnapshot(ctx context.Context, projectID string) (ProjectSnapshot, error) {
+	row := q.db.QueryRow(ctx, getLatestProjectSnapshot, projectID)
+	var i ProjectSnapshot
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.Data,
+		&i.VersionNumber,
+		&i.Title,
+		&i.Description,
+		&i.ParentSnapshotID,
+		&i.CreatedAt,
+	)
+	return i, err
+}
