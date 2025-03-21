@@ -9,7 +9,9 @@ package v1_projects
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/service"
 	"KonferCA/SPUR/internal/v1/v1_common"
+	"context"
 	"fmt"
 	"net/http"
 	"sort"
@@ -514,13 +516,25 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		})
 	}
 
-	// Update project status to pending
-	err = h.server.GetQueries().UpdateProjectStatus(c.Request().Context(), db.UpdateProjectStatusParams{
-		ID:     projectID,
-		Status: db.ProjectStatusPending,
-	})
+	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
+	defer cancel()
+
+	tx, err := h.server.GetDB().Begin(ctx)
 	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to update project status", err)
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to submit project", err)
+	}
+	defer tx.Rollback(ctx)
+
+	queries := h.server.GetQueries().WithTx(tx)
+
+	err = service.SubmitProject(queries, ctx, project.ID)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to submit project", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to submit project", err)
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{

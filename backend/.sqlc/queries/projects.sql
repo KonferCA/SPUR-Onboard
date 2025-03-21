@@ -384,3 +384,16 @@ ORDER BY
     p.created_at DESC
 LIMIT 
     $1;
+
+-- name: MatchProjectTitletoCompanyNameQuestion :exec
+UPDATE projects
+SET title = (
+	SELECT pa.answer
+    FROM project_questions pq
+    LEFT JOIN project_answers pa ON pa.question_id = pq.id
+        AND pa.project_id = $1
+        AND pa.answer IS NOT NULL
+        AND pa.answer != ''
+    WHERE pq.question_key = 'company_name'
+    )
+WHERE id = $1;
