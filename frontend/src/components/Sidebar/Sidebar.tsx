@@ -13,7 +13,7 @@ import {
     FiBook,
     FiChevronDown,
     FiChevronRight,
-    FiFileText
+    FiFileText,
 } from 'react-icons/fi';
 import { IoLogOutOutline } from 'react-icons/io5';
 import { isAdmin, isInvestor } from '@/utils/permissions';
@@ -52,14 +52,16 @@ export const Sidebar = ({
     isMobile = false,
     user,
     onLogout,
-    currentProjectId
+    currentProjectId,
 }: SidebarProps) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { accessToken } = useAuth();
-    const [expandedProject, setExpandedProject] = useState<string | null>('show-all');
+    const [expandedProject, setExpandedProject] = useState<string | null>(
+        'show-all'
+    );
     const [showLogoutModal, setShowLogoutModal] = useState(false);
-    
+
     const { data: projects } = useQuery({
         queryKey: ['sidebar_projects', accessToken],
         queryFn: async () => {
@@ -214,8 +216,8 @@ export const Sidebar = ({
 
         const isActive =
             (item.path === '/user/dashboard' &&
-                (location.pathname.startsWith('/user/dashboard') || 
-                 location.pathname.includes('/project/'))) ||
+                (location.pathname.startsWith('/user/dashboard') ||
+                    location.pathname.includes('/project/'))) ||
             (item.path === '/user/settings/profile' &&
                 location.pathname.startsWith('/user/settings')) ||
             location.pathname === item.path ||
@@ -245,23 +247,24 @@ export const Sidebar = ({
     const handleGoToProject = (projectId: string, e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        
-        navigate({ 
+
+        navigate({
             to: `/user/project/${projectId}/form`,
-            replace: false
+            replace: false,
         });
     };
 
     const getProjectClass = (projectId: string) => {
         const isActive = currentProjectId === projectId;
-        let baseClass = 'flex items-center gap-2 text-sm rounded-lg pl-8 py-2 mx-4 transition-colors cursor-pointer';
-        
+        let baseClass =
+            'flex items-center gap-2 text-sm rounded-lg pl-8 py-2 mx-4 transition-colors cursor-pointer';
+
         if (isActive) {
             baseClass += ' text-gray-900 font-medium';
         } else {
             baseClass += ' text-gray-600 hover:text-gray-900 hover:bg-gray-50';
         }
-        
+
         return baseClass;
     };
 
@@ -277,9 +280,7 @@ export const Sidebar = ({
     const renderNormalSidebar = () => (
         <>
             {sections.map((section) => (
-                <div
-                    key={section.id || `section-${section.title}`}
-                >
+                <div key={section.id || `section-${section.title}`}>
                     {section.title && (
                         <div className="text-sm font-bold text-gray-900 px-4 pt-6 pb-2">
                             {section.title}
@@ -296,8 +297,7 @@ export const Sidebar = ({
                                 return (
                                     <div
                                         key={
-                                            item.id ||
-                                            `separator-${item.label}`
+                                            item.id || `separator-${item.label}`
                                         }
                                         className="border-t border-gray-200 my-2"
                                     />
@@ -305,22 +305,32 @@ export const Sidebar = ({
                             }
 
                             if (item.id === 'my-projects') {
-                                const isProjectsActive = location.pathname.startsWith('/user/dashboard') || 
-                                                        location.pathname.includes('/project/');
+                                const isProjectsActive =
+                                    location.pathname.startsWith(
+                                        '/user/dashboard'
+                                    ) ||
+                                    location.pathname.includes('/project/');
                                 return (
                                     <div key={item.id}>
-                                        <div className={getNavItemClass(item, isProjectsActive)}>
-                                            <Link 
+                                        <div
+                                            className={getNavItemClass(
+                                                item,
+                                                isProjectsActive
+                                            )}
+                                        >
+                                            <Link
                                                 to={item.path}
                                                 className="flex-1 flex items-center gap-3"
-                                                onClick={(e) => e.stopPropagation()}
+                                                onClick={(e) =>
+                                                    e.stopPropagation()
+                                                }
                                             >
                                                 {item.icon}
                                                 <span className="truncate">
                                                     {item.label}
                                                 </span>
                                             </Link>
-                                            <button 
+                                            <button
                                                 onClick={toggleProjectsDropdown}
                                                 className="ml-auto focus:outline-none"
                                             >
@@ -334,16 +344,25 @@ export const Sidebar = ({
 
                                         {expandedProject && (
                                             <div className="mt-1">
-                                                {projects && projects.length > 0 ? (
+                                                {projects &&
+                                                projects.length > 0 ? (
                                                     projects.map((project) => (
-                                                        <div 
+                                                        <div
                                                             key={project.id}
-                                                            className={getProjectClass(project.id)}
-                                                            onClick={(e) => handleGoToProject(project.id, e)}
+                                                            className={getProjectClass(
+                                                                project.id
+                                                            )}
+                                                            onClick={(e) =>
+                                                                handleGoToProject(
+                                                                    project.id,
+                                                                    e
+                                                                )
+                                                            }
                                                         >
                                                             <FiFileText className="w-4 h-4" />
                                                             <span className="truncate flex-1">
-                                                                {project.title || `Project ${project.id.slice(0, 6)}`}
+                                                                {project.title ||
+                                                                    `Project ${project.id.slice(0, 6)}`}
                                                             </span>
                                                         </div>
                                                     ))
@@ -373,9 +392,7 @@ export const Sidebar = ({
                                         `item-${item.label}`
                                     }
                                     to={item.path}
-                                    className={getNavItemClass(
-                                        item
-                                    )}
+                                    className={getNavItemClass(item)}
                                 >
                                     {item.icon}
 
@@ -399,10 +416,7 @@ export const Sidebar = ({
                     if (item.isSectionTitle) {
                         return (
                             <div
-                                key={
-                                    item.id ||
-                                    `section-${item.label}`
-                                }
+                                key={item.id || `section-${item.label}`}
                                 className="text-sm font-bold text-gray-900 px-6 pt-6 pb-2"
                             >
                                 {item.label}
@@ -413,22 +427,25 @@ export const Sidebar = ({
                     if (item.isSeparator) {
                         return (
                             <div
-                                key={
-                                    item.id ||
-                                    `separator-${item.label}`
-                                }
+                                key={item.id || `separator-${item.label}`}
                                 className="border-t border-gray-200 my-2"
                             />
                         );
                     }
 
                     if (item.id === 'my-projects') {
-                        const isProjectsActive = location.pathname.startsWith('/user/dashboard') || 
-                                               location.pathname.includes('/project/');
+                        const isProjectsActive =
+                            location.pathname.startsWith('/user/dashboard') ||
+                            location.pathname.includes('/project/');
                         return (
                             <div key={item.id}>
-                                <div className={getNavItemClass(item, isProjectsActive)}>
-                                    <Link 
+                                <div
+                                    className={getNavItemClass(
+                                        item,
+                                        isProjectsActive
+                                    )}
+                                >
+                                    <Link
                                         to={item.path}
                                         className="flex-1 flex items-center gap-3"
                                         onClick={(e) => e.stopPropagation()}
@@ -438,7 +455,7 @@ export const Sidebar = ({
                                             {item.label}
                                         </span>
                                     </Link>
-                                    <button 
+                                    <button
                                         onClick={toggleProjectsDropdown}
                                         className="ml-auto focus:outline-none"
                                     >
@@ -454,14 +471,20 @@ export const Sidebar = ({
                                     <div className="mt-1">
                                         {projects && projects.length > 0 ? (
                                             projects.map((project) => (
-                                                <div 
+                                                <div
                                                     key={project.id}
                                                     className={`${getProjectClass(project.id)} py-3 px-6 mx-2`}
-                                                    onClick={(e) => handleGoToProject(project.id, e)}
+                                                    onClick={(e) =>
+                                                        handleGoToProject(
+                                                            project.id,
+                                                            e
+                                                        )
+                                                    }
                                                 >
                                                     <FiFileText className="w-4 h-4" />
                                                     <span className="truncate flex-1">
-                                                        {project.title || `Project ${project.id.slice(0, 6)}`}
+                                                        {project.title ||
+                                                            `Project ${project.id.slice(0, 6)}`}
                                                     </span>
                                                 </div>
                                             ))
@@ -485,19 +508,13 @@ export const Sidebar = ({
 
                     return (
                         <Link
-                            key={
-                                item.path ||
-                                item.id ||
-                                `item-${item.label}`
-                            }
+                            key={item.path || item.id || `item-${item.label}`}
                             to={item.path}
                             className={getNavItemClass(item)}
                         >
                             {item.icon}
 
-                            <span className="truncate">
-                                {item.label}
-                            </span>
+                            <span className="truncate">{item.label}</span>
                         </Link>
                     );
                 })}
