@@ -7,7 +7,7 @@ const indicatorStyles = cva(
     {
         variants: {
             status: {
-                idle: 'bg-gray-50 text-gray-600 border-gray-200',
+                idle: 'bg-[#EAF2F8] text-gray-600 border-gray-200',
                 saving: 'bg-blue-50 text-blue-700 border-blue-100',
                 success: 'bg-green-50 text-green-700 border-green-100',
                 error: 'bg-red-50 text-red-700 border-red-100',
