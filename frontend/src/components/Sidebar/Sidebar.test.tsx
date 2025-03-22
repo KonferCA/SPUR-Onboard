@@ -17,9 +17,14 @@ vi.mock('@tanstack/react-router', () => ({
         to: string;
         className?: string;
         children: React.ReactNode;
-        onClick?: (e: any) => void;
+        onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
     }) => (
-        <a href={to} className={className} data-testid={`link-${to}`} onClick={onClick}>
+        <a
+            href={to}
+            className={className}
+            data-testid={`link-${to}`}
+            onClick={onClick}
+        >
             {children}
         </a>
     ),
@@ -43,13 +48,13 @@ vi.mock('@/contexts', () => ({
 
 // mock Button component
 vi.mock('@/components', () => ({
-    Button: ({ 
-        children, 
-        onClick, 
-        className = "", 
-        variant = "primary", 
-        size = "md", 
-        icon
+    Button: ({
+        children,
+        onClick,
+        className = '',
+        variant = 'primary',
+        size = 'md',
+        icon,
     }: {
         children: React.ReactNode;
         onClick: () => void;
@@ -58,12 +63,13 @@ vi.mock('@/components', () => ({
         size?: 'sm' | 'md' | 'lg';
         icon?: React.ReactNode;
     }) => (
-        <button 
-            onClick={onClick} 
-            className={className} 
+        <button
+            onClick={onClick}
+            className={className}
             data-variant={variant}
             data-size={size}
             data-testid="button-component"
+            type="button"
         >
             {icon && <span data-testid="button-icon">{icon}</span>}
             {children}
@@ -87,16 +93,27 @@ vi.mock('@/components/ConfirmationModal', () => ({
         title: string;
         children: React.ReactNode;
         primaryActionText: string;
-    }) => (
+    }) =>
         isOpen && (
             <div data-testid="confirmation-modal">
                 <h2>{title}</h2>
                 <div>{children}</div>
-                <button onClick={onClose} data-testid="modal-cancel">Cancel</button>
-                <button onClick={primaryAction} data-testid="modal-confirm">{primaryActionText}</button>
+                <button
+                    onClick={onClose}
+                    data-testid="modal-cancel"
+                    type="button"
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={primaryAction}
+                    data-testid="modal-confirm"
+                    type="button"
+                >
+                    {primaryActionText}
+                </button>
             </div>
-        )
-    ),
+        ),
 }));
 
 // mock for FiIcons
@@ -104,15 +121,21 @@ vi.mock('react-icons/fi', () => ({
     FiFolder: () => <span data-testid="fi-folder">FolderIcon</span>,
     FiSettings: () => <span data-testid="fi-settings">SettingsIcon</span>,
     FiUser: () => <span data-testid="fi-user">UserIcon</span>,
-    FiCreditCard: () => <span data-testid="fi-credit-card">CreditCardIcon</span>,
+    FiCreditCard: () => (
+        <span data-testid="fi-credit-card">CreditCardIcon</span>
+    ),
     FiBarChart2: () => <span data-testid="fi-bar-chart">BarChartIcon</span>,
     FiDollarSign: () => <span data-testid="fi-dollar">DollarIcon</span>,
     FiShield: () => <span data-testid="fi-shield">ShieldIcon</span>,
     FiHeadphones: () => <span data-testid="fi-headphones">HeadphonesIcon</span>,
     FiSearch: () => <span data-testid="fi-search">SearchIcon</span>,
     FiBook: () => <span data-testid="fi-book">BookIcon</span>,
-    FiChevronDown: () => <span data-testid="fi-chevron-down">ChevronDownIcon</span>,
-    FiChevronRight: () => <span data-testid="fi-chevron-right">ChevronRightIcon</span>,
+    FiChevronDown: () => (
+        <span data-testid="fi-chevron-down">ChevronDownIcon</span>
+    ),
+    FiChevronRight: () => (
+        <span data-testid="fi-chevron-right">ChevronRightIcon</span>
+    ),
     FiFileText: () => <span data-testid="fi-file-text">FileTextIcon</span>,
 }));
 
@@ -151,7 +174,7 @@ describe('Sidebar', () => {
             data: mockProjects,
             isLoading: false,
             error: null,
-        } as any);
+        } as ReturnType<typeof useQuery>);
     });
 
     describe('Basic rendering', () => {
@@ -219,16 +242,20 @@ describe('Sidebar', () => {
             render(<Sidebar userPermissions={0} isMobile={true} />);
             expect(screen.getByText('MAIN')).toBeInTheDocument();
         });
-    
+
         it('applies correct mobile styles', () => {
-            const { container } = render(<Sidebar userPermissions={0} isMobile={true} />);
+            const { container } = render(
+                <Sidebar userPermissions={0} isMobile={true} />
+            );
             expect(container).toBeInTheDocument();
         });
     });
-    
+
     describe('Desktop view', () => {
         it('applies correct desktop styles', () => {
-            const { container } = render(<Sidebar userPermissions={0} isMobile={false} />);
+            const { container } = render(
+                <Sidebar userPermissions={0} isMobile={false} />
+            );
             expect(container).toBeInTheDocument();
         });
     });
@@ -254,35 +281,39 @@ describe('Sidebar', () => {
     describe('Projects dropdown', () => {
         it('expands and collapses projects dropdown when toggle button is clicked', () => {
             render(<Sidebar userPermissions={0} />);
-            
+
             // initially expanded by default ('show-all')
             expect(screen.getByText('Project One')).toBeInTheDocument();
-            
+
             // find dropdown toggle button by its icon test id
             const toggleButton = screen.getByTestId('fi-chevron-down');
             const toggleButtonParent = toggleButton.closest('button');
-            
+
             if (toggleButtonParent) {
                 fireEvent.click(toggleButtonParent);
-                
-                expect(screen.queryByText('Project One')).not.toBeInTheDocument();
-                
+
+                expect(
+                    screen.queryByText('Project One')
+                ).not.toBeInTheDocument();
+
                 const newToggleButton = screen.getByTestId('fi-chevron-right');
                 const newToggleButtonParent = newToggleButton.closest('button');
-                
+
                 if (newToggleButtonParent) {
                     fireEvent.click(newToggleButtonParent);
-                    
+
                     expect(screen.getByText('Project One')).toBeInTheDocument();
                 }
             }
         });
-        
+
         it('constrains project list with max height and scrolling', () => {
             render(<Sidebar userPermissions={0} />);
-            
-            const projectsDropdown = screen.getByText('Project One').closest('div');
-            
+
+            const projectsDropdown = screen
+                .getByText('Project One')
+                .closest('div');
+
             expect(projectsDropdown).toHaveClass('max-h-60', 'overflow-y-auto');
         });
     });
@@ -300,17 +331,21 @@ describe('Sidebar', () => {
             // find logout button using the icon test ID
             const logoutIcon = screen.getByTestId('io-logout');
             const logoutButton = logoutIcon.closest('button');
-            
+
             expect(logoutButton).toBeInTheDocument();
-            
+
             if (logoutButton) {
                 fireEvent.click(logoutButton);
             }
 
             // check if confirmation modal appears
-            expect(screen.getByTestId('confirmation-modal')).toBeInTheDocument();
+            expect(
+                screen.getByTestId('confirmation-modal')
+            ).toBeInTheDocument();
             expect(screen.getByText('Logout')).toBeInTheDocument();
-            expect(screen.getByText('Are you sure you want to logout?')).toBeInTheDocument();
+            expect(
+                screen.getByText('Are you sure you want to logout?')
+            ).toBeInTheDocument();
         });
 
         it('calls onLogout function when logout is confirmed', async () => {
@@ -325,7 +360,7 @@ describe('Sidebar', () => {
             // open modal
             const logoutIcon = screen.getByTestId('io-logout');
             const logoutButton = logoutIcon.closest('button');
-            
+
             if (logoutButton) {
                 fireEvent.click(logoutButton);
             }
@@ -349,7 +384,7 @@ describe('Sidebar', () => {
             // open modal
             const logoutIcon = screen.getByTestId('io-logout');
             const logoutButton = logoutIcon.closest('button');
-            
+
             if (logoutButton) {
                 fireEvent.click(logoutButton);
             }
@@ -365,16 +400,16 @@ describe('Sidebar', () => {
     describe('Accessibility', () => {
         it('allows keyboard navigation for project items', () => {
             render(<Sidebar userPermissions={0} />);
-            
+
             // get project buttons - can find them by text content
-            const projectButtons = screen.getAllByRole('button').filter(
-                btn => btn.textContent?.includes('Project')
-            );
-            
+            const projectButtons = screen
+                .getAllByRole('button')
+                .filter((btn) => btn.textContent?.includes('Project'));
+
             expect(projectButtons.length).toBeGreaterThan(0);
-            
+
             fireEvent.keyUp(projectButtons[0], { key: 'Enter' });
-            
+
             expect(projectButtons[0]).toHaveAttribute('type', 'button');
         });
     });
@@ -382,21 +417,23 @@ describe('Sidebar', () => {
     describe('Fixed bottom elements', () => {
         it('renders bottom items in a fixed container', () => {
             render(<Sidebar userPermissions={0} user={mockUser} />);
-            
+
             // check for fixed bottom container with settings and profile
             const settingsLink = screen.getByText('Settings').closest('a');
             if (!settingsLink) {
-                throw new Error("Settings link not found");
+                throw new Error('Settings link not found');
             }
-            
+
             const bottomContainer = settingsLink.parentElement?.parentElement;
             if (!bottomContainer) {
-                throw new Error("Bottom container not found");
+                throw new Error('Bottom container not found');
             }
-            
+
             // check that the bottom container has the fixed classes
-            expect(bottomContainer.classList.contains('flex-shrink-0')).toBe(true);
-            expect(bottomContainer.classList.contains('border-t')).toBe(true); 
+            expect(bottomContainer.classList.contains('flex-shrink-0')).toBe(
+                true
+            );
+            expect(bottomContainer.classList.contains('border-t')).toBe(true);
             expect(bottomContainer.classList.contains('bg-white')).toBe(true);
         });
     });
