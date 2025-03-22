@@ -1,48 +1,96 @@
-import { createFileRoute, Outlet, Link } from '@tanstack/react-router';
-import { useLocation, useNavigate } from '@tanstack/react-router';
-import { FiFolder, FiSettings, FiUser, FiCreditCard } from 'react-icons/fi';
+import { useState, useEffect, useRef } from 'react';
+import {
+    createFileRoute,
+    Outlet,
+    useLocation,
+    useNavigate,
+} from '@tanstack/react-router';
 import { DashboardTemplate } from '@/templates';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserDropdown } from '@/components/UserDropdown';
+import { useNotification } from '@/contexts';
+import { Sidebar } from '@/components/Sidebar';
+
+const AVAILABLE_ROUTES = {
+    // main routes
+    '/user/dashboard': true,
+    '/user/browse': false,
+    '/user/resources': false,
+
+    // investor routes
+    '/user/investor/investments': false,
+    '/user/investor/statistics': false,
+
+    // admin routes
+    '/user/admin/permissions': false,
+
+    // settings and support
+    '/user/settings/profile': true,
+    '/user/settings/wallet': true,
+    '/user/support': false,
+};
+
+// route guard
+export const isRouteAvailable = (path: keyof typeof AVAILABLE_ROUTES) => {
+    return AVAILABLE_ROUTES[path] !== false;
+};
 
 export const Route = createFileRoute('/user/_auth/_appshell')({
     component: RouteComponent,
+    beforeLoad: ({ location }) => {
+        return {
+            path: location.pathname,
+        };
+    },
+    loader: async () => {
+        return {
+            stable: true,
+        };
+    },
 });
-
-// dashboard nav items
-const userMenuItems = [
-    {
-        path: '/user/dashboard',
-        label: 'Projects',
-        icon: <FiFolder />,
-    },
-    {
-        path: '/user/settings/profile',
-        label: 'Settings',
-        icon: <FiSettings />,
-    },
-];
-
-// settings nav items
-const settingsItems = [
-    {
-        path: '/user/settings/profile',
-        label: 'Profile',
-        icon: <FiUser className="w-4 h-4" />,
-    },
-    {
-        path: '/user/settings/wallet',
-        label: 'Wallet',
-        icon: <FiCreditCard className="w-4 h-4" />,
-    },
-];
 
 function RouteComponent() {
     const location = useLocation();
     const navigate = useNavigate();
+    const notification = useNotification();
     const { user, clearAuth } = useAuth();
+    const [isMobile, setIsMobile] = useState(false);
+    const lastValidPathRef = useRef<string>('/user/dashboard');
 
-    const isSettingsPage = location.pathname.includes('/settings');
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+
+        handleResize();
+        window.addEventListener('resize', handleResize);
+
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        const currentPath = location.pathname;
+        const routeExists = isRouteAvailable(
+            currentPath as keyof typeof AVAILABLE_ROUTES
+        );
+
+        if (routeExists && currentPath !== '/user/_auth/_appshell') {
+            lastValidPathRef.current = currentPath;
+        }
+
+        if (!routeExists) {
+            notification.push({
+                message: 'This page is coming soon!',
+                level: 'info',
+                autoClose: true,
+                duration: 5000,
+            });
+
+            navigate({
+                to: lastValidPathRef.current,
+                replace: true,
+            });
+        }
+    }, [location.pathname, notification, navigate]);
 
     const handleLogout = async () => {
         await clearAuth();
@@ -50,99 +98,43 @@ function RouteComponent() {
         navigate({ to: '/auth' });
     };
 
-    const userActions = user ? (
-        <UserDropdown user={user} onLogout={handleLogout} />
+    const customSidebar = user ? (
+        <div className="relative">
+            <Sidebar
+                userPermissions={user.permissions}
+                isMobile={false}
+                user={user}
+                onLogout={handleLogout}
+            />
+        </div>
     ) : null;
 
-    const desktopSidebar = (
-        <div className="hidden md:block w-48 bg-white border-r border-gray-200">
-            <div className="p-6">
-                <nav className="space-y-1">
-                    {userMenuItems.map((item) => (
-                        <Link
-                            key={item.path}
-                            to={item.path}
-                            className={`
-                                flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md 
-                                ${
-                                    (
-                                        item.path === '/user/dashboard' &&
-                                            location.pathname.startsWith(
-                                                '/user/dashboard'
-                                            )
-                                    ) ||
-                                    (
-                                        item.path ===
-                                            '/user/settings/profile' &&
-                                            location.pathname.startsWith(
-                                                '/user/settings'
-                                            )
-                                    )
-                                        ? 'bg-gray-50 text-gray-900'
-                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                }
-                            `}
-                        >
-                            {item.icon}
+    const getMobileMenuItems = () => {
+        if (!user) {
+            return [];
+        }
 
-                            <span className="truncate">{item.label}</span>
-                        </Link>
-                    ))}
-                </nav>
+        return [];
+    };
 
-                {isSettingsPage && (
-                    <div className="mt-6 pt-6 border-t border-gray-200">
-                        <nav className="space-y-1">
-                            {settingsItems.map((route) => (
-                                <Link
-                                    key={route.path}
-                                    to={route.path}
-                                    className={`
-                                        flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md 
-                                        ${
-                                            location.pathname === route.path
-                                                ? 'bg-gray-50 text-gray-900'
-                                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                        }
-                                    `}
-                                >
-                                    {route.icon}
-
-                                    <span className="truncate">
-                                        {route.label}
-                                    </span>
-                                </Link>
-                            ))}
-                        </nav>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-
-    const mobileMenuItems = isSettingsPage
-        ? [
-              ...userMenuItems,
-
-              // seperator
-              { path: '', label: '', icon: null, isSeparator: true },
-
-              // include settings subitems in mobile menu
-              ...settingsItems.map((item) => ({
-                  ...item,
-                  label: `${item.label}`,
-                  isSubmenu: true,
-              })),
-          ]
-        : userMenuItems;
+    const customMobileSidebar = user ? (
+        <Sidebar
+            userPermissions={user.permissions}
+            isMobile={true}
+            user={user}
+            onLogout={handleLogout}
+        />
+    ) : null;
 
     return (
         <DashboardTemplate
-            menuItems={mobileMenuItems}
-            actions={userActions}
-            customSidebar={desktopSidebar}
+            menuItems={getMobileMenuItems()}
+            customSidebar={customSidebar}
+            customMobileSidebar={customMobileSidebar}
         >
-            <Outlet />
+            <div className={`${!isMobile ? 'ml-60' : ''}`}>
+                <Outlet />
+            </div>
         </DashboardTemplate>
     );
 }

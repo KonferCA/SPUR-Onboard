@@ -2,38 +2,29 @@ import type React from 'react';
 import { type ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
 import { PageLayout } from '@layouts';
-import { LogoSVG } from '@assets';
 import { FaBars, FaTimes } from 'react-icons/fa';
 
 interface MenuItem {
     label: string;
     path: string;
     icon: ReactNode;
+    isSeparator?: boolean;
+    isSubmenu?: boolean;
+    id?: string;
 }
 
 interface DashboardTemplateProps {
     children: ReactNode;
     menuItems: MenuItem[];
-    logo?: ReactNode;
-    navTabs?: Array<{
-        label: string;
-        path: string;
-    }>;
-    actions?: ReactNode;
     customSidebar?: ReactNode;
+    customMobileSidebar?: ReactNode;
 }
 
 export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
     children,
     menuItems,
-    logo = (
-        <Link to="/user/dashboard" className="h-8">
-            <img src={LogoSVG} alt="Logo" className="h-full w-auto" />
-        </Link>
-    ),
-    navTabs = [],
-    actions,
     customSidebar,
+    customMobileSidebar,
 }) => {
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -60,65 +51,16 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
     }, [location.pathname]);
 
     return (
-        <PageLayout className="bg-gray-50">
-            {/* top navbar - fixed */}
-            <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-                <div className="max-w-[1440px] mx-auto px-4 md:px-6">
-                    <div className="flex justify-between items-center h-16">
-                        <div className="flex items-center">
-                            {isMobile ? (
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setIsMobileMenuOpen(!isMobileMenuOpen)
-                                    }
-                                    className="p-2 text-gray-700 hover:text-gray-900 focus:outline-none"
-                                >
-                                    <FaBars size={20} />
-                                </button>
-                            ) : (
-                                <div>{logo}</div>
-                            )}
-                        </div>
-
-                        {isMobile && (
-                            <div className="absolute left-1/2 transform -translate-x-1/2">
-                                {logo}
-                            </div>
-                        )}
-
-                        <div className="flex items-center">
-                            {!isMobile && navTabs.length > 0 && (
-                                <div className="flex items-center mr-6">
-                                    {navTabs.map((tab) => (
-                                        <Link
-                                            key={tab.path}
-                                            to={tab.path}
-                                            className={`px-4 py-2 text-sm font-medium ${
-                                                location.pathname === tab.path
-                                                    ? 'text-gray-900 border-b-2 border-gray-900'
-                                                    : 'text-gray-500 hover:text-gray-900'
-                                            }`}
-                                        >
-                                            {tab.label}
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
-
-                            <div
-                                onKeyUp={(e) => e.stopPropagation()}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                {actions}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* spacer for fixed header */}
-            <div className="h-16" />
+        <PageLayout className="bg-gray-50 min-h-screen flex flex-col">
+            {isMobile && (
+                <button
+                    type="button"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="fixed top-4 left-4 z-50 p-2 bg-white rounded-md shadow-md text-gray-700 hover:text-gray-900 focus:outline-none"
+                >
+                    <FaBars size={20} />
+                </button>
+            )}
 
             {isMobile && isMobileMenuOpen && (
                 <div
@@ -134,8 +76,7 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
                 >
-                    <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-                        {logo}
+                    <div className="flex items-center justify-end h-16 px-4 border-b border-gray-200">
                         <button
                             type="button"
                             onClick={() => setIsMobileMenuOpen(false)}
@@ -145,78 +86,61 @@ export const DashboardTemplate: React.FC<DashboardTemplateProps> = ({
                         </button>
                     </div>
 
-                    {navTabs.length > 0 && (
-                        <div className="border-b border-gray-200 py-2">
-                            {navTabs.map((tab) => (
-                                <Link
-                                    key={tab.path}
-                                    to={tab.path}
-                                    className={`block px-6 py-2 text-sm font-medium ${
-                                        location.pathname === tab.path
-                                            ? 'text-gray-900 bg-gray-100'
-                                            : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                                    }`}
-                                >
-                                    {tab.label}
-                                </Link>
-                            ))}
-                        </div>
-                    )}
+                    <div className="h-[calc(100%-4rem)] overflow-y-auto">
+                        {customMobileSidebar ? (
+                            customMobileSidebar
+                        ) : (
+                            <nav className="py-4">
+                                {menuItems.map((item) => {
+                                    if (item.isSeparator) {
+                                        return (
+                                            <div
+                                                key={
+                                                    item.id ||
+                                                    `separator-${item.label || item.path}`
+                                                }
+                                                className="border-t border-gray-200 my-4"
+                                            />
+                                        );
+                                    }
 
-                    <nav className="py-4">
-                        {menuItems.map((item) => (
-                            <Link
-                                key={item.path}
-                                to={item.path}
-                                className={`
-                                flex items-center gap-3 px-6 py-2 text-sm whitespace-nowrap
-                                ${
-                                    location.pathname === item.path
-                                        ? 'text-gray-900 bg-gray-100 font-medium [&>svg]:text-button-primary-100'
-                                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                                }
-                              `}
-                            >
-                                {item.icon}
-                                <span>{item.label}</span>
-                            </Link>
-                        ))}
-                    </nav>
+                                    return (
+                                        <Link
+                                            key={
+                                                item.id ||
+                                                item.path ||
+                                                `item-${item.label}`
+                                            }
+                                            to={item.path}
+                                            className={`
+                                            flex items-center gap-3 px-6 py-2 text-sm whitespace-nowrap
+                                            ${item.isSubmenu ? 'pl-10' : ''}
+                                            ${
+                                                location.pathname === item.path
+                                                    ? 'text-gray-900 bg-gray-100 font-medium [&>svg]:text-button-primary-100'
+                                                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                                            }
+                                        `}
+                                        >
+                                            {item.icon}
+                                            <span>{item.label}</span>
+                                        </Link>
+                                    );
+                                })}
+                            </nav>
+                        )}
+                    </div>
                 </div>
             )}
 
-            {/* main content area */}
-            <div className="w-full min-h-[calc(100vh_-_4rem)] max-w-[1440px] mx-auto flex flex-1">
-                {!isMobile &&
-                    (customSidebar || (
-                        <div className="w-40 bg-white border-r border-gray-200 flex-shrink-0">
-                            <nav className="sticky top-16 py-4">
-                                {menuItems.map((item) => (
-                                    <Link
-                                        key={item.path}
-                                        to={item.path}
-                                        className={`
-                                    flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap rounded-lg mx-1
-                                    ${
-                                        location.pathname === item.path
-                                            ? 'bg-gray-100 text-gray-900 font-medium [&>svg]:text-button-primary-100'
-                                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                                    }
-                                  `}
-                                    >
-                                        {item.icon}
+            <div className="w-full flex-grow max-w-screen mx-auto flex flex-1">
+                {!isMobile && (
+                    <div className="flex-shrink-0">{customSidebar}</div>
+                )}
 
-                                        <span className="truncate">
-                                            {item.label}
-                                        </span>
-                                    </Link>
-                                ))}
-                            </nav>
-                        </div>
-                    ))}
-
-                {/* main content */}
-                <main className="flex-1 p-4 md:p-6 w-full h-full">
+                <main
+                    className={`flex-1 w-full min-h-screen ${!isMobile ? '' : ''}`}
+                >
                     {children}
                 </main>
             </div>
