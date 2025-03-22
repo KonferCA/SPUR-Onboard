@@ -130,6 +130,7 @@ function ProjectFormPage() {
         type: 'error' | 'neutral';
     }>({ id: null, type: 'error' });
     const [isMobile, setIsMobile] = useState(false);
+    const [showClearFormModal, setShowClearFormModal] = useState(false);
 
     const autosave = useDebounceFn(
         async () => {
@@ -615,6 +616,80 @@ function ProjectFormPage() {
         }
     };
 
+    const clearForm = useCallback(() => {
+        setGroupedQuestions((prevGroups) => {
+            return prevGroups.map((group) => ({
+                ...group,
+                subSections: group.subSections.map((subsection) => ({
+                    ...subsection,
+                    questions: subsection.questions.map((question) => ({
+                        ...question,
+                        inputFields: question.inputFields.map((field) => {
+                            let resetValue:
+                                | string
+                                | string[]
+                                | null
+                                | Date
+                                | UploadableFile[] = '';
+
+                            switch (field.type) {
+                                case 'textinput':
+                                case 'textarea':
+                                    resetValue = '';
+                                    break;
+                                case 'select':
+                                case 'multiselect':
+                                    resetValue = [];
+                                    break;
+                                case 'date':
+                                    resetValue = null;
+                                    break;
+                                case 'file':
+                                    resetValue = [];
+                                    break;
+                                default:
+                                    resetValue = field.value.value as
+                                        | string
+                                        | string[]
+                                        | UploadableFile[]
+                                        | Date
+                                        | null;
+                                    break;
+                            }
+
+                            return {
+                                ...field,
+                                value: {
+                                    ...field.value,
+                                    value: resetValue,
+                                    files:
+                                        field.type === 'file'
+                                            ? []
+                                            : field.value.files,
+                                },
+                                invalid: false,
+                            };
+                        }),
+                    })),
+                })),
+            }));
+        });
+
+        setValidationErrors([]);
+        setRecommendedFields([]);
+
+        dirtyInputRef.current.clear();
+
+        notification.push({
+            message: 'Form has been cleared successfully',
+            level: 'success',
+        });
+
+        setShowClearFormModal(false);
+
+        scrollToTop();
+    }, [notification]);
+
     const handleSubmitConfirm = async () => {
         try {
             if (!accessToken || !currentProjectId) {
@@ -826,6 +901,17 @@ function ProjectFormPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
+                    <div className="flex justify-center">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-4"
+                            onClick={() => setShowClearFormModal(true)}
+                        >
+                            Clear Form
+                        </Button>
+                    </div>
+
                     <div className="pt-4">
                         <div className="hidden 2xl:block fixed w-60 3xl:w-80 right-12">
                             {validationErrors.length > 0 && (
@@ -1006,6 +1092,22 @@ function ProjectFormPage() {
                         Once submitted, you won't be able to make changes until
                         the application is either approved or sent back for
                         review.
+                    </p>
+                </div>
+            </ConfirmationModal>
+
+            <ConfirmationModal
+                isOpen={showClearFormModal}
+                onClose={() => setShowClearFormModal(false)}
+                primaryAction={clearForm}
+                title="Clear Form"
+                primaryActionText="Yes, clear everything"
+            >
+                <div className="space-y-4">
+                    <p>Are you sure you want to clear all form entries?</p>
+                    <p className="text-red-500 font-semibold">
+                        This will delete all your entered data including
+                        uploaded files. This action cannot be undone.
                     </p>
                 </div>
             </ConfirmationModal>
