@@ -41,6 +41,11 @@ export const Route = createFileRoute('/user/_auth/_appshell')({
             path: location.pathname,
         };
     },
+    loader: async () => {
+        return {
+            stable: true,
+        }
+    }
 });
 
 function RouteComponent() {
