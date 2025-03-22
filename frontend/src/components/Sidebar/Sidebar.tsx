@@ -244,7 +244,10 @@ export const Sidebar = ({
         setExpandedProject(expandedProject ? null : 'show-all');
     };
 
-    const handleGoToProject = (projectId: string, e: React.MouseEvent) => {
+    const handleGoToProject = (
+        projectId: string,
+        e: React.MouseEvent | React.KeyboardEvent
+    ) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -330,9 +333,11 @@ export const Sidebar = ({
                                                     {item.label}
                                                 </span>
                                             </Link>
+
                                             <button
                                                 onClick={toggleProjectsDropdown}
                                                 className="ml-auto focus:outline-none"
+                                                type="button"
                                             >
                                                 {expandedProject ? (
                                                     <FiChevronDown className="w-4 h-4" />
@@ -343,11 +348,11 @@ export const Sidebar = ({
                                         </div>
 
                                         {expandedProject && (
-                                            <div className="mt-1">
+                                            <div className="mt-1 max-h-60 overflow-y-auto">
                                                 {projects &&
                                                 projects.length > 0 ? (
                                                     projects.map((project) => (
-                                                        <div
+                                                        <button
                                                             key={project.id}
                                                             className={getProjectClass(
                                                                 project.id
@@ -358,13 +363,27 @@ export const Sidebar = ({
                                                                     e
                                                                 )
                                                             }
+                                                            onKeyUp={(e) => {
+                                                                if (
+                                                                    e.key ===
+                                                                        'Enter' ||
+                                                                    e.key ===
+                                                                        ' '
+                                                                ) {
+                                                                    handleGoToProject(
+                                                                        project.id,
+                                                                        e
+                                                                    );
+                                                                }
+                                                            }}
+                                                            type="button"
                                                         >
                                                             <FiFileText className="w-4 h-4" />
                                                             <span className="truncate flex-1">
                                                                 {project.title ||
                                                                     `Project ${project.id.slice(0, 6)}`}
                                                             </span>
-                                                        </div>
+                                                        </button>
                                                     ))
                                                 ) : (
                                                     <div className="text-sm text-gray-500 pl-8 py-2 mx-4">
@@ -458,6 +477,7 @@ export const Sidebar = ({
                                     <button
                                         onClick={toggleProjectsDropdown}
                                         className="ml-auto focus:outline-none"
+                                        type="button"
                                     >
                                         {expandedProject ? (
                                             <FiChevronDown className="w-4 h-4" />
@@ -468,10 +488,10 @@ export const Sidebar = ({
                                 </div>
 
                                 {expandedProject && (
-                                    <div className="mt-1">
+                                    <div className="mt-1 max-h-60 overflow-y-auto">
                                         {projects && projects.length > 0 ? (
                                             projects.map((project) => (
-                                                <div
+                                                <button
                                                     key={project.id}
                                                     className={`${getProjectClass(project.id)} py-3 px-6 mx-2`}
                                                     onClick={(e) =>
@@ -480,13 +500,25 @@ export const Sidebar = ({
                                                             e
                                                         )
                                                     }
+                                                    onKeyUp={(e) => {
+                                                        if (
+                                                            e.key === 'Enter' ||
+                                                            e.key === ' '
+                                                        ) {
+                                                            handleGoToProject(
+                                                                project.id,
+                                                                e
+                                                            );
+                                                        }
+                                                    }}
+                                                    type="button"
                                                 >
                                                     <FiFileText className="w-4 h-4" />
                                                     <span className="truncate flex-1">
                                                         {project.title ||
                                                             `Project ${project.id.slice(0, 6)}`}
                                                     </span>
-                                                </div>
+                                                </button>
                                             ))
                                         ) : (
                                             <div className="text-sm text-gray-500 pl-8 py-2 px-6 mx-2">
@@ -525,8 +557,7 @@ export const Sidebar = ({
         <div
             className={`${isMobile ? 'w-64' : 'w-60'} bg-white border-r border-gray-200 fixed h-screen flex flex-col`}
         >
-            {/* Logo Section */}
-            <div className="flex justify-center items-center py-4 mt-2">
+            <div className="flex-shrink-0 flex justify-center items-center py-4 mt-2">
                 <Link
                     to="/user/dashboard"
                     className="flex items-center justify-center"
@@ -535,26 +566,31 @@ export const Sidebar = ({
                 </Link>
             </div>
 
-            <div className="flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="flex flex-col h-[calc(100vh-80px)]">
+                <div className="flex-grow overflow-y-auto pb-4">
                     {isMobile ? renderMobileSidebar() : renderNormalSidebar()}
                 </div>
 
-                <div className="border-t border-gray-200 pt-2 mt-auto">
-                    {commonItems.map((item) => (
-                        <Link
-                            key={item.path || item.id || `common-${item.label}`}
-                            to={item.path}
-                            className={getNavItemClass(item)}
-                        >
-                            {item.icon}
-
-                            <span className="truncate">{item.label}</span>
-                        </Link>
-                    ))}
+                <div className="flex-shrink-0 border-t border-gray-200 bg-white">
+                    <div className="py-2">
+                        {commonItems.map((item) => (
+                            <Link
+                                key={
+                                    item.path ||
+                                    item.id ||
+                                    `common-${item.label}`
+                                }
+                                to={item.path}
+                                className={getNavItemClass(item)}
+                            >
+                                {item.icon}
+                                <span className="truncate">{item.label}</span>
+                            </Link>
+                        ))}
+                    </div>
 
                     {user && (
-                        <div className="mx-3 mt-3 mb-3 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
+                        <div className="mx-3 my-3 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
                             <div className="flex items-center">
                                 <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white font-medium text-md">
                                     {user?.firstName?.[0] || ''}
@@ -565,7 +601,7 @@ export const Sidebar = ({
                                         {user?.firstName} {user?.lastName}
                                     </div>
 
-                                    <div className="text-gray-600 text-sm">
+                                    <div className="text-gray-600 text-sm truncate max-w-[120px]">
                                         {user?.email || ''}
                                     </div>
                                 </div>
