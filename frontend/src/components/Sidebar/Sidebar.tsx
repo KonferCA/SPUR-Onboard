@@ -60,6 +60,9 @@ export const Sidebar = ({
     const [expandedProject, setExpandedProject] = useState<string | null>(
         'show-all'
     );
+    const [expandedProjectItems, setExpandedProjectItems] = useState<
+        Record<string, boolean>
+    >({});
     const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     const { data: projects } = useQuery({
@@ -207,12 +210,9 @@ export const Sidebar = ({
     }
 
     const getNavItemClass = (item: MenuItem, isExpanded = false) => {
-        let baseClass =
-            'flex items-center gap-3 text-sm font-medium rounded-lg';
+        let baseClass = 'flex items-center gap-3 text-sm font-medium';
 
-        if (item.isSubmenu) {
-            baseClass += ' pl-8';
-        }
+        baseClass += ' py-2.5 px-3';
 
         const isActive =
             (item.path === '/user/dashboard' &&
@@ -227,12 +227,6 @@ export const Sidebar = ({
             baseClass += ' bg-gray-100 text-gray-900 [&>svg]:text-orange-400';
         } else {
             baseClass += ' text-gray-600 hover:bg-gray-50 hover:text-gray-900';
-        }
-
-        if (isMobile) {
-            baseClass += ' py-3 px-6 mx-2';
-        } else {
-            baseClass += ' py-3 px-4 mx-4';
         }
 
         return baseClass;
@@ -251,24 +245,15 @@ export const Sidebar = ({
         e.preventDefault();
         e.stopPropagation();
 
+        setExpandedProjectItems((prev) => ({
+            ...prev,
+            [projectId]: !prev[projectId],
+        }));
+
         navigate({
             to: `/user/project/${projectId}/form`,
             replace: false,
         });
-    };
-
-    const getProjectClass = (projectId: string) => {
-        const isActive = currentProjectId === projectId;
-        let baseClass =
-            'flex items-center gap-2 text-sm rounded-lg pl-8 py-2 mx-4 transition-colors cursor-pointer';
-
-        if (isActive) {
-            baseClass += ' text-gray-900 font-medium';
-        } else {
-            baseClass += ' text-gray-600 hover:text-gray-900 hover:bg-gray-50';
-        }
-
-        return baseClass;
     };
 
     const handleLogout = async () => {
@@ -316,10 +301,7 @@ export const Sidebar = ({
                                 return (
                                     <div key={item.id}>
                                         <div
-                                            className={getNavItemClass(
-                                                item,
-                                                isProjectsActive
-                                            )}
+                                            className={`${getNavItemClass(item, isProjectsActive)} rounded-lg mx-2`}
                                         >
                                             <Link
                                                 to={item.path}
@@ -329,6 +311,7 @@ export const Sidebar = ({
                                                 }
                                             >
                                                 {item.icon}
+
                                                 <span className="truncate">
                                                     {item.label}
                                                 </span>
@@ -336,7 +319,7 @@ export const Sidebar = ({
 
                                             <button
                                                 onClick={toggleProjectsDropdown}
-                                                className="ml-auto focus:outline-none"
+                                                className="focus:outline-none"
                                                 type="button"
                                             >
                                                 {expandedProject ? (
@@ -351,52 +334,147 @@ export const Sidebar = ({
                                             <div className="mt-1 mb-2">
                                                 {projects &&
                                                 projects.length > 0 ? (
-                                                    projects.map((project) => (
-                                                        <button
-                                                            key={project.id}
-                                                            className={getProjectClass(
-                                                                project.id
-                                                            )}
-                                                            onClick={(e) =>
-                                                                handleGoToProject(
-                                                                    project.id,
-                                                                    e
-                                                                )
-                                                            }
-                                                            onKeyUp={(e) => {
-                                                                if (
-                                                                    e.key ===
-                                                                        'Enter' ||
-                                                                    e.key ===
-                                                                        ' '
-                                                                ) {
-                                                                    handleGoToProject(
-                                                                        project.id,
-                                                                        e
-                                                                    );
-                                                                }
-                                                            }}
-                                                            type="button"
+                                                    <div>
+                                                        {projects.map(
+                                                            (project, _) => (
+                                                                <div
+                                                                    key={
+                                                                        project.id
+                                                                    }
+                                                                    className="relative"
+                                                                >
+                                                                    <div className="flex items-center ml-6">
+                                                                        <button
+                                                                            onClick={(
+                                                                                e
+                                                                            ) => {
+                                                                                e.preventDefault();
+                                                                                e.stopPropagation();
+                                                                                setExpandedProjectItems(
+                                                                                    (
+                                                                                        prev
+                                                                                    ) => ({
+                                                                                        ...prev,
+                                                                                        [project.id]:
+                                                                                            !prev[
+                                                                                                project
+                                                                                                    .id
+                                                                                            ],
+                                                                                    })
+                                                                                );
+                                                                            }}
+                                                                            className="w-5 h-5 flex items-center justify-center text-gray-400 focus:outline-none"
+                                                                            type="button"
+                                                                        >
+                                                                            {expandedProjectItems[
+                                                                                project
+                                                                                    .id
+                                                                            ] ? (
+                                                                                <FiChevronDown className="w-4 h-4" />
+                                                                            ) : (
+                                                                                <FiChevronRight className="w-4 h-4" />
+                                                                            )}
+                                                                        </button>
+
+                                                                        <button
+                                                                            className={`flex items-center gap-2 py-2 pr-2 w-full text-left ${
+                                                                                currentProjectId ===
+                                                                                project.id
+                                                                                    ? 'text-gray-900 font-medium'
+                                                                                    : 'text-gray-600 hover:text-gray-900'
+                                                                            }`}
+                                                                            onClick={(
+                                                                                e
+                                                                            ) =>
+                                                                                handleGoToProject(
+                                                                                    project.id,
+                                                                                    e
+                                                                                )
+                                                                            }
+                                                                            type="button"
+                                                                        >
+                                                                            <FiFileText className="w-4 h-4 shrink-0" />
+                                                                            <span className="truncate max-w-[160px] text-sm">
+                                                                                {project.title ||
+                                                                                    `Project ${project.id.slice(0, 6)}`}
+                                                                            </span>
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {expandedProjectItems[
+                                                                        project
+                                                                            .id
+                                                                    ] && (
+                                                                        <div className="relative ml-9">
+                                                                            <div className="absolute left-3.5 top-0 bottom-0 w-px bg-gray-200" />
+                                                                            {[
+                                                                                'The Basics',
+                                                                                'The Details',
+                                                                                'The Team',
+                                                                                'The Financials',
+                                                                            ].map(
+                                                                                (
+                                                                                    section,
+                                                                                    _
+                                                                                ) => (
+                                                                                    <div
+                                                                                        key={`${project.id}-${section}`}
+                                                                                        className="flex items-center"
+                                                                                    >
+                                                                                        <div className="w-6 flex items-center ml-4">
+                                                                                            <div className="w-3 h-px bg-gray-200" />
+                                                                                        </div>
+
+                                                                                        <button
+                                                                                            className="text-sm text-gray-500 hover:text-gray-900 py-1.5 block w-full text-left"
+                                                                                            onClick={(
+                                                                                                e
+                                                                                            ) => {
+                                                                                                e.preventDefault();
+                                                                                                e.stopPropagation();
+                                                                                                navigate(
+                                                                                                    {
+                                                                                                        to: `/user/project/${project.id}/form`,
+                                                                                                        search: {
+                                                                                                            section:
+                                                                                                                section
+                                                                                                                    .toLowerCase()
+                                                                                                                    .replace(
+                                                                                                                        /\s+/g,
+                                                                                                                        '-'
+                                                                                                                    ),
+                                                                                                        },
+                                                                                                        replace: false,
+                                                                                                    }
+                                                                                                );
+                                                                                            }}
+                                                                                            type="button"
+                                                                                        >
+                                                                                            {
+                                                                                                section
+                                                                                            }
+                                                                                        </button>
+                                                                                    </div>
+                                                                                )
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )
+                                                        )}
+
+                                                        <Link
+                                                            to="/user/project/new"
+                                                            className="text-sm text-button-primary-100 flex items-center gap-2 pl-7 py-2 hover:underline"
                                                         >
-                                                            <FiFileText className="w-4 h-4" />
-                                                            <span className="truncate flex-1">
-                                                                {project.title ||
-                                                                    `Project ${project.id.slice(0, 6)}`}
-                                                            </span>
-                                                        </button>
-                                                    ))
+                                                            + Create new project
+                                                        </Link>
+                                                    </div>
                                                 ) : (
-                                                    <div className="text-sm text-gray-500 pl-8 py-2 mx-4">
+                                                    <div className="text-sm text-gray-500 pl-7 py-2">
                                                         No projects found
                                                     </div>
                                                 )}
-
-                                                <Link
-                                                    to="/user/project/new"
-                                                    className="text-sm text-button-primary-100 flex items-center gap-2 pl-8 py-2 mx-4 hover:underline"
-                                                >
-                                                    + Create new project
-                                                </Link>
                                             </div>
                                         )}
                                     </div>
@@ -411,10 +489,9 @@ export const Sidebar = ({
                                         `item-${item.label}`
                                     }
                                     to={item.path}
-                                    className={getNavItemClass(item)}
+                                    className={`${getNavItemClass(item)} rounded-lg mx-2`}
                                 >
                                     {item.icon}
-
                                     <span className="truncate">
                                         {item.label}
                                     </span>
@@ -436,7 +513,7 @@ export const Sidebar = ({
                         return (
                             <div
                                 key={item.id || `section-${item.label}`}
-                                className="text-sm font-bold text-gray-900 px-6 pt-6 pb-2"
+                                className="text-sm font-bold text-gray-900 px-4 pt-6 pb-2"
                             >
                                 {item.label}
                             </div>
@@ -459,10 +536,7 @@ export const Sidebar = ({
                         return (
                             <div key={item.id}>
                                 <div
-                                    className={getNavItemClass(
-                                        item,
-                                        isProjectsActive
-                                    )}
+                                    className={`${getNavItemClass(item, isProjectsActive)} rounded-lg mx-2`}
                                 >
                                     <Link
                                         to={item.path}
@@ -474,9 +548,10 @@ export const Sidebar = ({
                                             {item.label}
                                         </span>
                                     </Link>
+
                                     <button
                                         onClick={toggleProjectsDropdown}
-                                        className="ml-auto focus:outline-none"
+                                        className="focus:outline-none"
                                         type="button"
                                     >
                                         {expandedProject ? (
@@ -490,48 +565,142 @@ export const Sidebar = ({
                                 {expandedProject && (
                                     <div className="mt-1 mb-2">
                                         {projects && projects.length > 0 ? (
-                                            projects.map((project) => (
-                                                <button
-                                                    key={project.id}
-                                                    className={`${getProjectClass(project.id)} py-3 px-6 mx-2`}
-                                                    onClick={(e) =>
-                                                        handleGoToProject(
-                                                            project.id,
-                                                            e
-                                                        )
-                                                    }
-                                                    onKeyUp={(e) => {
-                                                        if (
-                                                            e.key === 'Enter' ||
-                                                            e.key === ' '
-                                                        ) {
-                                                            handleGoToProject(
-                                                                project.id,
-                                                                e
-                                                            );
-                                                        }
-                                                    }}
-                                                    type="button"
+                                            <div>
+                                                {projects.map((project) => (
+                                                    <div
+                                                        key={project.id}
+                                                        className="relative"
+                                                    >
+                                                        <div className="flex items-center ml-6">
+                                                            <button
+                                                                onClick={(
+                                                                    e
+                                                                ) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    setExpandedProjectItems(
+                                                                        (
+                                                                            prev
+                                                                        ) => ({
+                                                                            ...prev,
+                                                                            [project.id]:
+                                                                                !prev[
+                                                                                    project
+                                                                                        .id
+                                                                                ],
+                                                                        })
+                                                                    );
+                                                                }}
+                                                                className="w-5 h-5 flex items-center justify-center text-gray-400 focus:outline-none"
+                                                                type="button"
+                                                            >
+                                                                {expandedProjectItems[
+                                                                    project.id
+                                                                ] ? (
+                                                                    <FiChevronDown className="w-4 h-4" />
+                                                                ) : (
+                                                                    <FiChevronRight className="w-4 h-4" />
+                                                                )}
+                                                            </button>
+
+                                                            <button
+                                                                className={`flex items-center gap-2 py-2 pr-2 w-full text-left ${
+                                                                    currentProjectId ===
+                                                                    project.id
+                                                                        ? 'text-gray-900 font-medium'
+                                                                        : 'text-gray-600 hover:text-gray-900'
+                                                                }`}
+                                                                onClick={(
+                                                                    e
+                                                                ) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    navigate({
+                                                                        to: `/user/project/${project.id}/form`,
+                                                                        replace: false,
+                                                                    });
+                                                                }}
+                                                                type="button"
+                                                            >
+                                                                <FiFileText className="w-4 h-4 shrink-0" />
+                                                                <span className="truncate max-w-[160px] text-sm">
+                                                                    {project.title ||
+                                                                        `Project ${project.id.slice(0, 6)}`}
+                                                                </span>
+                                                            </button>
+                                                        </div>
+
+                                                        {expandedProjectItems[
+                                                            project.id
+                                                        ] && (
+                                                            <div className="relative ml-9">
+                                                                <div className="absolute left-3.5 top-0 bottom-0 w-px bg-gray-200" />
+                                                                {[
+                                                                    'The Basics',
+                                                                    'The Details',
+                                                                    'The Team',
+                                                                    'The Financials',
+                                                                ].map(
+                                                                    (
+                                                                        section
+                                                                    ) => (
+                                                                        <div
+                                                                            key={`${project.id}-${section}`}
+                                                                            className="flex items-center"
+                                                                        >
+                                                                            <div className="w-6 flex items-center ml-4">
+                                                                                <div className="w-3 h-px bg-gray-200" />
+                                                                            </div>
+
+                                                                            <button
+                                                                                className="text-sm text-gray-500 hover:text-gray-900 py-1.5 block w-full text-left"
+                                                                                onClick={(
+                                                                                    e
+                                                                                ) => {
+                                                                                    e.preventDefault();
+                                                                                    e.stopPropagation();
+                                                                                    navigate(
+                                                                                        {
+                                                                                            to: `/user/project/${project.id}/form`,
+                                                                                            search: {
+                                                                                                section:
+                                                                                                    section
+                                                                                                        .toLowerCase()
+                                                                                                        .replace(
+                                                                                                            /\s+/g,
+                                                                                                            '-'
+                                                                                                        ),
+                                                                                            },
+                                                                                            replace: false,
+                                                                                        }
+                                                                                    );
+                                                                                }}
+                                                                                type="button"
+                                                                            >
+                                                                                {
+                                                                                    section
+                                                                                }
+                                                                            </button>
+                                                                        </div>
+                                                                    )
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+
+                                                <Link
+                                                    to="/user/project/new"
+                                                    className="text-sm text-button-primary-100 flex items-center gap-2 pl-7 py-2 hover:underline"
                                                 >
-                                                    <FiFileText className="w-4 h-4" />
-                                                    <span className="truncate flex-1">
-                                                        {project.title ||
-                                                            `Project ${project.id.slice(0, 6)}`}
-                                                    </span>
-                                                </button>
-                                            ))
+                                                    + Create new project
+                                                </Link>
+                                            </div>
                                         ) : (
-                                            <div className="text-sm text-gray-500 pl-8 py-2 px-6 mx-2">
+                                            <div className="text-sm text-gray-500 pl-7 py-2">
                                                 No projects found
                                             </div>
                                         )}
-
-                                        <Link
-                                            to="/user/project/new"
-                                            className="text-sm text-button-primary-100 flex items-center gap-2 pl-8 py-2 px-6 mx-2 hover:underline"
-                                        >
-                                            + Create new project
-                                        </Link>
                                     </div>
                                 )}
                             </div>
@@ -542,10 +711,9 @@ export const Sidebar = ({
                         <Link
                             key={item.path || item.id || `item-${item.label}`}
                             to={item.path}
-                            className={getNavItemClass(item)}
+                            className={`${getNavItemClass(item)} rounded-lg mx-2`}
                         >
                             {item.icon}
-
                             <span className="truncate">{item.label}</span>
                         </Link>
                     );
@@ -555,7 +723,7 @@ export const Sidebar = ({
 
     return (
         <div
-            className={`${isMobile ? 'w-64' : 'w-60'} bg-white border-r border-gray-200 fixed h-screen flex flex-col`}
+            className={`${isMobile ? 'w-72' : 'w-64'} bg-white border-r border-gray-200 fixed h-screen flex flex-col`}
         >
             <div className="flex-shrink-0 flex justify-center items-center py-4 mt-2">
                 <Link
@@ -576,7 +744,11 @@ export const Sidebar = ({
                         <Link
                             key={item.path || item.id || `common-${item.label}`}
                             to={item.path}
-                            className={getNavItemClass(item)}
+                            className={`flex items-center gap-3 text-sm font-medium rounded-lg py-2.5 px-3 mx-2 ${
+                                location.pathname.startsWith(item.path)
+                                    ? 'bg-gray-100 text-gray-900 [&>svg]:text-orange-400'
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`}
                         >
                             {item.icon}
                             <span className="truncate">{item.label}</span>
