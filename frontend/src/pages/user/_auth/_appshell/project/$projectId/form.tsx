@@ -8,7 +8,6 @@ import {
     type DropdownOption,
     type UploadableFile,
 } from '@components';
-import { IoMdArrowRoundBack } from 'react-icons/io';
 import {
     getProjectFormQuestions,
     type ProjectDraft,
@@ -38,7 +37,9 @@ import type { RecommendedField } from '@/types';
 import { isValid as isValidDate } from 'date-fns';
 import { scrollToTop } from '@/utils';
 
-export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
+export const Route = createFileRoute(
+    '/user/_auth/_appshell/project/$projectId/form'
+)({
     component: ProjectFormPage,
 });
 
@@ -81,7 +82,7 @@ function ProjectFormPage() {
     const navigate = useNavigate({
         from: `/user/project/${currentProjectId}/form`,
     });
-    const { accessToken, companyId } = useAuth();
+    const { accessToken, companyId, user } = useAuth();
     const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
         queryKey: ['projectFormQuestions', accessToken, currentProjectId],
@@ -388,7 +389,7 @@ function ProjectFormPage() {
 
     useEffect(() => {
         const handleResize = () => {
-            setIsMobile(window.innerWidth < 1536);
+            setIsMobile(window.innerWidth < 1024);
         };
         setTimeout(() => {
             scrollToTop();
@@ -812,35 +813,25 @@ function ProjectFormPage() {
         }
     };
 
+    const handleLogout = async () => {
+        try {
+            navigate({ to: '/auth', replace: true });
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    };
+
     // TODO: make a better loading screen
     if (groupedQuestions.length < 1 || loadingQuestions) return null;
 
     return (
-        <div className="min-h-screen">
-            <div className="fixed top-0 left-0 right-0 z-50">
-                <nav className="bg-white h-16 border-b border-gray-200">
-                    <div className="h-full px-4 flex items-center">
-                        <Link
-                            to="/user/dashboard"
-                            className="transition p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2"
-                        >
-                            <IoMdArrowRoundBack />
-                            <span> Back to dashboard </span>
-                        </Link>
-                    </div>
-                </nav>
-
+        <div className="flex h-screen overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden">
                 <AutoSaveIndicator status={autosaveStatus} />
 
-                <div className="bg-white border-b border-gray-200">
+                <div className="sticky top-0 z-40 mt-2">
                     <div className="relative">
                         <div className="flex items-center py-4">
-                            <div className="hidden md:block absolute left-0">
-                                <h1 className="text-lg font-semibold text-gray-900 pl-6">
-                                    {groupedQuestions[currentStep]?.section}
-                                </h1>
-                            </div>
-
                             <div className="flex-1 flex justify-center overflow-x-auto px-6">
                                 <nav className="relative overflow-x-auto">
                                     <ul className="flex items-center space-x-8 overflow-x-auto">
@@ -872,106 +863,107 @@ function ProjectFormPage() {
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="pt-52">
-                <div className="hidden 2xl:block fixed w-60 3xl:w-80 max-h-96 overflow-y-auto left-12">
-                    <AnchorLinks
-                        links={asideLinks}
-                        onClick={(link) =>
-                            handleSubsectionLinkClick(link.target)
-                        }
-                    />
-                </div>
-                <div className="hidden 2xl:block fixed w-60 3xl:w-80 right-12">
-                    {validationErrors.length > 0 && (
-                        <ProjectError
-                            errors={validationErrors}
-                            onErrorClick={handleErrorClick}
-                        />
-                    )}
-                </div>
+                <div className="flex-1 overflow-y-auto">
+                    <div className="pt-4">
+                        <div className="hidden 2xl:block fixed w-60 3xl:w-80 right-12">
+                            {validationErrors.length > 0 && (
+                                <ProjectError
+                                    errors={validationErrors}
+                                    onErrorClick={handleErrorClick}
+                                />
+                            )}
+                        </div>
 
-                <form className="space-y-12 p-4 lg:p-0 lg:max-w-4xl lg:mx-auto">
-                    {groupedQuestions[currentStep].subSections.map(
-                        (subsection) => (
-                            <div
-                                id={sanitizeHtmlId(subsection.name)}
-                                key={subsection.name}
-                                className={questionGroupContainerStyles()}
-                            >
-                                <CollapsibleSection title={subsection.name}>
+                        <form className="space-y-12 p-4 lg:p-0 lg:max-w-4xl lg:mx-auto">
+                            {groupedQuestions[currentStep].subSections.map(
+                                (subsection) => (
                                     <div
-                                        className={questionGroupQuestionsContainerStyles()}
+                                        id={sanitizeHtmlId(subsection.name)}
+                                        key={subsection.name}
+                                        className={questionGroupContainerStyles()}
                                     >
-                                        {subsection.questions.map((q) =>
-                                            shouldRenderQuestion(
-                                                q,
-                                                subsection.questions
-                                            ) ? (
-                                                <QuestionInputs
-                                                    key={q.id}
-                                                    question={q}
-                                                    onChange={handleChange}
-                                                    shouldHighlight={
-                                                        q.id ===
-                                                        highlightedQuestionId.id
-                                                            ? highlightedQuestionId.type
-                                                            : false
-                                                    }
-                                                    fileUploadProps={
-                                                        accessToken
-                                                            ? {
-                                                                  projectId:
-                                                                      currentProjectId,
-                                                                  questionId:
-                                                                      q.id,
-                                                                  section:
-                                                                      groupedQuestions[
-                                                                          currentStep
-                                                                      ].section,
-                                                                  subSection:
-                                                                      subsection.name,
-                                                                  accessToken:
-                                                                      accessToken,
-                                                                  enableAutosave: true,
-                                                              }
-                                                            : undefined
-                                                    }
-                                                />
-                                            ) : null
-                                        )}
+                                        <CollapsibleSection
+                                            title={subsection.name}
+                                        >
+                                            <div
+                                                className={questionGroupQuestionsContainerStyles()}
+                                            >
+                                                {subsection.questions.map(
+                                                    (q) =>
+                                                        shouldRenderQuestion(
+                                                            q,
+                                                            subsection.questions
+                                                        ) ? (
+                                                            <QuestionInputs
+                                                                key={q.id}
+                                                                question={q}
+                                                                onChange={
+                                                                    handleChange
+                                                                }
+                                                                shouldHighlight={
+                                                                    q.id ===
+                                                                    highlightedQuestionId.id
+                                                                        ? highlightedQuestionId.type
+                                                                        : false
+                                                                }
+                                                                fileUploadProps={
+                                                                    accessToken
+                                                                        ? {
+                                                                              projectId:
+                                                                                  currentProjectId,
+                                                                              questionId:
+                                                                                  q.id,
+                                                                              section:
+                                                                                  groupedQuestions[
+                                                                                      currentStep
+                                                                                  ]
+                                                                                      .section,
+                                                                              subSection:
+                                                                                  subsection.name,
+                                                                              accessToken:
+                                                                                  accessToken,
+                                                                              enableAutosave: true,
+                                                                          }
+                                                                        : undefined
+                                                                }
+                                                            />
+                                                        ) : null
+                                                )}
+                                            </div>
+                                        </CollapsibleSection>
                                     </div>
-                                </CollapsibleSection>
-                            </div>
-                        )
-                    )}
-                    <div className="pb-32 flex gap-8">
-                        <Button
-                            variant="outline"
-                            liquid
-                            type="button"
-                            disabled={currentStep === 0}
-                            onClick={handleBackStep}
-                        >
-                            Back
-                        </Button>
+                                )
+                            )}
+                            <div className="pb-32 flex gap-8">
+                                <Button
+                                    variant="outline"
+                                    liquid
+                                    type="button"
+                                    disabled={currentStep === 0}
+                                    onClick={handleBackStep}
+                                >
+                                    Back
+                                </Button>
 
-                        <Button
-                            liquid
-                            type="button"
-                            onClick={
-                                currentStep < groupedQuestions.length - 1
-                                    ? handleNextStep
-                                    : handleSubmit
-                            }
-                        >
-                            {currentStep < groupedQuestions.length - 1
-                                ? 'Continue'
-                                : 'Submit'}
-                        </Button>
+                                <Button
+                                    liquid
+                                    type="button"
+                                    onClick={
+                                        currentStep <
+                                        groupedQuestions.length - 1
+                                            ? handleNextStep
+                                            : handleSubmit
+                                    }
+                                >
+                                    {currentStep < groupedQuestions.length - 1
+                                        ? 'Continue'
+                                        : 'Submit'}
+                                </Button>
+                            </div>
+                        </form>
                     </div>
-                </form>
+                </div>
             </div>
 
             {isMobile && (
