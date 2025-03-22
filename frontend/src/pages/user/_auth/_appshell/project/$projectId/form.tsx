@@ -1,8 +1,7 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
     type AnchorLinkItem,
-    AnchorLinks,
     Button,
     SectionDrawer,
     type DropdownOption,
@@ -83,7 +82,7 @@ function ProjectFormPage() {
     const navigate = useNavigate({
         from: `/user/project/${currentProjectId}/form`,
     });
-    const { accessToken, companyId, user } = useAuth();
+    const { accessToken, companyId } = useAuth();
     const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
         queryKey: ['projectFormQuestions', accessToken, currentProjectId],
@@ -780,45 +779,6 @@ function ProjectFormPage() {
                     }, 600);
                 }
             }, 100);
-        }
-    };
-
-    // Handle subsection link clicks from the navigation pane
-    const handleSubsectionLinkClick = (targetId: string) => {
-        const sectionIndex = currentStep;
-
-        // Find the subsection without the # prefix
-        const subsectionId = targetId.startsWith('#')
-            ? targetId.substring(1)
-            : targetId;
-
-        // Find the first question in this subsection to highlight
-        const subsection = groupedQuestions[sectionIndex]?.subSections.find(
-            (sub) => sanitizeHtmlId(sub.name) === subsectionId
-        );
-
-        if (subsection && subsection.questions.length > 0) {
-            // Set a timeout to allow the scroll to complete first
-            setTimeout(() => {
-                const firstQuestion = subsection.questions[0];
-                setHighlightedQuestionId({
-                    id: firstQuestion.id,
-                    type: 'neutral',
-                });
-                setTimeout(
-                    () =>
-                        setHighlightedQuestionId({ id: null, type: 'neutral' }),
-                    1200
-                );
-            }, 500);
-        }
-    };
-
-    const handleLogout = async () => {
-        try {
-            navigate({ to: '/auth', replace: true });
-        } catch (error) {
-            console.error('Logout error:', error);
         }
     };
 
