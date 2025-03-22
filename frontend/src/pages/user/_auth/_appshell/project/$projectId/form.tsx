@@ -7,6 +7,7 @@ import {
     SectionDrawer,
     type DropdownOption,
     type UploadableFile,
+    ScrollButton,
 } from '@components';
 import {
     getProjectFormQuestions,
@@ -965,6 +966,9 @@ function ProjectFormPage() {
                     </div>
                 </div>
             </div>
+
+            {/* scroll to top/bottom button */}
+            <ScrollButton />
 
             {isMobile && (
                 <SectionDrawer
