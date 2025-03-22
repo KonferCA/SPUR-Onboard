@@ -206,7 +206,7 @@ export const Sidebar = ({
         }
     }
 
-    const getNavItemClass = (item: MenuItem, isExpanded: boolean = false) => {
+    const getNavItemClass = (item: MenuItem, isExpanded = false) => {
         let baseClass =
             'flex items-center gap-3 text-sm font-medium rounded-lg';
 
