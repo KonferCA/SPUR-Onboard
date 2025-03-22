@@ -348,7 +348,7 @@ export const Sidebar = ({
                                         </div>
 
                                         {expandedProject && (
-                                            <div className="mt-1 max-h-60 overflow-y-auto">
+                                            <div className="mt-1 mb-2">
                                                 {projects &&
                                                 projects.length > 0 ? (
                                                     projects.map((project) => (
@@ -393,7 +393,7 @@ export const Sidebar = ({
 
                                                 <Link
                                                     to="/user/project/new"
-                                                    className="text-sm text-button-primary-100 flex items-center gap-2 pl-8 py-2 mb-2 mx-4 hover:underline"
+                                                    className="text-sm text-button-primary-100 flex items-center gap-2 pl-8 py-2 mx-4 hover:underline"
                                                 >
                                                     + Create new project
                                                 </Link>
@@ -488,7 +488,7 @@ export const Sidebar = ({
                                 </div>
 
                                 {expandedProject && (
-                                    <div className="mt-1 max-h-60 overflow-y-auto">
+                                    <div className="mt-1 mb-2">
                                         {projects && projects.length > 0 ? (
                                             projects.map((project) => (
                                                 <button
@@ -528,7 +528,7 @@ export const Sidebar = ({
 
                                         <Link
                                             to="/user/project/new"
-                                            className="text-sm text-button-primary-100 flex items-center gap-2 pl-8 py-2 mb-2 px-6 mx-2 hover:underline"
+                                            className="text-sm text-button-primary-100 flex items-center gap-2 pl-8 py-2 px-6 mx-2 hover:underline"
                                         >
                                             + Create new project
                                         </Link>
@@ -566,57 +566,51 @@ export const Sidebar = ({
                 </Link>
             </div>
 
-            <div className="flex flex-col h-[calc(100vh-80px)]">
-                <div className="flex-grow overflow-y-auto pb-4">
-                    {isMobile ? renderMobileSidebar() : renderNormalSidebar()}
+            <div className="flex-grow overflow-y-auto">
+                {isMobile ? renderMobileSidebar() : renderNormalSidebar()}
+            </div>
+
+            <div className="flex-shrink-0 border-t border-gray-200 bg-white">
+                <div className="py-2">
+                    {commonItems.map((item) => (
+                        <Link
+                            key={item.path || item.id || `common-${item.label}`}
+                            to={item.path}
+                            className={getNavItemClass(item)}
+                        >
+                            {item.icon}
+                            <span className="truncate">{item.label}</span>
+                        </Link>
+                    ))}
                 </div>
 
-                <div className="flex-shrink-0 border-t border-gray-200 bg-white">
-                    <div className="py-2">
-                        {commonItems.map((item) => (
-                            <Link
-                                key={
-                                    item.path ||
-                                    item.id ||
-                                    `common-${item.label}`
-                                }
-                                to={item.path}
-                                className={getNavItemClass(item)}
-                            >
-                                {item.icon}
-                                <span className="truncate">{item.label}</span>
-                            </Link>
-                        ))}
-                    </div>
-
-                    {user && (
-                        <div className="mx-3 my-3 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
-                            <div className="flex items-center">
-                                <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white font-medium text-md">
-                                    {user?.firstName?.[0] || ''}
-                                </div>
-
-                                <div className="ml-3">
-                                    <div className="text-gray-900 font-medium text-sm">
-                                        {user?.firstName} {user?.lastName}
-                                    </div>
-
-                                    <div className="text-gray-600 text-sm truncate max-w-[120px]">
-                                        {user?.email || ''}
-                                    </div>
-                                </div>
+                {user && (
+                    <div className="mx-3 my-3 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
+                        <div className="flex items-center">
+                            <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white font-medium text-md">
+                                {user?.firstName?.[0] || ''}
                             </div>
 
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowLogoutModal(true)}
-                                className="!border-0 !p-2 hover:bg-gray-200"
-                                icon={<IoLogOutOutline className="w-6 h-6" />}
-                            />
+                            <div className="ml-3">
+                                <div className="text-gray-900 font-medium text-sm">
+                                    {user?.firstName} {user?.lastName}
+                                </div>
+
+                                <div className="text-gray-600 text-sm truncate max-w-[120px]">
+                                    {user?.email || ''}
+                                </div>
+                            </div>
                         </div>
-                    )}
-                </div>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowLogoutModal(true)}
+                            className="!border-0 !p-2 hover:bg-gray-200"
+                            icon={<IoLogOutOutline className="w-6 h-6" />}
+                        />
+                    </div>
+                )}
             </div>
 
             <ConfirmationModal
