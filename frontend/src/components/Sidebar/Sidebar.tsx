@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import {
     FiFolder,
@@ -48,6 +48,7 @@ export const Sidebar = ({
         Record<string, boolean>
     >({});
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const manuallyCollapsedRef = useRef(false);
 
     const { data: projects = [] } = useQuery({
         queryKey: ['sidebar_projects', accessToken],
@@ -241,22 +242,6 @@ export const Sidebar = ({
         });
     }, [navigate]);
 
-    const handleGoToProject = (
-        projectId: string,
-        e: React.MouseEvent | React.KeyboardEvent
-    ) => {
-        e.stopPropagation();
-        
-        setExpandedProjectItems((prev) => ({
-            ...prev,
-            [projectId]: !prev[projectId],
-        }));
-        
-        if (projectId !== currentProjectId) {
-            navigateToProjectSection(projectId);
-        }
-    };
-
     const handleSectionClick = (
         projectId: string,
         section: string,
@@ -266,24 +251,16 @@ export const Sidebar = ({
         e.preventDefault();
         e.stopPropagation();
         
-        const clickedProject = projectId;
-        
+        setExpandedProjectItems({
+            [projectId]: true,
+        });
+
         if (projectConfig?.sectionClickHandler) {
             projectConfig.sectionClickHandler(projectId, section, sectionIndex);
-            
-            setExpandedProjectItems((prev) => ({
-                ...prev,
-                [clickedProject]: true,
-            }));
         } else {
             navigateToProjectSection(projectId, section);
-            
-            setExpandedProjectItems((prev) => ({
-                ...prev,
-                [clickedProject]: true,
-            }));
         }
-    };
+    };   
 
     const handleExpandProject = (
         projectId: string,
@@ -292,11 +269,23 @@ export const Sidebar = ({
         e.stopPropagation();
         e.preventDefault();
         
-        setExpandedProjectItems((prev) => ({
-            ...prev,
-            [projectId]: !prev[projectId],
-        }));
-    }; 
+        if (expandedProjectItems[projectId]) {
+            manuallyCollapsedRef.current = true;
+            
+            setTimeout(() => {
+                manuallyCollapsedRef.current = false;
+            }, 500);
+        }
+        
+        setExpandedProjectItems(prev => {
+            if (prev[projectId]) {
+                return {};
+            }
+            return { [projectId]: true };
+        });
+        
+        e.nativeEvent.stopImmediatePropagation();
+    };   
 
     const handleLogout = async () => {
         setShowLogoutModal(false);
@@ -316,27 +305,39 @@ export const Sidebar = ({
     }, [isMobileDrawerOpen, setMobileDrawerOpen]);
 
     useEffect(() => {
-        if (currentProjectId) {
-            setExpandedProjectItems((prev) => ({
-                ...prev,
-                [currentProjectId]: true,
-            }));
+        if (currentProjectId && 
+            !expandedProjectItems[currentProjectId] && 
+            !manuallyCollapsedRef.current) {
+            
+            setExpandedProjectItems({
+                [currentProjectId]: true
+            });
+            
+            if (!expandedProject) {
+                setExpandedProject('show-all');
+            }
         }
-    }, [currentProjectId]);
+    }, [currentProjectId, expandedProjectItems, expandedProject]);
 
     useEffect(() => {
         if (currentProjectId && location.search) {
             const params = new URLSearchParams(location.search);
             const currentSection = params.get('section');
             
-            if (currentSection) {
-                setExpandedProjectItems((prev) => ({
-                    ...prev,
-                    [currentProjectId]: true,
-                }));
+            if (currentSection && 
+                (!Object.keys(expandedProjectItems).includes(currentProjectId) && 
+                Object.keys(expandedProjectItems).length === 0)) {
+                
+                setExpandedProjectItems({
+                    [currentProjectId]: true
+                });
+                
+                if (!expandedProject) {
+                    setExpandedProject('show-all');
+                }
             }
         }
-    }, [location.search, currentProjectId]);
+    }, [location.search, currentProjectId, expandedProject, expandedProjectItems]);
 
     const navItems: MenuItem[] = [];
     
@@ -410,7 +411,10 @@ export const Sidebar = ({
                                                 }
                                             }}
                                         >
-                                            {item.icon}
+                                            <span className={isProjectsActive ? "text-orange-400": ""}>
+                                                {item.icon}
+                                            </span>
+                                            
                                             <span className="truncate">
                                                 {item.label}
                                             </span>
@@ -570,7 +574,7 @@ export const Sidebar = ({
                                 <div className="flex items-center ml-6">
                                     <button
                                         onClick={(e) => handleExpandProject(project.id, e)}
-                                        className="w-5 h-5 flex items-center justify-center text-gray-400 focus:outline-none"
+                                        className="w-5 h-5 flex items-center justify-center text-gray-400 focus:outline-none "
                                         type="button"
                                         aria-expanded={!!expandedProjectItems[project.id]}
                                         aria-label={expandedProjectItems[project.id] ? "Collapse project" : "Expand project"}
@@ -585,16 +589,25 @@ export const Sidebar = ({
                                     <button
                                         className={`flex items-center gap-2 py-2 pr-2 w-full text-left ${
                                             isCurrentProject
-                                                ? 'text-gray-900 font-medium'
-                                                : 'text-gray-600 hover:text-gray-900'
+                                                ? 'text-gray-900 font-medium [&>svg]:text-orange-400'
+                                                : 'text-gray-600 hover:text-gray-900 '
                                         }`}
-                                        onClick={(e) => handleGoToProject(project.id, e)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            
+                                            if (project.id !== currentProjectId) {
+                                                navigateToProjectSection(project.id);
+                                                
+                                                setExpandedProjectItems({
+                                                    [project.id]: true
+                                                });
+                                            }
+                                        }}
                                         type="button"
                                     >
                                         <FiFileText className="w-4 h-4 shrink-0" />
                                         <span className="truncate max-w-[160px] text-sm">
-                                            {project.title ||
-                                                `Project ${project.id.slice(0, 6)}`}
+                                            {project.title || `Project ${project.id.slice(0, 6)}`}
                                         </span>
                                     </button>
                                 </div>
@@ -684,12 +697,12 @@ export const Sidebar = ({
             )}
             
             <div className={sidebarClasses}>
-                <div className="flex-shrink-0 flex justify-between items-center py-4 mt-2 px-4">
+                <div className={`flex-shrink-0 flex ${isMobileDrawerOpen ? 'justify-between' : 'justify-center'} items-center mt-8 px-4`}>
                     <Link
                         to="/user/dashboard"
                         className="flex items-center justify-center"
                     >
-                        <img src={LogoSVG} alt="Logo" className="h-10 w-auto" />
+                        <img src={LogoSVG} alt="Logo" className="w-12 h-12" />
                     </Link>
 
                     {isMobileDrawerOpen && (
