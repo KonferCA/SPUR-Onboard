@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-
+import type { User } from '@/types/auth';
 /*
  *
  * @typedef ProjectItemConfig
@@ -45,12 +45,12 @@ export interface MenuItem {
  * @typedef SidebarProps
  * 
  * @property {number} userPermissions - the permissions of the user
- * @property {any} [user] - the user
+ * @property {User} [user] - the user object
  * @property {() => Promise<void>} [onLogout] - the handler for when the user logs out
  * 
  */
 export interface SidebarProps {
     userPermissions: number;
-    user?: any;
+    user?: User;
     onLogout?: () => Promise<void>;
 }
