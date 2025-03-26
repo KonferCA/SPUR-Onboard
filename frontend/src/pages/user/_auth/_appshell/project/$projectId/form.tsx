@@ -36,6 +36,8 @@ import { AutoSaveIndicator } from '@/components/AutoSaveIndicator';
 import type { RecommendedField } from '@/types';
 import { isValid as isValidDate } from 'date-fns';
 import { scrollToTop } from '@/utils';
+import { useLocation } from '@tanstack/react-router';
+import { useSidebar } from '@/contexts/SidebarContext/SidebarContext';
 
 export const Route = createFileRoute(
     '/user/_auth/_appshell/project/$projectId/form'
@@ -131,6 +133,58 @@ function ProjectFormPage() {
     }>({ id: null, type: 'error' });
     const [isMobile, setIsMobile] = useState(false);
     const [showClearFormModal, setShowClearFormModal] = useState(false);
+
+    const location = useLocation();
+    const { updateProjectConfig } = useSidebar();
+
+    const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+
+    useEffect(() => {
+        if (searchParams.has('section') && groupedQuestions.length > 0) {
+            const sectionParam = searchParams.get('section');
+            const sectionIndex = groupedQuestions.findIndex(
+                group => group.section.toLowerCase().replace(/\s+/g, '-') === sectionParam
+            );
+            
+            if (sectionIndex !== -1 && sectionIndex !== currentStep) {
+                setCurrentStep(sectionIndex);
+            }
+        }
+    }, [searchParams, groupedQuestions, currentStep]);
+
+    useEffect(() => {
+        if (groupedQuestions.length > 0) {
+            updateProjectConfig({
+                // pass section names to the sidebar
+                sections: groupedQuestions.map(group => group.section),
+                
+                // handle when a section is clicked in the sidebar
+                sectionClickHandler: (projectId, section, sectionIndex) => {
+                    if (projectId === currentProjectId) {
+                        setCurrentStep(sectionIndex);
+                        
+                        navigate({
+                            to: `/user/project/${currentProjectId}/form`,
+                            search: {
+                                section: section.toLowerCase().replace(/\s+/g, '-')
+                            },
+                            replace: false
+                        });
+                        
+                        scrollToTop();
+                    }
+                },
+                
+                getActiveSection: () => {
+                    if (groupedQuestions.length > 0 && currentStep >= 0) {
+                        return groupedQuestions[currentStep].section;
+                    }
+
+                    return null;
+                }
+            });
+        }
+    }, [groupedQuestions, currentProjectId, currentStep, updateProjectConfig, navigate]);
 
     const autosave = useDebounceFn(
         async () => {
@@ -366,26 +420,41 @@ function ProjectFormPage() {
     };
 
     const handleNextStep = () => {
-        setCurrentStep((curr) => {
-            if (curr < groupedQuestions.length - 1) {
-                return curr + 1;
-            }
-
-            return curr;
-        });
-        setTimeout(() => {
-            scrollToTop();
-        }, 120);
+        if (currentStep < groupedQuestions.length - 1) {
+            const nextStep = currentStep + 1;
+            setCurrentStep(nextStep);
+            
+            navigate({
+                to: `/user/project/${currentProjectId}/form`,
+                search: {
+                    section: groupedQuestions[nextStep].section.toLowerCase().replace(/\s+/g, '-')
+                },
+                replace: false
+            });
+            
+            setTimeout(() => {
+                scrollToTop();
+            }, 120);
+        }
     };
 
     const handleBackStep = () => {
-        setCurrentStep((curr) => {
-            if (curr > 0) {
-                return curr - 1;
-            }
-
-            return curr;
-        });
+        if (currentStep > 0) {
+            const prevStep = currentStep - 1;
+            setCurrentStep(prevStep);
+            
+            navigate({
+                to: `/user/project/${currentProjectId}/form`,
+                search: {
+                    section: groupedQuestions[prevStep].section.toLowerCase().replace(/\s+/g, '-')
+                },
+                replace: false
+            });
+            
+            setTimeout(() => {
+                scrollToTop();
+            }, 120);
+        }
     };
 
     useEffect(() => {
