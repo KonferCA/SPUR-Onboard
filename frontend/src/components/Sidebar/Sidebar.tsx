@@ -24,7 +24,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { useSidebar } from '@/contexts/SidebarContext/SidebarContext';
-import { MenuItem, SidebarProps } from './types';
+import type { MenuItem, SidebarProps } from './types';
 
 export const Sidebar = ({
     userPermissions,
@@ -313,7 +313,7 @@ export const Sidebar = ({
                 setMobileDrawerOpen(false);
             }
         };
-    }, [location.pathname, location.search, isMobileDrawerOpen, setMobileDrawerOpen]);
+    }, [isMobileDrawerOpen, setMobileDrawerOpen]);
 
     useEffect(() => {
         if (currentProjectId) {
@@ -706,6 +706,7 @@ export const Sidebar = ({
                                 viewBox="0 0 24 24" 
                                 stroke="currentColor"
                             >
+                                <title>Close sidebar</title>
                                 <path 
                                     strokeLinecap="round" 
                                     strokeLinejoin="round" 
