@@ -14,6 +14,7 @@ import {
     FiChevronDown,
     FiChevronRight,
     FiFileText,
+    FiX
 } from 'react-icons/fi';
 import { IoLogOutOutline } from 'react-icons/io5';
 import { isAdmin, isInvestor } from '@/utils/permissions';
@@ -49,6 +50,7 @@ export const Sidebar = ({
     >({});
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const manuallyCollapsedRef = useRef(false);
+    const sidebarRef = useRef<HTMLDivElement>(null);
 
     const { data: projects = [] } = useQuery({
         queryKey: ['sidebar_projects', accessToken],
@@ -260,6 +262,10 @@ export const Sidebar = ({
         } else {
             navigateToProjectSection(projectId, section);
         }
+        
+        if (isMobileDrawerOpen) {
+            setTimeout(() => setMobileDrawerOpen(false), 150);
+        }
     };   
 
     const handleExpandProject = (
@@ -295,6 +301,35 @@ export const Sidebar = ({
             navigate({ to: '/auth' });
         }
     };
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                isMobileDrawerOpen &&
+                sidebarRef.current &&
+                !sidebarRef.current.contains(event.target as Node)
+            ) {
+                setMobileDrawerOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isMobileDrawerOpen, setMobileDrawerOpen]);
+
+    useEffect(() => {
+        if (isMobileDrawerOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isMobileDrawerOpen]);
 
     useEffect(() => {
         return () => {
@@ -367,198 +402,98 @@ export const Sidebar = ({
         }
     }
     
-    const renderSidebarContent = (isMobile: boolean) => (
+    const renderSidebarContent = () => (
         <>
-            {isMobile ? 
-                navItems
-                    .filter((item) => !commonItems.includes(item))
-                    .map((item) => {
-                        if (item.isSectionTitle) {
-                            return (
-                                <div
-                                    key={item.id || `section-${item.label}`}
-                                    className="text-sm font-bold text-gray-900 px-4 pt-6 pb-2"
-                                >
-                                    {item.label}
-                                </div>
-                            );
-                        }
-
-                        if (item.isSeparator) {
-                            return (
-                                <div
-                                    key={item.id || `separator-${item.label}`}
-                                    className="border-t border-gray-200 my-2"
-                                />
-                            );
-                        }
-
-                        if (item.id === 'my-projects') {
-                            const isProjectsActive =
-                                location.pathname.startsWith('/user/dashboard') ||
-                                location.pathname.includes('/project/');
-                            return (
-                                <div key={item.id}>
-                                    <div
-                                        className={`${getNavItemClass(item, isProjectsActive)} rounded-lg mx-2`}
-                                    >
-                                        <Link
-                                            to={item.path}
-                                            className="flex-1 flex items-center gap-3"
-                                            onClick={() => {
-                                                if (isMobileDrawerOpen) {
-                                                    setTimeout(() => setMobileDrawerOpen(false), 150);
-                                                }
-                                            }}
-                                        >
-                                            <span className={isProjectsActive ? "text-orange-400": ""}>
-                                                {item.icon}
-                                            </span>
-                                            
-                                            <span className="truncate">
-                                                {item.label}
-                                            </span>
-                                        </Link>
-
-                                        <button
-                                            onClick={toggleProjectsDropdown}
-                                            className="focus:outline-none"
-                                            type="button"
-                                            aria-expanded={!!expandedProject}
-                                            aria-label={expandedProject ? "Collapse projects" : "Expand projects"}
-                                        >
-                                            {expandedProject ? (
-                                                <FiChevronDown className="w-4 h-4" />
-                                            ) : (
-                                                <FiChevronRight className="w-4 h-4" />
-                                            )}
-                                        </button>
-                                    </div>
-
-                                    {expandedProject && renderProjectsList(isMobile)}
-                                </div>
-                            );
-                        }
-
+            {navItems
+                .filter((item) => !commonItems.includes(item))
+                .map((item) => {
+                    if (item.isSectionTitle) {
                         return (
-                            <Link
-                                key={item.path || item.id || `item-${item.label}`}
-                                to={item.path}
-                                className={`${getNavItemClass(item)} rounded-lg mx-2`}
-                                onClick={() => {
-                                    if (isMobileDrawerOpen) {
-                                        setTimeout(() => setMobileDrawerOpen(false), 150);
-                                    }
-                                }}
+                            <div
+                                key={item.id || `section-${item.label}`}
+                                className="text-sm font-bold text-gray-900 px-4 pt-6 pb-2"
                             >
-                                {item.icon}
-                                <span className="truncate">{item.label}</span>
-                            </Link>
-                        );
-                    })
-                :
-                sections.map((section) => (
-                    <div key={section.id || `section-${section.title}`}>
-                        {section.title && (
-                            <div className="text-sm font-bold text-gray-900 px-4 pt-6 pb-2">
-                                {section.title}
+                                {item.label}
                             </div>
-                        )}
+                        );
+                    }
 
-                        <div>
-                            {section.items.map((item) => {
-                                if (commonItems.includes(item)) {
-                                    return null;
-                                }
+                    if (item.isSeparator) {
+                        return (
+                            <div
+                                key={item.id || `separator-${item.label}`}
+                                className="border-t border-gray-200 my-2"
+                            />
+                        );
+                    }
 
-                                if (item.isSeparator) {
-                                    return (
-                                        <div
-                                            key={
-                                                item.id || `separator-${item.label}`
-                                            }
-                                            className="border-t border-gray-200 my-2"
-                                        />
-                                    );
-                                }
-
-                                if (item.id === 'my-projects') {
-                                    const isProjectsActive =
-                                        location.pathname.startsWith(
-                                            '/user/dashboard'
-                                        ) ||
-                                        location.pathname.includes('/project/');
-                                    return (
-                                        <div key={item.id}>
-                                            <div
-                                                className={`${getNavItemClass(item, isProjectsActive)} rounded-lg mx-2`}
-                                            >
-                                                <Link
-                                                    to={item.path}
-                                                    className="flex-1 flex items-center gap-3"
-                                                    onClick={() => {
-                                                        if (isMobileDrawerOpen) {
-                                                            setTimeout(() => setMobileDrawerOpen(false), 150);
-                                                        }
-                                                    }}
-                                                >
-                                                    {item.icon}
-
-                                                    <span className="truncate">
-                                                        {item.label}
-                                                    </span>
-                                                </Link>
-
-                                                <button
-                                                    onClick={toggleProjectsDropdown}
-                                                    className="focus:outline-none"
-                                                    type="button"
-                                                    aria-expanded={!!expandedProject}
-                                                    aria-label={expandedProject ? "Collapse projects" : "Expand projects"}
-                                                >
-                                                    {expandedProject ? (
-                                                        <FiChevronDown className="w-4 h-4" />
-                                                    ) : (
-                                                        <FiChevronRight className="w-4 h-4" />
-                                                    )}
-                                                </button>
-                                            </div>
-
-                                            {expandedProject && renderProjectsList(isMobile)}
-                                        </div>
-                                    );
-                                }
-
-                                return (
+                    if (item.id === 'my-projects') {
+                        const isProjectsActive =
+                            location.pathname.startsWith('/user/dashboard') ||
+                            location.pathname.includes('/project/');
+                        return (
+                            <div key={item.id}>
+                                <div
+                                    className={`${getNavItemClass(item, isProjectsActive)} rounded-lg mx-2`}
+                                >
                                     <Link
-                                        key={
-                                            item.path ||
-                                            item.id ||
-                                            `item-${item.label}`
-                                        }
                                         to={item.path}
-                                        className={`${getNavItemClass(item)} rounded-lg mx-2`}
+                                        className="flex-1 flex items-center gap-3"
                                         onClick={() => {
                                             if (isMobileDrawerOpen) {
                                                 setTimeout(() => setMobileDrawerOpen(false), 150);
                                             }
                                         }}
                                     >
-                                        {item.icon}
+                                        <span className={isProjectsActive ? "text-orange-400": ""}>
+                                            {item.icon}
+                                        </span>
+                                        
                                         <span className="truncate">
                                             {item.label}
                                         </span>
                                     </Link>
-                                );
-                            })}
-                        </div>
-                    </div>
-                ))
-            }
+
+                                    <button
+                                        onClick={toggleProjectsDropdown}
+                                        className="focus:outline-none"
+                                        type="button"
+                                        aria-expanded={!!expandedProject}
+                                        aria-label={expandedProject ? "Collapse projects" : "Expand projects"}
+                                    >
+                                        {expandedProject ? (
+                                            <FiChevronDown className="w-4 h-4" />
+                                        ) : (
+                                            <FiChevronRight className="w-4 h-4" />
+                                        )}
+                                    </button>
+                                </div>
+
+                                {expandedProject && renderProjectsList()}
+                            </div>
+                        );
+                    }
+
+                    return (
+                        <Link
+                            key={item.path || item.id || `item-${item.label}`}
+                            to={item.path}
+                            className={`${getNavItemClass(item)} rounded-lg mx-2`}
+                            onClick={() => {
+                                if (isMobileDrawerOpen) {
+                                    setTimeout(() => setMobileDrawerOpen(false), 150);
+                                }
+                            }}
+                        >
+                            {item.icon}
+                            <span className="truncate">{item.label}</span>
+                        </Link>
+                    );
+                })}
         </>
     );
 
-    const renderProjectsList = (isMobile: boolean) => (
+    const renderProjectsList = () => (
         <div className="mt-1 mb-2">
             {projects && projects.length > 0 ? (
                 <div>
@@ -574,7 +509,7 @@ export const Sidebar = ({
                                 <div className="flex items-center ml-6">
                                     <button
                                         onClick={(e) => handleExpandProject(project.id, e)}
-                                        className="w-5 h-5 flex items-center justify-center text-gray-400 focus:outline-none "
+                                        className="w-5 h-5 flex items-center justify-center text-gray-400 focus:outline-none"
                                         type="button"
                                         aria-expanded={!!expandedProjectItems[project.id]}
                                         aria-label={expandedProjectItems[project.id] ? "Collapse project" : "Expand project"}
@@ -601,11 +536,15 @@ export const Sidebar = ({
                                                 setExpandedProjectItems({
                                                     [project.id]: true
                                                 });
+                                                
+                                                if (isMobileDrawerOpen) {
+                                                    setTimeout(() => setMobileDrawerOpen(false), 150);
+                                                }
                                             }
                                         }}
                                         type="button"
                                     >
-                                        <FiFileText className="w-4 h-4 shrink-0" />
+                                        <FiFileText className={`w-4 h-4 shrink-0 ${isCurrentProject ? 'text-orange-400' : ''}`} />
                                         <span className="truncate max-w-[160px] text-sm">
                                             {project.title || `Project ${project.id.slice(0, 6)}`}
                                         </span>
@@ -662,6 +601,11 @@ export const Sidebar = ({
                     <Link
                         to="/user/project/new"
                         className="text-sm text-button-primary-100 flex items-center gap-2 pl-7 py-2 hover:underline"
+                        onClick={() => {
+                            if (isMobileDrawerOpen) {
+                                setTimeout(() => setMobileDrawerOpen(false), 150);
+                            }
+                        }}
                     >
                         + Create new project
                     </Link>
@@ -677,114 +621,104 @@ export const Sidebar = ({
     const { isSidebarVisible } = useSidebar();
     if (!isSidebarVisible) return null;
     
-    const containerClasses = isMobileDrawerOpen
-        ? "fixed inset-0 z-50 bg-black bg-opacity-50"
-        : "";
-
-    const sidebarClasses = isMobileDrawerOpen
-        ? "fixed top-0 left-0 w-72 h-full z-50 bg-white shadow-lg transform transition-transform ease-in-out duration-300 translate-x-0"
-        : "w-64 bg-white border-r border-gray-200 fixed h-screen flex flex-col";
-
     return (
         <>
             {isMobileDrawerOpen && (
                 <div 
-                    className={containerClasses}
-                    onClick={() => setMobileDrawerOpen(false)}
-                    onKeyUp={(e) => e.key === 'Escape' && setMobileDrawerOpen(false)}
-                    role="presentation"
+                    className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden transition-opacity duration-300"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setMobileDrawerOpen(false);
+                    }}
+                    aria-hidden="true"
                 />
             )}
             
-            <div className={sidebarClasses}>
-                <div className={`flex-shrink-0 flex ${isMobileDrawerOpen ? 'justify-between' : 'justify-center'} items-center mt-8 px-4`}>
+            <div 
+                ref={sidebarRef}
+                className={`fixed top-0 left-0 h-full z-50 bg-white border-r border-gray-200 transition-all duration-300 ease-in-out 
+                           shadow-lg md:shadow-none 
+                           md:w-64 ${isMobileDrawerOpen ? 'w-72 translate-x-0' : 'w-72 -translate-x-full md:translate-x-0'}`}
+                style={{ transform: isMobileDrawerOpen ? 'translateX(0) !important' : '' }}
+            >
+                <div className="relative flex items-center justify-center px-4 mt-6 pb-6 border-b border-gray-200">
                     <Link
                         to="/user/dashboard"
                         className="flex items-center justify-center"
+                        onClick={() => {
+                            if (isMobileDrawerOpen) {
+                                setTimeout(() => setMobileDrawerOpen(false), 150);
+                            }
+                        }}
                     >
                         <img src={LogoSVG} alt="Logo" className="w-12 h-12" />
                     </Link>
-
-                    {isMobileDrawerOpen && (
-                        <button
-                            type="button"
-                            onClick={() => setMobileDrawerOpen(false)}
-                            className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                            aria-label="Close sidebar"
-                        >
-                            <svg 
-                                xmlns="http://www.w3.org/2000/svg" 
-                                className="h-6 w-6" 
-                                fill="none" 
-                                viewBox="0 0 24 24" 
-                                stroke="currentColor"
-                            >
-                                <title>Close sidebar</title>
-                                <path 
-                                    strokeLinecap="round" 
-                                    strokeLinejoin="round" 
-                                    strokeWidth={2} 
-                                    d="M6 18L18 6M6 6l12 12" 
-                                />
-                            </svg>
-                        </button>
-                    )}
+                    <button
+                        type="button"
+                        className="absolute right-4 md:hidden text-gray-500 hover:text-gray-700"
+                        onClick={() => setMobileDrawerOpen(false)}
+                        aria-label="Close sidebar"
+                    >
+                        <FiX className="w-6 h-6" />
+                    </button>
                 </div>
 
-                <div className="flex-grow overflow-y-auto">
-                    {renderSidebarContent(isMobileDrawerOpen)}
-                </div>
-
-                <div className="flex-shrink-0 border-t border-gray-200 bg-white">
-                    <div className="py-2">
-                        {commonItems.map((item) => (
-                            <Link
-                                key={item.path || item.id || `common-${item.label}`}
-                                to={item.path}
-                                className={`flex items-center gap-3 text-sm font-medium rounded-lg py-2.5 px-3 mx-2 ${
-                                    location.pathname.startsWith(item.path)
-                                        ? 'bg-gray-100 text-gray-900 [&>svg]:text-orange-400'
-                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                }`}
-                                onClick={() => {
-                                    if (isMobileDrawerOpen) {
-                                        setTimeout(() => setMobileDrawerOpen(false), 150);
-                                    }
-                                }}
-                            >
-                                {item.icon}
-                                <span className="truncate">{item.label}</span>
-                            </Link>
-                        ))}
+                <div className="flex flex-col h-[calc(100%-64px)]">
+                    <div className="flex-grow overflow-y-auto">
+                        {renderSidebarContent()}
                     </div>
 
-                    {user && (
-                        <div className="mx-3 my-3 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
-                            <div className="flex items-center">
-                                <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white font-medium text-md">
-                                    {user?.firstName?.[0] || ''}
-                                </div>
-
-                                <div className="ml-3">
-                                    <div className="text-gray-900 font-medium text-sm">
-                                        {user?.firstName} {user?.lastName}
-                                    </div>
-
-                                    <div className="text-gray-600 text-sm truncate max-w-[120px]">
-                                        {user?.email || ''}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowLogoutModal(true)}
-                                className="!border-0 !p-2 hover:bg-gray-200"
-                                icon={<IoLogOutOutline className="w-6 h-6" />}
-                            />
+                    <div className="flex-shrink-0 border-t border-gray-200 bg-white mb-6">
+                        <div className="mt-3">
+                            {commonItems.map((item) => (
+                                <Link
+                                    key={item.path || item.id || `common-${item.label}`}
+                                    to={item.path}
+                                    className={`flex items-center gap-3 text-sm font-medium rounded-lg py-2.5 px-3 mx-2 ${
+                                        location.pathname.startsWith(item.path)
+                                            ? 'bg-gray-100 text-gray-900 [&>svg]:text-orange-400'
+                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }`}
+                                    onClick={() => {
+                                        if (isMobileDrawerOpen) {
+                                            setTimeout(() => setMobileDrawerOpen(false), 150);
+                                        }
+                                    }}
+                                >
+                                    {item.icon}
+                                    <span className="truncate">{item.label}</span>
+                                </Link>
+                            ))}
                         </div>
-                    )}
+
+                        {user && (
+                            <div className="mx-3 my-3 p-3 mb-6 bg-blue-50 rounded-lg flex items-center justify-between">
+                                <div className="flex items-center">
+                                    <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white font-medium text-md">
+                                        {user?.firstName?.[0] || ''}
+                                    </div>
+
+                                    <div className="ml-3">
+                                        <div className="text-gray-900 font-medium text-sm">
+                                            {user?.firstName} {user?.lastName}
+                                        </div>
+
+                                        <div className="text-gray-600 text-sm truncate max-w-[120px]">
+                                            {user?.email || ''}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowLogoutModal(true)}
+                                    className="!border-0 !p-2 hover:bg-gray-200"
+                                    icon={<IoLogOutOutline className="w-6 h-6" />}
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
