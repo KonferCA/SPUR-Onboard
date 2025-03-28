@@ -27,7 +27,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         } else {
             document.body.style.overflow = '';
         }
-
         return () => {
             document.body.style.overflow = '';
         };
@@ -39,14 +38,20 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 setMobileDrawerOpen(false);
             }
         };
-
         window.addEventListener('resize', handleResize);
-
         return () => window.removeEventListener('resize', handleResize);
     }, [isMobileDrawerOpen, setMobileDrawerOpen]);
 
     const handleLogout = async () => {
         await clearAuth();
+    };
+
+    const handleBurgerClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        console.log("Burger menu clicked, current state:", isMobileDrawerOpen);
+        setMobileDrawerOpen(true);
     };
 
     const shouldRenderSidebar = showSidebar && isSidebarVisible && user;
@@ -55,17 +60,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         <div className="h-screen flex flex-col bg-gray-50">
             {shouldRenderSidebar && (
                 <>
-                    <div className="md:hidden fixed top-4 left-4 z-40">
+                    <div className="md:hidden fixed top-4 left-4 z-50">
                         <button
                             type="button"
                             className="p-2 rounded-md bg-white shadow-md text-gray-700 hover:text-gray-900 focus:outline-none"
-                            onClick={() => setMobileDrawerOpen(true)}
+                            onClick={handleBurgerClick}
                             aria-label="Open sidebar"
                         >
                             <FiMenu size={24} />
                         </button>
                     </div>
-
                     <Sidebar
                         userPermissions={user?.permissions || 0}
                         user={user}
@@ -73,7 +77,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     />
                 </>
             )}
-
             <main className={`flex-1 overflow-auto ${shouldRenderSidebar ? 'md:ml-64' : ''}`}>
                 <div className="w-full h-full">
                     {children || <Outlet />}
