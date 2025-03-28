@@ -8,22 +8,23 @@ import {
 import { useAuth } from '@/contexts';
 import { getProjectComments } from '@/services/comment';
 import { getProjectFormQuestions } from '@/services/project';
-import { SectionedLayout } from '@/templates';
 import { scrollToTop } from '@/utils';
 import { sanitizeHtmlId } from '@/utils/html';
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { cva } from 'class-variance-authority';
-import { useEffect, useState } from 'react';
-import { IoMdArrowRoundBack } from 'react-icons/io';
+import { useEffect, useState, useMemo } from 'react';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
+import { ScrollButton } from '@/components';
+import { useLocation } from '@tanstack/react-router';
+import { useSidebar } from '@/contexts/SidebarContext/SidebarContext';
 
 const stepItemStyles = cva(
-    'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
+    'text-lg relative transition text-gray-400 hover:text-button-secondary-100 hover:cursor-pointer py-2',
     {
         variants: {
             active: {
-                true: ['text-gray-700 hover:text-gray-700'],
+                true: 'font-semibold !text-button-secondary-100',
             },
         },
     }
@@ -41,6 +42,12 @@ export const Route = createFileRoute(
 function RouteComponent() {
     const { projectId } = Route.useParams();
     const { accessToken } = useAuth();
+    const navigate = useNavigate({
+        from: `/user/project/${projectId}/view`,
+    });
+    const location = useLocation();
+    const { updateProjectConfig } = useSidebar();
+    
     const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
         queryKey: ['project_review_questions', accessToken, projectId],
@@ -79,6 +86,71 @@ function RouteComponent() {
     >([]);
     const [isLoading, setIsLoading] = useState(true);
     const [currentStep, setCurrentStep] = useState<number>(0);
+    const [_, setIsMobile] = useState(false);
+    
+    const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+
+    useEffect(() => {
+        if (searchParams.has('section') && groupedQuestions.length > 0) {
+            const sectionParam = searchParams.get('section');
+            const sectionIndex = groupedQuestions.findIndex(
+                group => group.section.toLowerCase().replace(/\s+/g, '-') === sectionParam
+            );
+            
+            if (sectionIndex !== -1 && sectionIndex !== currentStep) {
+                setCurrentStep(sectionIndex);
+            }
+        }
+    }, [searchParams, groupedQuestions, currentStep]);
+
+    useEffect(() => {
+        if (groupedQuestions.length > 0) {
+            updateProjectConfig({
+                // pass section names to the sidebar
+                sections: groupedQuestions.map(group => group.section),
+                
+                // handle when a section is clicked in the sidebar
+                sectionClickHandler: (projectId, section, sectionIndex) => {
+                    if (projectId === projectId) {
+                        setCurrentStep(sectionIndex);
+                        
+                        navigate({
+                            to: `/user/project/${projectId}/view`,
+                            search: {
+                                section: section.toLowerCase().replace(/\s+/g, '-')
+                            },
+                            replace: false
+                        });
+                        
+                        scrollToTop();
+                    }
+                },
+                
+                getActiveSection: () => {
+                    if (groupedQuestions.length > 0 && currentStep >= 0) {
+                        return groupedQuestions[currentStep].section;
+                    }
+
+                    return null;
+                }
+            });
+        }
+    }, [groupedQuestions, projectId, currentStep, updateProjectConfig, navigate]);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 1024);
+        };
+        
+        setTimeout(() => {
+            scrollToTop();
+        }, 120);
+
+        handleResize();
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         if (questionData) {
@@ -154,39 +226,42 @@ function RouteComponent() {
     };
 
     const handleNextStep = () => {
-        setCurrentStep((curr) => {
-            if (curr < groupedQuestions.length - 1) {
-                return curr + 1;
-            }
-
-            return curr;
-        });
-
-        setTimeout(() => {
-            scrollToTop();
-        }, 120);
+        if (currentStep < groupedQuestions.length - 1) {
+            const nextStep = currentStep + 1;
+            setCurrentStep(nextStep);
+            
+            navigate({
+                to: `/user/project/${projectId}/view`,
+                search: {
+                    section: groupedQuestions[nextStep].section.toLowerCase().replace(/\s+/g, '-')
+                },
+                replace: false
+            });
+            
+            setTimeout(() => {
+                scrollToTop();
+            }, 120);
+        }
     };
 
     const handleBackStep = () => {
-        setCurrentStep((curr) => {
-            if (curr > 0) {
-                return curr - 1;
-            }
-
-            return curr;
-        });
-
-        setTimeout(() => {
-            scrollToTop();
-        }, 120);
+        if (currentStep > 0) {
+            const prevStep = currentStep - 1;
+            setCurrentStep(prevStep);
+            
+            navigate({
+                to: `/user/project/${projectId}/view`,
+                search: {
+                    section: groupedQuestions[prevStep].section.toLowerCase().replace(/\s+/g, '-')
+                },
+                replace: false
+            });
+            
+            setTimeout(() => {
+                scrollToTop();
+            }, 120);
+        }
     };
-
-    const asideLinks = groupedQuestions[currentStep]?.subSectionNames.map(
-        (name) => ({
-            target: `#${sanitizeHtmlId(name)}`,
-            label: name,
-        })
-    );
 
     if (loadingQuestions || loadingComments || isLoading) {
         return (
@@ -197,118 +272,109 @@ function RouteComponent() {
     }
 
     return (
-        <div>
-            <nav className="fixed top-0 left-0 right-0 z-50 bg-white h-24 border-b border-gray-300">
-                <ul className="flex items-center pl-4 h-full">
-                    <li>
-                        <Link
-                            to="/user/dashboard"
-                            className="transition p-2 inline-block rounded-lg hover:bg-gray-100"
-                        >
-                            <div className="flex items-center gap-2">
-                                <span>
-                                    <IoMdArrowRoundBack />
-                                </span>
-
-                                <span>Back to dashboard</span>
+        <div className="flex h-screen overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="sticky top-0 z-40 mt-2">
+                    <div className="relative">
+                        <div className="flex items-center py-4">
+                            <div className="flex-1 flex justify-center overflow-x-auto px-6">
+                                <nav className="relative overflow-x-auto">
+                                    <ul className="flex items-center space-x-8 overflow-x-auto">
+                                        {groupedQuestions.map((group, idx) => (
+                                            <li
+                                                key={`step_${group.section}`}
+                                                className={stepItemStyles({
+                                                    active: currentStep === idx,
+                                                })}
+                                                onKeyUp={() => setCurrentStep(idx)}
+                                                onClick={() => {
+                                                    setCurrentStep(idx);
+                                                    navigate({
+                                                        to: `/user/project/${projectId}/view`,
+                                                        search: {
+                                                            section: group.section.toLowerCase().replace(/\s+/g, '-')
+                                                        },
+                                                        replace: false
+                                                    });
+                                                }}
+                                            >
+                                                <span className="text-nowrap">{group.section}</span>
+                                                {currentStep === idx && (
+                                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-button-secondary-100" />
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gray-200" />
+                                </nav>
                             </div>
-                        </Link>
-                    </li>
-                </ul>
-            </nav>
-
-            <div className="h-24" />
-
-            <SectionedLayout
-                linkContainerClassnames="top-36"
-                links={asideLinks}
-            >
-                <div>
-                    <div>
-                        <nav>
-                            <ul className="flex gap-4 items-center justify-center">
-                                {groupedQuestions.map((group, idx) => (
-                                    <li
-                                        key={`step_${group.section}`}
-                                        className={stepItemStyles({
-                                            active: currentStep === idx,
-                                        })}
-                                        onKeyUp={() => {
-                                            setCurrentStep(idx);
-                                        }}
-                                        onClick={() => {
-                                            setCurrentStep(idx);
-                                        }}
-                                    >
-                                        <span>{group.section}</span>
-
-                                        {currentStep === idx ? (
-                                            <div className="absolute bottom-0 h-[2px] bg-gray-700 w-full" />
-                                        ) : null}
-                                    </li>
-                                ))}
-                            </ul>
-                        </nav>
-                    </div>
-
-                    <div className="space-y-12 lg:max-w-3xl mx-auto mt-12">
-                        {groupedQuestions[currentStep].subSections.map(
-                            (subsection) => (
-                                <div
-                                    id={sanitizeHtmlId(subsection.name)}
-                                    key={subsection.name}
-                                    className={questionGroupContainerStyles()}
-                                >
-                                    <CollapsibleSection title={subsection.name}>
-                                        <div
-                                            className={questionGroupQuestionsContainerStyles()}
-                                        >
-                                            {subsection.questions.map((q) =>
-                                                shouldRenderQuestion(
-                                                    q,
-                                                    subsection.questions
-                                                ) ? (
-                                                    <ReviewQuestions
-                                                        disableCommentCreation
-                                                        key={q.id}
-                                                        question={q}
-                                                        onCreateComment={() => {}}
-                                                        comments={
-                                                            commentsData || []
-                                                        }
-                                                    />
-                                                ) : null
-                                            )}
-                                        </div>
-                                    </CollapsibleSection>
-                                </div>
-                            )
-                        )}
-                        <div className="pb-32 flex gap-8">
-                            <Button
-                                variant="outline"
-                                liquid
-                                type="button"
-                                disabled={currentStep === 0}
-                                onClick={handleBackStep}
-                            >
-                                Back
-                            </Button>
-
-                            <Button
-                                liquid
-                                type="button"
-                                onClick={handleNextStep}
-                                disabled={
-                                    currentStep === groupedQuestions.length - 1
-                                }
-                            >
-                                Continue
-                            </Button>
                         </div>
                     </div>
                 </div>
-            </SectionedLayout>
+
+                <div className="flex-1 overflow-y-auto">
+                    <div className="pt-4">
+                        <div className="space-y-12 p-4 lg:p-0 lg:max-w-4xl lg:mx-auto">
+                            {groupedQuestions[currentStep].subSections.map(
+                                (subsection) => (
+                                    <div
+                                        id={sanitizeHtmlId(subsection.name)}
+                                        key={subsection.name}
+                                        className={questionGroupContainerStyles()}
+                                    >
+                                        <CollapsibleSection title={subsection.name}>
+                                            <div
+                                                className={questionGroupQuestionsContainerStyles()}
+                                            >
+                                                {subsection.questions.map((q) =>
+                                                    shouldRenderQuestion(
+                                                        q,
+                                                        subsection.questions
+                                                    ) ? (
+                                                        <ReviewQuestions
+                                                            disableCommentCreation
+                                                            key={q.id}
+                                                            question={q}
+                                                            onCreateComment={() => {}}
+                                                            comments={
+                                                                commentsData || []
+                                                            }
+                                                        />
+                                                    ) : null
+                                                )}
+                                            </div>
+                                        </CollapsibleSection>
+                                    </div>
+                                )
+                            )}
+                            <div className="pb-32 flex gap-8">
+                                <Button
+                                    variant="outline"
+                                    liquid
+                                    type="button"
+                                    disabled={currentStep === 0}
+                                    onClick={handleBackStep}
+                                >
+                                    Back
+                                </Button>
+
+                                <Button
+                                    liquid
+                                    type="button"
+                                    onClick={handleNextStep}
+                                    disabled={
+                                        currentStep === groupedQuestions.length - 1
+                                    }
+                                >
+                                    Continue
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <ScrollButton />
         </div>
     );
 }
