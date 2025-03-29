@@ -286,7 +286,7 @@ export const Sidebar = ({
     }, [navigate]);
 
     const handleSectionClick = (
-        project: any,
+        project: ProjectResponse,
         section: string,
         sectionIndex: number,
         e: React.MouseEvent
@@ -298,7 +298,7 @@ export const Sidebar = ({
             [project.id]: true,
         });
 
-        const isSubmitted = project?.isSubmitted || project?.status === 'SUBMITTED' || 
+        const isSubmitted = project?.status === 'SUBMITTED' || 
                            project?.status === 'UNDER_REVIEW' || project?.status === 'APPROVED';
 
         if (projectConfig?.sectionClickHandler && !isSubmitted) {
@@ -677,7 +677,15 @@ export const Sidebar = ({
                         e.stopPropagation();
                         setMobileDrawerOpen(false);
                     }}
-                    aria-hidden="true"
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+                            e.stopPropagation();
+                            setMobileDrawerOpen(false);
+                        }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label="Close menu"
                 />
             )}
             
