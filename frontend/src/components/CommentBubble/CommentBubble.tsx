@@ -1,8 +1,14 @@
-import type { Comment } from '@/services/comment';
+import {
+    resolveProjectComment,
+    unresolveProjectComment,
+    type Comment,
+} from '@/services/comment';
 import { cva } from 'class-variance-authority';
-import { type FC, useState } from 'react';
+import { type FC, useCallback, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { FaXmark } from 'react-icons/fa6';
+import { FaXmark, FaCheck } from 'react-icons/fa6';
+import { useAuth, useNotification } from '@/contexts';
+import { ApiError } from '@/services';
 
 const commentInfoContainerStyles = cva(
     'absolute rounded-lg -top-2 -left-2 p-2 border border-gray-300 shadow-lg bg-white hidden min-w-64 min-h-16 z-50',
@@ -15,40 +21,117 @@ const commentInfoContainerStyles = cva(
     }
 );
 
+const commentResolveButtonStyles = cva(
+    'border border-gray-400 rounded py-1 px-2 text-sm flex items-center justify-center gap-2',
+    {
+        variants: {
+            resolved: {
+                true: 'text-red-600',
+                false: 'text-green-700',
+            },
+        },
+    }
+);
+
 export interface CommentBubbleProps {
     data: Comment;
 }
 
 export const CommentBubble: FC<CommentBubbleProps> = ({ data }) => {
     const [active, setActive] = useState(false);
+    const [comment, setComment] = useState(data);
+    const notifications = useNotification();
+    const { accessToken } = useAuth();
+
+    const onToggleResolution = useCallback(async (comment: Comment) => {
+        if (!accessToken) return;
+        const originalResolvedState = comment.resolved;
+        try {
+            // Optimistic update
+            setComment({ ...comment, resolved: !comment.resolved });
+            if (comment.resolved) {
+                await unresolveProjectComment(
+                    accessToken,
+                    comment.id,
+                    comment.projectId
+                );
+            } else {
+                await resolveProjectComment(
+                    accessToken,
+                    comment.id,
+                    comment.projectId
+                );
+            }
+        } catch (error) {
+            // Reverse optimistic update
+            setComment({ ...comment, resolved: originalResolvedState });
+            let message = '';
+            if (error instanceof ApiError) {
+                message =
+                    (error.body as { message: string }).message ||
+                    error.message;
+            }
+            notifications.push({
+                message:
+                    message ||
+                    "Failed to resolve comment. Make sure you're connected to the Internet.",
+                level: 'error',
+            });
+        }
+    }, []);
+
     return (
         <div className="relative">
             <div
+                data-testid="comment-body"
                 className={twMerge(
                     commentInfoContainerStyles({ active: active })
                 )}
             >
                 <div className="flex items-center justify-between mt-1">
                     <div className="flex items-center gap-2">
-                        <span>{data.commenterFirstName || 'First'}</span>
-                        <span>{data.commenterLastName || 'Last'}</span>
+                        <span>{comment.commenterFirstName || 'First'}</span>
+                        <span>{comment.commenterLastName || 'Last'}</span>
                     </div>
                     <div className="flex items-center">
-                        <button type="button" onClick={() => setActive(false)}>
+                        <button
+                            type="button"
+                            aria-label="close comment"
+                            onClick={() => setActive(false)}
+                        >
                             <FaXmark className="h-4 w-4" />
                         </button>
                     </div>
                 </div>
                 <div className="mt-2">
-                    <span>{data.comment}</span>
+                    <span>{comment.comment}</span>
+                </div>
+                <div className="mt-2 flex justify-end">
+                    <button
+                        type="button"
+                        className={commentResolveButtonStyles({
+                            resolved: comment.resolved,
+                        })}
+                        onClick={() => onToggleResolution(comment)}
+                    >
+                        <span>
+                            {comment.resolved ? 'Unresolve' : 'Resolve'}
+                        </span>
+                        {!comment.resolved && (
+                            <span>
+                                <FaCheck />
+                            </span>
+                        )}
+                    </button>
                 </div>
             </div>
             <button
                 type="button"
+                aria-label="open comment"
                 onClick={() => setActive((p) => !p)}
                 className="relative w-8 h-8 rounded-full border border-gray-300 p-2 flex items-center justify-center z-10"
             >
-                <span>{data.commenterFirstName?.at(0) || ''}</span>
+                <span>{comment.commenterFirstName?.at(0) || ''}</span>
             </button>
         </div>
     );
