@@ -49,13 +49,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     const handleBurgerClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         e.preventDefault();
-        
-        console.log("Burger menu clicked, current state:", isMobileDrawerOpen);
         setMobileDrawerOpen(true);
     };
 
     const shouldRenderSidebar = showSidebar && isSidebarVisible && user;
-
+    
     return (
         <div className="h-screen flex flex-col bg-gray-50">
             {shouldRenderSidebar && (
