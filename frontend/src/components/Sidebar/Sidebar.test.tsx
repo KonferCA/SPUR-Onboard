@@ -156,7 +156,7 @@ vi.mock('react-icons/fi', () => ({
     ),
     FiBarChart2: () => <span data-testid="fi-bar-chart">BarChartIcon</span>,
     FiDollarSign: () => <span data-testid="fi-dollar">DollarIcon</span>,
-    FiShield: () => <span data-testid="fi-shield">ShieldIcon</span>,
+    FiTool: () => <span data-testid="fi-tool">ToolIcon</span>,
     FiHeadphones: () => <span data-testid="fi-headphones">HeadphonesIcon</span>,
     FiSearch: () => <span data-testid="fi-search">SearchIcon</span>,
     FiBook: () => <span data-testid="fi-book">BookIcon</span>,
@@ -169,6 +169,7 @@ vi.mock('react-icons/fi', () => ({
     FiFileText: () => <span data-testid="fi-file-text">FileTextIcon</span>,
     FiX: () => <span data-testid="fi-x">XIcon</span>,
     FiEye: () => <span data-testid="fi-eye">EyeIcon</span>,
+    FiKey: () => <span data-testid="fi-key">KeyIcon</span>,
 }));
 
 // mock for IO icons
