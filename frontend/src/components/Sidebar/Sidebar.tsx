@@ -28,7 +28,7 @@ import { useNotification } from '@/contexts/NotificationContext';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { useSidebar } from '@/contexts/SidebarContext/SidebarContext';
 import { isRouteAvailable } from '@/config/routes';
-import type { MenuItem, SidebarProps } from './types';
+import type { MenuItem, SidebarProps } from '@/types/sidebar';
 
 export const Sidebar = ({
     userPermissions,
