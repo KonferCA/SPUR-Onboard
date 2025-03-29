@@ -1,8 +1,8 @@
 import {
-    type ProjectDocument,
     uploadDocument,
     removeDocument,
 } from '@/services/project';
+import type { ProjectDocument } from '@/types/project';
 import { useState, useRef } from 'react';
 import { FiUpload, FiX, FiLoader, FiCheck } from 'react-icons/fi';
 import { useDebounceFn, useRandomId } from '@/hooks';
