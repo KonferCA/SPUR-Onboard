@@ -45,16 +45,6 @@ export interface ProjectCommentsResponse {
 //     CompanyStage: string | null;
 // }
 
-// Backend response interface
-export interface ProjectResponse {
-    id: string;
-    title: string;
-    description: string;
-    status: string;
-    createdAt: number;
-    updatedAt: number;
-}
-
 export interface ExtendedProjectResponse extends ProjectResponse {
     companyName: string;
     documentCount: number;
