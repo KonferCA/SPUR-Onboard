@@ -7,7 +7,7 @@ import {
     FiCreditCard,
     FiBarChart2,
     FiDollarSign,
-    FiShield,
+    FiTool,
     FiHeadphones,
     FiSearch,
     FiBook,
@@ -16,6 +16,7 @@ import {
     FiFileText,
     FiX,
     FiEye,
+    FiKey,
 } from 'react-icons/fi';
 import { IoLogOutOutline } from 'react-icons/io5';
 import { isAdmin, isInvestor } from '@/utils/permissions';
@@ -113,13 +114,13 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
         {
             path: '/admin/dashboard',
             label: 'Admin Dashboard',
-            icon: <FiShield className="w-5 h-5" />,
+            icon: <FiTool className="w-5 h-5" />,
             id: 'admin-dashboard',
         },
         {
             path: '/admin/settings/permissions',
             label: 'Manage Permissions',
-            icon: <FiShield className="w-5 h-5" />,
+            icon: <FiKey className="w-5 h-5" />,
             id: 'admin-permissions',
         },
     ];
