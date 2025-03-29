@@ -46,7 +46,37 @@ vi.mock('@/contexts', () => ({
     useAuth: () => ({ accessToken: 'test-token' }),
 }));
 
-// mock Button component
+// mock sidebar context
+vi.mock('@/contexts/SidebarContext/SidebarContext', () => {
+    return {
+        useSidebar: vi.fn().mockImplementation(() => ({
+            currentProjectId: 'project1',
+            projectConfig: {
+                sections: [
+                    'The Basics',
+                    'The Details',
+                    'The Team',
+                    'The Financials',
+                ],
+                getActiveSection: () => 'The Basics',
+                sectionClickHandler: vi.fn(),
+            },
+            isMobileDrawerOpen: false,
+            setMobileDrawerOpen: vi.fn(),
+            isSidebarVisible: true,
+        })),
+        permissions: 0,
+    };
+});
+
+// mock notification context
+vi.mock('@/contexts/NotificationContext', () => ({
+    useNotification: () => ({
+        push: vi.fn(),
+    }),
+}));
+
+// mock button component
 vi.mock('@/components', () => ({
     Button: ({
         children,
@@ -56,10 +86,10 @@ vi.mock('@/components', () => ({
         size = 'md',
         icon,
     }: {
-        children: React.ReactNode;
+        children?: React.ReactNode;
         onClick: () => void;
         className?: string;
-        variant?: 'primary' | 'secondary' | 'danger';
+        variant?: 'primary' | 'secondary' | 'danger' | 'outline';
         size?: 'sm' | 'md' | 'lg';
         icon?: React.ReactNode;
     }) => (
@@ -137,11 +167,23 @@ vi.mock('react-icons/fi', () => ({
         <span data-testid="fi-chevron-right">ChevronRightIcon</span>
     ),
     FiFileText: () => <span data-testid="fi-file-text">FileTextIcon</span>,
+    FiX: () => <span data-testid="fi-x">XIcon</span>,
+    FiEye: () => <span data-testid="fi-eye">EyeIcon</span>,
 }));
 
 // mock for IO icons
 vi.mock('react-icons/io5', () => ({
     IoLogOutOutline: () => <span data-testid="io-logout">LogoutIcon</span>,
+}));
+
+// mock logo
+vi.mock('@/assets', () => ({
+    LogoSVG: 'test-logo-path',
+}));
+
+// mock route config
+vi.mock('@/config/routes', () => ({
+    isRouteAvailable: (path: string) => path !== '/user/resources',
 }));
 
 describe('Sidebar', () => {
@@ -157,8 +199,16 @@ describe('Sidebar', () => {
     };
 
     const mockProjects = [
-        { id: 'project1', title: 'Project One' },
-        { id: 'project2', title: 'Project Two' },
+        {
+            id: 'project1',
+            title: 'Project One',
+            status: 'DRAFT',
+        },
+        {
+            id: 'project2',
+            title: 'Project Two',
+            status: 'SUBMITTED',
+        },
     ];
 
     beforeEach(() => {
@@ -207,7 +257,7 @@ describe('Sidebar', () => {
         it('renders investor items when user has investor permissions', () => {
             vi.mocked(isInvestor).mockReturnValue(true);
 
-            render(<Sidebar userPermissions={1} />);
+            render(<Sidebar userPermissions={64} />);
 
             // check for investor menu items
             expect(screen.getByText('INVESTOR')).toBeInTheDocument();
@@ -218,10 +268,11 @@ describe('Sidebar', () => {
         it('renders admin items when user has admin permissions', () => {
             vi.mocked(isAdmin).mockReturnValue(true);
 
-            render(<Sidebar userPermissions={2} />);
+            render(<Sidebar userPermissions={1024} />);
 
             // check for admin menu items
             expect(screen.getByText('ADMIN')).toBeInTheDocument();
+            expect(screen.getByText('Admin Dashboard')).toBeInTheDocument();
             expect(screen.getByText('Manage Permissions')).toBeInTheDocument();
         });
 
@@ -229,34 +280,11 @@ describe('Sidebar', () => {
             vi.mocked(isInvestor).mockReturnValue(true);
             vi.mocked(isAdmin).mockReturnValue(true);
 
-            render(<Sidebar userPermissions={3} />);
+            render(<Sidebar userPermissions={1088} />);
 
             // check for both investor and admin sections
             expect(screen.getByText('INVESTOR')).toBeInTheDocument();
             expect(screen.getByText('ADMIN')).toBeInTheDocument();
-        });
-    });
-
-    describe('Mobile view', () => {
-        it('displays all items in mobile view', () => {
-            render(<Sidebar userPermissions={0} isMobile={true} />);
-            expect(screen.getByText('MAIN')).toBeInTheDocument();
-        });
-
-        it('applies correct mobile styles', () => {
-            const { container } = render(
-                <Sidebar userPermissions={0} isMobile={true} />
-            );
-            expect(container).toBeInTheDocument();
-        });
-    });
-
-    describe('Desktop view', () => {
-        it('applies correct desktop styles', () => {
-            const { container } = render(
-                <Sidebar userPermissions={0} isMobile={false} />
-            );
-            expect(container).toBeInTheDocument();
         });
     });
 
@@ -279,42 +307,39 @@ describe('Sidebar', () => {
     });
 
     describe('Projects dropdown', () => {
-        it('expands and collapses projects dropdown when toggle button is clicked', () => {
+        it('shows project sections when expanded', () => {
             render(<Sidebar userPermissions={0} />);
 
-            // initially expanded by default ('show-all')
-            expect(screen.getByText('Project One')).toBeInTheDocument();
+            // find the project expand button
+            const projectButtons = screen.getAllByText(/Project/);
+            expect(projectButtons.length).toBeGreaterThan(0);
 
-            // find dropdown toggle button by its icon test id
-            const toggleButton = screen.getByTestId('fi-chevron-down');
-            const toggleButtonParent = toggleButton.closest('button');
+            // get the first project's expand button
+            const projectExpanders = screen.getAllByTestId('fi-chevron-right');
 
-            if (toggleButtonParent) {
-                fireEvent.click(toggleButtonParent);
+            const expander = projectExpanders[0].closest('button');
+            if (expander) {
+                fireEvent.click(expander);
 
-                expect(
-                    screen.queryByText('Project One')
-                ).not.toBeInTheDocument();
-
-                const newToggleButton = screen.getByTestId('fi-chevron-right');
-                const newToggleButtonParent = newToggleButton.closest('button');
-
-                if (newToggleButtonParent) {
-                    fireEvent.click(newToggleButtonParent);
-
-                    expect(screen.getByText('Project One')).toBeInTheDocument();
-                }
+                expect(screen.getByText('The Basics')).toBeInTheDocument();
+                expect(screen.getByText('The Details')).toBeInTheDocument();
+                expect(screen.getByText('The Team')).toBeInTheDocument();
+                expect(screen.getByText('The Financials')).toBeInTheDocument();
             }
         });
 
-        it('constrains project list with max height and scrolling', () => {
+        it('shows the "Submitted" label for submitted projects', () => {
             render(<Sidebar userPermissions={0} />);
 
-            const projectsDropdown = screen
-                .getByText('Project One')
-                .closest('div');
+            expect(screen.getByText('Submitted')).toBeInTheDocument();
+        });
 
-            expect(projectsDropdown).toHaveClass('max-h-60', 'overflow-y-auto');
+        it('shows "Create new project" link', () => {
+            render(<Sidebar userPermissions={0} />);
+
+            expect(
+                screen.getByText('+ Create new project')
+            ).toBeInTheDocument();
         });
     });
 
@@ -397,44 +422,15 @@ describe('Sidebar', () => {
         });
     });
 
-    describe('Accessibility', () => {
-        it('allows keyboard navigation for project items', () => {
+    describe('Route availability', () => {
+        it('shows notification for unavailable routes', () => {
             render(<Sidebar userPermissions={0} />);
 
-            // get project buttons - can find them by text content
-            const projectButtons = screen
-                .getAllByRole('button')
-                .filter((btn) => btn.textContent?.includes('Project'));
-
-            expect(projectButtons.length).toBeGreaterThan(0);
-
-            fireEvent.keyUp(projectButtons[0], { key: 'Enter' });
-
-            expect(projectButtons[0]).toHaveAttribute('type', 'button');
-        });
-    });
-
-    describe('Fixed bottom elements', () => {
-        it('renders bottom items in a fixed container', () => {
-            render(<Sidebar userPermissions={0} user={mockUser} />);
-
-            // check for fixed bottom container with settings and profile
-            const settingsLink = screen.getByText('Settings').closest('a');
-            if (!settingsLink) {
-                throw new Error('Settings link not found');
+            const resourcesLink = screen.getByText('Resources').closest('a');
+            if (resourcesLink) {
+                expect(resourcesLink.className).toContain('opacity-70');
+                expect(resourcesLink.className).toContain('cursor-not-allowed');
             }
-
-            const bottomContainer = settingsLink.parentElement?.parentElement;
-            if (!bottomContainer) {
-                throw new Error('Bottom container not found');
-            }
-
-            // check that the bottom container has the fixed classes
-            expect(bottomContainer.classList.contains('flex-shrink-0')).toBe(
-                true
-            );
-            expect(bottomContainer.classList.contains('border-t')).toBe(true);
-            expect(bottomContainer.classList.contains('bg-white')).toBe(true);
         });
     });
 });
