@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useLocation, useNavigate } from '@tanstack/react-router';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import {
     FiFolder,
     FiSettings,
@@ -54,7 +54,7 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
     const hasAdminPerms = isAdmin(userPermissions);
     const hasInvestorPerms = isInvestor(userPermissions);
 
-    const { data: projects = [] } = useQuery({
+    const { data: projects = [], refetch: refetchProjects } = useQuery({
         queryKey: ['sidebar_projects', accessToken],
         queryFn: async () => {
             if (!accessToken) {
@@ -344,6 +344,24 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
         }
     };
 
+    const handleCreateNewProject = (e: React.MouseEvent) => {
+        e.preventDefault();
+
+        navigate({ to: '/user/project/new' });
+
+        if (!expandedProject) {
+            setExpandedProject('show-all');
+        }
+
+        setTimeout(() => {
+            refetchProjects();
+        }, 1000);
+
+        if (isMobileDrawerOpen) {
+            setTimeout(() => setMobileDrawerOpen(false), 150);
+        }
+    };
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
@@ -382,6 +400,19 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
     }, [isMobileDrawerOpen, setMobileDrawerOpen]);
 
     useEffect(() => {
+        const isProjectPage = location.pathname.includes('/project/');
+        const isNewProject = location.pathname.includes('/project/new');
+
+        if (isProjectPage) {
+            refetchProjects();
+
+            if (isNewProject && !expandedProject) {
+                setExpandedProject('show-all');
+            }
+        }
+    }, [location.pathname, expandedProject, refetchProjects]);
+
+    useEffect(() => {
         if (
             currentProjectId &&
             !expandedProjectItems[currentProjectId] &&
@@ -391,10 +422,6 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
             setExpandedProjectItems({
                 [currentProjectId]: true,
             });
-
-            if (!expandedProject) {
-                setExpandedProject('show-all');
-            }
         }
     }, [currentProjectId, expandedProjectItems, expandedProject]);
 
@@ -695,20 +722,13 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
                         );
                     })}
 
-                    <Link
-                        to="/user/project/new"
+                    <a
+                        href="/user/project/new"
                         className="text-sm text-button-primary-100 flex items-center gap-2 pl-7 py-2 hover:underline"
-                        onClick={() => {
-                            if (isMobileDrawerOpen) {
-                                setTimeout(
-                                    () => setMobileDrawerOpen(false),
-                                    150
-                                );
-                            }
-                        }}
+                        onClick={handleCreateNewProject}
                     >
                         + Create new project
-                    </Link>
+                    </a>
                 </div>
             ) : (
                 <div className="text-sm text-gray-500 pl-7 py-2">
