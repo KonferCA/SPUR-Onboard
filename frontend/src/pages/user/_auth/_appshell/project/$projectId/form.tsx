@@ -19,7 +19,7 @@ import {
     groupProjectQuestions,
     type SectionMetadata,
     type Question,
-} from '@/config/forms';
+} from '@/config';
 import { cva } from 'class-variance-authority';
 import { sanitizeHtmlId } from '@/utils/html';
 import { QuestionInputs } from '@/components/QuestionInputs/QuestionInputs';

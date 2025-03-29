@@ -4,7 +4,7 @@ import {
     type GroupedProjectQuestions,
     groupProjectQuestions,
     type Question,
-} from '@/config/forms';
+} from '@/config';
 import { useAuth } from '@/contexts';
 import { getProjectComments } from '@/services/comment';
 import { getProjectFormQuestions } from '@/services/project';
