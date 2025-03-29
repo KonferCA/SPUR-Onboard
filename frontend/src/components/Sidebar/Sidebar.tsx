@@ -43,9 +43,7 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
         setMobileDrawerOpen,
     } = useSidebar();
 
-    const [expandedProject, setExpandedProject] = useState<string | null>(
-        'show-all'
-    );
+    const [expandedProject, setExpandedProject] = useState<string | null>(null);
     const [expandedProjectItems, setExpandedProjectItems] = useState<
         Record<string, boolean>
     >({});
@@ -387,7 +385,8 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
         if (
             currentProjectId &&
             !expandedProjectItems[currentProjectId] &&
-            !manuallyCollapsedRef.current
+            !manuallyCollapsedRef.current &&
+            expandedProject
         ) {
             setExpandedProjectItems({
                 [currentProjectId]: true,
@@ -400,7 +399,7 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
     }, [currentProjectId, expandedProjectItems, expandedProject]);
 
     useEffect(() => {
-        if (currentProjectId && location.search) {
+        if (currentProjectId && location.search && expandedProject) {
             const params = new URLSearchParams(location.search);
             const currentSection = params.get('section');
 
@@ -412,10 +411,6 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
                 setExpandedProjectItems({
                     [currentProjectId]: true,
                 });
-
-                if (!expandedProject) {
-                    setExpandedProject('show-all');
-                }
             }
         }
     }, [
