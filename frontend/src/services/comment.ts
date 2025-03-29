@@ -71,3 +71,49 @@ export async function getProjectComments(
 
     return snakeToCamel(body.comments) as Comment[];
 }
+
+export async function resolveProjectComment(
+    accessToken: string,
+    commentID: string,
+    projectID: string
+): Promise<void> {
+    const url = getApiUrl(
+        `/project/${projectID}/comments/${commentID}/resolve`
+    );
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    const body = await res.json();
+
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to resolve comment', res.status, body);
+    }
+}
+
+export async function unresolveProjectComment(
+    accessToken: string,
+    commentID: string,
+    projectID: string
+): Promise<void> {
+    const url = getApiUrl(
+        `/project/${projectID}/comments/${commentID}/unresolve`
+    );
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    const body = await res.json();
+
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to resolve comment', res.status, body);
+    }
+}
