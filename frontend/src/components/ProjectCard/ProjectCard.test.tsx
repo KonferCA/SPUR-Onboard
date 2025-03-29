@@ -4,7 +4,7 @@ import { ProjectCard } from './ProjectCard';
 import { ProjectStatusEnum } from '@/services/projects';
 import * as router from '@tanstack/react-router';
 import { AuthProvider, NotificationProvider } from '@/contexts';
-import type { ExtendedProjectResponse } from '@/services/project';
+import type { ExtendedProjectResponse } from '@/types/project';
 
 // mock the router hook
 vi.mock('@tanstack/react-router', async () => {

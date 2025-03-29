@@ -10,7 +10,7 @@ import {
     getFilteredRowModel,
     type SortingState,
 } from '@tanstack/react-table';
-import type { Project } from '@/services/project';
+import type { Project } from '@/types/project';
 import { format, isValid, parseISO } from 'date-fns';
 
 const columnHelper = createColumnHelper<Project>();

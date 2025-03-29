@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react';
 import { cva } from 'class-variance-authority';
 
 const indicatorStyles = cva(
-    'w-full transition-all duration-300 flex items-center justify-center py-1 text-sm font-medium border-b',
+    'w-full transition-all duration-300 flex items-center justify-center py-0 text-xs font-base border-b',
     {
         variants: {
             status: {
-                idle: 'bg-gray-50 text-gray-600 border-gray-200',
+                idle: 'bg-[#EAF2F8] text-gray-600 border-gray-200',
                 saving: 'bg-blue-50 text-blue-700 border-blue-100',
                 success: 'bg-green-50 text-green-700 border-green-100',
                 error: 'bg-red-50 text-red-700 border-red-100',
@@ -83,13 +83,13 @@ export const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
                 )}
                 <span
                     data-testid="desktop-autosaveindicator-text"
-                    className="hidden md:inline text-sm sm:text-base"
+                    className="hidden md:inline text-sm"
                 >
                     {displayMessage}
                 </span>
                 <span
                     data-testid="mobile-autosaveindicator-text"
-                    className="inline md:hidden text-sm sm:text-base"
+                    className="inline md:hidden text-sm"
                 >
                     {mobileDisplayMessage}
                 </span>

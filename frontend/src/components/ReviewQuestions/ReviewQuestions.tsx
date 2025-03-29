@@ -5,7 +5,7 @@ import {
     TeamMembers,
 } from '@/components';
 import { BiSolidCommentAdd } from 'react-icons/bi';
-import type { Question } from '@/config/forms';
+import type { Question } from '@/config';
 import type { Comment } from '@/services/comment';
 import type { FormField } from '@/types';
 import { type FC, useState } from 'react';
