@@ -307,17 +307,54 @@ describe('Sidebar', () => {
     });
 
     describe('Projects dropdown', () => {
-        it('shows project sections when expanded', () => {
+        it('keeps projects section collapsed by default', () => {
             render(<Sidebar userPermissions={0} />);
 
-            // find the project expand button
-            const projectButtons = screen.getAllByText(/Project/);
-            expect(projectButtons.length).toBeGreaterThan(0);
+            // projects dropdown should be collapsed by default
+            expect(screen.queryByText('The Basics')).not.toBeInTheDocument();
+            expect(screen.queryByText('The Details')).not.toBeInTheDocument();
+            expect(screen.queryByText('The Team')).not.toBeInTheDocument();
+            expect(
+                screen.queryByText('The Financials')
+            ).not.toBeInTheDocument();
+        });
 
-            // get the first project's expand button
+        it('expands projects section when dropdown button is clicked', () => {
+            render(<Sidebar userPermissions={0} />);
+
+            // find the My Projects text first
+            const myProjectsElement = screen.getByText('My Projects');
+            expect(myProjectsElement).toBeInTheDocument();
+
+            const toggleButton = myProjectsElement
+                .closest('div')
+                ?.querySelector('button');
+            expect(toggleButton).not.toBeNull();
+
+            if (toggleButton) {
+                fireEvent.click(toggleButton);
+
+                expect(screen.getByText('Project One')).toBeInTheDocument();
+                expect(screen.getByText('Project Two')).toBeInTheDocument();
+            }
+        });
+
+        it('shows project sections when project is expanded', () => {
+            render(<Sidebar userPermissions={0} />);
+
+            // expand the projects dropdown
+            const myProjectsElement = screen.getByText('My Projects');
+            const toggleButton = myProjectsElement
+                .closest('div')
+                ?.querySelector('button');
+            if (toggleButton) {
+                fireEvent.click(toggleButton);
+            }
+
+            // find the first project's expand button
             const projectExpanders = screen.getAllByTestId('fi-chevron-right');
-
             const expander = projectExpanders[0].closest('button');
+
             if (expander) {
                 fireEvent.click(expander);
 
@@ -331,15 +368,33 @@ describe('Sidebar', () => {
         it('shows the "Submitted" label for submitted projects', () => {
             render(<Sidebar userPermissions={0} />);
 
-            expect(screen.getByText('Submitted')).toBeInTheDocument();
+            // expand the projects dropdown to see the projects
+            const myProjectsElement = screen.getByText('My Projects');
+            const toggleButton = myProjectsElement
+                .closest('div')
+                ?.querySelector('button');
+            if (toggleButton) {
+                fireEvent.click(toggleButton);
+
+                expect(screen.getByText('Submitted')).toBeInTheDocument();
+            }
         });
 
-        it('shows "Create new project" link', () => {
+        it('shows "Create new project" link when projects dropdown is open', () => {
             render(<Sidebar userPermissions={0} />);
 
-            expect(
-                screen.getByText('+ Create new project')
-            ).toBeInTheDocument();
+            // expand the projects dropdown
+            const myProjectsElement = screen.getByText('My Projects');
+            const toggleButton = myProjectsElement
+                .closest('div')
+                ?.querySelector('button');
+            if (toggleButton) {
+                fireEvent.click(toggleButton);
+
+                expect(
+                    screen.getByText('+ Create new project')
+                ).toBeInTheDocument();
+            }
         });
     });
 
