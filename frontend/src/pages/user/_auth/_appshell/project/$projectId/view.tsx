@@ -110,8 +110,8 @@ function RouteComponent() {
                 sections: groupedQuestions.map(group => group.section),
                 
                 // handle when a section is clicked in the sidebar
-                sectionClickHandler: (projectId, section, sectionIndex) => {
-                    if (projectId === projectId) {
+                sectionClickHandler: (sectionProjectId, section, sectionIndex) => {
+                    if (sectionProjectId === projectId) {
                         setCurrentStep(sectionIndex);
                         
                         navigate({
