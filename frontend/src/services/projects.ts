@@ -1,7 +1,7 @@
 import { getApiUrl, HttpStatusCode } from '@/utils';
 import { snakeToCamel } from '@/utils/object';
 import { ApiError } from '@/services/errors';
-import {
+import type {
     ProjectResponse,
     ProjectDocumentsResponse,
     ProjectCommentsResponse,
