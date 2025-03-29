@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { User } from '@/types/auth';
+
 /*
  *
  * @typedef ProjectItemConfig
