@@ -1,4 +1,4 @@
-import type { ExtendedProjectResponse } from '@/services/project';
+import type { ExtendedProjectResponse } from '@/types/project';
 import { formatUnixTimestamp } from '@/utils/date';
 import { Badge, Button, Card } from '@components';
 import { type ReactNode, useNavigate } from '@tanstack/react-router';
