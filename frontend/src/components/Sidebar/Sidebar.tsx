@@ -15,7 +15,7 @@ import {
     FiChevronRight,
     FiFileText,
     FiX,
-    FiEye
+    FiEye,
 } from 'react-icons/fi';
 import { IoLogOutOutline } from 'react-icons/io5';
 import { isAdmin, isInvestor } from '@/utils/permissions';
@@ -31,20 +31,16 @@ import { isRouteAvailable } from '@/config/routes';
 import type { MenuItem, SidebarProps } from '@/types/sidebar';
 import type { ProjectResponse } from '@/types/project';
 
-export const Sidebar = ({
-    userPermissions,
-    user,
-    onLogout,
-}: SidebarProps) => {
+export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { accessToken } = useAuth();
     const { push } = useNotification();
-    const { 
-        currentProjectId, 
+    const {
+        currentProjectId,
         projectConfig,
         isMobileDrawerOpen,
-        setMobileDrawerOpen 
+        setMobileDrawerOpen,
     } = useSidebar();
 
     const [expandedProject, setExpandedProject] = useState<string | null>(
@@ -190,7 +186,7 @@ export const Sidebar = ({
         if (projectConfig?.getActiveSection) {
             return projectConfig.getActiveSection(projectId);
         }
-        
+
         if (projectId === currentProjectId && location.search) {
             const params = new URLSearchParams(location.search);
             const section = params.get('section');
@@ -199,17 +195,17 @@ export const Sidebar = ({
                 // convert - section back to title case
                 const normalizedSection = section
                     .split('-')
-                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                     .join(' ');
-                
+
                 const matchingSection = projectSections.find(
-                    s => s.toLowerCase().replace(/\s+/g, '-') === section
+                    (s) => s.toLowerCase().replace(/\s+/g, '-') === section
                 );
-                
+
                 return matchingSection || normalizedSection;
             }
         }
-        
+
         return null;
     };
 
@@ -243,7 +239,7 @@ export const Sidebar = ({
 
     const handleNavigate = (e: React.MouseEvent, path: string) => {
         e.preventDefault();
-        
+
         if (!isRouteAvailable(path)) {
             push({
                 message: 'This page is coming soon!',
@@ -251,9 +247,9 @@ export const Sidebar = ({
             });
             return;
         }
-        
+
         navigate({ to: path });
-        
+
         if (isMobileDrawerOpen) {
             setTimeout(() => setMobileDrawerOpen(false), 150);
         }
@@ -262,28 +258,29 @@ export const Sidebar = ({
     const toggleProjectsDropdown = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        
-        setExpandedProject(expandedProject ? null : 'show-all');
-    };    
 
-    const navigateToProject = useCallback((
-        projectId: string,
-        section?: string,
-        project?: ProjectResponse 
-    ) => {
-        const isSubmitted = project?.status === 'SUBMITTED' || 
-                           project?.status === 'UNDER_REVIEW' || project?.status === 'APPROVED';
-        
-        const searchParams = section 
-            ? { section: section.toLowerCase().replace(/\s+/g, '-') }
-            : undefined;
-            
-        navigate({
-            to: `/user/project/${projectId}/${isSubmitted ? 'view' : 'form'}`,
-            search: searchParams,
-            replace: false,
-        });
-    }, [navigate]);
+        setExpandedProject(expandedProject ? null : 'show-all');
+    };
+
+    const navigateToProject = useCallback(
+        (projectId: string, section?: string, project?: ProjectResponse) => {
+            const isSubmitted =
+                project?.status === 'SUBMITTED' ||
+                project?.status === 'UNDER_REVIEW' ||
+                project?.status === 'APPROVED';
+
+            const searchParams = section
+                ? { section: section.toLowerCase().replace(/\s+/g, '-') }
+                : undefined;
+
+            navigate({
+                to: `/user/project/${projectId}/${isSubmitted ? 'view' : 'form'}`,
+                search: searchParams,
+                replace: false,
+            });
+        },
+        [navigate]
+    );
 
     const handleSectionClick = (
         project: ProjectResponse,
@@ -293,49 +290,52 @@ export const Sidebar = ({
     ) => {
         e.preventDefault();
         e.stopPropagation();
-        
+
         setExpandedProjectItems({
             [project.id]: true,
         });
 
-        const isSubmitted = project?.status === 'SUBMITTED' || 
-                           project?.status === 'UNDER_REVIEW' || project?.status === 'APPROVED';
+        const isSubmitted =
+            project?.status === 'SUBMITTED' ||
+            project?.status === 'UNDER_REVIEW' ||
+            project?.status === 'APPROVED';
 
         if (projectConfig?.sectionClickHandler && !isSubmitted) {
-            projectConfig.sectionClickHandler(project.id, section, sectionIndex);
+            projectConfig.sectionClickHandler(
+                project.id,
+                section,
+                sectionIndex
+            );
         } else {
             navigateToProject(project.id, section, project);
         }
-        
+
         if (isMobileDrawerOpen) {
             setTimeout(() => setMobileDrawerOpen(false), 150);
         }
-    };   
+    };
 
-    const handleExpandProject = (
-        projectId: string,
-        e: React.MouseEvent
-    ) => {
+    const handleExpandProject = (projectId: string, e: React.MouseEvent) => {
         e.stopPropagation();
         e.preventDefault();
-        
+
         if (expandedProjectItems[projectId]) {
             manuallyCollapsedRef.current = true;
-            
+
             setTimeout(() => {
                 manuallyCollapsedRef.current = false;
             }, 500);
         }
-        
-        setExpandedProjectItems(prev => {
+
+        setExpandedProjectItems((prev) => {
             if (prev[projectId]) {
                 return {};
             }
             return { [projectId]: true };
         });
-        
+
         e.nativeEvent.stopImmediatePropagation();
-    };   
+    };
 
     const handleLogout = async () => {
         setShowLogoutModal(false);
@@ -369,7 +369,7 @@ export const Sidebar = ({
         } else {
             document.body.style.overflow = '';
         }
-        
+
         return () => {
             document.body.style.overflow = '';
         };
@@ -384,14 +384,15 @@ export const Sidebar = ({
     }, [isMobileDrawerOpen, setMobileDrawerOpen]);
 
     useEffect(() => {
-        if (currentProjectId && 
-            !expandedProjectItems[currentProjectId] && 
-            !manuallyCollapsedRef.current) {
-            
+        if (
+            currentProjectId &&
+            !expandedProjectItems[currentProjectId] &&
+            !manuallyCollapsedRef.current
+        ) {
             setExpandedProjectItems({
-                [currentProjectId]: true
+                [currentProjectId]: true,
             });
-            
+
             if (!expandedProject) {
                 setExpandedProject('show-all');
             }
@@ -402,24 +403,30 @@ export const Sidebar = ({
         if (currentProjectId && location.search) {
             const params = new URLSearchParams(location.search);
             const currentSection = params.get('section');
-            
-            if (currentSection && 
-                (!Object.keys(expandedProjectItems).includes(currentProjectId) && 
-                Object.keys(expandedProjectItems).length === 0)) {
-                
+
+            if (
+                currentSection &&
+                !Object.keys(expandedProjectItems).includes(currentProjectId) &&
+                Object.keys(expandedProjectItems).length === 0
+            ) {
                 setExpandedProjectItems({
-                    [currentProjectId]: true
+                    [currentProjectId]: true,
                 });
-                
+
                 if (!expandedProject) {
                     setExpandedProject('show-all');
                 }
             }
         }
-    }, [location.search, currentProjectId, expandedProject, expandedProjectItems]);
+    }, [
+        location.search,
+        currentProjectId,
+        expandedProject,
+        expandedProjectItems,
+    ]);
 
     const navItems: MenuItem[] = [];
-    
+
     sections.forEach((section) => {
         if (section.title) {
             navItems.push({
@@ -445,7 +452,7 @@ export const Sidebar = ({
             navItems.splice(settingsIndex + 1, 0, ...settingsItems);
         }
     }
-    
+
     const renderSidebarContent = () => (
         <>
             {navItems
@@ -483,12 +490,20 @@ export const Sidebar = ({
                                     <a
                                         href={item.path}
                                         className="flex-1 flex items-center gap-3"
-                                        onClick={(e) => handleNavigate(e, item.path)}
+                                        onClick={(e) =>
+                                            handleNavigate(e, item.path)
+                                        }
                                     >
-                                        <span className={isProjectsActive ? "text-orange-400": ""}>
+                                        <span
+                                            className={
+                                                isProjectsActive
+                                                    ? 'text-orange-400'
+                                                    : ''
+                                            }
+                                        >
                                             {item.icon}
                                         </span>
-                                        
+
                                         <span className="truncate">
                                             {item.label}
                                         </span>
@@ -499,7 +514,11 @@ export const Sidebar = ({
                                         className="focus:outline-none"
                                         type="button"
                                         aria-expanded={!!expandedProject}
-                                        aria-label={expandedProject ? "Collapse projects" : "Expand projects"}
+                                        aria-label={
+                                            expandedProject
+                                                ? 'Collapse projects'
+                                                : 'Expand projects'
+                                        }
                                     >
                                         {expandedProject ? (
                                             <FiChevronDown className="w-4 h-4" />
@@ -534,22 +553,28 @@ export const Sidebar = ({
             {projects && projects.length > 0 ? (
                 <div>
                     {projects.map((project) => {
-                        const isCurrentProject = project.id === currentProjectId;
+                        const isCurrentProject =
+                            project.id === currentProjectId;
                         const activeSection = getActiveSection(project.id);
                         const isSubmitted = project.status === 'SUBMITTED';
-                        
+
                         return (
-                            <div
-                                key={project.id}
-                                className="relative"
-                            >
+                            <div key={project.id} className="relative">
                                 <div className="flex items-center ml-6">
                                     <button
-                                        onClick={(e) => handleExpandProject(project.id, e)}
+                                        onClick={(e) =>
+                                            handleExpandProject(project.id, e)
+                                        }
                                         className="w-5 h-5 flex items-center justify-center text-gray-400 focus:outline-none"
                                         type="button"
-                                        aria-expanded={!!expandedProjectItems[project.id]}
-                                        aria-label={expandedProjectItems[project.id] ? "Collapse project" : "Expand project"}
+                                        aria-expanded={
+                                            !!expandedProjectItems[project.id]
+                                        }
+                                        aria-label={
+                                            expandedProjectItems[project.id]
+                                                ? 'Collapse project'
+                                                : 'Expand project'
+                                        }
                                     >
                                         {expandedProjectItems[project.id] ? (
                                             <FiChevronDown className="w-4 h-4" />
@@ -566,28 +591,45 @@ export const Sidebar = ({
                                         }`}
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            
-                                            if (project.id !== currentProjectId) {
-                                                navigateToProject(project.id, undefined, project);
-                                                
+
+                                            if (
+                                                project.id !== currentProjectId
+                                            ) {
+                                                navigateToProject(
+                                                    project.id,
+                                                    undefined,
+                                                    project
+                                                );
+
                                                 setExpandedProjectItems({
-                                                    [project.id]: true
+                                                    [project.id]: true,
                                                 });
-                                                
+
                                                 if (isMobileDrawerOpen) {
-                                                    setTimeout(() => setMobileDrawerOpen(false), 150);
+                                                    setTimeout(
+                                                        () =>
+                                                            setMobileDrawerOpen(
+                                                                false
+                                                            ),
+                                                        150
+                                                    );
                                                 }
                                             }
                                         }}
                                         type="button"
                                     >
                                         {isSubmitted ? (
-                                            <FiEye className={`w-4 h-4 shrink-0 ${isCurrentProject ? 'text-orange-400' : ''}`} />
+                                            <FiEye
+                                                className={`w-4 h-4 shrink-0 ${isCurrentProject ? 'text-orange-400' : ''}`}
+                                            />
                                         ) : (
-                                            <FiFileText className={`w-4 h-4 shrink-0 ${isCurrentProject ? 'text-orange-400' : ''}`} />
+                                            <FiFileText
+                                                className={`w-4 h-4 shrink-0 ${isCurrentProject ? 'text-orange-400' : ''}`}
+                                            />
                                         )}
                                         <span className="truncate max-w-[160px] text-sm">
-                                            {project.title || `Project ${project.id.slice(0, 6)}`}
+                                            {project.title ||
+                                                `Project ${project.id.slice(0, 6)}`}
                                         </span>
                                         {isSubmitted && (
                                             <span className="ml-1 text-xs px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded-full">
@@ -602,11 +644,22 @@ export const Sidebar = ({
                                         <div className="absolute left-3.5 top-0 bottom-0 w-px bg-gray-200" />
                                         {projectSections.map(
                                             (section, sectionIndex) => {
-                                                const isSectionActive = activeSection === section || 
-                                                    (activeSection && 
-                                                        section.toLowerCase().replace(/\s+/g, '-') === 
-                                                        activeSection.toLowerCase().replace(/\s+/g, '-'));
-                                                    
+                                                const isSectionActive =
+                                                    activeSection === section ||
+                                                    (activeSection &&
+                                                        section
+                                                            .toLowerCase()
+                                                            .replace(
+                                                                /\s+/g,
+                                                                '-'
+                                                            ) ===
+                                                            activeSection
+                                                                .toLowerCase()
+                                                                .replace(
+                                                                    /\s+/g,
+                                                                    '-'
+                                                                ));
+
                                                 return (
                                                     <div
                                                         key={`${project.id}-${section}`}
@@ -622,17 +675,19 @@ export const Sidebar = ({
                                                                     ? 'text-gray-900 font-medium'
                                                                     : 'text-gray-500 hover:text-gray-900'
                                                             } ${isSubmitted ? 'flex items-center gap-1' : ''}`}
-                                                            onClick={(e) => 
+                                                            onClick={(e) =>
                                                                 handleSectionClick(
-                                                                    project, 
-                                                                    section, 
-                                                                    sectionIndex, 
+                                                                    project,
+                                                                    section,
+                                                                    sectionIndex,
                                                                     e
                                                                 )
                                                             }
                                                             type="button"
                                                         >
-                                                            {isSubmitted && <FiEye className="w-3 h-3 text-gray-400" />}
+                                                            {isSubmitted && (
+                                                                <FiEye className="w-3 h-3 text-gray-400" />
+                                                            )}
                                                             {section}
                                                         </button>
                                                     </div>
@@ -650,7 +705,10 @@ export const Sidebar = ({
                         className="text-sm text-button-primary-100 flex items-center gap-2 pl-7 py-2 hover:underline"
                         onClick={() => {
                             if (isMobileDrawerOpen) {
-                                setTimeout(() => setMobileDrawerOpen(false), 150);
+                                setTimeout(
+                                    () => setMobileDrawerOpen(false),
+                                    150
+                                );
                             }
                         }}
                     >
@@ -664,21 +722,25 @@ export const Sidebar = ({
             )}
         </div>
     );
-    
+
     const { isSidebarVisible } = useSidebar();
     if (!isSidebarVisible) return null;
-    
+
     return (
         <>
             {isMobileDrawerOpen && (
-                <div 
+                <div
                     className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden transition-opacity duration-300"
                     onClick={(e) => {
                         e.stopPropagation();
                         setMobileDrawerOpen(false);
                     }}
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+                        if (
+                            e.key === 'Enter' ||
+                            e.key === ' ' ||
+                            e.key === 'Escape'
+                        ) {
                             e.stopPropagation();
                             setMobileDrawerOpen(false);
                         }
@@ -688,13 +750,17 @@ export const Sidebar = ({
                     aria-label="Close menu"
                 />
             )}
-            
-            <div 
+
+            <div
                 ref={sidebarRef}
                 className={`fixed top-0 left-0 h-full z-50 bg-white border-r border-gray-200 transition-all duration-300 ease-in-out 
                            shadow-lg md:shadow-none 
                            md:w-64 ${isMobileDrawerOpen ? 'w-72 translate-x-0' : 'w-72 -translate-x-full md:translate-x-0'}`}
-                style={{ transform: isMobileDrawerOpen ? 'translateX(0) !important' : '' }}
+                style={{
+                    transform: isMobileDrawerOpen
+                        ? 'translateX(0) !important'
+                        : '',
+                }}
             >
                 <div className="relative flex items-center justify-center px-4 mt-6 pb-6 border-b border-gray-200">
                     <a
@@ -703,9 +769,12 @@ export const Sidebar = ({
                         onClick={(e) => {
                             e.preventDefault();
                             navigate({ to: '/user/dashboard' });
-                            
+
                             if (isMobileDrawerOpen) {
-                                setTimeout(() => setMobileDrawerOpen(false), 150);
+                                setTimeout(
+                                    () => setMobileDrawerOpen(false),
+                                    150
+                                );
                             }
                         }}
                     >
@@ -730,17 +799,25 @@ export const Sidebar = ({
                         <div className="mt-3">
                             {commonItems.map((item) => (
                                 <a
-                                    key={item.path || item.id || `common-${item.label}`}
+                                    key={
+                                        item.path ||
+                                        item.id ||
+                                        `common-${item.label}`
+                                    }
                                     href={item.path}
                                     className={`flex items-center gap-3 text-sm font-medium rounded-lg py-2.5 px-3 mx-2 ${
                                         location.pathname.startsWith(item.path)
                                             ? 'bg-gray-100 text-gray-900 [&>svg]:text-orange-400'
                                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                     } ${!isRouteAvailable(item.path) ? 'opacity-70 cursor-not-allowed' : ''}`}
-                                    onClick={(e) => handleNavigate(e, item.path)}
+                                    onClick={(e) =>
+                                        handleNavigate(e, item.path)
+                                    }
                                 >
                                     {item.icon}
-                                    <span className="truncate">{item.label}</span>
+                                    <span className="truncate">
+                                        {item.label}
+                                    </span>
                                 </a>
                             ))}
                         </div>
@@ -768,7 +845,9 @@ export const Sidebar = ({
                                     size="sm"
                                     onClick={() => setShowLogoutModal(true)}
                                     className="!border-0 !p-2 hover:bg-gray-200"
-                                    icon={<IoLogOutOutline className="w-6 h-6" />}
+                                    icon={
+                                        <IoLogOutOutline className="w-6 h-6" />
+                                    }
                                 />
                             </div>
                         )}

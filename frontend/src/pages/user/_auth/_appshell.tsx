@@ -16,7 +16,7 @@ export const Route = createFileRoute('/user/_auth/_appshell')({
 function RouteComponent() {
     const location = useLocation();
     const { setCurrentProjectId } = useSidebar();
-    
+
     useEffect(() => {
         const match = location.pathname.match(/\/project\/([^/]+)/);
         setCurrentProjectId(match ? match[1] : undefined);

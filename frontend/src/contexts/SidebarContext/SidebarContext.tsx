@@ -1,9 +1,19 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import {
+    createContext,
+    useContext,
+    useState,
+    useCallback,
+    useEffect,
+} from 'react';
 import { useLocation } from '@tanstack/react-router';
 
 export interface ProjectItemConfig {
     sections?: string[];
-    sectionClickHandler?: (projectId: string, section: string, sectionIndex: number) => void;
+    sectionClickHandler?: (
+        projectId: string,
+        section: string,
+        sectionIndex: number
+    ) => void;
     getActiveSection?: (projectId: string) => string | null;
 }
 
@@ -25,31 +35,41 @@ interface SidebarContextValue {
     updateProjectConfig: (config: Partial<ProjectItemConfig>) => void;
 }
 
-const SidebarContext = createContext<SidebarContextValue | undefined>(undefined);
+const SidebarContext = createContext<SidebarContextValue | undefined>(
+    undefined
+);
 
-export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
+    children,
+}) => {
     const location = useLocation();
 
     const [isSidebarVisible, setSidebarVisible] = useState(true);
     const [isMobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-    const [currentProjectId, setCurrentProjectId] = useState<string | undefined>();
+    const [currentProjectId, setCurrentProjectId] = useState<
+        string | undefined
+    >();
     const [projectConfig, setProjectConfig] = useState<ProjectItemConfig>({
         sections: ['The Basics', 'The Details', 'The Team', 'The Financials'],
     });
 
-    const updateProjectConfig = useCallback((config: Partial<ProjectItemConfig>) => {
-        setProjectConfig(prev => ({
-            ...prev,
-            ...config,
-        }));
-    }, []);
+    const updateProjectConfig = useCallback(
+        (config: Partial<ProjectItemConfig>) => {
+            setProjectConfig((prev) => ({
+                ...prev,
+                ...config,
+            }));
+        },
+        []
+    );
 
     useEffect(() => {
-        const isAuthPage = location.pathname.startsWith('/auth') || 
-                            location.pathname === '/login' || 
-                            location.pathname === '/register' ||
-                            location.pathname === '/signin' ||
-                            location.pathname === '/signup';
+        const isAuthPage =
+            location.pathname.startsWith('/auth') ||
+            location.pathname === '/login' ||
+            location.pathname === '/register' ||
+            location.pathname === '/signin' ||
+            location.pathname === '/signup';
 
         setSidebarVisible(!isAuthPage);
 

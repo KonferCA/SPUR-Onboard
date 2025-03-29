@@ -47,7 +47,7 @@ function RouteComponent() {
     });
     const location = useLocation();
     const { updateProjectConfig } = useSidebar();
-    
+
     const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
         queryKey: ['project_review_questions', accessToken, projectId],
@@ -87,16 +87,21 @@ function RouteComponent() {
     const [isLoading, setIsLoading] = useState(true);
     const [currentStep, setCurrentStep] = useState<number>(0);
     const [_, setIsMobile] = useState(false);
-    
-    const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+
+    const searchParams = useMemo(
+        () => new URLSearchParams(location.search),
+        [location.search]
+    );
 
     useEffect(() => {
         if (searchParams.has('section') && groupedQuestions.length > 0) {
             const sectionParam = searchParams.get('section');
             const sectionIndex = groupedQuestions.findIndex(
-                group => group.section.toLowerCase().replace(/\s+/g, '-') === sectionParam
+                (group) =>
+                    group.section.toLowerCase().replace(/\s+/g, '-') ===
+                    sectionParam
             );
-            
+
             if (sectionIndex !== -1 && sectionIndex !== currentStep) {
                 setCurrentStep(sectionIndex);
             }
@@ -107,41 +112,53 @@ function RouteComponent() {
         if (groupedQuestions.length > 0) {
             updateProjectConfig({
                 // pass section names to the sidebar
-                sections: groupedQuestions.map(group => group.section),
-                
+                sections: groupedQuestions.map((group) => group.section),
+
                 // handle when a section is clicked in the sidebar
-                sectionClickHandler: (sectionProjectId, section, sectionIndex) => {
+                sectionClickHandler: (
+                    sectionProjectId,
+                    section,
+                    sectionIndex
+                ) => {
                     if (sectionProjectId === projectId) {
                         setCurrentStep(sectionIndex);
-                        
+
                         navigate({
                             to: `/user/project/${projectId}/view`,
                             search: {
-                                section: section.toLowerCase().replace(/\s+/g, '-')
+                                section: section
+                                    .toLowerCase()
+                                    .replace(/\s+/g, '-'),
                             },
-                            replace: false
+                            replace: false,
                         });
-                        
+
                         scrollToTop();
                     }
                 },
-                
+
                 getActiveSection: () => {
                     if (groupedQuestions.length > 0 && currentStep >= 0) {
                         return groupedQuestions[currentStep].section;
                     }
 
                     return null;
-                }
+                },
             });
         }
-    }, [groupedQuestions, projectId, currentStep, updateProjectConfig, navigate]);
+    }, [
+        groupedQuestions,
+        projectId,
+        currentStep,
+        updateProjectConfig,
+        navigate,
+    ]);
 
     useEffect(() => {
         const handleResize = () => {
             setIsMobile(window.innerWidth < 1024);
         };
-        
+
         setTimeout(() => {
             scrollToTop();
         }, 120);
@@ -229,15 +246,17 @@ function RouteComponent() {
         if (currentStep < groupedQuestions.length - 1) {
             const nextStep = currentStep + 1;
             setCurrentStep(nextStep);
-            
+
             navigate({
                 to: `/user/project/${projectId}/view`,
                 search: {
-                    section: groupedQuestions[nextStep].section.toLowerCase().replace(/\s+/g, '-')
+                    section: groupedQuestions[nextStep].section
+                        .toLowerCase()
+                        .replace(/\s+/g, '-'),
                 },
-                replace: false
+                replace: false,
             });
-            
+
             setTimeout(() => {
                 scrollToTop();
             }, 120);
@@ -248,15 +267,17 @@ function RouteComponent() {
         if (currentStep > 0) {
             const prevStep = currentStep - 1;
             setCurrentStep(prevStep);
-            
+
             navigate({
                 to: `/user/project/${projectId}/view`,
                 search: {
-                    section: groupedQuestions[prevStep].section.toLowerCase().replace(/\s+/g, '-')
+                    section: groupedQuestions[prevStep].section
+                        .toLowerCase()
+                        .replace(/\s+/g, '-'),
                 },
-                replace: false
+                replace: false,
             });
-            
+
             setTimeout(() => {
                 scrollToTop();
             }, 120);
@@ -286,19 +307,29 @@ function RouteComponent() {
                                                 className={stepItemStyles({
                                                     active: currentStep === idx,
                                                 })}
-                                                onKeyUp={() => setCurrentStep(idx)}
+                                                onKeyUp={() =>
+                                                    setCurrentStep(idx)
+                                                }
                                                 onClick={() => {
                                                     setCurrentStep(idx);
                                                     navigate({
                                                         to: `/user/project/${projectId}/view`,
                                                         search: {
-                                                            section: group.section.toLowerCase().replace(/\s+/g, '-')
+                                                            section:
+                                                                group.section
+                                                                    .toLowerCase()
+                                                                    .replace(
+                                                                        /\s+/g,
+                                                                        '-'
+                                                                    ),
                                                         },
-                                                        replace: false
+                                                        replace: false,
                                                     });
                                                 }}
                                             >
-                                                <span className="text-nowrap">{group.section}</span>
+                                                <span className="text-nowrap">
+                                                    {group.section}
+                                                </span>
                                                 {currentStep === idx && (
                                                     <div className="absolute bottom-0 left-0 w-full h-1 bg-button-secondary-100" />
                                                 )}
@@ -322,25 +353,29 @@ function RouteComponent() {
                                         key={subsection.name}
                                         className={questionGroupContainerStyles()}
                                     >
-                                        <CollapsibleSection title={subsection.name}>
+                                        <CollapsibleSection
+                                            title={subsection.name}
+                                        >
                                             <div
                                                 className={questionGroupQuestionsContainerStyles()}
                                             >
-                                                {subsection.questions.map((q) =>
-                                                    shouldRenderQuestion(
-                                                        q,
-                                                        subsection.questions
-                                                    ) ? (
-                                                        <ReviewQuestions
-                                                            disableCommentCreation
-                                                            key={q.id}
-                                                            question={q}
-                                                            onCreateComment={() => {}}
-                                                            comments={
-                                                                commentsData || []
-                                                            }
-                                                        />
-                                                    ) : null
+                                                {subsection.questions.map(
+                                                    (q) =>
+                                                        shouldRenderQuestion(
+                                                            q,
+                                                            subsection.questions
+                                                        ) ? (
+                                                            <ReviewQuestions
+                                                                disableCommentCreation
+                                                                key={q.id}
+                                                                question={q}
+                                                                onCreateComment={() => {}}
+                                                                comments={
+                                                                    commentsData ||
+                                                                    []
+                                                                }
+                                                            />
+                                                        ) : null
                                                 )}
                                             </div>
                                         </CollapsibleSection>
@@ -363,7 +398,8 @@ function RouteComponent() {
                                     type="button"
                                     onClick={handleNextStep}
                                     disabled={
-                                        currentStep === groupedQuestions.length - 1
+                                        currentStep ===
+                                        groupedQuestions.length - 1
                                     }
                                 >
                                     Continue
@@ -373,7 +409,7 @@ function RouteComponent() {
                     </div>
                 </div>
             </div>
-            
+
             <ScrollButton />
         </div>
     );

@@ -16,7 +16,7 @@ export const Route = createFileRoute('/admin/_auth/_appshell')({
 function AdminAppShellComponent() {
     const location = useLocation();
     const { setCurrentProjectId } = useSidebar();
-    
+
     useEffect(() => {
         const match = location.pathname.match(/\/projects\/([^/]+)/);
         setCurrentProjectId(match ? match[1] : undefined);

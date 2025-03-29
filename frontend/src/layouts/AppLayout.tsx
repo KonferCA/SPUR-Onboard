@@ -10,16 +10,13 @@ interface AppLayoutProps {
     children?: React.ReactNode;
 }
 
-export const AppLayout: React.FC<AppLayoutProps> = ({ 
+export const AppLayout: React.FC<AppLayoutProps> = ({
     showSidebar = true,
     children,
 }) => {
     const { user, clearAuth } = useAuth();
-    const { 
-        isSidebarVisible, 
-        isMobileDrawerOpen,
-        setMobileDrawerOpen
-    } = useSidebar();
+    const { isSidebarVisible, isMobileDrawerOpen, setMobileDrawerOpen } =
+        useSidebar();
 
     useEffect(() => {
         if (isMobileDrawerOpen) {
@@ -53,7 +50,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     };
 
     const shouldRenderSidebar = showSidebar && isSidebarVisible && user;
-    
+
     return (
         <div className="h-screen flex flex-col bg-gray-50">
             {shouldRenderSidebar && (
@@ -75,10 +72,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     />
                 </>
             )}
-            <main className={`flex-1 overflow-auto ${shouldRenderSidebar ? 'md:ml-64' : ''}`}>
-                <div className="w-full h-full">
-                    {children || <Outlet />}
-                </div>
+            <main
+                className={`flex-1 overflow-auto ${shouldRenderSidebar ? 'md:ml-64' : ''}`}
+            >
+                <div className="w-full h-full">{children || <Outlet />}</div>
             </main>
         </div>
     );

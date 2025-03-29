@@ -137,15 +137,20 @@ function ProjectFormPage() {
     const location = useLocation();
     const { updateProjectConfig } = useSidebar();
 
-    const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+    const searchParams = useMemo(
+        () => new URLSearchParams(location.search),
+        [location.search]
+    );
 
     useEffect(() => {
         if (searchParams.has('section') && groupedQuestions.length > 0) {
             const sectionParam = searchParams.get('section');
             const sectionIndex = groupedQuestions.findIndex(
-                group => group.section.toLowerCase().replace(/\s+/g, '-') === sectionParam
+                (group) =>
+                    group.section.toLowerCase().replace(/\s+/g, '-') ===
+                    sectionParam
             );
-            
+
             if (sectionIndex !== -1 && sectionIndex !== currentStep) {
                 setCurrentStep(sectionIndex);
             }
@@ -156,35 +161,43 @@ function ProjectFormPage() {
         if (groupedQuestions.length > 0) {
             updateProjectConfig({
                 // pass section names to the sidebar
-                sections: groupedQuestions.map(group => group.section),
-                
+                sections: groupedQuestions.map((group) => group.section),
+
                 // handle when a section is clicked in the sidebar
                 sectionClickHandler: (projectId, section, sectionIndex) => {
                     if (projectId === currentProjectId) {
                         setCurrentStep(sectionIndex);
-                        
+
                         navigate({
                             to: `/user/project/${currentProjectId}/form`,
                             search: {
-                                section: section.toLowerCase().replace(/\s+/g, '-')
+                                section: section
+                                    .toLowerCase()
+                                    .replace(/\s+/g, '-'),
                             },
-                            replace: false
+                            replace: false,
                         });
-                        
+
                         scrollToTop();
                     }
                 },
-                
+
                 getActiveSection: () => {
                     if (groupedQuestions.length > 0 && currentStep >= 0) {
                         return groupedQuestions[currentStep].section;
                     }
 
                     return null;
-                }
+                },
             });
         }
-    }, [groupedQuestions, currentProjectId, currentStep, updateProjectConfig, navigate]);
+    }, [
+        groupedQuestions,
+        currentProjectId,
+        currentStep,
+        updateProjectConfig,
+        navigate,
+    ]);
 
     const autosave = useDebounceFn(
         async () => {
@@ -423,15 +436,17 @@ function ProjectFormPage() {
         if (currentStep < groupedQuestions.length - 1) {
             const nextStep = currentStep + 1;
             setCurrentStep(nextStep);
-            
+
             navigate({
                 to: `/user/project/${currentProjectId}/form`,
                 search: {
-                    section: groupedQuestions[nextStep].section.toLowerCase().replace(/\s+/g, '-')
+                    section: groupedQuestions[nextStep].section
+                        .toLowerCase()
+                        .replace(/\s+/g, '-'),
                 },
-                replace: false
+                replace: false,
             });
-            
+
             setTimeout(() => {
                 scrollToTop();
             }, 120);
@@ -442,15 +457,17 @@ function ProjectFormPage() {
         if (currentStep > 0) {
             const prevStep = currentStep - 1;
             setCurrentStep(prevStep);
-            
+
             navigate({
                 to: `/user/project/${currentProjectId}/form`,
                 search: {
-                    section: groupedQuestions[prevStep].section.toLowerCase().replace(/\s+/g, '-')
+                    section: groupedQuestions[prevStep].section
+                        .toLowerCase()
+                        .replace(/\s+/g, '-'),
                 },
-                replace: false
+                replace: false,
             });
-            
+
             setTimeout(() => {
                 scrollToTop();
             }, 120);

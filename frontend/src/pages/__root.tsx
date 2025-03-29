@@ -22,4 +22,4 @@ function RootComponent() {
             )}
         </SidebarProvider>
     );
-};
+}
