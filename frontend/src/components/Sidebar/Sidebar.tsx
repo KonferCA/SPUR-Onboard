@@ -29,6 +29,7 @@ import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { useSidebar } from '@/contexts/SidebarContext/SidebarContext';
 import { isRouteAvailable } from '@/config/routes';
 import type { MenuItem, SidebarProps } from '@/types/sidebar';
+import type { ProjectResponse } from '@/types/project';
 
 export const Sidebar = ({
     userPermissions,
@@ -268,9 +269,9 @@ export const Sidebar = ({
     const navigateToProject = useCallback((
         projectId: string,
         section?: string,
-        project?: any
+        project?: ProjectResponse 
     ) => {
-        const isSubmitted = project?.isSubmitted || project?.status === 'SUBMITTED' || 
+        const isSubmitted = project?.status === 'SUBMITTED' || 
                            project?.status === 'UNDER_REVIEW' || project?.status === 'APPROVED';
         
         const searchParams = section 
