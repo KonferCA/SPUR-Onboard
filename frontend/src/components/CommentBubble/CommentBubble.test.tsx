@@ -99,7 +99,7 @@ describe('CommentBubble', () => {
     });
 
     it('handles resolve action when resolve button is clicked', async () => {
-        vi.mocked(resolveProjectComment).mockResolvedValue({} as any);
+        vi.mocked(resolveProjectComment).mockResolvedValue();
 
         renderWithProviders(<CommentBubble data={mockComment} />);
 
@@ -127,7 +127,7 @@ describe('CommentBubble', () => {
     });
 
     it('handles unresolve action when unresolve button is clicked', async () => {
-        vi.mocked(unresolveProjectComment).mockResolvedValue({} as any);
+        vi.mocked(unresolveProjectComment).mockResolvedValue();
 
         const resolvedComment = { ...mockComment, resolved: true };
 

@@ -43,42 +43,45 @@ export const CommentBubble: FC<CommentBubbleProps> = ({ data }) => {
     const notifications = useNotification();
     const { accessToken } = useAuth();
 
-    const onToggleResolution = useCallback(async (comment: Comment) => {
-        if (!accessToken) return;
-        const originalResolvedState = comment.resolved;
-        try {
-            // Optimistic update
-            setComment({ ...comment, resolved: !comment.resolved });
-            if (comment.resolved) {
-                await unresolveProjectComment(
-                    accessToken,
-                    comment.id,
-                    comment.projectId
-                );
-            } else {
-                await resolveProjectComment(
-                    accessToken,
-                    comment.id,
-                    comment.projectId
-                );
+    const onToggleResolution = useCallback(
+        async (comment: Comment) => {
+            if (!accessToken) return;
+            const originalResolvedState = comment.resolved;
+            try {
+                // Optimistic update
+                setComment({ ...comment, resolved: !comment.resolved });
+                if (comment.resolved) {
+                    await unresolveProjectComment(
+                        accessToken,
+                        comment.id,
+                        comment.projectId
+                    );
+                } else {
+                    await resolveProjectComment(
+                        accessToken,
+                        comment.id,
+                        comment.projectId
+                    );
+                }
+            } catch (error) {
+                // Reverse optimistic update
+                setComment({ ...comment, resolved: originalResolvedState });
+                let message = '';
+                if (error instanceof ApiError) {
+                    message =
+                        (error.body as { message: string }).message ||
+                        error.message;
+                }
+                notifications.push({
+                    message:
+                        message ||
+                        "Failed to resolve comment. Make sure you're connected to the Internet.",
+                    level: 'error',
+                });
             }
-        } catch (error) {
-            // Reverse optimistic update
-            setComment({ ...comment, resolved: originalResolvedState });
-            let message = '';
-            if (error instanceof ApiError) {
-                message =
-                    (error.body as { message: string }).message ||
-                    error.message;
-            }
-            notifications.push({
-                message:
-                    message ||
-                    "Failed to resolve comment. Make sure you're connected to the Internet.",
-                level: 'error',
-            });
-        }
-    }, []);
+        },
+        [accessToken, notifications.push]
+    );
 
     return (
         <div className="relative">
