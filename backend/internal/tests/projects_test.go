@@ -440,7 +440,7 @@ func TestProjectEndpoints(t *testing.T) {
 		unauthorizedRec := httptest.NewRecorder()
 		s.GetEcho().ServeHTTP(unauthorizedRec, unauthorizedReq)
 
-		// This should fail with a 404 Not Found (as the user can't access the project)
+		// This should fail with a 403 Forbidden (as the user can't access the project)
 		assert.Equal(t, http.StatusForbidden, unauthorizedRec.Code, "User without project access should not be able to get snapshot")
 	})
 
