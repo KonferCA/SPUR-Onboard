@@ -20,10 +20,17 @@ It matches the format: 0x followed by 64 hexadecimal characters.
 
 linkedinURLPattern is a regular expression pattern for validating LinkedIn profile URLs.
 It matches URLs that start with http:// or https:// and contain linkedin.com domain.
+
+upperCasePattern is a regular expression pattern for validating the presence of at least one uppercase letter.
+numberPattern is a regular expression pattern for validating the presence of at least one numeric digit.
+specialCharPattern is a regular expression pattern for validating the presence of at least one special character.
 */
 var (
 	walletAddressPattern = regexp.MustCompile("^0x[0-9a-fA-F]{64}$")
 	linkedInURLPattern   = regexp.MustCompile(`^https?:\/\/(www\.)?linkedin\.com\/.*$`)
+	upperCasePattern     = regexp.MustCompile(`[A-Z]`)
+	numberPattern        = regexp.MustCompile(`[0-9]`)
+	specialCharPattern   = regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]`)
 )
 
 /*
@@ -41,6 +48,9 @@ NewRequestValidator creates and initializes a new CustomValidator with registere
   - wallet_address: Validates cryptocurrency wallet addresses
   - linkedin_url: Validates LinkedIn profile URLs
   - project_status: Validates project status values
+  - contains_upper: Validates the presence of at least one uppercase letter
+  - contains_number: Validates the presence of at least one numeric digit
+  - contains_special: Validates the presence of at least one special character
 
 Returns a configured CustomValidator
 */
@@ -53,6 +63,9 @@ func NewRequestValidator() *CustomValidator {
 	v.RegisterValidation("linkedin_url", validateLinkedInURL)
 	v.RegisterValidation("project_status", validateProjectStatus)
 	v.RegisterValidation("social_platform", validateSocialPlatform)
+	v.RegisterValidation("contains_upper", validateContainsUppercase)
+	v.RegisterValidation("contains_number", validateContainsNumber)
+	v.RegisterValidation("contains_special", validateContainsSpecialChar)
 
 	return &CustomValidator{validator: v}
 }
@@ -189,6 +202,30 @@ func validateSocialPlatform(fl validator.FieldLevel) bool {
 }
 
 /*
+validateContainsUppercase checks if a string contains at least one uppercase letter.
+Returns true if the field contains at least one uppercase letter, false otherwise.
+*/
+func validateContainsUppercase(fl validator.FieldLevel) bool {
+	return upperCasePattern.MatchString(fl.Field().String())
+}
+
+/*
+validateContainsNumber checks if a string contains at least one numeric digit.
+Returns true if the field contains at least one digit, false otherwise.
+*/
+func validateContainsNumber(fl validator.FieldLevel) bool {
+	return numberPattern.MatchString(fl.Field().String())
+}
+
+/*
+validateContainsSpecialChar checks if a string contains at least one special character.
+Returns true if the field contains at least one special character, false otherwise.
+*/
+func validateContainsSpecialChar(fl validator.FieldLevel) bool {
+	return specialCharPattern.MatchString(fl.Field().String())
+}
+
+/*
 formatValidationErrors converts validator.ValidationErrors into a human-readable string.
 It processes each validation error and formats it according to the validation tag that failed.
 
@@ -235,6 +272,12 @@ func formatErrorMessage(field, tag, param string) string {
 		return fmt.Sprintf("%s must be a valid LinkedIn URL", field)
 	case "project_status":
 		return fmt.Sprintf("%s must be a valid project status", field)
+	case "contains_upper":
+		return fmt.Sprintf("%s must contain at least one uppercase letter", field)
+	case "contains_number":
+		return fmt.Sprintf("%s must contain at least one number", field)
+	case "contains_special":
+		return fmt.Sprintf("%s must contain at least one special character", field)
 	case "required":
 		return fmt.Sprintf("%s is required", field)
 	case "email":

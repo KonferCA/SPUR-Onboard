@@ -8,6 +8,7 @@ interface PasswordValidation {
     hasUpperCase: boolean;
     hasNumber: boolean;
     hasSpecialChar: boolean;
+    minLength: boolean;
     isValid: boolean;
 }
 
@@ -31,6 +32,7 @@ export function AuthForm({
             hasUpperCase: false,
             hasNumber: false,
             hasSpecialChar: false,
+            minLength: false,
             isValid: false,
         });
     const [showRequirements, setShowRequirements] = useState(false);
@@ -43,13 +45,15 @@ export function AuthForm({
                 hasSpecialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
                     formData.password
                 ),
+                minLength: formData.password.length >= 8,
                 isValid: false,
             };
 
             validation.isValid =
                 validation.hasUpperCase &&
                 validation.hasNumber &&
-                validation.hasSpecialChar;
+                validation.hasSpecialChar &&
+                validation.minLength;
 
             setPasswordValidation(validation);
 
@@ -210,6 +214,15 @@ export function AuthForm({
                                 Password must contain:
                             </p>
                             <ul className="space-y-1 pl-5 list-disc">
+                                <li
+                                    className={
+                                        passwordValidation.minLength
+                                            ? 'text-green-600'
+                                            : ''
+                                    }
+                                >
+                                    At least 8 characters
+                                </li>
                                 <li
                                     className={
                                         passwordValidation.hasUpperCase
