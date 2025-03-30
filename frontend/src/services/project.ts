@@ -2,6 +2,7 @@ import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
 import { snakeToCamel } from '@/utils/object';
 import type { TeamMember } from '@/types';
+import type { ProjectSnapshotResponse } from '@/types/projects';
 
 // interface CompanyResponse {
 //     ID: string;
@@ -342,4 +343,26 @@ export async function submitProject(accessToken: string, projectId: string) {
     if (res.status !== HttpStatusCode.OK) {
         throw new Error(`Failed to submit project: ${json.message}`);
     }
+}
+
+/*
+ * getLatestProjectSnapshot tries to get the latest project snapshot.
+ * This function throws an ApiError for any status code that is not 200.
+ */
+export async function getLatestProjectSnapshot(
+    accessToken: string,
+    projectId: string
+): Promise<ProjectSnapshotResponse> {
+    const url = getApiUrl(`/project/${projectId}/snapshots/latest`);
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+    const json = await res.json();
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to get project snapshot', res.status, json);
+    }
+    return json as ProjectSnapshotResponse;
 }
