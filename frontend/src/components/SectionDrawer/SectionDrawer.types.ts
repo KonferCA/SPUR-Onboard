@@ -1,5 +1,5 @@
 import type { AnchorLinkItem } from '@components';
-import type { ValidationError } from '@/components/ProjectError';
+import type { ValidationError } from '@/types/project';
 import type { RecommendedField } from '@/types';
 
 export type SectionDrawerLinkItem = AnchorLinkItem & {
