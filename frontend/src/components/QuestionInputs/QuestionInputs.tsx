@@ -5,6 +5,7 @@ import {
     Dropdown,
     TeamMembers,
     DateInput,
+    Comments,
 } from '@/components';
 import type { DropdownOption, UploadableFile } from '@/components';
 import type { Question } from '@/config/forms';
@@ -14,6 +15,7 @@ import { cva } from 'class-variance-authority';
 import FundingStructure, {
     type FundingStructureModel,
 } from '../FundingStructure';
+import type { Comment } from '@/services/comment';
 
 const legendStyles = cva('block text-md font-normal', {
     variants: {
@@ -90,12 +92,14 @@ interface QuestionInputsProps {
         enableAutosave?: boolean;
     };
     shouldHighlight?: boolean | 'error' | 'neutral';
+    comments?: Comment[];
 }
 
 export const QuestionInputs: FC<QuestionInputsProps> = ({
     question,
     onChange,
     fileUploadProps,
+    comments = [],
     shouldHighlight = false,
 }) => {
     const hasInvalidField = question.inputFields.some((field) => field.invalid);
@@ -293,46 +297,54 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     };
 
     return (
-        <fieldset
-            id={question.id}
-            className={fieldsetStyles({
-                highlight: shouldHighlight
-                    ? shouldHighlight === true
-                        ? 'error'
-                        : shouldHighlight
-                    : false,
-            })}
-        >
-            <div className={headerContainerStyles()}>
-                <legend className={legendStyles({ hasError: hasInvalidField })}>
-                    {question.question}
+        <div className="relative">
+            <fieldset
+                id={question.id}
+                className={fieldsetStyles({
+                    highlight: shouldHighlight
+                        ? shouldHighlight === true
+                            ? 'error'
+                            : shouldHighlight
+                        : false,
+                })}
+            >
+                <div className={headerContainerStyles()}>
+                    <legend
+                        className={legendStyles({ hasError: hasInvalidField })}
+                    >
+                        {question.question}
+                        {isQuestionRequired && (
+                            <span
+                                className={requiredIndicatorStyles({
+                                    hasError: hasInvalidField,
+                                })}
+                            >
+                                *
+                            </span>
+                        )}
+                    </legend>
                     {isQuestionRequired && (
                         <span
-                            className={requiredIndicatorStyles({
+                            className={requiredTextStyles({
                                 hasError: hasInvalidField,
                             })}
                         >
-                            *
+                            Required
                         </span>
                     )}
-                </legend>
-                {isQuestionRequired && (
-                    <span
-                        className={requiredTextStyles({
-                            hasError: hasInvalidField,
-                        })}
-                    >
-                        Required
-                    </span>
-                )}
-            </div>
-            <div className="space-y-4">
-                {question.inputFields.map((field, index) => (
-                    <div key={field.key} className="w-full">
-                        {renderInput(field, index === 0)}
-                    </div>
-                ))}
-            </div>
-        </fieldset>
+                </div>
+                <div className="space-y-4">
+                    {question.inputFields.map((field, index) => (
+                        <div key={field.key} className="w-full">
+                            {renderInput(field, index === 0)}
+                        </div>
+                    ))}
+                </div>
+            </fieldset>
+            <Comments
+                comments={comments.filter((c) => c.targetId === question.id)}
+                rootContainerClasses="absolute -right-2 top-0 -translate-y-1/2 translate-x-full"
+            />
+        </div>
     );
 };
