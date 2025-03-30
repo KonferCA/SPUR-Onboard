@@ -61,8 +61,8 @@ export function AuthPage({ children }: AuthPageProps) {
 
     // function to create a responsive grid
     const renderGrid = (key: string, gridSize: number) => {
-        return Array.from({ length: gridSize + 1 }).map((_, rowIndex) =>
-            Array.from({ length: gridSize + 1 }).map((_, colIndex) => {
+        return Array.from({ length: gridSize }).map((_, rowIndex) =>
+            Array.from({ length: gridSize }).map((_, colIndex) => {
                 const cellId = `${key}-cell-r${rowIndex}-c${colIndex}`;
 
                 return (
