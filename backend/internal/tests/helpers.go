@@ -28,7 +28,7 @@ The function returns userID, email, password, error
 func createTestUser(ctx context.Context, s *server.Server, perms uint32) (string, string, string, error) {
 	userID := uuid.New().String()
 	email := fmt.Sprintf("test-%s@example.com", uuid.New().String())
-	password := "testpassword123"
+	password := "TestPassword123!"
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	_, err := s.GetDB().Exec(ctx, `
@@ -120,7 +120,7 @@ func createTestAdmin(ctx context.Context, s *server.Server) (string, string, str
 
 	// Generate random email and password
 	email := fmt.Sprintf("admin_%s@test.com", uuid.New().String())
-	password := "test_password"
+	password := "TestPassword123!"
 
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)

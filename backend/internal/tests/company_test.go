@@ -68,7 +68,7 @@ func TestCompanyEndpoints(t *testing.T) {
 				RETURNING token_salt
 			)
 			SELECT token_salt FROM inserted
-		`, testUsers[i].id, testUsers[i].email, "hashedpass", int32(testUsers[i].permissions), true).Scan(&salt)
+		`, testUsers[i].id, testUsers[i].email, "TestPassword123!", int32(testUsers[i].permissions), true).Scan(&salt)
 		require.NoError(t, err)
 
 		testUsers[i].salt = salt
