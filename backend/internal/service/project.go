@@ -44,3 +44,33 @@ func GetLatestProjectSnapshot(queries *db.Queries, ctx context.Context, projectI
 	}
 	return snapshot, nil
 }
+
+// CreateProjectComment creates a new project comment, sets the 'allow_edit' flag to 'true', and update project status to 'needs review'.
+// The affect project row is one matching the project id in the comment parameters.
+func CreateProjectComment(queries *db.Queries, ctx context.Context, commentParams db.CreateProjectCommentParams) (db.ProjectComment, error) {
+	// Create new comment
+	comment, err := queries.CreateProjectComment(ctx, commentParams)
+	if err != nil {
+		return db.ProjectComment{}, err
+	}
+
+	// Set 'allow_flag' to true
+	err = queries.SetProjectAllowEdit(ctx, db.SetProjectAllowEditParams{
+		AllowEdit: true,
+		ID:        commentParams.ProjectID,
+	})
+	if err != nil {
+		return db.ProjectComment{}, err
+	}
+
+	// Set project status to 'needs review'
+	err = queries.UpdateProjectStatus(ctx, db.UpdateProjectStatusParams{
+		ID:     commentParams.ProjectID,
+		Status: db.ProjectStatusNeedsreview,
+	})
+	if err != nil {
+		return db.ProjectComment{}, err
+	}
+
+	return comment, nil
+}

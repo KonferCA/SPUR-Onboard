@@ -19,6 +19,7 @@ type ProjectResponse struct {
 	Title       string           `json:"title"`
 	Description string           `json:"description"`
 	Status      db.ProjectStatus `json:"status"`
+	AllowEdit   bool             `json:"allow_edit"`
 	CreatedAt   int64            `json:"created_at"`
 	UpdatedAt   int64            `json:"updated_at"`
 }

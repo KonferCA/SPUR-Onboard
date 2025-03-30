@@ -236,6 +236,7 @@ func (h *Handler) handleGetProject(c echo.Context) error {
 		Title:       project.Title,
 		Description: description,
 		Status:      project.Status,
+		AllowEdit:   project.AllowEdit,
 		CreatedAt:   project.CreatedAt,
 		UpdatedAt:   project.UpdatedAt,
 	})

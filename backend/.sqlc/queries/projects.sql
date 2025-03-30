@@ -397,3 +397,8 @@ SET title = (
     WHERE pq.question_key = 'company_name'
     )
 WHERE id = $1;
+
+-- name: SetProjectAllowEdit :exec
+UPDATE projects
+SET allow_edit = $1
+WHERE id = $2;

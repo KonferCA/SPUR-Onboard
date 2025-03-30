@@ -3,9 +3,12 @@ package v1_projects
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/service"
 	"KonferCA/SPUR/internal/v1/v1_common"
+	"context"
 	"database/sql"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -144,14 +147,28 @@ func (h *Handler) handleCreateProjectComment(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
+	// Request should not take longer than one minute to process
+	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
+	defer cancel()
+
+	// Begin transaction because the flag 'allow_edit' in the projects table
+	// needs to be set upon successful creation of a comment.
+	tx, err := h.server.GetDB().Begin(ctx)
+	if err != nil {
+		return v1_common.NewInternalError(err)
+	}
+	defer tx.Rollback(ctx)
+
+	queries := h.server.GetQueries().WithTx(tx)
+
 	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
+	company, err := queries.GetCompanyByUserID(c.Request().Context(), user.ID)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusNotFound, "Company not found", err)
 	}
 
 	// Verify project exists using admin query
-	project, err := h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
+	_, err = queries.GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
 		ID:        projectID,
 		CompanyID: company.ID,
 		Column3:   int32(user.Permissions),
@@ -171,15 +188,20 @@ func (h *Handler) handleCreateProjectComment(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request data", err)
 	}
 
-	// Create comment
-	comment, err := h.server.GetQueries().CreateProjectComment(c.Request().Context(), db.CreateProjectCommentParams{
-		ProjectID:   project.ID,
+	// Create comment and set 'allow_edit' flag
+	comment, err := service.CreateProjectComment(queries, ctx, db.CreateProjectCommentParams{
+		ProjectID:   projectID,
 		TargetID:    req.TargetID,
 		Comment:     req.Comment,
 		CommenterID: user.ID,
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create comment", err)
+	}
+
+	// Commit changes
+	if err := tx.Commit(ctx); err != nil {
+		return v1_common.NewInternalError(err)
 	}
 
 	response := CommentResponse{

@@ -639,6 +639,28 @@ func TestProjectEndpoints(t *testing.T) {
 		assert.True(t, ok, "Response should contain comment ID")
 		assert.NotEmpty(t, commentID, "Comment ID should not be empty")
 
+		// Verify the allow_edit flag was set to true
+		// Get project details to check allow_edit flag
+		projectReq := httptest.NewRequest(http.MethodGet,
+			fmt.Sprintf("/api/v1/project/%s", projectID),
+			nil)
+		projectReq.Header.Set("Authorization", "Bearer "+adminToken)
+		projectRec := httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(projectRec, projectReq)
+
+		var projectResp map[string]interface{}
+		err = json.NewDecoder(projectRec.Body).Decode(&projectResp)
+		assert.NoError(t, err)
+
+		allowEdit, ok := projectResp["allow_edit"].(bool)
+		assert.True(t, ok, "Response should contain allow_edit field")
+		assert.True(t, allowEdit, "allow_edit should be set to true after comment creation")
+
+		// Verify the project status was set to 'needs_review'
+		status, ok := projectResp["status"].(string)
+		assert.True(t, ok, "Response should contain status field")
+		assert.Equal(t, "needs review", status, "Project status should be set to 'needs review' after comment creation")
+
 		// Table-driven tests for comment resolution actions
 		tests := []struct {
 			name         string

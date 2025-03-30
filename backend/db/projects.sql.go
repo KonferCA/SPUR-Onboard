@@ -21,7 +21,7 @@ INSERT INTO projects (
     updated_at
 ) VALUES (
     $1, $2, $3, $4, $5, $6
-) RETURNING id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at
+) RETURNING id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at, allow_edit
 `
 
 type CreateProjectParams struct {
@@ -53,6 +53,7 @@ func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (P
 		&i.UpdatedAt,
 		&i.LastSnapshotID,
 		&i.OriginalSubmissionAt,
+		&i.AllowEdit,
 	)
 	return i, err
 }
@@ -512,7 +513,7 @@ func (q *Queries) GetProjectAnswers(ctx context.Context, projectID string) ([]Ge
 }
 
 const getProjectByID = `-- name: GetProjectByID :one
-SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at FROM projects 
+SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at, allow_edit FROM projects 
 WHERE id = $1 
   AND (company_id = $2 OR $3 & 1 = 1) -- Check for PermViewAllProjects (1 << 0)
 LIMIT 1
@@ -537,12 +538,13 @@ func (q *Queries) GetProjectByID(ctx context.Context, arg GetProjectByIDParams) 
 		&i.UpdatedAt,
 		&i.LastSnapshotID,
 		&i.OriginalSubmissionAt,
+		&i.AllowEdit,
 	)
 	return i, err
 }
 
 const getProjectByIDAsAdmin = `-- name: GetProjectByIDAsAdmin :one
-SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at FROM projects
+SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at, allow_edit FROM projects
 WHERE id = $1
 LIMIT 1
 `
@@ -560,6 +562,7 @@ func (q *Queries) GetProjectByIDAsAdmin(ctx context.Context, id string) (Project
 		&i.UpdatedAt,
 		&i.LastSnapshotID,
 		&i.OriginalSubmissionAt,
+		&i.AllowEdit,
 	)
 	return i, err
 }
@@ -864,7 +867,7 @@ func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestion
 }
 
 const getProjectsByCompanyID = `-- name: GetProjectsByCompanyID :many
-SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at FROM projects 
+SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at, allow_edit FROM projects 
 WHERE company_id = $1 
 ORDER BY created_at DESC
 `
@@ -888,6 +891,7 @@ func (q *Queries) GetProjectsByCompanyID(ctx context.Context, companyID string) 
 			&i.UpdatedAt,
 			&i.LastSnapshotID,
 			&i.OriginalSubmissionAt,
+			&i.AllowEdit,
 		); err != nil {
 			return nil, err
 		}
@@ -1316,6 +1320,22 @@ func (q *Queries) ResolveProjectComment(ctx context.Context, arg ResolveProjectC
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const setProjectAllowEdit = `-- name: SetProjectAllowEdit :exec
+UPDATE projects
+SET allow_edit = $1
+WHERE id = $2
+`
+
+type SetProjectAllowEditParams struct {
+	AllowEdit bool   `json:"allow_edit"`
+	ID        string `json:"id"`
+}
+
+func (q *Queries) SetProjectAllowEdit(ctx context.Context, arg SetProjectAllowEditParams) error {
+	_, err := q.db.Exec(ctx, setProjectAllowEdit, arg.AllowEdit, arg.ID)
+	return err
 }
 
 const unresolveProjectComment = `-- name: UnresolveProjectComment :one
