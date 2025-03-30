@@ -38,6 +38,7 @@ import { AutoSaveIndicator } from '@/components/AutoSaveIndicator';
 import type { RecommendedField } from '@/types';
 import { isValid as isValidDate } from 'date-fns';
 import { scrollToTop } from '@/utils';
+import type { FundingStructureModel } from '@/components/FundingStructure';
 
 export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
     component: ProjectFormPage,
@@ -57,6 +58,11 @@ const stepItemStyles = cva(
 const questionGroupContainerStyles = cva('');
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
+type FundingStructureFieldValue = {
+    value?: string;
+    fundingStructure?: FundingStructureModel;
+};
+
 const isEmptyValue = (value: unknown, type: string): boolean => {
     if (value === null || value === undefined) {
         return true;
@@ -71,6 +77,14 @@ const isEmptyValue = (value: unknown, type: string): boolean => {
             return (value as string).length === 0;
         case 'date':
             return isValidDate(value);
+        case 'fundingstructure':
+            // for fundingstructure fields, check if fundingStructure exists in the value object
+            if (typeof value === 'object' && value !== null) {
+                const typedValue = value as FundingStructureFieldValue;
+                // Check if fundingStructure is undefined or null
+                return !typedValue.fundingStructure;
+            }
+            return true;
         default:
             return false;
     }
@@ -298,8 +312,6 @@ function ProjectFormPage() {
                                             return field;
                                         }
 
-                                        const newValue = value;
-
                                         switch (field.type) {
                                             case 'select':
                                             case 'multiselect': {
@@ -330,7 +342,51 @@ function ProjectFormPage() {
                                                 );
                                                 break;
                                             }
+                                            case 'fundingstructure': {
+                                                const currentFieldValue =
+                                                    field.value as FundingStructureFieldValue;
+                                                if (
+                                                    typeof value === 'string' &&
+                                                    value === 'completed'
+                                                ) {
+                                                    // if it's just the marker value, return a simple object
+                                                    setTimeout(
+                                                        () => autosave(),
+                                                        0
+                                                    );
+                                                    return {
+                                                        ...field,
+                                                        value: {
+                                                            ...currentFieldValue,
+                                                            value: 'completed',
+                                                            fundingStructure:
+                                                                currentFieldValue.fundingStructure,
+                                                        },
+                                                    };
+                                                }
 
+                                                dirtyInputRef.current.set(
+                                                    questionId,
+                                                    {
+                                                        question_id: questionId,
+                                                        answer: JSON.stringify(
+                                                            value
+                                                        ),
+                                                    }
+                                                );
+
+                                                // return the object with both properties
+                                                setTimeout(() => autosave(), 0);
+                                                return {
+                                                    ...field,
+                                                    value: {
+                                                        ...currentFieldValue,
+                                                        value: 'completed', // keep the completed marker
+                                                        fundingStructure:
+                                                            value as FundingStructureModel, // store the actual structure
+                                                    },
+                                                };
+                                            }
                                             default:
                                                 dirtyInputRef.current.set(
                                                     questionId,
@@ -350,7 +406,7 @@ function ProjectFormPage() {
                                             ...field,
                                             value: {
                                                 ...field.value,
-                                                value: newValue,
+                                                value: value,
                                             },
                                         };
                                     }
@@ -570,6 +626,17 @@ function ProjectFormPage() {
                                         input.value.files.length === 0)
                                 ) {
                                     fieldValid = false;
+                                }
+                                break;
+                            case 'fundingstructure':
+                                if (input.required) {
+                                    const typedValue =
+                                        input.value as FundingStructureFieldValue;
+                                    // check if there's a fundingStructure property and it's populated
+                                    // (ex., it's not null or undefined)
+                                    if (!typedValue.fundingStructure) {
+                                        fieldValid = false;
+                                    }
                                 }
                                 break;
                             default:
