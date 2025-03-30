@@ -25,6 +25,7 @@ const (
 	testCompanyWebsite       = "https://example-company.com"
 	testValuePropositionText = "Our product provides a unique solution that addresses critical needs in the market. It offers unprecedented performance, reliability, and cost-effectiveness compared to existing alternatives. The proprietary technology enables seamless integration with existing systems."
 	testCoreProductText      = "Our core service is a comprehensive platform that solves multiple pain points for enterprise customers. The solution integrates with existing workflows while providing enhanced security, analytics, and collaboration features. It significantly reduces operational overhead and improves productivity across organizations."
+	testCompanyName          = "TechVision"
 
 	// error case test constants
 	testInvalidProjectID = "invalid-id"
@@ -147,6 +148,8 @@ func createAndFillTestProject(t *testing.T, s *server.Server, accessToken string
 			answer = testCoreProductText
 		case "What is the unique value proposition?":
 			answer = testValuePropositionText
+		case "What is your company/project name?":
+			answer = testCompanyName
 		default:
 			continue // Skip non-required questions
 		}
@@ -169,8 +172,9 @@ SELECT insert_question_with_input_types(
     0, 0, 0,
     true,
     'textinput',
+    'company_website',
     NULL,
-    'url'
+    ARRAY['url']
 ) as id;
         `,
 		`
@@ -181,8 +185,9 @@ SELECT insert_question_with_input_types(
     0, 0, 1,
     true,
     'textinput',
+    'unique_value_proposition',
     NULL,
-    'min=50'
+    ARRAY['min=50']
 ) as id;
         `,
 		`
@@ -193,9 +198,23 @@ SELECT insert_question_with_input_types(
     0, 0, 2,
     true,
     'textinput',
+    'core_product',
     NULL,
-    'min=100'
-);
+    ARRAY['min=100']
+) as id;
+        `,
+		`
+SELECT insert_question_with_input_types(
+    'What is your company/project name?',
+    'Test',
+    'Sub-Test',
+    0, 0, 3,
+    true,
+    'textinput',
+    'company_name',
+    NULL,
+    NULL
+) as id;
         `,
 	}
 
@@ -239,7 +258,7 @@ func TestProjectEndpoints(t *testing.T) {
 	// seeding database with sample questions
 	testQuestionIds, err := seedTestProjectQuestions(s.DBPool)
 	require.NoError(t, err)
-	require.Equal(t, 3, len(testQuestionIds))
+	require.Equal(t, 4, len(testQuestionIds))
 
 	// Create test user and get auth token
 	ctx := context.Background()
@@ -362,6 +381,67 @@ func TestProjectEndpoints(t *testing.T) {
 		status, ok := resp["status"].(string)
 		assert.True(t, ok, "Response should contain status field")
 		assert.Equal(t, "pending", status, "Project status should be pending after submission")
+	})
+
+	t.Run("Get Latest Project Snapshot", func(t *testing.T) {
+		// Create a new project specifically for this test
+		projectIDToSubmit := createAndFillTestProject(t, s, accessToken, companyID)
+
+		// Submit the project to ensure a snapshot is created
+		submitProject(t, s, accessToken, projectIDToSubmit)
+
+		// Get the latest snapshot
+		snapshotPath := fmt.Sprintf("/api/v1/project/%s/snapshots/latest", projectIDToSubmit)
+		req := httptest.NewRequest(http.MethodGet, snapshotPath, nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		rec := httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(rec, req)
+
+		// Verify response status
+		assert.Equal(t, http.StatusOK, rec.Code, "Getting latest snapshot should succeed")
+
+		// Parse response
+		var snapshot db.ProjectSnapshot
+		err := json.NewDecoder(rec.Body).Decode(&snapshot)
+		assert.NoError(t, err, "Should decode snapshot response")
+
+		// Validate snapshot basic properties
+		assert.NotEmpty(t, snapshot.ID, "Snapshot ID should not be empty")
+		assert.Equal(t, projectIDToSubmit, snapshot.ProjectID, "Snapshot project ID should match submitted project ID")
+		assert.NotEmpty(t, snapshot.Data, "Snapshot data should not be empty")
+		assert.Equal(t, int32(1), snapshot.VersionNumber, "First snapshot should have version number 1")
+		assert.NotEmpty(t, snapshot.Title, "Snapshot title should not be empty")
+		assert.Greater(t, snapshot.CreatedAt, int64(0), "Snapshot creation timestamp should be positive")
+
+		// Test unauthorized access (using an admin-only account to access the snapshot)
+		// Create a new user with insufficient permissions
+		limitedUserID, limitedEmail, limitedPassword, err := createTestUser(ctx, s, uint32(permissions.PermViewAllProjects))
+		assert.NoError(t, err)
+		defer removeTestUser(ctx, limitedEmail, s)
+
+		// Verify the user exists and check their status
+		_, err = s.GetQueries().GetUserByEmail(ctx, limitedEmail)
+		assert.NoError(t, err, "Should find user in database")
+
+		// Directly verify email in database
+		err = s.GetQueries().UpdateUserEmailVerifiedStatus(ctx, db.UpdateUserEmailVerifiedStatusParams{
+			ID:            limitedUserID,
+			EmailVerified: true,
+		})
+		assert.NoError(t, err, "Should update email verification status")
+
+		// Login as limited user
+		limitedToken := loginAndGetToken(t, s, limitedEmail, limitedPassword)
+		require.NotEmpty(t, limitedToken)
+
+		// Try to access snapshot with insufficient permissions
+		unauthorizedReq := httptest.NewRequest(http.MethodGet, snapshotPath, nil)
+		unauthorizedReq.Header.Set("Authorization", "Bearer "+limitedToken)
+		unauthorizedRec := httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(unauthorizedRec, unauthorizedReq)
+
+		// This should fail with a 404 Not Found (as the user can't access the project)
+		assert.Equal(t, http.StatusForbidden, unauthorizedRec.Code, "User without project access should not be able to get snapshot")
 	})
 
 	/*
