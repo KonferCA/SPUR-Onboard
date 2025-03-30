@@ -28,7 +28,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useDebounceFn } from '@/hooks';
 import { useAuth, useNotification } from '@/contexts';
 import { useNavigate } from '@tanstack/react-router';
-import { type ValidationError, ProjectError } from '@/components/ProjectError';
+import { type ValidationError } from '@/types/project';
+import { ProjectError } from '@/components/ProjectError';
 import { RecommendedFields } from '@/components/RecommendedFields';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
@@ -133,6 +134,7 @@ function ProjectFormPage() {
     }>({ id: null, type: 'error' });
     const [isMobile, setIsMobile] = useState(false);
     const [showClearFormModal, setShowClearFormModal] = useState(false);
+    const [showErrorPanel, setShowErrorPanel] = useState(true);
 
     const location = useLocation();
     const { updateProjectConfig } = useSidebar();
@@ -999,11 +1001,15 @@ function ProjectFormPage() {
                     </div>
 
                     <div className="pt-4">
-                        <div className="hidden 2xl:block fixed w-60 3xl:w-80 right-12">
+                        <div className="hidden lg:block fixed right-0 top-32 z-30">
                             {validationErrors.length > 0 && (
                                 <ProjectError
                                     errors={validationErrors}
                                     onErrorClick={handleErrorClick}
+                                    isOpen={showErrorPanel}
+                                    onToggle={() =>
+                                        setShowErrorPanel(!showErrorPanel)
+                                    }
                                 />
                             )}
                         </div>
