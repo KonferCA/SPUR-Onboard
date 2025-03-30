@@ -1,3 +1,5 @@
+import { ProjectQuestionsData } from '@/services/project';
+
 /*
  * ProjectSnapshotResponse is the response body for a successful retrieval
  * for a project snapshot.
@@ -12,4 +14,11 @@ export interface ProjectSnapshotResponse {
     description?: string;
     parent_snapshot_id?: string;
     created_at: number;
+}
+
+/*
+ * ProjectSnapshot represents the structure after the data field has been decoded and parsed as ProjectQuestionsData.
+ */
+export interface ProjectSnapshot extends Omit<ProjectSnapshotResponse, 'data'> {
+    data: ProjectQuestionsData;
 }

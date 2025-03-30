@@ -2,7 +2,7 @@ import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
 import { snakeToCamel } from '@/utils/object';
 import type { TeamMember } from '@/types';
-import type { ProjectSnapshotResponse } from '@/types/projects';
+import type { ProjectSnapshot } from '@/types/projects';
 
 // interface CompanyResponse {
 //     ID: string;
@@ -352,7 +352,7 @@ export async function submitProject(accessToken: string, projectId: string) {
 export async function getLatestProjectSnapshot(
     accessToken: string,
     projectId: string
-): Promise<ProjectSnapshotResponse> {
+): Promise<ProjectSnapshot> {
     const url = getApiUrl(`/project/${projectId}/snapshots/latest`);
     const res = await fetch(url, {
         method: 'GET',
@@ -364,5 +364,12 @@ export async function getLatestProjectSnapshot(
     if (res.status !== HttpStatusCode.OK) {
         throw new ApiError('Failed to get project snapshot', res.status, json);
     }
-    return json as ProjectSnapshotResponse;
+
+    // The data field is a base64 encoded json and it should be of type ProjectQuestionsData
+    const decoded = window.atob(json.data);
+    const parsed = JSON.parse(decoded);
+    // transformation snakeToCamel is necessary because the function groupProjectQuestions expects camel casing
+    json.data = snakeToCamel(parsed);
+
+    return json as ProjectSnapshot;
 }
