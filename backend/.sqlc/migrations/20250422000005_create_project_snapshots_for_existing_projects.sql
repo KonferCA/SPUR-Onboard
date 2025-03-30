@@ -51,6 +51,7 @@ SELECT
                         END
                     )
                 )
+                ORDER BY pq.section_order, pq.sub_section_order, pq.question_order
             ), '[]'::jsonb)
             FROM project_questions pq
             LEFT JOIN project_answers pa ON pa.question_id = pq.id AND pa.project_id = p.id
@@ -70,6 +71,7 @@ SELECT
                     'created_at', pd.created_at,
                     'updated_at', pd.updated_at
                 )
+				ORDER BY pd.created_at
             ), '[]'::jsonb)
             FROM project_documents pd
             WHERE pd.project_id = p.id
@@ -98,6 +100,7 @@ SELECT
                     'updated_at', tm.updated_at,
                     'social_links', tm.social_links
                 )
+				ORDER BY tm.created_at
             ), '[]'::jsonb)
             FROM team_members tm
             WHERE tm.company_id = p.company_id
