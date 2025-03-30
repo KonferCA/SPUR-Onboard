@@ -99,6 +99,9 @@ export default {
                 blink: 'blink 1.2s ease-in-out 1',
                 neutralBlink: 'neutralBlink 1.2s ease-in-out 1',
             },
+            backgroundImage: {
+                'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+            },
         },
     },
 
