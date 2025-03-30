@@ -7,7 +7,10 @@ import {
 } from '@/config/forms';
 import { useAuth } from '@/contexts';
 import { createProjectComment, getProjectComments } from '@/services/comment';
-import { getProjectFormQuestions } from '@/services/project';
+import {
+    getLatestProjectSnapshot,
+    ProjectQuestionsData,
+} from '@/services/project';
 import { SectionedLayout } from '@/templates';
 import { scrollToTop } from '@/utils';
 import { sanitizeHtmlId } from '@/utils/html';
@@ -17,6 +20,7 @@ import { cva } from 'class-variance-authority';
 import { useEffect, useState } from 'react';
 import { IoMdArrowRoundBack } from 'react-icons/io';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
+import { snakeToCamel } from '@/utils/object';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -48,7 +52,15 @@ function RouteComponent() {
         queryKey: ['project_review_questions', accessToken, projectId],
         queryFn: async () => {
             if (!accessToken) return;
-            const data = await getProjectFormQuestions(accessToken, projectId);
+            const snapshotData = await getLatestProjectSnapshot(
+                accessToken,
+                projectId
+            );
+            // decode base64 encoded data
+            const decodedData = window.atob(snapshotData.data);
+            const data = snakeToCamel(
+                JSON.parse(decodedData)
+            ) as ProjectQuestionsData;
             return data;
         },
         enabled: !!accessToken && !!projectId,
