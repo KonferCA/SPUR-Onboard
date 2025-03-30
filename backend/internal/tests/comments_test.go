@@ -202,6 +202,49 @@ func TestCommentEndpoints(t *testing.T) {
 		}
 	})
 
+	t.Run("Comment Creation Sets Allow Edit", func(t *testing.T) {
+		// Create a new comment
+		commentBody := map[string]interface{}{
+			"comment":   "Test comment for allow_edit check",
+			"target_id": targetID.String(),
+		}
+		jsonBody, err := json.Marshal(commentBody)
+		require.NoError(t, err)
+
+		// Create the comment
+		req := httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/project/%s/comments", projectID.String()),
+			bytes.NewReader(jsonBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", accessToken))
+		rec := httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusCreated, rec.Code)
+
+		// Now get the project to check allow_edit flag
+		req = httptest.NewRequest(http.MethodGet,
+			fmt.Sprintf("/api/v1/project/%s", projectID.String()),
+			nil)
+		req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", accessToken))
+		rec = httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var projectResp map[string]interface{}
+		err = json.Unmarshal(rec.Body.Bytes(), &projectResp)
+		assert.NoError(t, err)
+
+		// Check that allow_edit is present and true
+		allowEdit, ok := projectResp["allow_edit"].(bool)
+		assert.True(t, ok, "Response should contain allow_edit field")
+		assert.True(t, allowEdit, "allow_edit should be set to true after comment creation")
+
+		// Check that status is set to "needs review"
+		status, ok := projectResp["status"].(string)
+		assert.True(t, ok, "Response should contain status field")
+		assert.Equal(t, "needs review", status, "Project status should be 'needs review' after comment creation")
+	})
+
 	t.Run("Get Project Comments", func(t *testing.T) {
 		// Clear existing comments before test
 		_, err = s.GetDB().Exec(ctx, `DELETE FROM project_comments WHERE project_id = $1`, projectID)

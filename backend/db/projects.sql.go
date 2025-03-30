@@ -314,6 +314,7 @@ SELECT
     ) as title,
     p.description, 
     p.status, 
+    p.allow_edit,
     p.created_at, 
     p.updated_at,
     c.name as company_name,
@@ -341,6 +342,7 @@ type GetNewProjectsAnyStatusRow struct {
 	Title           string        `json:"title"`
 	Description     *string       `json:"description"`
 	Status          ProjectStatus `json:"status"`
+	AllowEdit       bool          `json:"allow_edit"`
 	CreatedAt       int64         `json:"created_at"`
 	UpdatedAt       int64         `json:"updated_at"`
 	CompanyName     *string       `json:"company_name"`
@@ -363,6 +365,7 @@ func (q *Queries) GetNewProjectsAnyStatus(ctx context.Context, limit int32) ([]G
 			&i.Title,
 			&i.Description,
 			&i.Status,
+			&i.AllowEdit,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.CompanyName,
@@ -393,6 +396,7 @@ SELECT
     ) as title,
     p.description, 
     p.status, 
+    p.allow_edit,
     p.created_at, 
     p.updated_at,
     c.name as company_name,
@@ -427,6 +431,7 @@ type GetNewProjectsByStatusRow struct {
 	Title           string        `json:"title"`
 	Description     *string       `json:"description"`
 	Status          ProjectStatus `json:"status"`
+	AllowEdit       bool          `json:"allow_edit"`
 	CreatedAt       int64         `json:"created_at"`
 	UpdatedAt       int64         `json:"updated_at"`
 	CompanyName     *string       `json:"company_name"`
@@ -449,6 +454,7 @@ func (q *Queries) GetNewProjectsByStatus(ctx context.Context, arg GetNewProjects
 			&i.Title,
 			&i.Description,
 			&i.Status,
+			&i.AllowEdit,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.CompanyName,
@@ -1149,6 +1155,7 @@ SELECT
     ) as title,
     p.description,
     p.status,
+    p.allow_edit,
     p.created_at,
     p.updated_at,
     COUNT(d.id) as document_count,
@@ -1168,6 +1175,7 @@ type ListAllProjectsRow struct {
 	Title           string        `json:"title"`
 	Description     *string       `json:"description"`
 	Status          ProjectStatus `json:"status"`
+	AllowEdit       bool          `json:"allow_edit"`
 	CreatedAt       int64         `json:"created_at"`
 	UpdatedAt       int64         `json:"updated_at"`
 	DocumentCount   int64         `json:"document_count"`
@@ -1190,6 +1198,7 @@ func (q *Queries) ListAllProjects(ctx context.Context) ([]ListAllProjectsRow, er
 			&i.Title,
 			&i.Description,
 			&i.Status,
+			&i.AllowEdit,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DocumentCount,
@@ -1219,6 +1228,7 @@ SELECT
     ) as title,
     p.description,
     p.status,
+    p.allow_edit,
     p.created_at,
     p.updated_at,
     COUNT(d.id) as document_count,
@@ -1237,6 +1247,7 @@ type ListCompanyProjectsRow struct {
 	Title           string        `json:"title"`
 	Description     *string       `json:"description"`
 	Status          ProjectStatus `json:"status"`
+	AllowEdit       bool          `json:"allow_edit"`
 	CreatedAt       int64         `json:"created_at"`
 	UpdatedAt       int64         `json:"updated_at"`
 	DocumentCount   int64         `json:"document_count"`
@@ -1258,6 +1269,7 @@ func (q *Queries) ListCompanyProjects(ctx context.Context, companyID string) ([]
 			&i.Title,
 			&i.Description,
 			&i.Status,
+			&i.AllowEdit,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DocumentCount,

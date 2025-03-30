@@ -319,6 +319,7 @@ func TestProjectEndpoints(t *testing.T) {
 		 * "List Projects" test verifies:
 		 * - Endpoint returns 200 OK
 		 * - User can see their projects
+		 * - Response contains all expected fields
 		 */
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/projects", nil)
 		req.Header.Set("Authorization", "Bearer "+accessToken)
@@ -334,6 +335,19 @@ func TestProjectEndpoints(t *testing.T) {
 
 		// Verify at least one project is returned
 		assert.Greater(t, len(resp["projects"]), 0, "Response should contain at least one project")
+
+		// Verify all expected fields are present in the first project
+		project := resp["projects"][0].(map[string]interface{})
+		assert.Contains(t, project, "id", "Project should have id field")
+		assert.Contains(t, project, "title", "Project should have title field")
+		assert.Contains(t, project, "description", "Project should have description field")
+		assert.Contains(t, project, "status", "Project should have status field")
+		assert.Contains(t, project, "allow_edit", "Project should have allow_edit field")
+		assert.Contains(t, project, "created_at", "Project should have created_at field")
+		assert.Contains(t, project, "updated_at", "Project should have updated_at field")
+		assert.Contains(t, project, "company_name", "Project should have company_name field")
+		assert.Contains(t, project, "document_count", "Project should have document_count field")
+		assert.Contains(t, project, "team_member_count", "Project should have team_member_count field")
 	})
 
 	t.Run("Get Project", func(t *testing.T) {
@@ -341,6 +355,7 @@ func TestProjectEndpoints(t *testing.T) {
 		 * "Get Project" test verifies:
 		 * - Single project retrieval works
 		 * - Project details are accessible
+		 * - Response contains all expected fields
 		 */
 		path := fmt.Sprintf("/api/v1/project/%s", projectID)
 
@@ -359,6 +374,15 @@ func TestProjectEndpoints(t *testing.T) {
 		id, ok := resp["id"].(string)
 		assert.True(t, ok, "Response should contain id field")
 		assert.Equal(t, projectID, id, "Should return the requested project")
+
+		// Verify all expected fields are present
+		assert.Contains(t, resp, "id", "Project should have id field")
+		assert.Contains(t, resp, "title", "Project should have title field")
+		assert.Contains(t, resp, "description", "Project should have description field")
+		assert.Contains(t, resp, "status", "Project should have status field")
+		assert.Contains(t, resp, "allow_edit", "Project should have allow_edit field")
+		assert.Contains(t, resp, "created_at", "Project should have created_at field")
+		assert.Contains(t, resp, "updated_at", "Project should have updated_at field")
 	})
 
 	t.Run("Submit Project", func(t *testing.T) {
