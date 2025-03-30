@@ -194,16 +194,18 @@ export function AuthPage({ children }: AuthPageProps) {
                             className="h-16 w-16 mb-8 filter brightness-0 invert"
                         />
 
-                        {/* onboard text */}
+                        {/* ONBOARD text with gradient */}
                         <h1 className="text-8xl md:text-6xl lg:text-8xl font-bold mb-5 bg-gradient-to-r from-orange-500 to-gray-300 bg-clip-text text-transparent">
                             ONBOARD
                         </h1>
-                        <h2 className="text-4xl md:text-2xl lg:text-4xl text-white">
-                            BUILD IT AND
-                        </h2>
-                        <h2 className="text-4xl md:text-2xl lg:text-4xl text-white">
-                            SHOW THE WORLD
-                        </h2>
+                        <div className="flex flex-col items-center whitespace-nowrap">
+                            <h2 className="text-6xl md:text-3xl lg:text-5xl xl:text-6xl text-white">
+                                BUILD IT AND
+                            </h2>
+                            <h2 className="text-6xl md:text-3xl lg:text-5xl xl:text-6xl text-white">
+                                SHOW THE WORLD
+                            </h2>
+                        </div>
                     </div>
 
                     {/* world map */}
