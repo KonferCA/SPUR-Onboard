@@ -28,7 +28,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useDebounceFn } from '@/hooks';
 import { useAuth, useNotification } from '@/contexts';
 import { useNavigate } from '@tanstack/react-router';
-import { type ValidationError } from '@/types/project';
+import type { ValidationError } from '@/types/project';
 import { ProjectError } from '@/components/ProjectError';
 import { RecommendedFields } from '@/components/RecommendedFields';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
