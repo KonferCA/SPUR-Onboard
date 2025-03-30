@@ -68,3 +68,6 @@ export {
 
 export { SectionDrawer } from './SectionDrawer';
 export type { SectionDrawerProps } from './SectionDrawer';
+
+export { Comments } from './Comments';
+export type { CommentsProps } from './Comments';
