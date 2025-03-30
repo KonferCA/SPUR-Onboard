@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts';
 import { createProjectComment, getProjectComments } from '@/services/comment';
 import {
     getLatestProjectSnapshot,
-    ProjectQuestionsData,
+    type ProjectQuestionsData,
 } from '@/services/project';
 import { SectionedLayout } from '@/templates';
 import { scrollToTop } from '@/utils';
