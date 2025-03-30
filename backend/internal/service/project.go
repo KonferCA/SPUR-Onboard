@@ -27,7 +27,7 @@ func SubmitProject(queries *db.Queries, ctx context.Context, projectID string) e
 	}
 
 	// Update the projects table title column
-	err = queries.MatchProjectTitletoCompanyNameQuestion(ctx, projectID)
+	err = queries.MatchProjectTitleToCompanyNameQuestion(ctx, projectID)
 	if err != nil {
 		return err
 	}

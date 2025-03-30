@@ -1269,7 +1269,7 @@ func (q *Queries) ListCompanyProjects(ctx context.Context, companyID string) ([]
 	return items, nil
 }
 
-const matchProjectTitletoCompanyNameQuestion = `-- name: MatchProjectTitletoCompanyNameQuestion :exec
+const matchProjectTitleToCompanyNameQuestion = `-- name: MatchProjectTitleToCompanyNameQuestion :exec
 UPDATE projects
 SET title = (
 	SELECT pa.answer
@@ -1283,8 +1283,8 @@ SET title = (
 WHERE id = $1
 `
 
-func (q *Queries) MatchProjectTitletoCompanyNameQuestion(ctx context.Context, projectID string) error {
-	_, err := q.db.Exec(ctx, matchProjectTitletoCompanyNameQuestion, projectID)
+func (q *Queries) MatchProjectTitleToCompanyNameQuestion(ctx context.Context, projectID string) error {
+	_, err := q.db.Exec(ctx, matchProjectTitleToCompanyNameQuestion, projectID)
 	return err
 }
 

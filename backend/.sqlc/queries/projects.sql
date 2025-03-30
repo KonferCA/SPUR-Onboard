@@ -385,7 +385,7 @@ ORDER BY
 LIMIT 
     $1;
 
--- name: MatchProjectTitletoCompanyNameQuestion :exec
+-- name: MatchProjectTitleToCompanyNameQuestion :exec
 UPDATE projects
 SET title = (
 	SELECT pa.answer
