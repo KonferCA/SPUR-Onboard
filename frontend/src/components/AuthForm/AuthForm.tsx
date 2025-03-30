@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Button, TextInput } from '@/components';
 import type { AuthFormProps, AuthFormData } from '@/types/auth';
-import { LogoSVG } from '@/assets';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import {
     FaGoogle,
