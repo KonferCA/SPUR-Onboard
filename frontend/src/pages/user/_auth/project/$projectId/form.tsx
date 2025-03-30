@@ -16,6 +16,7 @@ import {
     saveProjectDraft,
     submitProject,
 } from '@/services/project';
+import { getProjectComments } from '@/services/comment';
 import {
     type GroupedProjectQuestions,
     groupProjectQuestions,
@@ -101,6 +102,25 @@ function ProjectFormPage() {
         refetchOnReconnect: true,
         refetchOnWindowFocus: false,
         refetchOnMount: true,
+    });
+
+    const { data: commentsData, isLoading: loadingComments } = useQuery({
+        queryKey: ['project_review_comments', accessToken, currentProjectId],
+        queryFn: async () => {
+            if (!accessToken) {
+                return;
+            }
+
+            const data = await getProjectComments(
+                accessToken,
+                currentProjectId
+            );
+            return data;
+        },
+        enabled: !!accessToken && !!currentProjectId,
+        refetchOnWindowFocus: false,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
     });
 
     const [groupedQuestions, setGroupedQuestions] = useState<
@@ -814,7 +834,8 @@ function ProjectFormPage() {
     };
 
     // TODO: make a better loading screen
-    if (groupedQuestions.length < 1 || loadingQuestions) return null;
+    if (groupedQuestions.length < 1 || loadingQuestions || loadingComments)
+        return null;
 
     return (
         <div className="min-h-screen">
@@ -920,6 +941,7 @@ function ProjectFormPage() {
                                                             ? highlightedQuestionId.type
                                                             : false
                                                     }
+                                                    comments={commentsData}
                                                     fileUploadProps={
                                                         accessToken
                                                             ? {

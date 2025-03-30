@@ -7,16 +7,20 @@ import {
 } from '@/config/forms';
 import { useAuth } from '@/contexts';
 import { getProjectComments } from '@/services/comment';
-import { getLatestProjectSnapshot } from '@/services/project';
+import {
+    getLatestProjectSnapshot,
+    getProjectDetails,
+} from '@/services/project';
 import { SectionedLayout } from '@/templates';
 import { scrollToTop } from '@/utils';
 import { sanitizeHtmlId } from '@/utils/html';
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { cva } from 'class-variance-authority';
 import { useEffect, useState } from 'react';
 import { IoMdArrowRoundBack } from 'react-icons/io';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
+import { ProjectStatusEnum } from '@/services/projects';
 
 const stepItemStyles = cva(
     'relative transition text-gray-400 hover:text-gray-600 hover:cursor-pointer py-2',
@@ -34,6 +38,28 @@ const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
 export const Route = createFileRoute('/user/_auth/project/$projectId/view')({
     component: RouteComponent,
+    beforeLoad: async ({ context, params }) => {
+        if (!context || !context.auth?.accessToken) {
+            throw redirect({
+                to: '/auth',
+                replace: true,
+            });
+        }
+        const details = await getProjectDetails(
+            context.auth.accessToken,
+            params.projectId
+        ).catch(console.error);
+        if (
+            details &&
+            details.status === ProjectStatusEnum.NeedsReview &&
+            details.allow_edit
+        ) {
+            throw redirect({
+                to: `/user/project/${params.projectId}/form`,
+                replace: true,
+            });
+        }
+    },
 });
 
 function RouteComponent() {

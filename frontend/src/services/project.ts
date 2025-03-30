@@ -4,20 +4,13 @@ import { snakeToCamel } from '@/utils/object';
 import type { TeamMember } from '@/types';
 import type { ProjectSnapshot } from '@/types/projects';
 
-// interface CompanyResponse {
-//     ID: string;
-//     Name: string;
-//     Industry: string | null;
-//     FoundedDate: string | null;
-//     CompanyStage: string | null;
-// }
-
 // Backend response interface
 export interface ProjectResponse {
     id: string;
     title: string;
     description: string;
     status: string;
+    allow_edit: boolean;
     createdAt: number;
     updatedAt: number;
 }
@@ -134,24 +127,6 @@ export async function getProjectFormQuestions(
     return snakeToCamel(data) as ProjectQuestionsData;
 }
 
-// Transform backend response to frontend format
-// biome-ignore lint/suspicious/noExplicitAny:
-const transformProject = (data: any): Project => {
-    return {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        status: data.status,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        industry: null,
-        company_stage: null,
-        founded_date: null,
-        documents: [], // todo: implement when backend supports
-        sections: data.Sections || [],
-    };
-};
-
 export async function createProject(
     accessToken: string
 ): Promise<ProjectResponse> {
@@ -218,8 +193,8 @@ export async function listProjectsAll(accessToken: string) {
 export async function getProjectDetails(
     accessToken: string,
     id: string
-): Promise<Project> {
-    const url = `${getApiUrl()}/projects/${id}`.replace(/([^:]\/)\/+/g, '$1');
+): Promise<ProjectResponse> {
+    const url = getApiUrl(`/project/${id}`);
 
     const response = await fetch(url, {
         method: 'GET',
@@ -229,17 +204,16 @@ export async function getProjectDetails(
         },
     });
 
+    const data = await response.json();
     if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
         throw new ApiError(
             'Failed to fetch project details',
             response.status,
-            errorData || {}
+            data || {}
         );
     }
 
-    const data = await response.json();
-    return transformProject(data);
+    return data;
 }
 
 export interface ProjectDraft {
