@@ -124,3 +124,32 @@ export interface Project {
     documents: ProjectDocument[];
     sections: ProjectSection[];
 }
+
+export interface ValidationError {
+    section: string;
+    subsection: string;
+    questionText: string;
+    inputType: string;
+    required: boolean;
+    value: unknown;
+    reason: string;
+    questionId?: string;
+}
+
+export interface ErrorsBySection {
+    [section: string]: {
+        count: number;
+        errors: ValidationError[];
+    };
+}
+
+export interface ProjectErrorProps {
+    errors: ValidationError[];
+    onErrorClick: (
+        section: string,
+        subsectionId: string,
+        questionId?: string
+    ) => void;
+    isOpen?: boolean;
+    onToggle?: () => void;
+}
