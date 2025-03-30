@@ -3,7 +3,6 @@
 CREATE TABLE IF NOT EXISTS project_snapshots (
     id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     data JSONB NOT NULL,
     version_number INT NOT NULL DEFAULT 1,
     title VARCHAR NOT NULL,

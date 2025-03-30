@@ -8,8 +8,11 @@ package v1_projects
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/middleware"
 	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/service"
 	"KonferCA/SPUR/internal/v1/v1_common"
+	"context"
 	"fmt"
 	"net/http"
 	"sort"
@@ -17,6 +20,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
 )
 
@@ -514,13 +518,25 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		})
 	}
 
-	// Update project status to pending
-	err = h.server.GetQueries().UpdateProjectStatus(c.Request().Context(), db.UpdateProjectStatusParams{
-		ID:     projectID,
-		Status: db.ProjectStatusPending,
-	})
+	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
+	defer cancel()
+
+	tx, err := h.server.GetDB().Begin(ctx)
 	if err != nil {
-		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to update project status", err)
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to submit project", err)
+	}
+	defer tx.Rollback(ctx)
+
+	queries := h.server.GetQueries().WithTx(tx)
+
+	err = service.SubmitProject(queries, ctx, project.ID)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to submit project", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to submit project", err)
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
@@ -713,4 +729,63 @@ func (h *Handler) handleGetNewProjects(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"projects": response,
 	})
+}
+
+/*
+ * handleGetLatestProjectSnapshot gets the latest project snapshot
+ *
+ * parameters:
+ * - project_id: the project id of the snapshot
+ *
+ * security:
+ * - for regular users, allow if user owns resource
+ * - for admin, allow
+ *
+ * responds with db.ProjectSnapshot struct as JSON
+ */
+func (h *Handler) handleGetLatestProjectSnapshot(c echo.Context) error {
+	projectID := c.Param("project_id")
+
+	user, err := middleware.GetUserFromContext(c)
+	if err != nil {
+		return v1_common.NewAuthError("Missing user information in request.")
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
+	defer cancel()
+
+	queries := h.server.GetQueries()
+
+	// If user is not an admin, then make a check for project ownership
+	if !permissions.HasPermission(uint32(user.Permissions), permissions.PermIsAdmin) {
+		company, err := queries.GetCompanyByOwnerID(ctx, user.ID)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return v1_common.NewNotFoundError("Company")
+			}
+			return v1_common.NewInternalError(err)
+		}
+
+		_, err = queries.GetProjectByID(ctx, db.GetProjectByIDParams{
+			ID:        projectID,
+			CompanyID: company.ID,
+			Column3:   user.Permissions,
+		})
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return v1_common.NewNotFoundError("Project")
+			}
+			return v1_common.NewInternalError(err)
+		}
+	}
+
+	snapshot, err := service.GetLatestProjectSnapshot(queries, ctx, projectID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return v1_common.NewNotFoundError("Project snapshot")
+		}
+		return v1_common.NewInternalError(err)
+	}
+
+	return c.JSON(http.StatusOK, snapshot)
 }
