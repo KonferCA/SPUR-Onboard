@@ -137,7 +137,9 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
         }
     };
 
-    const canWithdraw = data.status === ProjectStatusEnum.Pending;
+    const canWithdraw =
+        data.status === ProjectStatusEnum.Pending ||
+        data.status === ProjectStatusEnum.NeedsReview;
 
     const viewProject = () => {
         if (data.status === 'draft') {
@@ -248,7 +250,15 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
 
                 <div className="hidden lg:flex items-center justify-between">
                     <InfoSection label="Status">
-                        <Badge text={data.status} />
+                        <Badge
+                            capitalizeText
+                            text={data.status}
+                            variant={
+                                data.status === ProjectStatusEnum.NeedsReview
+                                    ? 'warning'
+                                    : 'default'
+                            }
+                        />
                     </InfoSection>
 
                     <InfoSection label="Date Submitted">
