@@ -389,22 +389,72 @@ func TestProjectEndpoints(t *testing.T) {
 		// Create a new project specifically for this test
 		projectIDToSubmit := createAndFillTestProject(t, s, accessToken, companyID)
 
+		// Add a comment that needs to be resolved
+		commentBody := fmt.Sprintf(`{
+			"comment": "Test comment for submission resolution",
+			"target_id": "%s"
+		}`, projectIDToSubmit)
+
+		req := httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/project/%s/comments", projectIDToSubmit),
+			strings.NewReader(commentBody))
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(rec, req)
+
+		// Check that comment was created successfully
+		assert.Equal(t, http.StatusCreated, rec.Code, "Comment creation should succeed")
+
+		var commentResp map[string]interface{}
+		err := json.NewDecoder(rec.Body).Decode(&commentResp)
+		assert.NoError(t, err)
+
+		commentID, ok := commentResp["id"].(string)
+		assert.True(t, ok, "Response should contain comment ID")
+		assert.NotEmpty(t, commentID, "Comment ID should not be empty")
+
+		// Resolve the comment before submission
+		resolveReq := httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectIDToSubmit, commentID),
+			nil)
+		resolveReq.Header.Set("Authorization", "Bearer "+accessToken)
+		resolveRec := httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(resolveRec, resolveReq)
+		assert.Equal(t, http.StatusOK, resolveRec.Code, "Resolving comment should succeed")
+
 		// Submit the project
 		submitProject(t, s, accessToken, projectIDToSubmit)
 
 		// Verify the project status was updated in the database
-		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/project/%s", projectIDToSubmit), nil)
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/project/%s", projectIDToSubmit), nil)
 		req.Header.Set("Authorization", "Bearer "+accessToken)
-		rec := httptest.NewRecorder()
+		rec = httptest.NewRecorder()
 		s.GetEcho().ServeHTTP(rec, req)
 
 		var resp map[string]interface{}
-		err := json.NewDecoder(rec.Body).Decode(&resp)
+		err = json.NewDecoder(rec.Body).Decode(&resp)
 		assert.NoError(t, err)
 
 		status, ok := resp["status"].(string)
 		assert.True(t, ok, "Response should contain status field")
 		assert.Equal(t, "pending", status, "Project status should be pending after submission")
+
+		// Check if the comment has resolved_by_snapshot_id set
+		commentReq := httptest.NewRequest(http.MethodGet,
+			fmt.Sprintf("/api/v1/project/%s/comments/%s", projectIDToSubmit, commentID),
+			nil)
+		commentReq.Header.Set("Authorization", "Bearer "+accessToken)
+		commentRec := httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(commentRec, commentReq)
+		assert.Equal(t, http.StatusOK, commentRec.Code, "Retrieving comment should succeed")
+
+		var getCommentResp map[string]interface{}
+		err = json.NewDecoder(commentRec.Body).Decode(&getCommentResp)
+		assert.NoError(t, err)
+		assert.True(t, getCommentResp["resolved"].(bool), "Comment should be resolved")
+		assert.NotNil(t, getCommentResp["resolved_by_snapshot_id"], "resolved_by_snapshot_id should be set")
+		assert.NotEmpty(t, getCommentResp["resolved_by_snapshot_id"], "resolved_by_snapshot_id should not be empty")
 	})
 
 	t.Run("Get Latest Project Snapshot", func(t *testing.T) {

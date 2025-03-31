@@ -289,6 +289,13 @@ SET
 WHERE id = $1 AND project_id = $2
 RETURNING *; 
 
+-- name: SetSnapshotIDToProjectComments :exec
+UPDATE project_comments
+SET
+    resolved_by_snapshot_id = $1,
+    updated_at = extract(epoch from now())
+WHERE projecT_id = $2 AND resolved_by_snapshot_id IS NULL;
+
 -- name: ListAllProjects :many
 SELECT
     p.id,

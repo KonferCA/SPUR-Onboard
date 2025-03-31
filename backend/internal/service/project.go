@@ -64,11 +64,32 @@ func SubmitProject(queries *db.Queries, ctx context.Context, projectID string) e
 		return err
 	}
 
+	// Get the latest snapshot
+	snapshot, err := GetLatestProjectSnapshot(queries, ctx, projectID)
+	if err != nil {
+		return err
+	}
+
 	// Reset allow edit to false
 	err = queries.SetProjectAllowEdit(ctx, db.SetProjectAllowEditParams{ID: projectID, AllowEdit: false})
 	if err != nil {
 		return err
 	}
+
+	var snapshotID pgtype.UUID
+	parsed, err := uuid.Parse(snapshot.ID)
+	if err != nil {
+		return err
+	}
+	snapshotID.Valid = true
+	snapshotID.Bytes = parsed
+
+	// Update all resolved comments with the snapshot id
+	err = queries.SetSnapshotIDToProjectComments(ctx, db.SetSnapshotIDToProjectCommentsParams{ProjectID: projectID, ResolvedBySnapshotID: snapshotID})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -1367,6 +1367,24 @@ func (q *Queries) SetProjectAllowEdit(ctx context.Context, arg SetProjectAllowEd
 	return err
 }
 
+const setSnapshotIDToProjectComments = `-- name: SetSnapshotIDToProjectComments :exec
+UPDATE project_comments
+SET
+    resolved_by_snapshot_id = $1,
+    updated_at = extract(epoch from now())
+WHERE projecT_id = $2 AND resolved_by_snapshot_id IS NULL
+`
+
+type SetSnapshotIDToProjectCommentsParams struct {
+	ResolvedBySnapshotID pgtype.UUID `json:"resolved_by_snapshot_id"`
+	ProjectID            string      `json:"project_id"`
+}
+
+func (q *Queries) SetSnapshotIDToProjectComments(ctx context.Context, arg SetSnapshotIDToProjectCommentsParams) error {
+	_, err := q.db.Exec(ctx, setSnapshotIDToProjectComments, arg.ResolvedBySnapshotID, arg.ProjectID)
+	return err
+}
+
 const unresolveProjectComment = `-- name: UnresolveProjectComment :one
 UPDATE project_comments
 SET 
