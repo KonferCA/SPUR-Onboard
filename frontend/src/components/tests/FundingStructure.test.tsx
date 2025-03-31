@@ -33,12 +33,8 @@ describe('FundingStructure', () => {
                 onChange={onChangeMock}
             />
         );
-        expect(
-            screen.getByText('Target Funding Structure')
-        ).toBeInTheDocument();
-        expect(
-            screen.getByText(/Target funding: \$100000 CAD for 10% equity/)
-        ).toBeInTheDocument();
+        expect(screen.getByText('Target funding:')).toBeInTheDocument();
+        expect(screen.getByText('$100,000 for 10% equity')).toBeInTheDocument();
     });
 
     it('opens modal when edit button is clicked', async () => {
@@ -382,12 +378,8 @@ describe('FundingStructure', () => {
             <FundingStructure value={customStructure} onChange={onChangeMock} />
         );
 
-        // Check summary shows correct info
-        const summary = screen.getByText(
-            /Target funding: \$250000 CAD for 15% equity/i,
-            { exact: false }
-        );
-        expect(summary).toBeInTheDocument();
+        expect(screen.getByText('Target funding:')).toBeInTheDocument();
+        expect(screen.getByText('$250,000 for 15% equity')).toBeInTheDocument();
 
         // open the modal
         const editButtons = screen.getAllByText('Edit');
