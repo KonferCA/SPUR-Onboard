@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
     type AnchorLinkItem,
@@ -11,6 +11,7 @@ import {
 } from '@components';
 import { IoMdArrowRoundBack } from 'react-icons/io';
 import {
+    getProjectDetails,
     getProjectFormQuestions,
     type ProjectDraft,
     saveProjectDraft,
@@ -43,6 +44,25 @@ import { ApiError } from '@/services';
 
 export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
     component: ProjectFormPage,
+    beforeLoad: async ({ context, params }) => {
+        if (!context || !context.auth?.accessToken) {
+            throw redirect({
+                to: '/auth',
+                replace: true,
+            });
+        }
+
+        const details = await getProjectDetails(
+            context.auth.accessToken,
+            params.projectId
+        ).catch(console.error);
+        if (details && !details.allow_edit) {
+            throw redirect({
+                to: `/user/project/${params.projectId}/view`,
+                replace: true,
+            });
+        }
+    },
 });
 
 const stepItemStyles = cva(
