@@ -399,3 +399,7 @@ WHERE id = $1;
 UPDATE projects
 SET allow_edit = $1
 WHERE id = $2;
+
+-- name: CountUnresolvedProjectComments :one
+SELECT COUNT(*) FROM project_comments
+WHERE project_id = $1 AND resolved = false;

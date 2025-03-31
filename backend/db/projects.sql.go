@@ -11,6 +11,18 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countUnresolvedProjectComments = `-- name: CountUnresolvedProjectComments :one
+SELECT COUNT(*) FROM project_comments
+WHERE project_id = $1 AND resolved = false
+`
+
+func (q *Queries) CountUnresolvedProjectComments(ctx context.Context, projectID string) (int64, error) {
+	row := q.db.QueryRow(ctx, countUnresolvedProjectComments, projectID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createProject = `-- name: CreateProject :one
 INSERT INTO projects (
     company_id,

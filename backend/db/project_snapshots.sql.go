@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countProjectSnapshots = `-- name: CountProjectSnapshots :one
@@ -128,7 +130,7 @@ SELECT
     ), -- data column
     $2, -- version_number
     p.title, -- title
-    NULL, -- parent_snapshot_id
+    $3, -- parent_snapshot_id
     extract(epoch from now())::bigint -- created_at timestamp in epoch seconds
 FROM
     projects p
@@ -136,12 +138,13 @@ WHERE p.id = $1
 `
 
 type CreateProjectSnapshotParams struct {
-	ID            string `json:"id"`
-	VersionNumber int32  `json:"version_number"`
+	ID               string      `json:"id"`
+	VersionNumber    int32       `json:"version_number"`
+	ParentSnapshotID pgtype.UUID `json:"parent_snapshot_id"`
 }
 
 func (q *Queries) CreateProjectSnapshot(ctx context.Context, arg CreateProjectSnapshotParams) error {
-	_, err := q.db.Exec(ctx, createProjectSnapshot, arg.ID, arg.VersionNumber)
+	_, err := q.db.Exec(ctx, createProjectSnapshot, arg.ID, arg.VersionNumber, arg.ParentSnapshotID)
 	return err
 }
 

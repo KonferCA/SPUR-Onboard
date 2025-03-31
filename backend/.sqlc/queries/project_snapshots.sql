@@ -106,7 +106,7 @@ SELECT
     ), -- data column
     $2, -- version_number
     p.title, -- title
-    NULL, -- parent_snapshot_id
+    $3, -- parent_snapshot_id
     extract(epoch from now())::bigint -- created_at timestamp in epoch seconds
 FROM
     projects p

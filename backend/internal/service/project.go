@@ -3,15 +3,41 @@ package service
 import (
 	"KonferCA/SPUR/db"
 	"context"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // CreateProjectSnapshot creates a new snapshot for a project and handles updating the version number of the new snapshot.
 func CreateProjectSnapshot(queries *db.Queries, ctx context.Context, projectID string) error {
-	count, err := queries.CountProjectSnapshots(ctx, projectID)
+	latestSnap, err := queries.GetLatestProjectSnapshot(ctx, projectID)
 	if err != nil {
-		return err
+		if err != pgx.ErrNoRows {
+			return err
+		}
+		// Explicitly set the version number to 0 so the addition below make it 1
+		latestSnap.VersionNumber = 0
 	}
-	return queries.CreateProjectSnapshot(ctx, db.CreateProjectSnapshotParams{ID: projectID, VersionNumber: int32(count) + 1})
+
+	// Parse the latest snapshot id to set as the parent snapshot id for the new snapshot
+	var pgUUID pgtype.UUID
+	parsedUUID, err := uuid.Parse(latestSnap.ID)
+	if err != nil {
+		pgUUID.Valid = false
+	} else {
+		pgUUID.Bytes = parsedUUID
+		pgUUID.Valid = true
+	}
+
+	return queries.CreateProjectSnapshot(
+		ctx,
+		db.CreateProjectSnapshotParams{
+			ID:               projectID,
+			VersionNumber:    latestSnap.VersionNumber + 1,
+			ParentSnapshotID: pgUUID,
+		},
+	)
 }
 
 // SubmitProject sets the status of a project as "pending", updates the project's title according to company_name question and
