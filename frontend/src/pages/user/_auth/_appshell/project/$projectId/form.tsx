@@ -177,10 +177,20 @@ function ProjectFormPage() {
                                     .toLowerCase()
                                     .replace(/\s+/g, '-'),
                             },
-                            replace: false,
+                            replace: true,
                         });
 
                         scrollToTop();
+                    } else {
+                        navigate({
+                            to: `/user/project/${projectId}/form`,
+                            search: {
+                                section: groupedQuestions[0].section
+                                    .toLowerCase()
+                                    .replace(/\s+/g, '-'),
+                            },
+                            replace: true,
+                        });
                     }
                 },
 
@@ -468,6 +478,26 @@ function ProjectFormPage() {
                         .replace(/\s+/g, '-'),
                 },
                 replace: false,
+            });
+
+            setTimeout(() => {
+                scrollToTop();
+            }, 120);
+        }
+    };
+
+    const handleStepClick = (stepIndex: number) => {
+        if (stepIndex !== currentStep) {
+            setCurrentStep(stepIndex);
+
+            navigate({
+                to: `/user/project/${currentProjectId}/form`,
+                search: {
+                    section: groupedQuestions[stepIndex].section
+                        .toLowerCase()
+                        .replace(/\s+/g, '-'),
+                },
+                replace: true,
             });
 
             setTimeout(() => {
@@ -966,10 +996,10 @@ function ProjectFormPage() {
                                                     active: currentStep === idx,
                                                 })}
                                                 onKeyUp={() =>
-                                                    setCurrentStep(idx)
+                                                    handleStepClick(idx)
                                                 }
                                                 onClick={() =>
-                                                    setCurrentStep(idx)
+                                                    handleStepClick(idx)
                                                 }
                                             >
                                                 <span className="text-nowrap">
