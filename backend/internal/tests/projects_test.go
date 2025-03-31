@@ -260,9 +260,9 @@ func TestProjectEndpoints(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 4, len(testQuestionIds))
 
-	// Create test user and get auth token
+	// Create admin user with comment permissions
 	ctx := context.Background()
-	userID, email, password, err := createTestUser(ctx, s, uint32(permissions.PermSubmitProject|permissions.PermViewAllProjects|permissions.PermManageTeam))
+	userID, email, password, err := createTestAdmin(ctx, s)
 	assert.NoError(t, err)
 	defer removeTestUser(ctx, email, s)
 
