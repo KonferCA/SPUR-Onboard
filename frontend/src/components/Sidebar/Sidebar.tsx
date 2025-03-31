@@ -275,7 +275,7 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
             navigate({
                 to: `/user/project/${projectId}/${isSubmitted ? 'view' : 'form'}`,
                 search: searchParams,
-                replace: false,
+                replace: true,
             });
         },
         [navigate]
@@ -318,19 +318,21 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
         e.stopPropagation();
         e.preventDefault();
 
-        if (expandedProjectItems[projectId]) {
-            manuallyCollapsedRef.current = true;
-
-            setTimeout(() => {
-                manuallyCollapsedRef.current = false;
-            }, 500);
-        }
-
         setExpandedProjectItems((prev) => {
-            if (prev[projectId]) {
-                return {};
+            const newState = { ...prev };
+
+            if (newState[projectId]) {
+                delete newState[projectId];
+                manuallyCollapsedRef.current = true;
+
+                setTimeout(() => {
+                    manuallyCollapsedRef.current = false;
+                }, 500);
+            } else {
+                return { [projectId]: true };
             }
-            return { [projectId]: true };
+
+            return newState;
         });
 
         e.nativeEvent.stopImmediatePropagation();
@@ -425,28 +427,6 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
             });
         }
     }, [currentProjectId, expandedProjectItems, expandedProject]);
-
-    useEffect(() => {
-        if (currentProjectId && location.search && expandedProject) {
-            const params = new URLSearchParams(location.search);
-            const currentSection = params.get('section');
-
-            if (
-                currentSection &&
-                !Object.keys(expandedProjectItems).includes(currentProjectId) &&
-                Object.keys(expandedProjectItems).length === 0
-            ) {
-                setExpandedProjectItems({
-                    [currentProjectId]: true,
-                });
-            }
-        }
-    }, [
-        location.search,
-        currentProjectId,
-        expandedProject,
-        expandedProjectItems,
-    ]);
 
     const navItems: MenuItem[] = [];
 
@@ -618,11 +598,24 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
                                             if (
                                                 project.id !== currentProjectId
                                             ) {
-                                                navigateToProject(
-                                                    project.id,
-                                                    undefined,
-                                                    project
-                                                );
+                                                if (
+                                                    projectConfig?.sections &&
+                                                    projectConfig.sections
+                                                        .length > 0
+                                                ) {
+                                                    navigateToProject(
+                                                        project.id,
+                                                        projectConfig
+                                                            .sections[0],
+                                                        project
+                                                    );
+                                                } else {
+                                                    navigateToProject(
+                                                        project.id,
+                                                        undefined,
+                                                        project
+                                                    );
+                                                }
 
                                                 setExpandedProjectItems({
                                                     [project.id]: true,
