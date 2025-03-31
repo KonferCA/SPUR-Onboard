@@ -338,6 +338,20 @@ func (h *Handler) handleResolveComment(c echo.Context) error {
 		}
 	}
 
+	oldComment, err := queries.GetProjectComment(ctx, db.GetProjectCommentParams{
+		ID:        commentID,
+		ProjectID: projectID,
+	})
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return v1_common.Fail(c, http.StatusNotFound, "Comment not found", err)
+		}
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to resolve comment", err)
+	}
+	if oldComment.ResolvedBySnapshotID.Valid {
+		return v1_common.Fail(c, http.StatusBadRequest, "This comment has been resolved by a previous submission and it can't be modified.", nil)
+	}
+
 	// Resolve the comment
 	comment, err := queries.ResolveProjectComment(ctx, db.ResolveProjectCommentParams{
 		ID:        commentID,
@@ -403,6 +417,20 @@ func (h *Handler) handleUnresolveComment(c echo.Context) error {
 			}
 			return v1_common.NewInternalError(err)
 		}
+	}
+
+	oldComment, err := queries.GetProjectComment(ctx, db.GetProjectCommentParams{
+		ID:        commentID,
+		ProjectID: projectID,
+	})
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return v1_common.Fail(c, http.StatusNotFound, "Comment not found", err)
+		}
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to resolve comment", err)
+	}
+	if oldComment.ResolvedBySnapshotID.Valid {
+		return v1_common.Fail(c, http.StatusBadRequest, "This comment has been resolved by a previous submission and it can't be modified.", nil)
 	}
 
 	// Unresolve the comment
