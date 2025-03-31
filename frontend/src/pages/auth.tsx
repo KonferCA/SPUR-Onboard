@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { AuthForm } from '@/components/AuthForm';
+import { AuthPage as AuthPageLayout } from '@/components/AuthPage';
 import { UserDetailsForm } from '@/components/UserDetailsForm';
 import { VerifyEmail } from '@/components/VerifyEmail';
 import { register, signin, resendVerificationEmail } from '@/services';
@@ -201,78 +202,82 @@ function AuthPage() {
         switch (currentStep) {
             case 'login-register':
                 return (
-                    <AuthForm
-                        onSubmit={handleAuthSubmit}
-                        isLoading={isLoading}
-                        errors={errors}
-                        mode={mode}
-                        onToggleMode={() =>
-                            setMode(mode === 'login' ? 'register' : 'login')
-                        }
-                    />
+                    <AuthPageLayout>
+                        <AuthForm
+                            onSubmit={handleAuthSubmit}
+                            isLoading={isLoading}
+                            errors={errors}
+                            mode={mode}
+                            onToggleMode={() =>
+                                setMode(mode === 'login' ? 'register' : 'login')
+                            }
+                        />
+                    </AuthPageLayout>
                 );
 
             case 'verify-email':
                 return user ? (
-                    <VerifyEmail
-                        email={user.email}
-                        onVerified={handleOnVerified}
-                        onResendVerification={handleResendVerification}
-                        isResending={isResendingVerification}
-                    />
+                    <AuthPageLayout>
+                        <VerifyEmail
+                            email={user.email}
+                            onVerified={handleOnVerified}
+                            onResendVerification={handleResendVerification}
+                            isResending={isResendingVerification}
+                        />
+                    </AuthPageLayout>
                 ) : null;
 
             case 'form-details':
                 return (
-                    <UserDetailsForm
-                        onSubmit={handleUserDetailsSubmit}
-                        isLoading={isLoading}
-                        errors={errors}
-                        initialData={
-                            user
-                                ? {
-                                      firstName: user.firstName,
-                                      lastName: user.lastName,
-                                  }
-                                : undefined
-                        }
-                    />
+                    <AuthPageLayout>
+                        <UserDetailsForm
+                            onSubmit={handleUserDetailsSubmit}
+                            isLoading={isLoading}
+                            errors={errors}
+                            initialData={
+                                user
+                                    ? {
+                                          firstName: user.firstName,
+                                          lastName: user.lastName,
+                                      }
+                                    : undefined
+                            }
+                        />
+                    </AuthPageLayout>
                 );
 
             case 'registration-complete':
                 return (
-                    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md text-center">
-                        <h2 className="text-2xl font-semibold mb-4">
-                            Registration Complete!
-                        </h2>
-                        <p className="text-gray-600">
-                            Redirecting you to the dashboard...
-                        </p>
-                        <div className="mt-4">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
+                    <AuthPageLayout>
+                        <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md text-center">
+                            <h2 className="text-2xl font-semibold mb-4">
+                                Registration Complete!
+                            </h2>
+                            <p className="text-gray-600">
+                                Redirecting you to the dashboard...
+                            </p>
+                            <div className="mt-4">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
+                            </div>
                         </div>
-                    </div>
+                    </AuthPageLayout>
                 );
 
             case 'signing-in':
                 return (
-                    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md text-center">
-                        <h2 className="text-xl mb-4">Signing you in...</h2>
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
-                    </div>
+                    <AuthPageLayout>
+                        <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md text-center">
+                            <h2 className="text-xl mb-4">Signing you in...</h2>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
+                        </div>
+                    </AuthPageLayout>
                 );
         }
     };
 
     if (authLoading) return null;
 
-    return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-            <div className="w-full max-w-md space-y-8">
-                {renderCurrentStep()}
-            </div>
-        </div>
-    );
+    return <div className="min-h-screen w-full">{renderCurrentStep()}</div>;
 }
 
 export const Route = createFileRoute('/auth')({
