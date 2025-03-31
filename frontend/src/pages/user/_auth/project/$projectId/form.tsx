@@ -1,4 +1,9 @@
-import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import {
+    createFileRoute,
+    Link,
+    redirect,
+    useRouteContext,
+} from '@tanstack/react-router';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
     type AnchorLinkItem,
@@ -14,6 +19,7 @@ import {
     getProjectDetails,
     getProjectFormQuestions,
     type ProjectDraft,
+    type ProjectResponse,
     saveProjectDraft,
     submitProject,
 } from '@/services/project';
@@ -42,6 +48,7 @@ import { isValid as isValidDate } from 'date-fns';
 import { scrollToTop } from '@/utils';
 import { ApiError } from '@/services';
 import type { FundingStructureModel } from '@/components/FundingStructure';
+import { ProjectStatusEnum } from '@/services/projects';
 
 export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
     component: ProjectFormPage,
@@ -56,13 +63,35 @@ export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
         const details = await getProjectDetails(
             context.auth.accessToken,
             params.projectId
-        ).catch(console.error);
-        if (details && !details.allow_edit) {
-            throw redirect({
-                to: `/user/project/${params.projectId}/view`,
-                replace: true,
-            });
+        ).catch((e) => {
+            console.error(e);
+            return null;
+        });
+        if (details) {
+            switch (details.status) {
+                case ProjectStatusEnum.NeedsReview:
+                    if (!details.allow_edit) {
+                        throw redirect({
+                            to: `/user/project/${params.projectId}/view`,
+                            replace: true,
+                        });
+                    }
+                    break;
+                case ProjectStatusEnum.Pending:
+                case ProjectStatusEnum.Declined:
+                case ProjectStatusEnum.Withdrawn:
+                case ProjectStatusEnum.Verified:
+                    throw redirect({
+                        to: `/user/project/${params.projectId}/view`,
+                    });
+
+                default:
+                    break;
+            }
         }
+        return {
+            details,
+        };
     },
 });
 
@@ -113,6 +142,10 @@ const isEmptyValue = (value: unknown, type: string): boolean => {
 };
 
 function ProjectFormPage() {
+    const projectDetails: ProjectResponse | null = useRouteContext({
+        from: '/user/_auth/project/$projectId/form',
+        select: (context) => context.details,
+    });
     const notification = useNotification();
     const { projectId: currentProjectId } = Route.useParams();
     const navigate = useNavigate({
@@ -499,7 +532,7 @@ function ProjectFormPage() {
     }, []);
 
     useEffect(() => {
-        if (questionData) {
+        if (questionData && !loadingQuestions && !loadingComments) {
             const groups = groupProjectQuestions(questionData);
             const sections = groups.map((g) => {
                 const metadata: SectionMetadata = {
@@ -511,7 +544,7 @@ function ProjectFormPage() {
             setGroupedQuestions(groups);
             setSectionMetadata(sections);
         }
-    }, [questionData]);
+    }, [loadingQuestions, loadingComments, questionData]);
 
     const asideLinks = useMemo<AnchorLinkItem[]>(() => {
         return sectionsMetadata[currentStep]?.subSections.map((name) => ({
@@ -1036,6 +1069,12 @@ function ProjectFormPage() {
                                                             : false
                                                     }
                                                     comments={commentsData}
+                                                    projectStatus={
+                                                        projectDetails?.status
+                                                    }
+                                                    allowEdit={
+                                                        projectDetails?.allow_edit
+                                                    }
                                                     fileUploadProps={
                                                         accessToken
                                                             ? {

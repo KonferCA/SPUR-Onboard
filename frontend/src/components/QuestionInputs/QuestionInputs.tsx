@@ -10,12 +10,13 @@ import {
 import type { DropdownOption, UploadableFile } from '@/components';
 import type { Question } from '@/config/forms';
 import type { FormField } from '@/types';
-import { type FC, useRef, useEffect } from 'react';
+import { type FC, useRef, useEffect, useMemo } from 'react';
 import { cva } from 'class-variance-authority';
 import FundingStructure, {
     type FundingStructureModel,
 } from '../FundingStructure';
 import type { Comment } from '@/services/comment';
+import { ProjectStatusEnum } from '@/services/projects';
 
 const legendStyles = cva('block text-md font-normal', {
     variants: {
@@ -93,6 +94,8 @@ interface QuestionInputsProps {
     };
     shouldHighlight?: boolean | 'error' | 'neutral';
     comments?: Comment[];
+    projectStatus?: string;
+    allowEdit?: boolean;
 }
 
 export const QuestionInputs: FC<QuestionInputsProps> = ({
@@ -101,6 +104,8 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     fileUploadProps,
     comments = [],
     shouldHighlight = false,
+    projectStatus,
+    allowEdit,
 }) => {
     const hasInvalidField = question.inputFields.some((field) => field.invalid);
     const isQuestionRequired = question.inputFields.some(
@@ -110,6 +115,50 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     // references to the first input fields of different types
     const textInputRef = useRef<HTMLInputElement | null>(null);
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+
+    // Determine if this question should be enabled or disabled
+    const shouldDisableInput = useMemo(() => {
+        // Only apply special logic if project status is 'needs review' and allowEdit is true
+        if (projectStatus !== ProjectStatusEnum.NeedsReview || !allowEdit) {
+            return false;
+        }
+
+        // Check if the question has any comments that don't have resolvedBySnapshotId
+        const questionComments = comments.filter(
+            (comment) =>
+                comment.targetId === question.id &&
+                !comment.resolvedBySnapshotId
+        );
+
+        // If this question has comments without resolvedBySnapshotId, ENABLE it
+        if (questionComments.length > 0) {
+            return false;
+        }
+
+        // If this is a conditionally rendered input (has dependentQuestionId),
+        // check if its dependent question has comments (and is therefore enabled)
+        if (question.dependentQuestionId) {
+            const dependentQuestionComments = comments.filter(
+                (comment) =>
+                    comment.targetId === question.dependentQuestionId &&
+                    !comment.resolvedBySnapshotId
+            );
+
+            // If dependent question has comments, enable this question too
+            if (dependentQuestionComments.length > 0) {
+                return false;
+            }
+        }
+
+        // By default, if no rule enables the input, disable it
+        return true;
+    }, [
+        question.id,
+        question.dependentQuestionId,
+        comments,
+        projectStatus,
+        allowEdit,
+    ]);
 
     // auto-focus when highlighted
     useEffect(() => {
@@ -181,6 +230,9 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
             }
         }
 
+        // Apply disabled state based on our conditions
+        const isDisabled = shouldDisableInput || field.disabled;
+
         switch (field.type) {
             case 'textinput':
                 return (
@@ -192,7 +244,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         }
                         error={errorMessage}
                         required={field.required}
-                        disabled={field.disabled}
+                        disabled={isDisabled}
                         {...inputProps}
                         {...field.props}
                     />
@@ -209,7 +261,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         required={field.required}
                         rows={field.rows || 4}
                         error={errorMessage}
-                        disabled={field.disabled}
+                        disabled={isDisabled}
                         {...inputProps}
                         {...field.props}
                     />
@@ -220,6 +272,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     <FileUpload
                         onFilesChange={(v) => onChange(field.key, field.key, v)}
                         initialFiles={field.value.files || []}
+                        disabled={isDisabled}
                         {...(fileUploadProps && {
                             ...fileUploadProps,
                             questionId: field.key,
@@ -244,6 +297,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                                     );
                                 }
                             }}
+                            disabled={isDisabled}
                         />
                     </div>
                 );
@@ -277,6 +331,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         }
                         multiple={field.type === 'multiselect'}
                         error={errorMessage}
+                        disabled={isDisabled}
                         {...field.props}
                     />
                 );
@@ -286,6 +341,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                 return (
                     <TeamMembers
                         initialValue={field.value.teamMembers || []}
+                        disabled={isDisabled}
                         {...field.props}
                     />
                 );
@@ -295,7 +351,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     <DateInput
                         value={field.value.value as Date}
                         onChange={(v) => onChange(question.id, field.key, v)}
-                        disabled={field.disabled}
+                        disabled={isDisabled}
                         error={errorMessage}
                         {...field.props}
                     />

@@ -35,6 +35,7 @@ interface ValidationErrors {
 interface FundingStructureProps {
     value?: FundingStructureModel;
     onChange: (value: FundingStructureModel) => void;
+    disabled?: boolean;
 }
 
 const errorTextStyle = 'text-xs text-red-500 mt-1';
@@ -190,6 +191,7 @@ const EquityProgressBar: FC<{
 export const FundingStructure: FC<FundingStructureProps> = ({
     value,
     onChange,
+    disabled = false,
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isAnimatingOut, setIsAnimatingOut] = useState(false);
@@ -2366,6 +2368,7 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                         type="button"
                         variant="primary"
                         liquid={true}
+                        disabled={disabled}
                     >
                         Choose funding
                     </Button>
@@ -2407,7 +2410,12 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                         </span>
                     </div>
                 </div>
-                <Button onClick={handleOpenModal} variant="secondary" size="sm">
+                <Button
+                    onClick={handleOpenModal}
+                    variant="secondary"
+                    size="sm"
+                    disabled={disabled}
+                >
                     Edit
                 </Button>
             </div>
