@@ -315,7 +315,7 @@ export async function submitProject(accessToken: string, projectId: string) {
 
     const json = await res.json();
     if (res.status !== HttpStatusCode.OK) {
-        throw new Error(`Failed to submit project: ${json.message}`);
+        throw new ApiError('Failed to submit project', res.status, json);
     }
 }
 

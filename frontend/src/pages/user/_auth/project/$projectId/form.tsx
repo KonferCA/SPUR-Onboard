@@ -39,6 +39,7 @@ import { AutoSaveIndicator } from '@/components/AutoSaveIndicator';
 import type { RecommendedField } from '@/types';
 import { isValid as isValidDate } from 'date-fns';
 import { scrollToTop } from '@/utils';
+import { ApiError } from '@/services';
 
 export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
     component: ProjectFormPage,
@@ -652,9 +653,15 @@ function ProjectFormPage() {
             // replace to not let them go back, it causes the creation of a new project
             navigate({ to: '/user/dashboard', replace: true });
         } catch (e) {
+            setShowSubmitModal(false);
+            setShowRecommendedModal(false);
+            let message =
+                'Oops, seems like something went wrong. Please try again later.';
+            if (e instanceof ApiError) {
+                message = (e.body as { message: string }).message;
+            }
             notification.push({
-                message:
-                    'Oops, seems like something went wrong. Please try again later.',
+                message,
                 level: 'error',
             });
             console.error(e);
