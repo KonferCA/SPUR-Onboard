@@ -12,6 +12,7 @@ import {
 } from '@tanstack/react-table';
 import type { Project } from '@/services/project';
 import { format, isValid, parseISO } from 'date-fns';
+import { ProjectStatusEnum } from '@/services/projects';
 
 const columnHelper = createColumnHelper<Project>();
 
@@ -226,9 +227,18 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
         [data]
     );
 
+    const mapStatus = (status: string) => {
+        switch (status) {
+            case ProjectStatusEnum.Pending:
+                return 'submitted';
+            default:
+                return status;
+        }
+    };
+
     const filteredData = useMemo(() => {
         return data.filter((item) => {
-            return selectedStatus === item.status;
+            return selectedStatus === mapStatus(item.status);
         });
     }, [data, filters, selectedStatus]);
 
