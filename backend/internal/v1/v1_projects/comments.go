@@ -192,7 +192,7 @@ func (h *Handler) handleCreateProjectComment(c echo.Context) error {
 	queries := h.server.GetQueries().WithTx(tx)
 
 	// Get company owned by user
-	company, err := queries.GetCompanyByUserID(c.Request().Context(), user.ID)
+	company, err := queries.GetCompanyByUserID(ctx, user.ID)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusNotFound, "Company not found", err)
 	}
