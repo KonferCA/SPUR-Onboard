@@ -132,7 +132,7 @@ export const CommentBubble: FC<CommentBubbleProps> = ({ data }) => {
                 type="button"
                 aria-label="open comment"
                 onClick={() => setActive((p) => !p)}
-                className="relative w-8 h-8 rounded-full border border-gray-300 p-2 flex items-center justify-center z-10"
+                className="relative bg-white w-8 h-8 rounded-full border border-gray-300 p-2 flex items-center justify-center z-10"
             >
                 <span>{comment.commenterFirstName?.at(0) || ''}</span>
             </button>
