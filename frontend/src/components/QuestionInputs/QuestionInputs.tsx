@@ -138,6 +138,8 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     return 'Please select an option';
                 case 'date':
                     return 'Please select a date';
+                case 'fundingstructure':
+                    return 'Please choose your funding structure';
                 default:
                     return 'This field is required';
             }
@@ -227,9 +229,17 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     <div className="w-full">
                         <FundingStructure
                             value={field.value.fundingStructure}
-                            onChange={(structure) =>
-                                onChange(question.id, field.key, structure)
-                            }
+                            onChange={(structure) => {
+                                onChange(question.id, field.key, structure);
+
+                                if (!field.value.value) {
+                                    onChange(
+                                        question.id,
+                                        field.key,
+                                        'completed'
+                                    );
+                                }
+                            }}
                         />
                     </div>
                 );

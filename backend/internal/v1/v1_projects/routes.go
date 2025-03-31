@@ -91,15 +91,15 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 
 	comments.GET("", h.handleGetProjectComments)
 	comments.GET("/:comment_id", h.handleGetProjectComment)
-	comments.POST("", h.handleCreateProjectComment)
 	comments.PUT("/:comment_id", h.handleUpdateProjectComment)
+	comments.POST("/:comment_id/resolve", h.handleResolveComment)
+	comments.POST("/:comment_id/unresolve", h.handleUnresolveComment)
 
 	// Admin-only comment resolution endpoints - require both comment and admin permissions
-	adminComments := comments.Group("/:comment_id", middleware.Auth(s.GetDB(),
+	adminComments := comments.Group("", middleware.Auth(s.GetDB(),
 		permissions.PermViewAllProjects,
 		permissions.PermCommentOnProjects,
 		permissions.PermAdmin,
 	))
-	adminComments.POST("/resolve", h.handleResolveComment)
-	adminComments.POST("/unresolve", h.handleUnresolveComment)
+	adminComments.POST("", h.handleCreateProjectComment)
 }
