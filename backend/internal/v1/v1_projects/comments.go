@@ -60,17 +60,25 @@ func (h *Handler) handleGetProjectComments(c echo.Context) error {
 	// Convert to response format
 	response := make([]CommentResponse, len(comments))
 	for i, comment := range comments {
+		var snapshotID *string = nil
+		if comment.ResolvedBySnapshotID.Valid {
+			uuid := comment.ResolvedBySnapshotID.String()
+			snapshotID = &uuid
+		}
+
 		response[i] = CommentResponse{
-			ID:                 comment.ID,
-			ProjectID:          comment.ProjectID,
-			TargetID:           comment.TargetID,
-			Comment:            comment.Comment,
-			CommenterID:        comment.CommenterID,
-			CreatedAt:          comment.CreatedAt,
-			UpdatedAt:          comment.UpdatedAt,
-			CommenterFirstName: comment.CommenterFirstName,
-			CommenterLastName:  comment.CommenterLastName,
-			Resolved:           comment.Resolved,
+			ID:                   comment.ID,
+			ProjectID:            comment.ProjectID,
+			TargetID:             comment.TargetID,
+			Comment:              comment.Comment,
+			CommenterID:          comment.CommenterID,
+			CreatedAt:            comment.CreatedAt,
+			UpdatedAt:            comment.UpdatedAt,
+			CommenterFirstName:   comment.CommenterFirstName,
+			CommenterLastName:    comment.CommenterLastName,
+			Resolved:             comment.Resolved,
+			ResolvedBySnapshotID: snapshotID,
+			ResolvedBySnapshotAt: comment.ResolvedBySnapshotAt,
 		}
 	}
 
@@ -123,17 +131,25 @@ func (h *Handler) handleGetProjectComment(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusNotFound, "Comment not found", err)
 	}
 
+	var snapshotID *string = nil
+	if comment.ResolvedBySnapshotID.Valid {
+		uuid := comment.ResolvedBySnapshotID.String()
+		snapshotID = &uuid
+	}
+
 	response := CommentResponse{
-		ID:                 comment.ID,
-		ProjectID:          comment.ProjectID,
-		TargetID:           comment.TargetID,
-		Comment:            comment.Comment,
-		CommenterID:        comment.CommenterID,
-		CreatedAt:          comment.CreatedAt,
-		UpdatedAt:          comment.UpdatedAt,
-		CommenterFirstName: comment.CommenterFirstName,
-		CommenterLastName:  comment.CommenterLastName,
-		Resolved:           comment.Resolved,
+		ID:                   comment.ID,
+		ProjectID:            comment.ProjectID,
+		TargetID:             comment.TargetID,
+		Comment:              comment.Comment,
+		CommenterID:          comment.CommenterID,
+		CreatedAt:            comment.CreatedAt,
+		UpdatedAt:            comment.UpdatedAt,
+		CommenterFirstName:   comment.CommenterFirstName,
+		CommenterLastName:    comment.CommenterLastName,
+		Resolved:             comment.Resolved,
+		ResolvedBySnapshotID: snapshotID,
+		ResolvedBySnapshotAt: comment.ResolvedBySnapshotAt,
 	}
 
 	return c.JSON(http.StatusOK, response)
@@ -213,16 +229,18 @@ func (h *Handler) handleCreateProjectComment(c echo.Context) error {
 	}
 
 	response := CommentResponse{
-		ID:                 comment.ID,
-		ProjectID:          comment.ProjectID,
-		TargetID:           comment.TargetID,
-		Comment:            comment.Comment,
-		CommenterID:        comment.CommenterID,
-		CommenterFirstName: user.FirstName,
-		CommenterLastName:  user.LastName,
-		Resolved:           comment.Resolved,
-		CreatedAt:          comment.CreatedAt,
-		UpdatedAt:          comment.UpdatedAt,
+		ID:                   comment.ID,
+		ProjectID:            comment.ProjectID,
+		TargetID:             comment.TargetID,
+		Comment:              comment.Comment,
+		CommenterID:          comment.CommenterID,
+		CommenterFirstName:   user.FirstName,
+		CommenterLastName:    user.LastName,
+		Resolved:             comment.Resolved,
+		CreatedAt:            comment.CreatedAt,
+		UpdatedAt:            comment.UpdatedAt,
+		ResolvedBySnapshotID: nil,
+		ResolvedBySnapshotAt: nil,
 	}
 
 	return c.JSON(http.StatusCreated, response)

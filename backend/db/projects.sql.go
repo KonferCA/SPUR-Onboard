@@ -153,7 +153,7 @@ INSERT INTO project_comments (
     $2, -- target_id
     $3, -- comment
     $4  -- commenter_id
-) RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at
+) RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at, resolved_by_snapshot_id
 `
 
 type CreateProjectCommentParams struct {
@@ -180,6 +180,7 @@ func (q *Queries) CreateProjectComment(ctx context.Context, arg CreateProjectCom
 		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ResolvedBySnapshotID,
 	)
 	return i, err
 }
@@ -586,8 +587,9 @@ func (q *Queries) GetProjectByIDAsAdmin(ctx context.Context, id string) (Project
 }
 
 const getProjectComment = `-- name: GetProjectComment :one
-SELECT pc.id, pc.project_id, pc.target_id, pc.comment, pc.commenter_id, pc.resolved, pc.created_at, pc.updated_at, u.first_name as commenter_first_name, u.last_name as commenter_last_name FROM project_comments pc
-JOIN users u ON u.id = pc.commenter_id
+SELECT pc.id, pc.project_id, pc.target_id, pc.comment, pc.commenter_id, pc.resolved, pc.created_at, pc.updated_at, pc.resolved_by_snapshot_id, u.first_name as commenter_first_name, u.last_name as commenter_last_name, ps.created_at as resolved_by_snapshot_at FROM project_comments pc
+LEFT JOIN users u ON u.id = pc.commenter_id
+LEFT JOIN project_snapshots ps ON ps.id = pc.resolved_by_snapshot_id
 WHERE pc.id = $1 AND pc.project_id = $2
 LIMIT 1
 `
@@ -598,16 +600,18 @@ type GetProjectCommentParams struct {
 }
 
 type GetProjectCommentRow struct {
-	ID                 string  `json:"id"`
-	ProjectID          string  `json:"project_id"`
-	TargetID           string  `json:"target_id"`
-	Comment            string  `json:"comment"`
-	CommenterID        string  `json:"commenter_id"`
-	Resolved           bool    `json:"resolved"`
-	CreatedAt          int64   `json:"created_at"`
-	UpdatedAt          int64   `json:"updated_at"`
-	CommenterFirstName *string `json:"commenter_first_name"`
-	CommenterLastName  *string `json:"commenter_last_name"`
+	ID                   string      `json:"id"`
+	ProjectID            string      `json:"project_id"`
+	TargetID             string      `json:"target_id"`
+	Comment              string      `json:"comment"`
+	CommenterID          string      `json:"commenter_id"`
+	Resolved             bool        `json:"resolved"`
+	CreatedAt            int64       `json:"created_at"`
+	UpdatedAt            int64       `json:"updated_at"`
+	ResolvedBySnapshotID pgtype.UUID `json:"resolved_by_snapshot_id"`
+	CommenterFirstName   *string     `json:"commenter_first_name"`
+	CommenterLastName    *string     `json:"commenter_last_name"`
+	ResolvedBySnapshotAt *int64      `json:"resolved_by_snapshot_at"`
 }
 
 func (q *Queries) GetProjectComment(ctx context.Context, arg GetProjectCommentParams) (GetProjectCommentRow, error) {
@@ -622,30 +626,35 @@ func (q *Queries) GetProjectComment(ctx context.Context, arg GetProjectCommentPa
 		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ResolvedBySnapshotID,
 		&i.CommenterFirstName,
 		&i.CommenterLastName,
+		&i.ResolvedBySnapshotAt,
 	)
 	return i, err
 }
 
 const getProjectComments = `-- name: GetProjectComments :many
-SELECT pc.id, pc.project_id, pc.target_id, pc.comment, pc.commenter_id, pc.resolved, pc.created_at, pc.updated_at, u.first_name as commenter_first_name, u.last_name as commenter_last_name FROM project_comments pc
-JOIN users u ON u.id = pc.commenter_id
+SELECT pc.id, pc.project_id, pc.target_id, pc.comment, pc.commenter_id, pc.resolved, pc.created_at, pc.updated_at, pc.resolved_by_snapshot_id, u.first_name as commenter_first_name, u.last_name as commenter_last_name, ps.created_at as resolved_by_snapshot_at FROM project_comments pc
+LEFT JOIN users u ON u.id = pc.commenter_id
+LEFT JOIN project_snapshots ps ON ps.id = pc.resolved_by_snapshot_id
 WHERE pc.project_id = $1
 ORDER BY pc.created_at DESC
 `
 
 type GetProjectCommentsRow struct {
-	ID                 string  `json:"id"`
-	ProjectID          string  `json:"project_id"`
-	TargetID           string  `json:"target_id"`
-	Comment            string  `json:"comment"`
-	CommenterID        string  `json:"commenter_id"`
-	Resolved           bool    `json:"resolved"`
-	CreatedAt          int64   `json:"created_at"`
-	UpdatedAt          int64   `json:"updated_at"`
-	CommenterFirstName *string `json:"commenter_first_name"`
-	CommenterLastName  *string `json:"commenter_last_name"`
+	ID                   string      `json:"id"`
+	ProjectID            string      `json:"project_id"`
+	TargetID             string      `json:"target_id"`
+	Comment              string      `json:"comment"`
+	CommenterID          string      `json:"commenter_id"`
+	Resolved             bool        `json:"resolved"`
+	CreatedAt            int64       `json:"created_at"`
+	UpdatedAt            int64       `json:"updated_at"`
+	ResolvedBySnapshotID pgtype.UUID `json:"resolved_by_snapshot_id"`
+	CommenterFirstName   *string     `json:"commenter_first_name"`
+	CommenterLastName    *string     `json:"commenter_last_name"`
+	ResolvedBySnapshotAt *int64      `json:"resolved_by_snapshot_at"`
 }
 
 func (q *Queries) GetProjectComments(ctx context.Context, projectID string) ([]GetProjectCommentsRow, error) {
@@ -666,8 +675,10 @@ func (q *Queries) GetProjectComments(ctx context.Context, projectID string) ([]G
 			&i.Resolved,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ResolvedBySnapshotID,
 			&i.CommenterFirstName,
 			&i.CommenterLastName,
+			&i.ResolvedBySnapshotAt,
 		); err != nil {
 			return nil, err
 		}
@@ -1315,7 +1326,7 @@ SET
     resolved = true,
     updated_at = extract(epoch from now())
 WHERE id = $1 AND project_id = $2
-RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at
+RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at, resolved_by_snapshot_id
 `
 
 type ResolveProjectCommentParams struct {
@@ -1335,6 +1346,7 @@ func (q *Queries) ResolveProjectComment(ctx context.Context, arg ResolveProjectC
 		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ResolvedBySnapshotID,
 	)
 	return i, err
 }
@@ -1361,7 +1373,7 @@ SET
     resolved = false,
     updated_at = extract(epoch from now())
 WHERE id = $1 AND project_id = $2
-RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at
+RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at, resolved_by_snapshot_id
 `
 
 type UnresolveProjectCommentParams struct {
@@ -1381,6 +1393,7 @@ func (q *Queries) UnresolveProjectComment(ctx context.Context, arg UnresolveProj
 		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ResolvedBySnapshotID,
 	)
 	return i, err
 }
@@ -1422,7 +1435,7 @@ UPDATE project_comments
 SET comment = $2,
     updated_at = extract(epoch from now())
 WHERE id = $1
-RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at
+RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at, resolved_by_snapshot_id
 `
 
 type UpdateProjectCommentParams struct {
@@ -1442,6 +1455,7 @@ func (q *Queries) UpdateProjectComment(ctx context.Context, arg UpdateProjectCom
 		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ResolvedBySnapshotID,
 	)
 	return i, err
 }
