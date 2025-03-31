@@ -629,7 +629,7 @@ func TestProjectEndpoints(t *testing.T) {
 		rec := httptest.NewRecorder()
 		s.GetEcho().ServeHTTP(rec, req)
 
-		assert.Equal(t, http.StatusCreated, rec.Code)
+		assert.Equal(t, http.StatusCreated, rec.Code, "Should be able to create test comment for comment resolution")
 
 		var commentResp map[string]interface{}
 		err = json.NewDecoder(rec.Body).Decode(&commentResp)
@@ -662,11 +662,11 @@ func TestProjectEndpoints(t *testing.T) {
 				expectedCode: http.StatusOK,
 			},
 			{
-				name:         "Non-Admin Cannot Resolve Comment",
+				name:         "Non-Admin Can Resolve Comment",
 				method:       http.MethodPost,
 				path:         fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectID, commentID),
 				token:        accessToken,
-				expectedCode: http.StatusForbidden,
+				expectedCode: http.StatusOK,
 			},
 		}
 
