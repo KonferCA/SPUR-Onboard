@@ -280,15 +280,44 @@ jobs:
       # Comment on the PR with the preview URL
       - name: Comment on PR
         uses: actions/github-script@v7
+        id: pr-comment
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            await github.rest.issues.createComment({
+            // check if we already have a comment from a previous deployment
+            const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: ${{ github.event.pull_request.number }},
-              body: '🚀 PR Preview Environment Deployed!\n\n**Preview URL:** https://${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}\n\nThis environment will be automatically cleaned up when the PR is closed.'
+              issue_number: ${{ github.event.pull_request.number }}
             });
+            
+            const deploymentComments = comments.filter(comment => 
+              comment.body.includes('PR Preview Environment Deployed!')
+            );
+            
+            const now = new Date().toISOString();
+            const commentBody = '🚀 PR Preview Environment Deployed!\n\n' +
+                              '**Preview URL:** https://${{ env.SUBDOMAIN }}.${{ secrets.DOMAIN_NAME }}\n\n' +
+                              'This environment will be automatically cleaned up when the PR is closed.\n\n' +
+                              `Last updated: ${now}`;
+            
+            if (deploymentComments.length > 0) {
+              // update the existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: deploymentComments[0].id,
+                body: commentBody
+              });
+            } else {
+              // create a new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ github.event.pull_request.number }},
+                body: commentBody
+              });
+            }
   # Cleanup preview environment when PR is closed
   cleanup-preview:
     if: github.event.action == 'closed'
