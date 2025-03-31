@@ -224,23 +224,22 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
             status: [],
             year: [],
         }),
-        [data]
+        []
     );
 
-    const mapStatus = (status: string) => {
-        switch (status) {
-            case ProjectStatusEnum.Pending:
-                return 'submitted';
-            default:
-                return status;
-        }
-    };
-
     const filteredData = useMemo(() => {
+        const mapStatus = (status: string) => {
+            switch (status) {
+                case ProjectStatusEnum.Pending:
+                    return 'submitted';
+                default:
+                    return status;
+            }
+        };
         return data.filter((item) => {
             return selectedStatus === mapStatus(item.status);
         });
-    }, [data, filters, selectedStatus]);
+    }, [data, selectedStatus]);
 
     const table = useReactTable({
         data: filteredData,

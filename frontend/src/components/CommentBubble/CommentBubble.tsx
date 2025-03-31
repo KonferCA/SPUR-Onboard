@@ -9,9 +9,10 @@ import { twMerge } from 'tailwind-merge';
 import { FaXmark, FaCheck } from 'react-icons/fa6';
 import { useAuth, useNotification } from '@/contexts';
 import { ApiError } from '@/services';
+import { format, fromUnixTime } from 'date-fns';
 
 const commentInfoContainerStyles = cva(
-    'absolute rounded-lg -top-2 -left-2 p-2 border border-gray-300 shadow-lg bg-white hidden min-w-64 min-h-16 z-50',
+    'absolute rounded-lg -top-2 -left-2 p-2 border border-gray-300 shadow-lg bg-white hidden min-w-72 min-h-16 z-50',
     {
         variants: {
             active: {
@@ -110,22 +111,28 @@ export const CommentBubble: FC<CommentBubbleProps> = ({ data }) => {
                     <span>{comment.comment}</span>
                 </div>
                 <div className="mt-2 flex justify-end">
-                    <button
-                        type="button"
-                        className={commentResolveButtonStyles({
-                            resolved: comment.resolved,
-                        })}
-                        onClick={() => onToggleResolution(comment)}
-                    >
-                        <span>
-                            {comment.resolved ? 'Unresolve' : 'Resolve'}
-                        </span>
-                        {!comment.resolved && (
+                    {comment.resolvedBySnapshotId === null && (
+                        <button
+                            type="button"
+                            className={commentResolveButtonStyles({
+                                resolved: comment.resolved,
+                            })}
+                            onClick={() => onToggleResolution(comment)}
+                            disabled={comment.resolvedBySnapshotId !== null}
+                        >
                             <span>
-                                <FaCheck />
+                                {comment.resolved ? 'Unresolve' : 'Resolve'}
                             </span>
-                        )}
-                    </button>
+                            {!comment.resolved && (
+                                <span>
+                                    <FaCheck />
+                                </span>
+                            )}
+                        </button>
+                    )}
+                    {comment.resolvedBySnapshotAt !== null && (
+                        <p className="text-sm text-gray-400">{`Resolved on ${format(fromUnixTime(comment.resolvedBySnapshotAt), 'MMM d, yyyy h:mm a zzz')}`}</p>
+                    )}
                 </div>
             </div>
             <button
