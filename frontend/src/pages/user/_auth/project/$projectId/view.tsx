@@ -49,15 +49,24 @@ export const Route = createFileRoute('/user/_auth/project/$projectId/view')({
             context.auth.accessToken,
             params.projectId
         ).catch(console.error);
-        if (
-            details &&
-            details.status === ProjectStatusEnum.NeedsReview &&
-            details.allow_edit
-        ) {
-            throw redirect({
-                to: `/user/project/${params.projectId}/form`,
-                replace: true,
-            });
+        if (details) {
+            switch (details.status) {
+                case ProjectStatusEnum.NeedsReview:
+                    if (details.allow_edit) {
+                        throw redirect({
+                            to: `/user/project/${params.projectId}/form`,
+                            replace: true,
+                        });
+                    }
+                    break;
+                case ProjectStatusEnum.Draft:
+                    throw redirect({
+                        to: `/user/project/${params.projectId}/form`,
+                        replace: true,
+                    });
+                default:
+                    break;
+            }
         }
     },
 });
