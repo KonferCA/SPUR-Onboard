@@ -34,3 +34,14 @@ export {
 import NotFoundBgSVG from './404s.svg';
 
 export { NotFoundBgSVG };
+
+/*
+ * Auth page assets
+ */
+import Blob1SVG from './auth/blob1.svg';
+import Blob2SVG from './auth/blob2.svg';
+import Blob3SVG from './auth/blob3.svg';
+import Blob4SVG from './auth/blob4.svg';
+import MapbaseSVG from './auth/mapbase.svg';
+
+export { Blob1SVG, Blob2SVG, Blob3SVG, Blob4SVG, MapbaseSVG };
