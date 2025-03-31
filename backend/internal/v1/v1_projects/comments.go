@@ -171,6 +171,12 @@ func (h *Handler) handleCreateProjectComment(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
 	}
 
+	// Ensure that the handler is checking for permissions instead of solely relying on
+	// middleware. This ensures that the permission is strictly followed.
+	if user.Permissions&int32(permissions.PermIsAdmin) == 0 {
+		return v1_common.NewAuthError("Unauthorized to create a new comment on project.")
+	}
+  
 	// Request should not take longer than one minute to process
 	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
 	defer cancel()
@@ -199,7 +205,8 @@ func (h *Handler) handleCreateProjectComment(c echo.Context) error {
 	})
 	if err != nil {
 		return v1_common.Fail(c, http.StatusNotFound, "Project not found", err)
-	}
+  }
+ 
 
 	// Parse request body
 	var req CreateCommentRequest
