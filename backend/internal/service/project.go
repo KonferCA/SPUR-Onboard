@@ -59,7 +59,17 @@ func SubmitProject(queries *db.Queries, ctx context.Context, projectID string) e
 	}
 
 	// Create a new snapshot
-	return CreateProjectSnapshot(queries, ctx, projectID)
+	err = CreateProjectSnapshot(queries, ctx, projectID)
+	if err != nil {
+		return err
+	}
+
+	// Reset allow edit to false
+	err = queries.SetProjectAllowEdit(ctx, db.SetProjectAllowEditParams{ID: projectID, AllowEdit: false})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetLatestProjectSnapshot gets the latest project snapshot based on the created_at timestamp.
