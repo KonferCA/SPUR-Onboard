@@ -42,6 +42,8 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	// Get new projects
 	g.GET("/project/latest", h.handleGetNewProjects, publicProjectsLimiter.RateLimit())
 
+	g.GET("/project/popular", h.handleGetPopularProjects, publicProjectsLimiter.RateLimit())
+
 	// Update project status
 	g.PUT("/project/:id/status", h.handleUpdateProjectStatus, middleware.Auth(s.GetDB(), permissions.PermAdmin))
 
