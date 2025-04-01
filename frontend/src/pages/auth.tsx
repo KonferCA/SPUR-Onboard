@@ -13,7 +13,6 @@ import type {
     CompanyFormErrors,
     RegistrationStep,
 } from '@/types/auth';
-import { isAdmin } from '@/utils/permissions';
 import { initialUserProfile } from '@/services/user';
 import { useNotification } from '@/contexts';
 
@@ -64,12 +63,7 @@ function AuthPage() {
     const handleRedirect = () => {
         if (!user) return;
 
-        const perms = user.permissions;
-        if (isAdmin(perms)) {
-            navigate({ to: '/admin/dashboard', replace: true });
-        } else {
-            navigate({ to: '/user/dashboard', replace: true });
-        }
+        navigate({ to: '/user/home', replace: true });
     };
 
     const handleAuthSubmit = async (formData: AuthFormData) => {
