@@ -145,3 +145,7 @@ type SaveProjectDraftRequest struct {
 type UpdateProjectStatusRequest struct {
 	Status db.ProjectStatus `json:"status" validate:"required,oneof=draft pending verified declined withdrawn"`
 }
+
+type GetPopularProjectsRequest struct {
+	Count int `query:"count" validate:"omitempty,min=1,max=50"`
+}
