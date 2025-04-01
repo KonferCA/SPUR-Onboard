@@ -40,7 +40,7 @@ const cards = [
         icon: GrowIcon,
         iconHover: GrowIconHover,
         image: BrowseInvestImage,
-        link: '/user/browse',
+        link: '/user/dashboard',
     },
     {
         id: 'hackathon-claim',
