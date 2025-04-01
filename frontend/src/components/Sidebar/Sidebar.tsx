@@ -318,22 +318,39 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
         e.stopPropagation();
         e.preventDefault();
 
-        setExpandedProjectItems((prev) => {
-            const newState = { ...prev };
+        const project = projects.find((p) => p.id === projectId);
 
-            if (newState[projectId]) {
+        setExpandedProjectItems((prev) => {
+            if (prev[projectId]) {
+                const newState = { ...prev };
                 delete newState[projectId];
                 manuallyCollapsedRef.current = true;
 
                 setTimeout(() => {
                     manuallyCollapsedRef.current = false;
                 }, 500);
-            } else {
-                return { [projectId]: true };
+
+                return newState;
             }
 
-            return newState;
+            return { [projectId]: true };
         });
+
+        if (projectId !== currentProjectId && project) {
+            if (projectConfig?.sections && projectConfig.sections.length > 0) {
+                navigateToProject(
+                    projectId,
+                    projectConfig.sections[0],
+                    project
+                );
+            } else {
+                navigateToProject(projectId, undefined, project);
+            }
+
+            if (isMobileDrawerOpen) {
+                setTimeout(() => setMobileDrawerOpen(false), 150);
+            }
+        }
 
         e.nativeEvent.stopImmediatePropagation();
     };
