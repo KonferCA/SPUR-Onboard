@@ -462,6 +462,108 @@ func (q *Queries) GetNewProjectsByStatus(ctx context.Context, arg GetNewProjects
 	return items, nil
 }
 
+const getPopularProjects = `-- name: GetPopularProjects :many
+SELECT 
+    p.id, 
+    p.company_id, 
+    COALESCE(
+        (SELECT pa.answer 
+         FROM project_answers pa
+         JOIN project_questions pq ON pa.question_id = pq.id
+         WHERE pa.project_id = p.id AND pq.question_key = 'company_name' AND pa.answer != ''
+         LIMIT 1),
+        p.title
+    ) as title,
+    p.description, 
+    p.status, 
+    p.created_at, 
+    p.updated_at,
+    c.name as company_name,
+    COUNT(d.id) as document_count,
+    COUNT(t.id) as team_member_count,
+    COUNT(pc.id) as comment_count,
+    (
+        -- Comments
+        COUNT(pc.id) * 2 + 
+        -- Documents
+        COUNT(d.id) * 1.5 + 
+        -- Team members
+        COUNT(t.id) +
+        -- Recent projects (boost score)
+        CASE 
+            WHEN (extract(epoch from now()) - p.updated_at) < 604800 THEN 10  --  7 days
+            WHEN (extract(epoch from now()) - p.updated_at) < 2592000 THEN 5  -- 30 days
+            ELSE 0
+        END
+    ) AS popularity_score
+FROM 
+    projects p
+LEFT JOIN 
+    project_documents d ON d.project_id = p.id
+LEFT JOIN 
+    team_members t ON t.company_id = p.company_id
+LEFT JOIN 
+    companies c ON c.id = p.company_id
+LEFT JOIN
+    project_comments pc ON pc.project_id = p.id
+WHERE 
+    p.status IN ('pending', 'verified')
+GROUP BY 
+    p.id, c.name
+ORDER BY 
+    popularity_score DESC
+LIMIT 
+    $1
+`
+
+type GetPopularProjectsRow struct {
+	ID              string        `json:"id"`
+	CompanyID       string        `json:"company_id"`
+	Title           string        `json:"title"`
+	Description     *string       `json:"description"`
+	Status          ProjectStatus `json:"status"`
+	CreatedAt       int64         `json:"created_at"`
+	UpdatedAt       int64         `json:"updated_at"`
+	CompanyName     *string       `json:"company_name"`
+	DocumentCount   int64         `json:"document_count"`
+	TeamMemberCount int64         `json:"team_member_count"`
+	CommentCount    int64         `json:"comment_count"`
+	PopularityScore int32         `json:"popularity_score"`
+}
+
+func (q *Queries) GetPopularProjects(ctx context.Context, limit int32) ([]GetPopularProjectsRow, error) {
+	rows, err := q.db.Query(ctx, getPopularProjects, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPopularProjectsRow
+	for rows.Next() {
+		var i GetPopularProjectsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CompanyID,
+			&i.Title,
+			&i.Description,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.CompanyName,
+			&i.DocumentCount,
+			&i.TeamMemberCount,
+			&i.CommentCount,
+			&i.PopularityScore,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getProjectAnswers = `-- name: GetProjectAnswers :many
 SELECT 
     pa.id as answer_id,

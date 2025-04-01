@@ -384,3 +384,56 @@ ORDER BY
     p.created_at DESC
 LIMIT 
     $1;
+
+-- name: GetPopularProjects :many
+SELECT 
+    p.id, 
+    p.company_id, 
+    COALESCE(
+        (SELECT pa.answer 
+         FROM project_answers pa
+         JOIN project_questions pq ON pa.question_id = pq.id
+         WHERE pa.project_id = p.id AND pq.question_key = 'company_name' AND pa.answer != ''
+         LIMIT 1),
+        p.title
+    ) as title,
+    p.description, 
+    p.status, 
+    p.created_at, 
+    p.updated_at,
+    c.name as company_name,
+    COUNT(d.id) as document_count,
+    COUNT(t.id) as team_member_count,
+    COUNT(pc.id) as comment_count,
+    (
+        -- Comments
+        COUNT(pc.id) * 2 + 
+        -- Documents
+        COUNT(d.id) * 1.5 + 
+        -- Team members
+        COUNT(t.id) +
+        -- Recent projects (boost score)
+        CASE 
+            WHEN (extract(epoch from now()) - p.updated_at) < 604800 THEN 10  --  7 days
+            WHEN (extract(epoch from now()) - p.updated_at) < 2592000 THEN 5  -- 30 days
+            ELSE 0
+        END
+    ) AS popularity_score
+FROM 
+    projects p
+LEFT JOIN 
+    project_documents d ON d.project_id = p.id
+LEFT JOIN 
+    team_members t ON t.company_id = p.company_id
+LEFT JOIN 
+    companies c ON c.id = p.company_id
+LEFT JOIN
+    project_comments pc ON pc.project_id = p.id
+WHERE 
+    p.status IN ('pending', 'verified')
+GROUP BY 
+    p.id, c.name
+ORDER BY 
+    popularity_score DESC
+LIMIT 
+    $1;

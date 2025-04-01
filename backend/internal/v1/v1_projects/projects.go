@@ -714,3 +714,68 @@ func (h *Handler) handleGetNewProjects(c echo.Context) error {
 		"projects": response,
 	})
 }
+
+/*
+ * handleGetPopularProjects retrieves the most popular projects based on a
+ * composite scoring algorithm that takes into account:
+ * - Comment activity (user engagement)
+ * - Document count (content richness)
+ * - Team member count (project size/importance)
+ * - Recency (newer projects get a boost)
+ *
+ * parameters:
+ * - count: Maximum number of projects to return (optional, default: 10)
+ *
+ * security:
+ * - Public endpoint (no authentication required)
+ * - Only returns projects with status 'pending' or 'verified'
+ *
+ * returns array of ExtendedProjectResponse objects ordered by popularity score
+ */
+func (h *Handler) handleGetPopularProjects(c echo.Context) error {
+	var req GetPopularProjectsRequest
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request parameters", err)
+	}
+
+	count := 10
+	if req.Count > 0 {
+		count = req.Count
+	}
+
+	projects, err := h.server.GetQueries().GetPopularProjects(c.Request().Context(), int32(count))
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to fetch popular projects", err)
+	}
+
+	response := make([]ExtendedProjectResponse, 0, len(projects))
+	for _, project := range projects {
+		description := ""
+		if project.Description != nil {
+			description = *project.Description
+		}
+
+		companyName := ""
+		if project.CompanyName != nil {
+			companyName = *project.CompanyName
+		}
+
+		response = append(response, ExtendedProjectResponse{
+			ProjectResponse: ProjectResponse{
+				ID:          project.ID,
+				Title:       project.Title,
+				Description: description,
+				Status:      project.Status,
+				CreatedAt:   project.CreatedAt,
+				UpdatedAt:   project.UpdatedAt,
+			},
+			CompanyName:     companyName,
+			DocumentCount:   project.DocumentCount,
+			TeamMemberCount: project.TeamMemberCount,
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"projects": response,
+	})
+}
