@@ -136,14 +136,15 @@ func AllGroupTypeEnumValues() []GroupTypeEnum {
 type InputTypeEnum string
 
 const (
-	InputTypeEnumUrl         InputTypeEnum = "url"
-	InputTypeEnumFile        InputTypeEnum = "file"
-	InputTypeEnumTextarea    InputTypeEnum = "textarea"
-	InputTypeEnumTextinput   InputTypeEnum = "textinput"
-	InputTypeEnumSelect      InputTypeEnum = "select"
-	InputTypeEnumMultiselect InputTypeEnum = "multiselect"
-	InputTypeEnumTeam        InputTypeEnum = "team"
-	InputTypeEnumDate        InputTypeEnum = "date"
+	InputTypeEnumUrl              InputTypeEnum = "url"
+	InputTypeEnumFile             InputTypeEnum = "file"
+	InputTypeEnumTextarea         InputTypeEnum = "textarea"
+	InputTypeEnumTextinput        InputTypeEnum = "textinput"
+	InputTypeEnumSelect           InputTypeEnum = "select"
+	InputTypeEnumMultiselect      InputTypeEnum = "multiselect"
+	InputTypeEnumTeam             InputTypeEnum = "team"
+	InputTypeEnumDate             InputTypeEnum = "date"
+	InputTypeEnumFundingstructure InputTypeEnum = "fundingstructure"
 )
 
 func (e *InputTypeEnum) Scan(src interface{}) error {
@@ -190,7 +191,8 @@ func (e InputTypeEnum) Valid() bool {
 		InputTypeEnumSelect,
 		InputTypeEnumMultiselect,
 		InputTypeEnumTeam,
-		InputTypeEnumDate:
+		InputTypeEnumDate,
+		InputTypeEnumFundingstructure:
 		return true
 	}
 	return false
@@ -206,6 +208,7 @@ func AllInputTypeEnumValues() []InputTypeEnum {
 		InputTypeEnumMultiselect,
 		InputTypeEnumTeam,
 		InputTypeEnumDate,
+		InputTypeEnumFundingstructure,
 	}
 }
 
