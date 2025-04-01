@@ -601,4 +601,119 @@ func TestProjectEndpoints(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("Popular Projects", func(t *testing.T) {
+		adminID, adminEmail, adminPassword, err := createTestAdmin(ctx, s)
+		assert.NoError(t, err)
+		defer removeTestUser(ctx, adminEmail, s)
+
+		adminCompanyID, err := createTestCompany(ctx, s, adminID)
+		assert.NoError(t, err)
+		defer removeTestCompany(ctx, adminCompanyID, s)
+
+		adminToken := loginAndGetToken(t, s, adminEmail, adminPassword)
+		require.NotEmpty(t, adminToken)
+
+		project1ID := createAndFillTestProject(t, s, accessToken, companyID)
+		submitProject(t, s, accessToken, project1ID)
+
+		for i := range 5 {
+			commentBody := fmt.Sprintf(`{
+			"comment": "Test comment %d for popularity",
+			"target_id": "%s"
+		}`, i, project1ID)
+
+			req := httptest.NewRequest(http.MethodPost,
+				fmt.Sprintf("/api/v1/project/%s/comments", project1ID),
+				strings.NewReader(commentBody))
+			req.Header.Set("Authorization", "Bearer "+adminToken)
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusCreated, rec.Code, "Failed to create comment with admin token")
+		}
+
+		project2ID := createAndFillTestProject(t, s, accessToken, companyID)
+		submitProject(t, s, accessToken, project2ID)
+
+		commentBody := fmt.Sprintf(`{
+		"comment": "Single test comment for medium popularity",
+		"target_id": "%s"
+	}`, project2ID)
+
+		req := httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/project/%s/comments", project2ID),
+			strings.NewReader(commentBody))
+		req.Header.Set("Authorization", "Bearer "+adminToken)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusCreated, rec.Code, "Failed to create comment with admin token")
+
+		project3ID := createAndFillTestProject(t, s, accessToken, companyID)
+		submitProject(t, s, accessToken, project3ID)
+
+		time.Sleep(100 * time.Millisecond)
+
+		t.Run("Default Count", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/project/popular", nil)
+			rec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			var resp map[string]interface{}
+			err := json.NewDecoder(rec.Body).Decode(&resp)
+			assert.NoError(t, err)
+
+			projects, ok := resp["projects"].([]interface{})
+			assert.True(t, ok, "Response should contain projects array")
+			assert.NotEmpty(t, projects, "Should return at least one project")
+
+			foundProject1 := false
+			foundProject2 := false
+			foundProject3 := false
+
+			for _, p := range projects {
+				proj := p.(map[string]interface{})
+				id := proj["id"].(string)
+
+				if id == project1ID {
+					foundProject1 = true
+				} else if id == project2ID {
+					foundProject2 = true
+				} else if id == project3ID {
+					foundProject3 = true
+				}
+			}
+
+			assert.True(t, foundProject1, "Project 1 should be in the results")
+			assert.True(t, foundProject2, "Project 2 should be in the results")
+			assert.True(t, foundProject3, "Project 3 should be in the results")
+		})
+
+		t.Run("Custom Count", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/project/popular?count=2", nil)
+			rec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			var resp map[string]interface{}
+			err := json.NewDecoder(rec.Body).Decode(&resp)
+			assert.NoError(t, err)
+
+			projects, ok := resp["projects"].([]interface{})
+			assert.True(t, ok, "Response should contain projects array")
+			assert.LessOrEqual(t, len(projects), 2, "Should respect the count parameter")
+		})
+
+		t.Run("Invalid Count", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/project/popular?count=invalid", nil)
+			rec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusBadRequest, rec.Code)
+		})
+	})
 }
