@@ -68,7 +68,7 @@ function AuthPage() {
         if (isAdmin(perms)) {
             navigate({ to: '/admin/dashboard', replace: true });
         } else {
-            navigate({ to: '/user/dashboard', replace: true });
+            navigate({ to: '/user/home', replace: true });
         }
     };
 
