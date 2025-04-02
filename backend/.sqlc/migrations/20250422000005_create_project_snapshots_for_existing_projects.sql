@@ -117,7 +117,7 @@ WHERE
         SELECT 1
         FROM project_snapshots ps
         WHERE ps.project_id = p.id
-    );
+    ) AND p.status != 'draft';
 -- +goose StatementEnd
 
 -- +goose Down
