@@ -779,3 +779,118 @@ func (h *Handler) handleGetPopularProjects(c echo.Context) error {
 		"projects": response,
 	})
 }
+
+/*
+ * handleGetFeaturedProjects retrieves projects that have been marked as featured.
+ * These are projects that have been specifically selected to be highlighted
+ * across SPUR products.
+ *
+ * parameters:
+ * - count: Maximum number of projects to return (optional, default: 10)
+ *
+ * security:
+ * - Public endpoint (no authentication required)
+ * - Only returns projects with status 'pending' or 'verified'
+ *
+ * returns array of ExtendedProjectResponse objects ordered by update date (newest first)
+ */
+func (h *Handler) handleGetFeaturedProjects(c echo.Context) error {
+	var req GetFeaturedProjectsRequest
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request parameters", err)
+	}
+
+	count := 10
+	if req.Count > 0 {
+		count = req.Count
+	}
+
+	projects, err := h.server.GetQueries().GetFeaturedProjects(c.Request().Context(), int32(count))
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to fetch featured projects", err)
+	}
+
+	response := make([]ExtendedProjectResponse, 0, len(projects))
+	for _, project := range projects {
+		description := ""
+		if project.Description != nil {
+			description = *project.Description
+		}
+
+		companyName := ""
+		if project.CompanyName != nil {
+			companyName = *project.CompanyName
+		}
+
+		response = append(response, ExtendedProjectResponse{
+			ProjectResponse: ProjectResponse{
+				ID:          project.ID,
+				Title:       project.Title,
+				Description: description,
+				Status:      project.Status,
+				CreatedAt:   project.CreatedAt,
+				UpdatedAt:   project.UpdatedAt,
+			},
+			CompanyName:     companyName,
+			DocumentCount:   project.DocumentCount,
+			TeamMemberCount: project.TeamMemberCount,
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"projects": response,
+	})
+}
+
+/*
+ * handleToggleProjectFeatured toggles the featured status of a project.
+ * This is an admin-only endpoint that allows highlighting or un-highlighting
+ * specific projects.
+ *
+ * parameters:
+ * - project_id: ID of the project to toggle (from URL)
+ * - featured: Boolean indicating whether project should be featured (from request body)
+ *
+ * security:
+ * - Admin-only endpoint
+ *
+ * returns success message
+ */
+func (h *Handler) handleToggleProjectFeatured(c echo.Context) error {
+	user, err := getUserFromContext(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	if !permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermAdmin) {
+		return v1_common.Fail(c, http.StatusForbidden, "Not authorized to toggle featured status", nil)
+	}
+
+	projectID := c.Param("id")
+	if projectID == "" {
+		return v1_common.Fail(c, http.StatusBadRequest, "Project ID is required", nil)
+	}
+
+	var req ToggleProjectFeaturedRequest
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
+	}
+
+	err = h.server.GetQueries().ToggleProjectFeatured(c.Request().Context(), db.ToggleProjectFeaturedParams{
+		Featured: req.Featured,
+		ID:       projectID,
+	})
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to update project featured status", err)
+	}
+
+	status := "featured"
+	if !req.Featured {
+		status = "unfeatured"
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message": fmt.Sprintf("Project %s successfully", status),
+		"status":  status,
+	})
+}
