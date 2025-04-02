@@ -7,7 +7,7 @@ import {
 } from '@/config';
 import { useAuth } from '@/contexts';
 import { createProjectComment, getProjectComments } from '@/services/comment';
-import { getProjectFormQuestions } from '@/services/project';
+import { getLatestProjectSnapshot } from '@/services/project';
 import { SectionedLayout } from '@/templates';
 import { scrollToTop } from '@/utils';
 import { sanitizeHtmlId } from '@/utils/html';
@@ -48,8 +48,11 @@ function RouteComponent() {
         queryKey: ['project_review_questions', accessToken, projectId],
         queryFn: async () => {
             if (!accessToken) return;
-            const data = await getProjectFormQuestions(accessToken, projectId);
-            return data;
+            const snapshot = await getLatestProjectSnapshot(
+                accessToken,
+                projectId
+            );
+            return snapshot.data;
         },
         enabled: !!accessToken && !!projectId,
         // if this is not set  to infity, data is refetched on window focus
