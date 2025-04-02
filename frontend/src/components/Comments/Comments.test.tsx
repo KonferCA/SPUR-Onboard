@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Comments } from './Comments';
 import type { Comment } from '@/services/comment';
@@ -15,6 +15,8 @@ const mockComments: Comment[] = [
         updatedAt: 1647896541000,
         commenterFirstName: 'John',
         commenterLastName: 'Doe',
+        resolvedBySnapshotId: null,
+        resolvedBySnapshotAt: null,
     },
     {
         id: '2',
@@ -27,6 +29,8 @@ const mockComments: Comment[] = [
         updatedAt: 1647896542000,
         commenterFirstName: 'Jane',
         commenterLastName: 'Smith',
+        resolvedBySnapshotId: null,
+        resolvedBySnapshotAt: null,
     },
 ];
 

@@ -1,5 +1,4 @@
 import {
-    CommentBubble,
     Comments,
     type DropdownOption,
     FileDownload,
