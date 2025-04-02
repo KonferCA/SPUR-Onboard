@@ -1,4 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router';
+import {
+    createFileRoute,
+    redirect,
+    useRouteContext,
+} from '@tanstack/react-router';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
     type AnchorLinkItem,
@@ -9,11 +13,13 @@ import {
     ScrollButton,
 } from '@components';
 import {
+    getProjectDetails,
     getProjectFormQuestions,
     type ProjectDraft,
     saveProjectDraft,
     submitProject,
 } from '@/services/project';
+import { getProjectComments } from '@/services/comment';
 import {
     type GroupedProjectQuestions,
     groupProjectQuestions,
@@ -28,7 +34,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useDebounceFn } from '@/hooks';
 import { useAuth, useNotification } from '@/contexts';
 import { useNavigate } from '@tanstack/react-router';
-import type { ValidationError } from '@/types/project';
+import type { ProjectResponse, ValidationError } from '@/types/project';
 import { ProjectError } from '@/components/ProjectError';
 import { RecommendedFields } from '@/components/RecommendedFields';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
@@ -37,14 +43,57 @@ import { AutoSaveIndicator } from '@/components/AutoSaveIndicator';
 import type { RecommendedField } from '@/types';
 import { isValid as isValidDate } from 'date-fns';
 import { scrollToTop } from '@/utils';
+import { ApiError } from '@/services';
 import { useLocation } from '@tanstack/react-router';
 import { useSidebar } from '@/contexts/SidebarContext/SidebarContext';
 import type { FundingStructureModel } from '@/components/FundingStructure';
+import { ProjectStatusEnum } from '@/services/projects';
 
 export const Route = createFileRoute(
     '/user/_auth/_appshell/project/$projectId/form'
 )({
     component: ProjectFormPage,
+    beforeLoad: async ({ context, params }) => {
+        if (!context || !context.auth?.accessToken) {
+            throw redirect({
+                to: '/auth',
+                replace: true,
+            });
+        }
+
+        const details = await getProjectDetails(
+            context.auth.accessToken,
+            params.projectId
+        ).catch((e) => {
+            console.error(e);
+            return null;
+        });
+        if (details) {
+            switch (details.status) {
+                case ProjectStatusEnum.NeedsReview:
+                    if (!details.allow_edit) {
+                        throw redirect({
+                            to: `/user/project/${params.projectId}/view`,
+                            replace: true,
+                        });
+                    }
+                    break;
+                case ProjectStatusEnum.Pending:
+                case ProjectStatusEnum.Declined:
+                case ProjectStatusEnum.Withdrawn:
+                case ProjectStatusEnum.Verified:
+                    throw redirect({
+                        to: `/user/project/${params.projectId}/view`,
+                    });
+
+                default:
+                    break;
+            }
+        }
+        return {
+            details,
+        };
+    },
 });
 
 const stepItemStyles = cva(
@@ -94,6 +143,10 @@ const isEmptyValue = (value: unknown, type: string): boolean => {
 };
 
 function ProjectFormPage() {
+    const projectDetails: ProjectResponse | null = useRouteContext({
+        from: '/user/_auth/_appshell/project/$projectId/form',
+        select: (context) => context.details,
+    });
     const notification = useNotification();
     const { projectId: currentProjectId } = Route.useParams();
     const navigate = useNavigate({
@@ -118,6 +171,25 @@ function ProjectFormPage() {
         refetchOnReconnect: true,
         refetchOnWindowFocus: false,
         refetchOnMount: true,
+    });
+
+    const { data: commentsData, isLoading: loadingComments } = useQuery({
+        queryKey: ['project_review_comments', accessToken, currentProjectId],
+        queryFn: async () => {
+            if (!accessToken) {
+                return;
+            }
+
+            const data = await getProjectComments(
+                accessToken,
+                currentProjectId
+            );
+            return data;
+        },
+        enabled: !!accessToken && !!currentProjectId,
+        refetchOnWindowFocus: false,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
     });
 
     const [groupedQuestions, setGroupedQuestions] = useState<
@@ -577,7 +649,7 @@ function ProjectFormPage() {
     }, []);
 
     useEffect(() => {
-        if (questionData) {
+        if (questionData && !loadingQuestions && !loadingComments) {
             const groups = groupProjectQuestions(questionData);
             const sections = groups.map((g) => {
                 const metadata: SectionMetadata = {
@@ -589,7 +661,7 @@ function ProjectFormPage() {
             setGroupedQuestions(groups);
             setSectionMetadata(sections);
         }
-    }, [questionData]);
+    }, [loadingQuestions, loadingComments, questionData]);
 
     const asideLinks = useMemo<AnchorLinkItem[]>(() => {
         return sectionsMetadata[currentStep]?.subSections.map((name) => ({
@@ -940,9 +1012,15 @@ function ProjectFormPage() {
             // replace to not let them go back, it causes the creation of a new project
             navigate({ to: '/user/dashboard', replace: true });
         } catch (e) {
+            setShowSubmitModal(false);
+            setShowRecommendedModal(false);
+            let message =
+                'Oops, seems like something went wrong. Please try again later.';
+            if (e instanceof ApiError) {
+                message = (e.body as { message: string }).message;
+            }
             notification.push({
-                message:
-                    'Oops, seems like something went wrong. Please try again later.',
+                message,
                 level: 'error',
             });
             console.error(e);
@@ -1091,7 +1169,8 @@ function ProjectFormPage() {
     };
 
     // TODO: make a better loading screen
-    if (groupedQuestions.length < 1 || loadingQuestions) return null;
+    if (groupedQuestions.length < 1 || loadingQuestions || loadingComments)
+        return null;
 
     return (
         <div className="flex h-screen overflow-hidden">
@@ -1190,6 +1269,15 @@ function ProjectFormPage() {
                                                                     highlightedQuestionId.id
                                                                         ? highlightedQuestionId.type
                                                                         : false
+                                                                }
+                                                                comments={
+                                                                    commentsData
+                                                                }
+                                                                projectStatus={
+                                                                    projectDetails?.status
+                                                                }
+                                                                allowEdit={
+                                                                    projectDetails?.allow_edit
                                                                 }
                                                                 fileUploadProps={
                                                                     accessToken

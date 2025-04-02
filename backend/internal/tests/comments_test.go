@@ -20,14 +20,16 @@ import (
 
 // CommentResponse represents the response format for comment operations
 type CommentResponse struct {
-	ID          string `json:"id"`
-	ProjectID   string `json:"project_id"`
-	TargetID    string `json:"target_id"`
-	Comment     string `json:"comment"`
-	CommenterID string `json:"commenter_id"`
-	Resolved    bool   `json:"resolved"`
-	CreatedAt   int64  `json:"created_at"`
-	UpdatedAt   int64  `json:"updated_at"`
+	ID                   string  `json:"id"`
+	ProjectID            string  `json:"project_id"`
+	TargetID             string  `json:"target_id"`
+	Comment              string  `json:"comment"`
+	CommenterID          string  `json:"commenter_id"`
+	Resolved             bool    `json:"resolved"`
+	CreatedAt            int64   `json:"created_at"`
+	UpdatedAt            int64   `json:"updated_at"`
+	ResolvedBySnapshotID *string `json:"resolved_by_snapshot_id,omitempty"`
+	ResolvedBySnapshotAt *int64  `json:"resolved_by_snapshot_at,omitempty"`
 }
 
 func TestCommentEndpoints(t *testing.T) {
@@ -200,6 +202,49 @@ func TestCommentEndpoints(t *testing.T) {
 				}
 			})
 		}
+	})
+
+	t.Run("Comment Creation Sets Allow Edit", func(t *testing.T) {
+		// Create a new comment
+		commentBody := map[string]interface{}{
+			"comment":   "Test comment for allow_edit check",
+			"target_id": targetID.String(),
+		}
+		jsonBody, err := json.Marshal(commentBody)
+		require.NoError(t, err)
+
+		// Create the comment
+		req := httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/project/%s/comments", projectID.String()),
+			bytes.NewReader(jsonBody))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", accessToken))
+		rec := httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusCreated, rec.Code)
+
+		// Now get the project to check allow_edit flag
+		req = httptest.NewRequest(http.MethodGet,
+			fmt.Sprintf("/api/v1/project/%s", projectID.String()),
+			nil)
+		req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", accessToken))
+		rec = httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var projectResp map[string]interface{}
+		err = json.Unmarshal(rec.Body.Bytes(), &projectResp)
+		assert.NoError(t, err)
+
+		// Check that allow_edit is present and true
+		allowEdit, ok := projectResp["allow_edit"].(bool)
+		assert.True(t, ok, "Response should contain allow_edit field")
+		assert.True(t, allowEdit, "allow_edit should be set to true after comment creation")
+
+		// Check that status is set to "needs review"
+		status, ok := projectResp["status"].(string)
+		assert.True(t, ok, "Response should contain status field")
+		assert.Equal(t, "needs review", status, "Project status should be 'needs review' after comment creation")
 	})
 
 	t.Run("Get Project Comments", func(t *testing.T) {
@@ -384,6 +429,86 @@ func TestCommentEndpoints(t *testing.T) {
 			assert.Equal(t, resolveCommentID.String(), response.ID)
 			assert.False(t, response.Resolved)
 		})
+	})
+
+	t.Run("Comment with Snapshot Resolution", func(t *testing.T) {
+		// Create a comment that is resolved by a snapshot
+		snapshotResolvedCommentID := uuid.New()
+
+		// Manually insert snapshot for testing
+		var snapshotID string
+		row := s.GetDB().QueryRow(ctx, `
+            INSERT INTO project_snapshots (project_id, data, version_number, title)
+            VALUES
+            ($1, '{}', 1, 'Test Project')
+            RETURNING id;
+            `, projectID)
+		err = row.Scan(&snapshotID)
+		require.NoError(t, err, "Project snapshot for comment resolution was not inserted")
+
+		// Insert a comment that has been resolved by a snapshot
+		_, err := s.GetDB().Exec(ctx, `
+			INSERT INTO project_comments (
+				id,
+				project_id,
+				target_id,
+				comment,
+				commenter_id,
+				created_at,
+				updated_at,
+				resolved,
+				resolved_by_snapshot_id
+			)
+			VALUES ($1, $2, $3, $4, $5, extract(epoch from now()), extract(epoch from now()), true, $6)
+		`, snapshotResolvedCommentID, projectID, targetID, "Comment resolved by snapshot", userID, snapshotID)
+		require.NoError(t, err)
+
+		// Try to resolve the comment - should fail with 400 error
+		req := httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/project/%s/comments/%s/resolve", projectID, snapshotResolvedCommentID),
+			nil)
+		req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", accessToken))
+		rec := httptest.NewRecorder()
+
+		s.GetEcho().ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+		var errResp map[string]interface{}
+		err = json.Unmarshal(rec.Body.Bytes(), &errResp)
+		assert.NoError(t, err)
+		assert.Contains(t, errResp["message"], "has been resolved by a previous submission")
+
+		// Try to unresolve the comment - should also fail with 400 error
+		req = httptest.NewRequest(http.MethodPost,
+			fmt.Sprintf("/api/v1/project/%s/comments/%s/unresolve", projectID, snapshotResolvedCommentID),
+			nil)
+		req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", accessToken))
+		rec = httptest.NewRecorder()
+
+		s.GetEcho().ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+		err = json.Unmarshal(rec.Body.Bytes(), &errResp)
+		assert.NoError(t, err)
+		assert.Contains(t, errResp["message"], "has been resolved by a previous submission")
+
+		// Check that we can get the comment including the snapshot information
+		req = httptest.NewRequest(http.MethodGet,
+			fmt.Sprintf("/api/v1/project/%s/comments/%s", projectID, snapshotResolvedCommentID),
+			nil)
+		req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", accessToken))
+		rec = httptest.NewRecorder()
+
+		s.GetEcho().ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var commentResp CommentResponse
+		err = json.Unmarshal(rec.Body.Bytes(), &commentResp)
+		assert.NoError(t, err)
+		assert.Equal(t, snapshotResolvedCommentID.String(), commentResp.ID)
+		assert.True(t, commentResp.Resolved)
+		assert.NotNil(t, commentResp.ResolvedBySnapshotID)
+		assert.Equal(t, snapshotID, *commentResp.ResolvedBySnapshotID)
 	})
 
 	// Cleanup

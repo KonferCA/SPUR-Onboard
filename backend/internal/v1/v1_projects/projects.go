@@ -236,6 +236,7 @@ func (h *Handler) handleGetProject(c echo.Context) error {
 		Title:       project.Title,
 		Description: description,
 		Status:      project.Status,
+		AllowEdit:   project.AllowEdit,
 		CreatedAt:   project.CreatedAt,
 		UpdatedAt:   project.UpdatedAt,
 	})
@@ -281,6 +282,7 @@ func (h *Handler) handleListCompanyProjects(c echo.Context) error {
 				Title:       project.Title,
 				Description: description,
 				Status:      project.Status,
+				AllowEdit:   project.AllowEdit,
 				CreatedAt:   project.CreatedAt,
 				UpdatedAt:   project.UpdatedAt,
 			},
@@ -316,6 +318,7 @@ func (h *Handler) handleListAllProjects(c echo.Context) error {
 				Title:       project.Title,
 				Description: description,
 				Status:      project.Status,
+				AllowEdit:   project.AllowEdit,
 				CreatedAt:   project.CreatedAt,
 				UpdatedAt:   project.UpdatedAt,
 			},
@@ -354,8 +357,11 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		return v1_common.NewForbiddenError("not authorized to submit projects")
 	}
 
+	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
+	defer cancel()
+
 	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
+	company, err := h.server.GetQueries().GetCompanyByUserID(ctx, user.ID)
 	if err != nil {
 		return v1_common.Fail(c, 404, "Company not found", err)
 	}
@@ -366,7 +372,7 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 	}
 
 	// Verify project belongs to company and check status
-	project, err := h.server.GetQueries().GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
+	project, err := h.server.GetQueries().GetProjectByID(ctx, db.GetProjectByIDParams{
 		ID:        projectID,
 		CompanyID: company.ID,
 	})
@@ -374,8 +380,20 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusNotFound, "Project not found", err)
 	}
 
-	// Only allow submission if project is in draft status
-	if project.Status != db.ProjectStatusDraft {
+	// Conditionally check whether the project can be submitted
+	switch {
+	// Case: project resubmission
+	case project.Status == db.ProjectStatusNeedsreview && project.AllowEdit:
+		// Get count of unresolved comments
+		count, err := h.server.GetQueries().CountUnresolvedProjectComments(ctx, project.ID)
+		if err != nil {
+			return v1_common.NewInternalError(err)
+		}
+		if count > 0 {
+			return v1_common.Fail(c, http.StatusBadRequest, "Resubmission of a project is only allowed once all comments have been resolved.", nil)
+		}
+		// Case: new project submission, status must be 'draft'
+	case project.Status != db.ProjectStatusDraft:
 		return v1_common.Fail(c, http.StatusBadRequest, "Only draft projects can be submitted", nil)
 	}
 
@@ -387,129 +405,8 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to get project questions", err)
 	}
-
-	var validationErrors []ValidationError
-
-	// Validate each question
-	for i, question := range questions {
-		// First two questions are the company name and date founded which are never filled
-		// by the user since they can't change through project form.
-		// only override if no answer exists already
-		switch i {
-		case 0:
-			if question.Answer == "" {
-				question.Answer = company.Name
-			}
-		case 1:
-			if question.Answer == "" {
-				question.Answer = v1_common.FormatUnixTimeCustom(company.DateFounded, v1_common.DateOnlyFormat)
-			}
-		}
-
-		// Check if required question is answered
-		if question.Required {
-			if question.ConditionType.Valid {
-				// Get the dependent question's answer
-				var dependentAnswer string
-				var dependentChoices []string
-
-				// Find the dependent question's answer
-				for _, q := range questions {
-					b := question.DependentQuestionID.Bytes
-					if q.ID == fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16]) {
-						dependentAnswer = q.Answer
-						dependentChoices = q.Choices
-						break
-					}
-				}
-
-				// Skip validation if condition is not met
-				shouldValidate := false
-
-				// Handle array answers (multiselect/select)
-				if len(dependentChoices) > 0 {
-					switch question.ConditionType.ConditionTypeEnum {
-					case db.ConditionTypeEnumEmpty:
-						shouldValidate = len(dependentChoices) == 0
-					case db.ConditionTypeEnumNotEmpty:
-						shouldValidate = len(dependentChoices) > 0
-					case db.ConditionTypeEnumEquals:
-						for _, choice := range dependentChoices {
-							if choice == *question.ConditionValue {
-								shouldValidate = true
-								break
-							}
-						}
-					case db.ConditionTypeEnumContains:
-						for _, choice := range dependentChoices {
-							if choice == *question.ConditionValue {
-								shouldValidate = true
-								break
-							}
-						}
-					}
-				} else {
-					// Handle single value answers
-					switch question.ConditionType.ConditionTypeEnum {
-					case db.ConditionTypeEnumEmpty:
-						shouldValidate = dependentAnswer == ""
-					case db.ConditionTypeEnumNotEmpty:
-						shouldValidate = dependentAnswer != ""
-					case db.ConditionTypeEnumEquals:
-						shouldValidate = dependentAnswer == *question.ConditionValue
-					case db.ConditionTypeEnumContains:
-						shouldValidate = strings.Contains(dependentAnswer, *question.ConditionValue)
-					}
-				}
-
-				// Skip validation if condition is not met
-				if !shouldValidate {
-					continue
-				}
-			}
-
-			switch question.InputType {
-			case db.InputTypeEnumTextinput, db.InputTypeEnumTextarea:
-				answer := question.Answer
-				if answer == "" {
-					validationErrors = append(validationErrors, ValidationError{
-						Question: question.Question,
-						Message:  "This question requires an answer",
-					})
-					continue
-				}
-				// Validate answer against rules if validations exist
-				if question.Validations != nil {
-					if !isValidAnswer(answer, question.Validations) {
-						validationErrors = append(validationErrors, ValidationError{
-							Question: question.Question,
-							Message:  getValidationMessage(question.Validations),
-						})
-					}
-				}
-			case db.InputTypeEnumSelect, db.InputTypeEnumMultiselect:
-				if len(question.Choices) < 1 {
-					validationErrors = append(validationErrors, ValidationError{
-						Question: question.Question,
-						Message:  "This question requires an answer",
-					})
-					continue
-				}
-				if question.Validations != nil {
-					for _, answer := range question.Choices {
-						if !isValidAnswer(answer, question.Validations) {
-							validationErrors = append(validationErrors, ValidationError{
-								Question: question.Question,
-								Message:  getValidationMessage(question.Validations),
-							})
-						}
-					}
-				}
-			}
-		}
-
-	}
-
+	// Validate the answers
+	validationErrors := validateProjectFormAnswers(questions)
 	// If there are any validation errors, return them
 	if len(validationErrors) > 0 {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -518,18 +415,15 @@ func (h *Handler) handleSubmitProject(c echo.Context) error {
 		})
 	}
 
-	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
-	defer cancel()
-
 	tx, err := h.server.GetDB().Begin(ctx)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to submit project", err)
 	}
 	defer tx.Rollback(ctx)
 
-	queries := h.server.GetQueries().WithTx(tx)
+	qTx := h.server.GetQueries().WithTx(tx)
 
-	err = service.SubmitProject(queries, ctx, project.ID)
+	err = service.SubmitProject(qTx, ctx, project.ID)
 	if err != nil {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to submit project", err)
 	}
@@ -717,6 +611,7 @@ func (h *Handler) handleGetNewProjects(c echo.Context) error {
 				Title:       project.Title,
 				Description: description,
 				Status:      project.Status,
+				AllowEdit:   project.AllowEdit,
 				CreatedAt:   project.CreatedAt,
 				UpdatedAt:   project.UpdatedAt,
 			},

@@ -5,6 +5,7 @@ export interface ProjectResponse {
     title: string;
     description: string;
     status: string;
+    allow_edit: boolean;
     createdAt: number;
     updatedAt: number;
 }

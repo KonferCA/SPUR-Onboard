@@ -26,6 +26,7 @@ export interface DropdownProps {
     required?: boolean;
     multiple?: boolean;
     error?: string;
+    disabled?: boolean;
 }
 
 const Dropdown: React.FC<DropdownProps> = ({
@@ -37,6 +38,7 @@ const Dropdown: React.FC<DropdownProps> = ({
     placeholder = 'Select',
     multiple,
     error,
+    disabled = false,
 }) => {
     const dropdownID = useRandomId();
 
@@ -85,9 +87,10 @@ const Dropdown: React.FC<DropdownProps> = ({
                 <div className="relative">
                     <ListboxButton
                         id={dropdownID}
+                        disabled={disabled}
                         className={`relative w-full py-4 px-4 text-left bg-white rounded-lg border ${
                             error ? 'border-red-500' : 'border-gray-300'
-                        } cursor-pointer focus:outline-none focus-visible:ring-2 ${
+                        } ${disabled ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} focus:outline-none focus-visible:ring-2 ${
                             error
                                 ? 'focus-visible:ring-red-500'
                                 : 'focus-visible:ring-blue-500'

@@ -86,6 +86,7 @@ export enum ProjectStatusEnum {
     Verified = 'verified',
     Declined = 'declined',
     Withdrawn = 'withdrawn',
+    NeedsReview = 'needs review',
 }
 
 export async function updateProjectStatus(

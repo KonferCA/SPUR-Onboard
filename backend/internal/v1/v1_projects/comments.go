@@ -3,6 +3,7 @@ package v1_projects
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/service"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"context"
 	"database/sql"
@@ -59,17 +60,25 @@ func (h *Handler) handleGetProjectComments(c echo.Context) error {
 	// Convert to response format
 	response := make([]CommentResponse, len(comments))
 	for i, comment := range comments {
+		var snapshotID *string = nil
+		if comment.ResolvedBySnapshotID.Valid {
+			uuid := comment.ResolvedBySnapshotID.String()
+			snapshotID = &uuid
+		}
+
 		response[i] = CommentResponse{
-			ID:                 comment.ID,
-			ProjectID:          comment.ProjectID,
-			TargetID:           comment.TargetID,
-			Comment:            comment.Comment,
-			CommenterID:        comment.CommenterID,
-			CreatedAt:          comment.CreatedAt,
-			UpdatedAt:          comment.UpdatedAt,
-			CommenterFirstName: comment.CommenterFirstName,
-			CommenterLastName:  comment.CommenterLastName,
-			Resolved:           comment.Resolved,
+			ID:                   comment.ID,
+			ProjectID:            comment.ProjectID,
+			TargetID:             comment.TargetID,
+			Comment:              comment.Comment,
+			CommenterID:          comment.CommenterID,
+			CreatedAt:            comment.CreatedAt,
+			UpdatedAt:            comment.UpdatedAt,
+			CommenterFirstName:   comment.CommenterFirstName,
+			CommenterLastName:    comment.CommenterLastName,
+			Resolved:             comment.Resolved,
+			ResolvedBySnapshotID: snapshotID,
+			ResolvedBySnapshotAt: comment.ResolvedBySnapshotAt,
 		}
 	}
 
@@ -122,17 +131,25 @@ func (h *Handler) handleGetProjectComment(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusNotFound, "Comment not found", err)
 	}
 
+	var snapshotID *string = nil
+	if comment.ResolvedBySnapshotID.Valid {
+		uuid := comment.ResolvedBySnapshotID.String()
+		snapshotID = &uuid
+	}
+
 	response := CommentResponse{
-		ID:                 comment.ID,
-		ProjectID:          comment.ProjectID,
-		TargetID:           comment.TargetID,
-		Comment:            comment.Comment,
-		CommenterID:        comment.CommenterID,
-		CreatedAt:          comment.CreatedAt,
-		UpdatedAt:          comment.UpdatedAt,
-		CommenterFirstName: comment.CommenterFirstName,
-		CommenterLastName:  comment.CommenterLastName,
-		Resolved:           comment.Resolved,
+		ID:                   comment.ID,
+		ProjectID:            comment.ProjectID,
+		TargetID:             comment.TargetID,
+		Comment:              comment.Comment,
+		CommenterID:          comment.CommenterID,
+		CreatedAt:            comment.CreatedAt,
+		UpdatedAt:            comment.UpdatedAt,
+		CommenterFirstName:   comment.CommenterFirstName,
+		CommenterLastName:    comment.CommenterLastName,
+		Resolved:             comment.Resolved,
+		ResolvedBySnapshotID: snapshotID,
+		ResolvedBySnapshotAt: comment.ResolvedBySnapshotAt,
 	}
 
 	return c.JSON(http.StatusOK, response)
@@ -160,6 +177,36 @@ func (h *Handler) handleCreateProjectComment(c echo.Context) error {
 		return v1_common.NewAuthError("Unauthorized to create a new comment on project.")
 	}
 
+	// Request should not take longer than one minute to process
+	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
+	defer cancel()
+
+	// Begin transaction because the flag 'allow_edit' in the projects table
+	// needs to be set upon successful creation of a comment.
+	tx, err := h.server.GetDB().Begin(ctx)
+	if err != nil {
+		return v1_common.NewInternalError(err)
+	}
+	defer tx.Rollback(ctx)
+
+	queries := h.server.GetQueries().WithTx(tx)
+
+	// Get company owned by user
+	company, err := queries.GetCompanyByUserID(ctx, user.ID)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusNotFound, "Company not found", err)
+	}
+
+	// Verify project exists using admin query
+	_, err = queries.GetProjectByID(c.Request().Context(), db.GetProjectByIDParams{
+		ID:        projectID,
+		CompanyID: company.ID,
+		Column3:   int32(user.Permissions),
+	})
+	if err != nil {
+		return v1_common.Fail(c, http.StatusNotFound, "Project not found", err)
+	}
+
 	// Parse request body
 	var req CreateCommentRequest
 	if err := c.Bind(&req); err != nil {
@@ -171,14 +218,8 @@ func (h *Handler) handleCreateProjectComment(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request data", err)
 	}
 
-	// Ensure project exists before creating comment
-	_, err = h.server.GetQueries().GetProjectByIDAsAdmin(c.Request().Context(), projectID)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusNotFound, "Project not found", err)
-	}
-
-	// Create comment
-	comment, err := h.server.GetQueries().CreateProjectComment(c.Request().Context(), db.CreateProjectCommentParams{
+	// Create comment and set 'allow_edit' flag
+	comment, err := service.CreateProjectComment(queries, ctx, db.CreateProjectCommentParams{
 		ProjectID:   projectID,
 		TargetID:    req.TargetID,
 		Comment:     req.Comment,
@@ -188,17 +229,24 @@ func (h *Handler) handleCreateProjectComment(c echo.Context) error {
 		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to create comment", err)
 	}
 
+	// Commit changes
+	if err := tx.Commit(ctx); err != nil {
+		return v1_common.NewInternalError(err)
+	}
+
 	response := CommentResponse{
-		ID:                 comment.ID,
-		ProjectID:          comment.ProjectID,
-		TargetID:           comment.TargetID,
-		Comment:            comment.Comment,
-		CommenterID:        comment.CommenterID,
-		CommenterFirstName: user.FirstName,
-		CommenterLastName:  user.LastName,
-		Resolved:           comment.Resolved,
-		CreatedAt:          comment.CreatedAt,
-		UpdatedAt:          comment.UpdatedAt,
+		ID:                   comment.ID,
+		ProjectID:            comment.ProjectID,
+		TargetID:             comment.TargetID,
+		Comment:              comment.Comment,
+		CommenterID:          comment.CommenterID,
+		CommenterFirstName:   user.FirstName,
+		CommenterLastName:    user.LastName,
+		Resolved:             comment.Resolved,
+		CreatedAt:            comment.CreatedAt,
+		UpdatedAt:            comment.UpdatedAt,
+		ResolvedBySnapshotID: nil,
+		ResolvedBySnapshotAt: nil,
 	}
 
 	return c.JSON(http.StatusCreated, response)
@@ -296,6 +344,20 @@ func (h *Handler) handleResolveComment(c echo.Context) error {
 		}
 	}
 
+	oldComment, err := queries.GetProjectComment(ctx, db.GetProjectCommentParams{
+		ID:        commentID,
+		ProjectID: projectID,
+	})
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return v1_common.Fail(c, http.StatusNotFound, "Comment not found", err)
+		}
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to resolve comment", err)
+	}
+	if oldComment.ResolvedBySnapshotID.Valid {
+		return v1_common.Fail(c, http.StatusBadRequest, "This comment has been resolved by a previous submission and it can't be modified.", nil)
+	}
+
 	// Resolve the comment
 	comment, err := queries.ResolveProjectComment(ctx, db.ResolveProjectCommentParams{
 		ID:        commentID,
@@ -361,6 +423,20 @@ func (h *Handler) handleUnresolveComment(c echo.Context) error {
 			}
 			return v1_common.NewInternalError(err)
 		}
+	}
+
+	oldComment, err := queries.GetProjectComment(ctx, db.GetProjectCommentParams{
+		ID:        commentID,
+		ProjectID: projectID,
+	})
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return v1_common.Fail(c, http.StatusNotFound, "Comment not found", err)
+		}
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to resolve comment", err)
+	}
+	if oldComment.ResolvedBySnapshotID.Valid {
+		return v1_common.Fail(c, http.StatusBadRequest, "This comment has been resolved by a previous submission and it can't be modified.", nil)
 	}
 
 	// Unresolve the comment
