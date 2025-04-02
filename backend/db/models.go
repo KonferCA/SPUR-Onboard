@@ -136,14 +136,15 @@ func AllGroupTypeEnumValues() []GroupTypeEnum {
 type InputTypeEnum string
 
 const (
-	InputTypeEnumUrl         InputTypeEnum = "url"
-	InputTypeEnumFile        InputTypeEnum = "file"
-	InputTypeEnumTextarea    InputTypeEnum = "textarea"
-	InputTypeEnumTextinput   InputTypeEnum = "textinput"
-	InputTypeEnumSelect      InputTypeEnum = "select"
-	InputTypeEnumMultiselect InputTypeEnum = "multiselect"
-	InputTypeEnumTeam        InputTypeEnum = "team"
-	InputTypeEnumDate        InputTypeEnum = "date"
+	InputTypeEnumUrl              InputTypeEnum = "url"
+	InputTypeEnumFile             InputTypeEnum = "file"
+	InputTypeEnumTextarea         InputTypeEnum = "textarea"
+	InputTypeEnumTextinput        InputTypeEnum = "textinput"
+	InputTypeEnumSelect           InputTypeEnum = "select"
+	InputTypeEnumMultiselect      InputTypeEnum = "multiselect"
+	InputTypeEnumTeam             InputTypeEnum = "team"
+	InputTypeEnumDate             InputTypeEnum = "date"
+	InputTypeEnumFundingstructure InputTypeEnum = "fundingstructure"
 )
 
 func (e *InputTypeEnum) Scan(src interface{}) error {
@@ -190,7 +191,8 @@ func (e InputTypeEnum) Valid() bool {
 		InputTypeEnumSelect,
 		InputTypeEnumMultiselect,
 		InputTypeEnumTeam,
-		InputTypeEnumDate:
+		InputTypeEnumDate,
+		InputTypeEnumFundingstructure:
 		return true
 	}
 	return false
@@ -206,6 +208,7 @@ func AllInputTypeEnumValues() []InputTypeEnum {
 		InputTypeEnumMultiselect,
 		InputTypeEnumTeam,
 		InputTypeEnumDate,
+		InputTypeEnumFundingstructure,
 	}
 }
 
@@ -365,13 +368,15 @@ type Company struct {
 }
 
 type Project struct {
-	ID          string        `json:"id"`
-	CompanyID   string        `json:"company_id"`
-	Title       string        `json:"title"`
-	Description *string       `json:"description"`
-	Status      ProjectStatus `json:"status"`
-	CreatedAt   int64         `json:"created_at"`
-	UpdatedAt   int64         `json:"updated_at"`
+	ID                   string        `json:"id"`
+	CompanyID            string        `json:"company_id"`
+	Title                string        `json:"title"`
+	Description          *string       `json:"description"`
+	Status               ProjectStatus `json:"status"`
+	CreatedAt            int64         `json:"created_at"`
+	UpdatedAt            int64         `json:"updated_at"`
+	LastSnapshotID       pgtype.UUID   `json:"last_snapshot_id"`
+	OriginalSubmissionAt *int64        `json:"original_submission_at"`
 }
 
 type ProjectAnswer struct {
@@ -441,6 +446,17 @@ type ProjectQuestions20250220Backup struct {
 	SectionOrder    int32  `json:"section_order"`
 	SubSectionOrder int32  `json:"sub_section_order"`
 	QuestionOrder   int32  `json:"question_order"`
+}
+
+type ProjectSnapshot struct {
+	ID               string      `json:"id"`
+	ProjectID        string      `json:"project_id"`
+	Data             []byte      `json:"data"`
+	VersionNumber    int32       `json:"version_number"`
+	Title            string      `json:"title"`
+	Description      *string     `json:"description"`
+	ParentSnapshotID pgtype.UUID `json:"parent_snapshot_id"`
+	CreatedAt        int64       `json:"created_at"`
 }
 
 type TeamMember struct {

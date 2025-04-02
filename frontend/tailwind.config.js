@@ -14,6 +14,7 @@ export default {
                 'button-primary-200': '#D2691F',
                 'button-secondary-100': '#154261',
                 'button-secondary-200': '#1C262D',
+                'button-primary-text-100': '#B54A00',
                 background: 'hsl(var(--background))',
                 foreground: 'hsl(var(--foreground))',
                 card: {
@@ -98,6 +99,9 @@ export default {
             animation: {
                 blink: 'blink 1.2s ease-in-out 1',
                 neutralBlink: 'neutralBlink 1.2s ease-in-out 1',
+            },
+            backgroundImage: {
+                'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
             },
         },
     },
