@@ -7,17 +7,21 @@ import {
 } from '@/config';
 import { useAuth } from '@/contexts';
 import { getProjectComments } from '@/services/comment';
-import { getLatestProjectSnapshot } from '@/services/project';
+import {
+    getLatestProjectSnapshot,
+    getProjectDetails,
+} from '@/services/project';
 import { scrollToTop } from '@/utils';
 import { sanitizeHtmlId } from '@/utils/html';
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { cva } from 'class-variance-authority';
 import { useEffect, useState, useMemo } from 'react';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
 import { ScrollButton } from '@/components';
 import { useLocation } from '@tanstack/react-router';
 import { useSidebar } from '@/contexts/SidebarContext/SidebarContext';
+import { ProjectStatusEnum } from '@/services/projects';
 
 const stepItemStyles = cva(
     'text-lg relative transition text-gray-400 hover:text-button-secondary-100 hover:cursor-pointer py-2',
@@ -37,6 +41,37 @@ export const Route = createFileRoute(
     '/user/_auth/_appshell/project/$projectId/view'
 )({
     component: RouteComponent,
+    beforeLoad: async ({ context, params }) => {
+        if (!context || !context.auth?.accessToken) {
+            throw redirect({
+                to: '/auth',
+                replace: true,
+            });
+        }
+        const details = await getProjectDetails(
+            context.auth.accessToken,
+            params.projectId
+        ).catch(console.error);
+        if (details) {
+            switch (details.status) {
+                case ProjectStatusEnum.NeedsReview:
+                    if (details.allow_edit) {
+                        throw redirect({
+                            to: `/user/project/${params.projectId}/form`,
+                            replace: true,
+                        });
+                    }
+                    break;
+                case ProjectStatusEnum.Draft:
+                    throw redirect({
+                        to: `/user/project/${params.projectId}/form`,
+                        replace: true,
+                    });
+                default:
+                    break;
+            }
+        }
+    },
 });
 
 function RouteComponent() {

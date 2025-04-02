@@ -62,6 +62,7 @@ describe('Test ProjectCard Component', () => {
             createdAt: 1675209600000, // Feb 1, 2024
             updatedAt: 1707004800000, // Feb 4, 2024
             companyName: 'Acme Corp',
+            allow_edit: false,
             documentCount: 15,
             teamMemberCount: 8,
         };

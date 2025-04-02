@@ -3,7 +3,6 @@ import { ApiError } from './errors';
 import { snakeToCamel } from '@/utils/object';
 import type { ProjectSnapshot } from '@/types/projects';
 import type {
-    Project,
     ProjectResponse,
     ProjectQuestionsData,
     ExtendedProjectResponse,
@@ -40,24 +39,6 @@ export async function getProjectFormQuestions(
     const data = await response.json();
     return snakeToCamel(data) as ProjectQuestionsData;
 }
-
-// Transform backend response to frontend format
-// biome-ignore lint/suspicious/noExplicitAny:
-const transformProject = (data: any): Project => {
-    return {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        status: data.status,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        industry: null,
-        company_stage: null,
-        founded_date: null,
-        documents: [], // todo: implement when backend supports
-        sections: data.Sections || [],
-    };
-};
 
 export async function createProject(
     accessToken: string
@@ -125,8 +106,8 @@ export async function listProjectsAll(accessToken: string) {
 export async function getProjectDetails(
     accessToken: string,
     id: string
-): Promise<Project> {
-    const url = `${getApiUrl()}/projects/${id}`.replace(/([^:]\/)\/+/g, '$1');
+): Promise<ProjectResponse> {
+    const url = getApiUrl(`/project/${id}`);
 
     const response = await fetch(url, {
         method: 'GET',
@@ -136,17 +117,16 @@ export async function getProjectDetails(
         },
     });
 
+    const data = await response.json();
     if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
         throw new ApiError(
             'Failed to fetch project details',
             response.status,
-            errorData || {}
+            data || {}
         );
     }
 
-    const data = await response.json();
-    return transformProject(data);
+    return data;
 }
 
 export interface ProjectDraft {
@@ -248,7 +228,7 @@ export async function submitProject(accessToken: string, projectId: string) {
 
     const json = await res.json();
     if (res.status !== HttpStatusCode.OK) {
-        throw new Error(`Failed to submit project: ${json.message}`);
+        throw new ApiError('Failed to submit project', res.status, json);
     }
 }
 

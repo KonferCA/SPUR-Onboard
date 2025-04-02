@@ -11,6 +11,18 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countUnresolvedProjectComments = `-- name: CountUnresolvedProjectComments :one
+SELECT COUNT(*) FROM project_comments
+WHERE project_id = $1 AND resolved = false
+`
+
+func (q *Queries) CountUnresolvedProjectComments(ctx context.Context, projectID string) (int64, error) {
+	row := q.db.QueryRow(ctx, countUnresolvedProjectComments, projectID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createProject = `-- name: CreateProject :one
 INSERT INTO projects (
     company_id,
@@ -21,7 +33,7 @@ INSERT INTO projects (
     updated_at
 ) VALUES (
     $1, $2, $3, $4, $5, $6
-) RETURNING id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at
+) RETURNING id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at, allow_edit
 `
 
 type CreateProjectParams struct {
@@ -53,6 +65,7 @@ func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (P
 		&i.UpdatedAt,
 		&i.LastSnapshotID,
 		&i.OriginalSubmissionAt,
+		&i.AllowEdit,
 	)
 	return i, err
 }
@@ -140,7 +153,7 @@ INSERT INTO project_comments (
     $2, -- target_id
     $3, -- comment
     $4  -- commenter_id
-) RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at
+) RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at, resolved_by_snapshot_id
 `
 
 type CreateProjectCommentParams struct {
@@ -167,6 +180,7 @@ func (q *Queries) CreateProjectComment(ctx context.Context, arg CreateProjectCom
 		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ResolvedBySnapshotID,
 	)
 	return i, err
 }
@@ -313,6 +327,7 @@ SELECT
     ) as title,
     p.description, 
     p.status, 
+    p.allow_edit,
     p.created_at, 
     p.updated_at,
     c.name as company_name,
@@ -340,6 +355,7 @@ type GetNewProjectsAnyStatusRow struct {
 	Title           string        `json:"title"`
 	Description     *string       `json:"description"`
 	Status          ProjectStatus `json:"status"`
+	AllowEdit       bool          `json:"allow_edit"`
 	CreatedAt       int64         `json:"created_at"`
 	UpdatedAt       int64         `json:"updated_at"`
 	CompanyName     *string       `json:"company_name"`
@@ -362,6 +378,7 @@ func (q *Queries) GetNewProjectsAnyStatus(ctx context.Context, limit int32) ([]G
 			&i.Title,
 			&i.Description,
 			&i.Status,
+			&i.AllowEdit,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.CompanyName,
@@ -392,6 +409,7 @@ SELECT
     ) as title,
     p.description, 
     p.status, 
+    p.allow_edit,
     p.created_at, 
     p.updated_at,
     c.name as company_name,
@@ -426,6 +444,7 @@ type GetNewProjectsByStatusRow struct {
 	Title           string        `json:"title"`
 	Description     *string       `json:"description"`
 	Status          ProjectStatus `json:"status"`
+	AllowEdit       bool          `json:"allow_edit"`
 	CreatedAt       int64         `json:"created_at"`
 	UpdatedAt       int64         `json:"updated_at"`
 	CompanyName     *string       `json:"company_name"`
@@ -448,6 +467,7 @@ func (q *Queries) GetNewProjectsByStatus(ctx context.Context, arg GetNewProjects
 			&i.Title,
 			&i.Description,
 			&i.Status,
+			&i.AllowEdit,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.CompanyName,
@@ -512,7 +532,7 @@ func (q *Queries) GetProjectAnswers(ctx context.Context, projectID string) ([]Ge
 }
 
 const getProjectByID = `-- name: GetProjectByID :one
-SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at FROM projects 
+SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at, allow_edit FROM projects 
 WHERE id = $1 
   AND (company_id = $2 OR $3 & 1 = 1) -- Check for PermViewAllProjects (1 << 0)
 LIMIT 1
@@ -537,12 +557,13 @@ func (q *Queries) GetProjectByID(ctx context.Context, arg GetProjectByIDParams) 
 		&i.UpdatedAt,
 		&i.LastSnapshotID,
 		&i.OriginalSubmissionAt,
+		&i.AllowEdit,
 	)
 	return i, err
 }
 
 const getProjectByIDAsAdmin = `-- name: GetProjectByIDAsAdmin :one
-SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at FROM projects
+SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at, allow_edit FROM projects
 WHERE id = $1
 LIMIT 1
 `
@@ -560,13 +581,15 @@ func (q *Queries) GetProjectByIDAsAdmin(ctx context.Context, id string) (Project
 		&i.UpdatedAt,
 		&i.LastSnapshotID,
 		&i.OriginalSubmissionAt,
+		&i.AllowEdit,
 	)
 	return i, err
 }
 
 const getProjectComment = `-- name: GetProjectComment :one
-SELECT pc.id, pc.project_id, pc.target_id, pc.comment, pc.commenter_id, pc.resolved, pc.created_at, pc.updated_at, u.first_name as commenter_first_name, u.last_name as commenter_last_name FROM project_comments pc
-JOIN users u ON u.id = pc.commenter_id
+SELECT pc.id, pc.project_id, pc.target_id, pc.comment, pc.commenter_id, pc.resolved, pc.created_at, pc.updated_at, pc.resolved_by_snapshot_id, u.first_name as commenter_first_name, u.last_name as commenter_last_name, ps.created_at as resolved_by_snapshot_at FROM project_comments pc
+LEFT JOIN users u ON u.id = pc.commenter_id
+LEFT JOIN project_snapshots ps ON ps.id = pc.resolved_by_snapshot_id
 WHERE pc.id = $1 AND pc.project_id = $2
 LIMIT 1
 `
@@ -577,16 +600,18 @@ type GetProjectCommentParams struct {
 }
 
 type GetProjectCommentRow struct {
-	ID                 string  `json:"id"`
-	ProjectID          string  `json:"project_id"`
-	TargetID           string  `json:"target_id"`
-	Comment            string  `json:"comment"`
-	CommenterID        string  `json:"commenter_id"`
-	Resolved           bool    `json:"resolved"`
-	CreatedAt          int64   `json:"created_at"`
-	UpdatedAt          int64   `json:"updated_at"`
-	CommenterFirstName *string `json:"commenter_first_name"`
-	CommenterLastName  *string `json:"commenter_last_name"`
+	ID                   string      `json:"id"`
+	ProjectID            string      `json:"project_id"`
+	TargetID             string      `json:"target_id"`
+	Comment              string      `json:"comment"`
+	CommenterID          string      `json:"commenter_id"`
+	Resolved             bool        `json:"resolved"`
+	CreatedAt            int64       `json:"created_at"`
+	UpdatedAt            int64       `json:"updated_at"`
+	ResolvedBySnapshotID pgtype.UUID `json:"resolved_by_snapshot_id"`
+	CommenterFirstName   *string     `json:"commenter_first_name"`
+	CommenterLastName    *string     `json:"commenter_last_name"`
+	ResolvedBySnapshotAt *int64      `json:"resolved_by_snapshot_at"`
 }
 
 func (q *Queries) GetProjectComment(ctx context.Context, arg GetProjectCommentParams) (GetProjectCommentRow, error) {
@@ -601,30 +626,35 @@ func (q *Queries) GetProjectComment(ctx context.Context, arg GetProjectCommentPa
 		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ResolvedBySnapshotID,
 		&i.CommenterFirstName,
 		&i.CommenterLastName,
+		&i.ResolvedBySnapshotAt,
 	)
 	return i, err
 }
 
 const getProjectComments = `-- name: GetProjectComments :many
-SELECT pc.id, pc.project_id, pc.target_id, pc.comment, pc.commenter_id, pc.resolved, pc.created_at, pc.updated_at, u.first_name as commenter_first_name, u.last_name as commenter_last_name FROM project_comments pc
-JOIN users u ON u.id = pc.commenter_id
+SELECT pc.id, pc.project_id, pc.target_id, pc.comment, pc.commenter_id, pc.resolved, pc.created_at, pc.updated_at, pc.resolved_by_snapshot_id, u.first_name as commenter_first_name, u.last_name as commenter_last_name, ps.created_at as resolved_by_snapshot_at FROM project_comments pc
+LEFT JOIN users u ON u.id = pc.commenter_id
+LEFT JOIN project_snapshots ps ON ps.id = pc.resolved_by_snapshot_id
 WHERE pc.project_id = $1
 ORDER BY pc.created_at DESC
 `
 
 type GetProjectCommentsRow struct {
-	ID                 string  `json:"id"`
-	ProjectID          string  `json:"project_id"`
-	TargetID           string  `json:"target_id"`
-	Comment            string  `json:"comment"`
-	CommenterID        string  `json:"commenter_id"`
-	Resolved           bool    `json:"resolved"`
-	CreatedAt          int64   `json:"created_at"`
-	UpdatedAt          int64   `json:"updated_at"`
-	CommenterFirstName *string `json:"commenter_first_name"`
-	CommenterLastName  *string `json:"commenter_last_name"`
+	ID                   string      `json:"id"`
+	ProjectID            string      `json:"project_id"`
+	TargetID             string      `json:"target_id"`
+	Comment              string      `json:"comment"`
+	CommenterID          string      `json:"commenter_id"`
+	Resolved             bool        `json:"resolved"`
+	CreatedAt            int64       `json:"created_at"`
+	UpdatedAt            int64       `json:"updated_at"`
+	ResolvedBySnapshotID pgtype.UUID `json:"resolved_by_snapshot_id"`
+	CommenterFirstName   *string     `json:"commenter_first_name"`
+	CommenterLastName    *string     `json:"commenter_last_name"`
+	ResolvedBySnapshotAt *int64      `json:"resolved_by_snapshot_at"`
 }
 
 func (q *Queries) GetProjectComments(ctx context.Context, projectID string) ([]GetProjectCommentsRow, error) {
@@ -645,8 +675,10 @@ func (q *Queries) GetProjectComments(ctx context.Context, projectID string) ([]G
 			&i.Resolved,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ResolvedBySnapshotID,
 			&i.CommenterFirstName,
 			&i.CommenterLastName,
+			&i.ResolvedBySnapshotAt,
 		); err != nil {
 			return nil, err
 		}
@@ -864,7 +896,7 @@ func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestion
 }
 
 const getProjectsByCompanyID = `-- name: GetProjectsByCompanyID :many
-SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at FROM projects 
+SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at, allow_edit FROM projects 
 WHERE company_id = $1 
 ORDER BY created_at DESC
 `
@@ -888,6 +920,7 @@ func (q *Queries) GetProjectsByCompanyID(ctx context.Context, companyID string) 
 			&i.UpdatedAt,
 			&i.LastSnapshotID,
 			&i.OriginalSubmissionAt,
+			&i.AllowEdit,
 		); err != nil {
 			return nil, err
 		}
@@ -1135,16 +1168,10 @@ SELECT
         c.name,
         ''
     ) as company_name,
-    COALESCE(
-        (SELECT pa.answer
-         FROM project_answers pa
-         JOIN project_questions pq ON pa.question_id = pq.id
-         WHERE pa.project_id = p.id AND pq.question_key = 'company_name' AND pa.answer != ''
-         LIMIT 1),
-        p.title
-    ) as title,
+    p.title,
     p.description,
     p.status,
+    p.allow_edit,
     p.created_at,
     p.updated_at,
     COUNT(d.id) as document_count,
@@ -1164,6 +1191,7 @@ type ListAllProjectsRow struct {
 	Title           string        `json:"title"`
 	Description     *string       `json:"description"`
 	Status          ProjectStatus `json:"status"`
+	AllowEdit       bool          `json:"allow_edit"`
 	CreatedAt       int64         `json:"created_at"`
 	UpdatedAt       int64         `json:"updated_at"`
 	DocumentCount   int64         `json:"document_count"`
@@ -1186,6 +1214,7 @@ func (q *Queries) ListAllProjects(ctx context.Context) ([]ListAllProjectsRow, er
 			&i.Title,
 			&i.Description,
 			&i.Status,
+			&i.AllowEdit,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DocumentCount,
@@ -1215,6 +1244,7 @@ SELECT
     ) as title,
     p.description,
     p.status,
+    p.allow_edit,
     p.created_at,
     p.updated_at,
     COUNT(d.id) as document_count,
@@ -1233,6 +1263,7 @@ type ListCompanyProjectsRow struct {
 	Title           string        `json:"title"`
 	Description     *string       `json:"description"`
 	Status          ProjectStatus `json:"status"`
+	AllowEdit       bool          `json:"allow_edit"`
 	CreatedAt       int64         `json:"created_at"`
 	UpdatedAt       int64         `json:"updated_at"`
 	DocumentCount   int64         `json:"document_count"`
@@ -1254,6 +1285,7 @@ func (q *Queries) ListCompanyProjects(ctx context.Context, companyID string) ([]
 			&i.Title,
 			&i.Description,
 			&i.Status,
+			&i.AllowEdit,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DocumentCount,
@@ -1294,7 +1326,7 @@ SET
     resolved = true,
     updated_at = extract(epoch from now())
 WHERE id = $1 AND project_id = $2
-RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at
+RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at, resolved_by_snapshot_id
 `
 
 type ResolveProjectCommentParams struct {
@@ -1314,8 +1346,43 @@ func (q *Queries) ResolveProjectComment(ctx context.Context, arg ResolveProjectC
 		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ResolvedBySnapshotID,
 	)
 	return i, err
+}
+
+const setProjectAllowEdit = `-- name: SetProjectAllowEdit :exec
+UPDATE projects
+SET allow_edit = $1
+WHERE id = $2
+`
+
+type SetProjectAllowEditParams struct {
+	AllowEdit bool   `json:"allow_edit"`
+	ID        string `json:"id"`
+}
+
+func (q *Queries) SetProjectAllowEdit(ctx context.Context, arg SetProjectAllowEditParams) error {
+	_, err := q.db.Exec(ctx, setProjectAllowEdit, arg.AllowEdit, arg.ID)
+	return err
+}
+
+const setSnapshotIDToProjectComments = `-- name: SetSnapshotIDToProjectComments :exec
+UPDATE project_comments
+SET
+    resolved_by_snapshot_id = $1,
+    updated_at = extract(epoch from now())
+WHERE projecT_id = $2 AND resolved_by_snapshot_id IS NULL
+`
+
+type SetSnapshotIDToProjectCommentsParams struct {
+	ResolvedBySnapshotID pgtype.UUID `json:"resolved_by_snapshot_id"`
+	ProjectID            string      `json:"project_id"`
+}
+
+func (q *Queries) SetSnapshotIDToProjectComments(ctx context.Context, arg SetSnapshotIDToProjectCommentsParams) error {
+	_, err := q.db.Exec(ctx, setSnapshotIDToProjectComments, arg.ResolvedBySnapshotID, arg.ProjectID)
+	return err
 }
 
 const unresolveProjectComment = `-- name: UnresolveProjectComment :one
@@ -1324,7 +1391,7 @@ SET
     resolved = false,
     updated_at = extract(epoch from now())
 WHERE id = $1 AND project_id = $2
-RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at
+RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at, resolved_by_snapshot_id
 `
 
 type UnresolveProjectCommentParams struct {
@@ -1344,6 +1411,7 @@ func (q *Queries) UnresolveProjectComment(ctx context.Context, arg UnresolveProj
 		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ResolvedBySnapshotID,
 	)
 	return i, err
 }
@@ -1385,7 +1453,7 @@ UPDATE project_comments
 SET comment = $2,
     updated_at = extract(epoch from now())
 WHERE id = $1
-RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at
+RETURNING id, project_id, target_id, comment, commenter_id, resolved, created_at, updated_at, resolved_by_snapshot_id
 `
 
 type UpdateProjectCommentParams struct {
@@ -1405,6 +1473,7 @@ func (q *Queries) UpdateProjectComment(ctx context.Context, arg UpdateProjectCom
 		&i.Resolved,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ResolvedBySnapshotID,
 	)
 	return i, err
 }

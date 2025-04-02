@@ -37,6 +37,8 @@ describe('CommentBubble', () => {
         updatedAt: Date.now(),
         commenterFirstName: 'John',
         commenterLastName: 'Doe',
+        resolvedBySnapshotId: null,
+        resolvedBySnapshotAt: null,
     };
 
     const mockAccessToken = 'mock-token';
@@ -208,5 +210,30 @@ describe('CommentBubble', () => {
                 level: 'error',
             });
         });
+    });
+
+    it('does not show resolve button when comment is resolved by snapshot', async () => {
+        const resolvedBySnapshotComment = {
+            ...mockComment,
+            resolvedBySnapshotId: 'snapshot123',
+            resolvedBySnapshotAt: Date.now() / 1000,
+        };
+
+        renderWithProviders(<CommentBubble data={resolvedBySnapshotComment} />);
+
+        // Open the comment details
+        const bubbleButton = screen.getByRole('button', {
+            name: /open comment/i,
+        });
+        await userEvent.click(bubbleButton);
+
+        // Verify resolve button is not displayed
+        const resolveButton = screen.queryByRole('button', {
+            name: /resolve/i,
+        });
+        expect(resolveButton).not.toBeInTheDocument();
+
+        // Verify resolved by snapshot text is displayed
+        expect(screen.getByText(/Resolved on/)).toBeInTheDocument();
     });
 });

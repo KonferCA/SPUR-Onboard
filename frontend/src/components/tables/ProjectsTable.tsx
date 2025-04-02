@@ -12,6 +12,7 @@ import {
 } from '@tanstack/react-table';
 import type { Project } from '@/types/project';
 import { format, isValid, parseISO } from 'date-fns';
+import { ProjectStatusEnum } from '@/services/projects';
 
 const columnHelper = createColumnHelper<Project>();
 
@@ -21,6 +22,7 @@ const STATUS_MAPPING = {
     verified: 'approved',
     declined: 'rejected',
     withdrawn: 'withdrew',
+    needsReview: 'needs review',
 } as const;
 
 const StatusButton = ({
@@ -212,68 +214,32 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
         { label: 'Approved', value: 'approved' },
         { label: 'Withdrew', value: 'withdrew' },
         { label: 'Rejected', value: 'rejected' },
+        { label: 'Needs Review', value: 'needs review' },
     ];
 
     const filterOptions = useMemo(
         () => ({
-            company_stage: [
-                ...new Set(data.map((item) => item.company_stage)),
-            ].filter((stage): stage is string => stage !== null),
-            industry: [...new Set(data.map((item) => item.industry))].filter(
-                (industry): industry is string => industry !== null
-            ),
-            status: [
-                ...new Set(
-                    data.map((item) => {
-                        const mappedStatus =
-                            STATUS_MAPPING[
-                                item.status as keyof typeof STATUS_MAPPING
-                            ];
-                        return mappedStatus;
-                    })
-                ),
-            ].filter(
-                (
-                    status
-                ): status is NonNullable<
-                    (typeof STATUS_MAPPING)[keyof typeof STATUS_MAPPING]
-                > => status !== null
-            ),
-            year: [
-                ...new Set(
-                    data.map((item) => formatDate(item.founded_date, 'yyyy'))
-                ),
-            ].filter((x) => x !== 'N/A'),
+            company_stage: [],
+            industry: [],
+            status: [],
+            year: [],
         }),
-        [data]
+        []
     );
 
     const filteredData = useMemo(() => {
+        const mapStatus = (status: string) => {
+            switch (status) {
+                case ProjectStatusEnum.Pending:
+                    return 'submitted';
+                default:
+                    return status;
+            }
+        };
         return data.filter((item) => {
-            const mappedStatus =
-                STATUS_MAPPING[item.status as keyof typeof STATUS_MAPPING];
-            const matchesSelectedStatus =
-                selectedStatus === 'submitted'
-                    ? mappedStatus === 'submitted'
-                    : selectedStatus === 'approved'
-                      ? mappedStatus === 'approved'
-                      : selectedStatus === 'rejected'
-                        ? mappedStatus === 'rejected'
-                        : selectedStatus === 'withdrew'
-                          ? mappedStatus === 'withdrew'
-                          : true;
-
-            return (
-                matchesSelectedStatus &&
-                (!filters.company_stage ||
-                    item.company_stage === filters.company_stage) &&
-                (!filters.industry || item.industry === filters.industry) &&
-                (!filters.status || mappedStatus === filters.status) &&
-                (!filters.year ||
-                    formatDate(item.founded_date, 'yyyy') === filters.year)
-            );
+            return selectedStatus === mapStatus(item.status);
         });
-    }, [data, filters, selectedStatus]);
+    }, [data, selectedStatus]);
 
     const table = useReactTable({
         data: filteredData,

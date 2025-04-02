@@ -13,6 +13,8 @@ export interface Comment {
     updatedAt: number;
     commenterFirstName: string | null;
     commenterLastName: string | null;
+    resolvedBySnapshotId: string | null;
+    resolvedBySnapshotAt: number | null;
 }
 
 export interface CreateCommentData {

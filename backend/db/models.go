@@ -215,11 +215,12 @@ func AllInputTypeEnumValues() []InputTypeEnum {
 type ProjectStatus string
 
 const (
-	ProjectStatusDraft     ProjectStatus = "draft"
-	ProjectStatusPending   ProjectStatus = "pending"
-	ProjectStatusVerified  ProjectStatus = "verified"
-	ProjectStatusDeclined  ProjectStatus = "declined"
-	ProjectStatusWithdrawn ProjectStatus = "withdrawn"
+	ProjectStatusDraft       ProjectStatus = "draft"
+	ProjectStatusPending     ProjectStatus = "pending"
+	ProjectStatusVerified    ProjectStatus = "verified"
+	ProjectStatusDeclined    ProjectStatus = "declined"
+	ProjectStatusWithdrawn   ProjectStatus = "withdrawn"
+	ProjectStatusNeedsreview ProjectStatus = "needs review"
 )
 
 func (e *ProjectStatus) Scan(src interface{}) error {
@@ -263,7 +264,8 @@ func (e ProjectStatus) Valid() bool {
 		ProjectStatusPending,
 		ProjectStatusVerified,
 		ProjectStatusDeclined,
-		ProjectStatusWithdrawn:
+		ProjectStatusWithdrawn,
+		ProjectStatusNeedsreview:
 		return true
 	}
 	return false
@@ -276,6 +278,7 @@ func AllProjectStatusValues() []ProjectStatus {
 		ProjectStatusVerified,
 		ProjectStatusDeclined,
 		ProjectStatusWithdrawn,
+		ProjectStatusNeedsreview,
 	}
 }
 
@@ -377,6 +380,7 @@ type Project struct {
 	UpdatedAt            int64         `json:"updated_at"`
 	LastSnapshotID       pgtype.UUID   `json:"last_snapshot_id"`
 	OriginalSubmissionAt *int64        `json:"original_submission_at"`
+	AllowEdit            bool          `json:"allow_edit"`
 }
 
 type ProjectAnswer struct {
@@ -390,14 +394,15 @@ type ProjectAnswer struct {
 }
 
 type ProjectComment struct {
-	ID          string `json:"id"`
-	ProjectID   string `json:"project_id"`
-	TargetID    string `json:"target_id"`
-	Comment     string `json:"comment"`
-	CommenterID string `json:"commenter_id"`
-	Resolved    bool   `json:"resolved"`
-	CreatedAt   int64  `json:"created_at"`
-	UpdatedAt   int64  `json:"updated_at"`
+	ID                   string      `json:"id"`
+	ProjectID            string      `json:"project_id"`
+	TargetID             string      `json:"target_id"`
+	Comment              string      `json:"comment"`
+	CommenterID          string      `json:"commenter_id"`
+	Resolved             bool        `json:"resolved"`
+	CreatedAt            int64       `json:"created_at"`
+	UpdatedAt            int64       `json:"updated_at"`
+	ResolvedBySnapshotID pgtype.UUID `json:"resolved_by_snapshot_id"`
 }
 
 type ProjectDocument struct {
