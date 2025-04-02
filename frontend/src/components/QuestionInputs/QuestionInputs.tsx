@@ -8,7 +8,7 @@ import {
     Comments,
 } from '@/components';
 import type { DropdownOption, UploadableFile } from '@/components';
-import type { Question } from '@/config/forms';
+import type { Question } from '@/config';
 import type { FormField } from '@/types';
 import { type FC, useRef, useEffect, useMemo } from 'react';
 import { cva } from 'class-variance-authority';

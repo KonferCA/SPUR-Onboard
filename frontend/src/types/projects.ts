@@ -1,4 +1,4 @@
-import type { ProjectQuestionsData } from '@/services/project';
+import type { ProjectQuestionsData } from '@/types/project';
 
 /*
  * ProjectSnapshotResponse is the response body for a successful retrieval

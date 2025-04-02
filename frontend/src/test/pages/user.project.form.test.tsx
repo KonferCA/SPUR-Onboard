@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Route } from '@/pages/user/_auth/project/$projectId/form';
+import { Route } from '@/pages/user/_auth/_appshell/project/$projectId/form';
 import { getProjectDetails } from '@/services/project';
 import { ProjectStatusEnum } from '@/services/projects';
 
