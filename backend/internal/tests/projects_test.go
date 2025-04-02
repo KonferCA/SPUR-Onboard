@@ -716,4 +716,171 @@ func TestProjectEndpoints(t *testing.T) {
 			assert.Equal(t, http.StatusBadRequest, rec.Code)
 		})
 	})
+
+	t.Run("Featured Projects", func(t *testing.T) {
+		projectID := createAndFillTestProject(t, s, accessToken, companyID)
+		submitProject(t, s, accessToken, projectID)
+
+		adminID, adminEmail, adminPassword, err := createTestAdmin(ctx, s)
+		assert.NoError(t, err)
+		defer removeTestUser(ctx, adminEmail, s)
+
+		err = s.GetQueries().UpdateUserEmailVerifiedStatus(ctx, db.UpdateUserEmailVerifiedStatusParams{
+			ID:            adminID,
+			EmailVerified: true,
+		})
+		assert.NoError(t, err, "Should update email verification status")
+
+		loginBody := fmt.Sprintf(`{"email":"%s","password":"%s"}`, adminEmail, adminPassword)
+		adminReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(loginBody))
+		adminReq.Header.Set("Content-Type", "application/json")
+		adminRec := httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(adminRec, adminReq)
+		assert.Equal(t, http.StatusOK, adminRec.Code, "Admin login should succeed")
+
+		var loginResp map[string]interface{}
+		err = json.NewDecoder(adminRec.Body).Decode(&loginResp)
+		assert.NoError(t, err)
+
+		adminToken, ok := loginResp["access_token"].(string)
+		assert.True(t, ok, "Response should contain access_token")
+		assert.NotEmpty(t, adminToken, "Admin token should not be empty")
+		require.NotEmpty(t, adminToken)
+
+		t.Run("Toggle Featured Status", func(t *testing.T) {
+			featuredBody := `{"featured": true}`
+
+			req := httptest.NewRequest(http.MethodPut,
+				fmt.Sprintf("/api/v1/project/%s/featured", projectID),
+				strings.NewReader(featuredBody))
+			req.Header.Set("Authorization", "Bearer "+adminToken)
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusOK, rec.Code, "Should be able to feature a project")
+
+			var resp map[string]any
+			err := json.NewDecoder(rec.Body).Decode(&resp)
+			assert.NoError(t, err)
+			assert.Equal(t, "featured", resp["status"])
+
+			unfeaturedBody := `{"featured": false}`
+
+			req = httptest.NewRequest(http.MethodPut,
+				fmt.Sprintf("/api/v1/project/%s/featured", projectID),
+				strings.NewReader(unfeaturedBody))
+			req.Header.Set("Authorization", "Bearer "+adminToken)
+			req.Header.Set("Content-Type", "application/json")
+			rec = httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusOK, rec.Code, "Should be able to unfeature a project")
+
+			err = json.NewDecoder(rec.Body).Decode(&resp)
+			assert.NoError(t, err)
+			assert.Equal(t, "unfeatured", resp["status"])
+		})
+
+		t.Run("Only Admins Can Toggle Featured", func(t *testing.T) {
+			regUserID, regEmail, regPassword, err := createTestUser(ctx, s, uint32(permissions.PermSubmitProject))
+			assert.NoError(t, err)
+			defer removeTestUser(ctx, regEmail, s)
+
+			err = s.GetQueries().UpdateUserEmailVerifiedStatus(ctx, db.UpdateUserEmailVerifiedStatusParams{
+				ID:            regUserID,
+				EmailVerified: true,
+			})
+			assert.NoError(t, err)
+
+			loginBody := fmt.Sprintf(`{"email":"%s","password":"%s"}`, regEmail, regPassword)
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", strings.NewReader(loginBody))
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			var loginResp map[string]interface{}
+			err = json.NewDecoder(rec.Body).Decode(&loginResp)
+			assert.NoError(t, err)
+
+			regToken, ok := loginResp["access_token"].(string)
+			assert.True(t, ok)
+			assert.NotEmpty(t, regToken)
+
+			featuredBody := `{"featured": true}`
+
+			req = httptest.NewRequest(http.MethodPut,
+				fmt.Sprintf("/api/v1/project/%s/featured", projectID),
+				strings.NewReader(featuredBody))
+			req.Header.Set("Authorization", "Bearer "+regToken) // Non-admin token
+			req.Header.Set("Content-Type", "application/json")
+			rec = httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusForbidden, rec.Code, "Non-admins should not be able to feature projects")
+		})
+
+		featuredBody := `{"featured": true}`
+		setupReq := httptest.NewRequest(http.MethodPut,
+			fmt.Sprintf("/api/v1/project/%s/featured", projectID),
+			strings.NewReader(featuredBody))
+		setupReq.Header.Set("Authorization", "Bearer "+adminToken)
+		setupReq.Header.Set("Content-Type", "application/json")
+		setupRec := httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(setupRec, setupReq)
+		assert.Equal(t, http.StatusOK, setupRec.Code)
+
+		time.Sleep(100 * time.Millisecond)
+
+		t.Run("Get Featured Projects", func(t *testing.T) {
+			getFeaturedReq := httptest.NewRequest(http.MethodGet, "/api/v1/project/featured", nil)
+			getFeaturedRec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(getFeaturedRec, getFeaturedReq)
+
+			assert.Equal(t, http.StatusOK, getFeaturedRec.Code)
+
+			var resp map[string]interface{}
+			err := json.NewDecoder(getFeaturedRec.Body).Decode(&resp)
+			assert.NoError(t, err)
+
+			projects, ok := resp["projects"].([]interface{})
+			assert.True(t, ok, "Response should contain projects array")
+			assert.NotEmpty(t, projects, "Should return at least one project")
+
+			found := false
+			for _, p := range projects {
+				proj := p.(map[string]interface{})
+				if proj["id"].(string) == projectID {
+					found = true
+					break
+				}
+			}
+			assert.True(t, found, "Featured project should be in the results")
+		})
+
+		t.Run("Custom Count", func(t *testing.T) {
+			countReq := httptest.NewRequest(http.MethodGet, "/api/v1/project/featured?count=1", nil)
+			countRec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(countRec, countReq)
+
+			assert.Equal(t, http.StatusOK, countRec.Code)
+
+			var resp map[string]interface{}
+			err := json.NewDecoder(countRec.Body).Decode(&resp)
+			assert.NoError(t, err)
+
+			projects, ok := resp["projects"].([]interface{})
+			assert.True(t, ok, "Response should contain projects array")
+			assert.LessOrEqual(t, len(projects), 1, "Should respect the count parameter")
+		})
+
+		t.Run("Invalid Count", func(t *testing.T) {
+			invalidReq := httptest.NewRequest(http.MethodGet, "/api/v1/project/featured?count=invalid", nil)
+			invalidRec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(invalidRec, invalidReq)
+
+			assert.Equal(t, http.StatusBadRequest, invalidRec.Code)
+		})
+	})
 }
