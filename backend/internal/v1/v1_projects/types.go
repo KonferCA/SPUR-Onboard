@@ -149,3 +149,15 @@ type UpdateProjectStatusRequest struct {
 type GetPopularProjectsRequest struct {
 	Count int `query:"count" validate:"omitempty,min=1,max=50"`
 }
+
+type GetFeaturedProjectsRequest struct {
+	Count int `query:"count" validate:"omitempty,min=1,max=50"`
+}
+
+type ToggleProjectFeaturedRequest struct {
+	Featured bool `json:"featured" validate:"required"`
+}
+
+type FeaturedProjectsResponse struct {
+	Projects []ExtendedProjectResponse `json:"projects"`
+}
