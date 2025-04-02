@@ -7,7 +7,7 @@ import {
     DateInput,
 } from '@/components';
 import type { DropdownOption, UploadableFile } from '@/components';
-import type { Question } from '@/config/forms';
+import type { Question } from '@/config';
 import type { FormField } from '@/types';
 import { type FC, useRef, useEffect } from 'react';
 import { cva } from 'class-variance-authority';

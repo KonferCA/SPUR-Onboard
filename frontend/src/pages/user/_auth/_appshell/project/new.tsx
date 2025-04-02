@@ -32,6 +32,6 @@ const NewProjectPage = () => {
     );
 };
 
-export const Route = createFileRoute('/user/_auth/project/new')({
+export const Route = createFileRoute('/user/_auth/_appshell/project/new')({
     component: React.memo(NewProjectPage),
 });
