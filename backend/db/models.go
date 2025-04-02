@@ -375,6 +375,7 @@ type Project struct {
 	Status      ProjectStatus `json:"status"`
 	CreatedAt   int64         `json:"created_at"`
 	UpdatedAt   int64         `json:"updated_at"`
+	Featured    bool          `json:"featured"`
 }
 
 type ProjectAnswer struct {
