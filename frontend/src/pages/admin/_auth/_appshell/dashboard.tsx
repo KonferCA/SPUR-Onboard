@@ -3,7 +3,7 @@ import { ProjectsTable } from '@/components/tables/ProjectsTable';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { listProjectsAll } from '@/services/project';
-import type { ExtendedProjectResponse, Project } from '@/services/project';
+import type { ExtendedProjectResponse, Project } from '@/types/project';
 import type { CompanyResponse } from '@/services/company';
 
 const transformToProject = (

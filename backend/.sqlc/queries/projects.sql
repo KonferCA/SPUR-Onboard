@@ -140,6 +140,7 @@ SELECT
     ) as title,
     p.description,
     p.status,
+    p.allow_edit,
     p.created_at,
     p.updated_at,
     COUNT(d.id) as document_count,
@@ -235,14 +236,16 @@ INSERT INTO project_answers (
 ) RETURNING *;
 
 -- name: GetProjectComments :many
-SELECT pc.*, u.first_name as commenter_first_name, u.last_name as commenter_last_name FROM project_comments pc
-JOIN users u ON u.id = pc.commenter_id
+SELECT pc.*, u.first_name as commenter_first_name, u.last_name as commenter_last_name, ps.created_at as resolved_by_snapshot_at FROM project_comments pc
+LEFT JOIN users u ON u.id = pc.commenter_id
+LEFT JOIN project_snapshots ps ON ps.id = pc.resolved_by_snapshot_id
 WHERE pc.project_id = $1
 ORDER BY pc.created_at DESC;
 
 -- name: GetProjectComment :one
-SELECT pc.*, u.first_name as commenter_first_name, u.last_name as commenter_last_name FROM project_comments pc
-JOIN users u ON u.id = pc.commenter_id
+SELECT pc.*, u.first_name as commenter_first_name, u.last_name as commenter_last_name, ps.created_at as resolved_by_snapshot_at FROM project_comments pc
+LEFT JOIN users u ON u.id = pc.commenter_id
+LEFT JOIN project_snapshots ps ON ps.id = pc.resolved_by_snapshot_id
 WHERE pc.id = $1 AND pc.project_id = $2
 LIMIT 1;
 
@@ -286,6 +289,13 @@ SET
 WHERE id = $1 AND project_id = $2
 RETURNING *; 
 
+-- name: SetSnapshotIDToProjectComments :exec
+UPDATE project_comments
+SET
+    resolved_by_snapshot_id = $1,
+    updated_at = extract(epoch from now())
+WHERE projecT_id = $2 AND resolved_by_snapshot_id IS NULL;
+
 -- name: ListAllProjects :many
 SELECT
     p.id,
@@ -294,16 +304,10 @@ SELECT
         c.name,
         ''
     ) as company_name,
-    COALESCE(
-        (SELECT pa.answer
-         FROM project_answers pa
-         JOIN project_questions pq ON pa.question_id = pq.id
-         WHERE pa.project_id = p.id AND pq.question_key = 'company_name' AND pa.answer != ''
-         LIMIT 1),
-        p.title
-    ) as title,
+    p.title,
     p.description,
     p.status,
+    p.allow_edit,
     p.created_at,
     p.updated_at,
     COUNT(d.id) as document_count,
@@ -329,6 +333,7 @@ SELECT
     ) as title,
     p.description, 
     p.status, 
+    p.allow_edit,
     p.created_at, 
     p.updated_at,
     c.name as company_name,
@@ -365,6 +370,7 @@ SELECT
     ) as title,
     p.description, 
     p.status, 
+    p.allow_edit,
     p.created_at, 
     p.updated_at,
     c.name as company_name,
@@ -384,3 +390,25 @@ ORDER BY
     p.created_at DESC
 LIMIT 
     $1;
+
+-- name: MatchProjectTitleToCompanyNameQuestion :exec
+UPDATE projects
+SET title = (
+	SELECT pa.answer
+    FROM project_questions pq
+    LEFT JOIN project_answers pa ON pa.question_id = pq.id
+        AND pa.project_id = $1
+        AND pa.answer IS NOT NULL
+        AND pa.answer != ''
+    WHERE pq.question_key = 'company_name'
+    )
+WHERE id = $1;
+
+-- name: SetProjectAllowEdit :exec
+UPDATE projects
+SET allow_edit = $1
+WHERE id = $2;
+
+-- name: CountUnresolvedProjectComments :one
+SELECT COUNT(*) FROM project_comments
+WHERE project_id = $1 AND resolved = false;

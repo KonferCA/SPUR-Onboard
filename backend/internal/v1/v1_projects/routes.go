@@ -29,11 +29,10 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	})
 
 	// Base project routes with auth
-	projects := g.Group("/project", middleware.Auth(s.GetDB(),
+	project := g.Group("/project", middleware.Auth(s.GetDB(),
 		permissions.PermSubmitProject,
 		permissions.PermViewAllProjects,
 	))
-	// projects := g.Group("/project")
 
 	g.GET("/projects", h.handleListCompanyProjects, middleware.Auth(s.GetDB(), permissions.PermSubmitProject))
 
@@ -46,16 +45,18 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	g.PUT("/project/:id/status", h.handleUpdateProjectStatus, middleware.Auth(s.GetDB(), permissions.PermAdmin))
 
 	// Static routes - require project submission permission
-	projectSubmitGroup := projects.Group("", middleware.Auth(s.GetDB(), permissions.PermSubmitProject))
+	projectSubmitGroup := project.Group("", middleware.Auth(s.GetDB(), permissions.PermSubmitProject))
 	projectSubmitGroup.POST("/new", h.handleCreateProject)
 	projectSubmitGroup.GET("/list", h.handleListCompanyProjects)
 	projectSubmitGroup.POST("/:id/draft", h.handleSaveProjectDraft)
+	// Project snapshots routes
+	projectSubmitGroup.GET("/:project_id/snapshots/latest", h.handleGetLatestProjectSnapshot)
 
 	// Questions route - viewable by anyone with project access
-	projects.GET("/questions", h.handleGetQuestions)
+	project.GET("/questions", h.handleGetQuestions)
 
 	// Dynamic :id routes
-	projects.GET("/:id", h.handleGetProject)
+	project.GET("/:id", h.handleGetProject)
 	projectSubmitGroup.POST("/:id/submit", h.handleSubmitProject)
 
 	// Project answers - require project submission permission
@@ -84,22 +85,22 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	docs.DELETE("/:document_id", h.handleDeleteProjectDocument)
 
 	// Project comments - require comment permissions
-	comments := projects.Group("/:id/comments", middleware.Auth(s.GetDB(),
+	comments := project.Group("/:id/comments", middleware.Auth(s.GetDB(),
 		permissions.PermViewAllProjects,
 		permissions.PermCommentOnProjects,
 	))
 
 	comments.GET("", h.handleGetProjectComments)
 	comments.GET("/:comment_id", h.handleGetProjectComment)
-	comments.POST("", h.handleCreateProjectComment)
 	comments.PUT("/:comment_id", h.handleUpdateProjectComment)
+	comments.POST("/:comment_id/resolve", h.handleResolveComment)
+	comments.POST("/:comment_id/unresolve", h.handleUnresolveComment)
 
 	// Admin-only comment resolution endpoints - require both comment and admin permissions
-	adminComments := comments.Group("/:comment_id", middleware.Auth(s.GetDB(),
+	adminComments := comments.Group("", middleware.Auth(s.GetDB(),
 		permissions.PermViewAllProjects,
 		permissions.PermCommentOnProjects,
 		permissions.PermAdmin,
 	))
-	adminComments.POST("/resolve", h.handleResolveComment)
-	adminComments.POST("/unresolve", h.handleUnresolveComment)
+	adminComments.POST("", h.handleCreateProjectComment)
 }

@@ -1,11 +1,11 @@
 import {
-    CommentBubble,
+    Comments,
     type DropdownOption,
     FileDownload,
     TeamMembers,
 } from '@/components';
 import { BiSolidCommentAdd } from 'react-icons/bi';
-import type { Question } from '@/config/forms';
+import type { Question } from '@/config';
 import type { Comment } from '@/services/comment';
 import type { FormField } from '@/types';
 import { type FC, useState } from 'react';
@@ -171,15 +171,10 @@ const ReviewQuestionInput: FC<ReviewQuestionInputProps> = ({
                     />
                 )}
             </div>
-            <div className="absolute -right-2 top-0 -translate-y-1/2 translate-x-full flex items-center gap-3">
-                {comments
-                    .filter((c) => c.targetId === field.key)
-                    .map((c) => (
-                        <div key={c.id}>
-                            <CommentBubble data={c} />
-                        </div>
-                    ))}
-            </div>
+            <Comments
+                comments={comments.filter((c) => c.targetId === field.key)}
+                rootContainerClasses="absolute -right-2 top-0 -translate-y-1/2 translate-x-full"
+            />
         </div>
     );
 };

@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import type { ProjectDocument } from '@/services/project';
+import type { ProjectDocument } from '@/types/project';
 import { FaFile } from 'react-icons/fa';
 
 export interface FileDownloadProps {

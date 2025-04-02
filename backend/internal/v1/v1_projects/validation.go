@@ -7,6 +7,8 @@ package v1_projects
  */
 
 import (
+	"KonferCA/SPUR/db"
+	"fmt"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -165,4 +167,116 @@ func getValidationMessage(validations []string) string {
 	}
 
 	return "Invalid input"
+}
+
+// validateProjectFormAnswers is a helper function that validates all the answers in the given questions.
+//
+// Returns: A list of validation errors.
+func validateProjectFormAnswers(questions []db.GetQuestionsByProjectRow) (validationErrors []ValidationError) {
+	// Validate each question
+	for _, question := range questions {
+		// Check if required question is answered
+		if question.Required {
+			if question.ConditionType.Valid {
+				// Get the dependent question's answer
+				var dependentAnswer string
+				var dependentChoices []string
+
+				// Find the dependent question's answer
+				for _, q := range questions {
+					b := question.DependentQuestionID.Bytes
+					if q.ID == fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16]) {
+						dependentAnswer = q.Answer
+						dependentChoices = q.Choices
+						break
+					}
+				}
+
+				// Skip validation if condition is not met
+				shouldValidate := false
+
+				// Handle array answers (multiselect/select)
+				if len(dependentChoices) > 0 {
+					switch question.ConditionType.ConditionTypeEnum {
+					case db.ConditionTypeEnumEmpty:
+						shouldValidate = len(dependentChoices) == 0
+					case db.ConditionTypeEnumNotEmpty:
+						shouldValidate = len(dependentChoices) > 0
+					case db.ConditionTypeEnumEquals:
+						for _, choice := range dependentChoices {
+							if choice == *question.ConditionValue {
+								shouldValidate = true
+								break
+							}
+						}
+					case db.ConditionTypeEnumContains:
+						for _, choice := range dependentChoices {
+							if choice == *question.ConditionValue {
+								shouldValidate = true
+								break
+							}
+						}
+					}
+				} else {
+					// Handle single value answers
+					switch question.ConditionType.ConditionTypeEnum {
+					case db.ConditionTypeEnumEmpty:
+						shouldValidate = dependentAnswer == ""
+					case db.ConditionTypeEnumNotEmpty:
+						shouldValidate = dependentAnswer != ""
+					case db.ConditionTypeEnumEquals:
+						shouldValidate = dependentAnswer == *question.ConditionValue
+					case db.ConditionTypeEnumContains:
+						shouldValidate = strings.Contains(dependentAnswer, *question.ConditionValue)
+					}
+				}
+
+				// Skip validation if condition is not met
+				if !shouldValidate {
+					continue
+				}
+			}
+
+			switch question.InputType {
+			case db.InputTypeEnumTextinput, db.InputTypeEnumTextarea:
+				answer := question.Answer
+				if answer == "" {
+					validationErrors = append(validationErrors, ValidationError{
+						Question: question.Question,
+						Message:  "This question requires an answer",
+					})
+					continue
+				}
+				// Validate answer against rules if validations exist
+				if question.Validations != nil {
+					if !isValidAnswer(answer, question.Validations) {
+						validationErrors = append(validationErrors, ValidationError{
+							Question: question.Question,
+							Message:  getValidationMessage(question.Validations),
+						})
+					}
+				}
+			case db.InputTypeEnumSelect, db.InputTypeEnumMultiselect:
+				if len(question.Choices) < 1 {
+					validationErrors = append(validationErrors, ValidationError{
+						Question: question.Question,
+						Message:  "This question requires an answer",
+					})
+					continue
+				}
+				if question.Validations != nil {
+					for _, answer := range question.Choices {
+						if !isValidAnswer(answer, question.Validations) {
+							validationErrors = append(validationErrors, ValidationError{
+								Question: question.Question,
+								Message:  getValidationMessage(question.Validations),
+							})
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return validationErrors
 }

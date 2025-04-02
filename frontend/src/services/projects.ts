@@ -1,43 +1,13 @@
 import { getApiUrl, HttpStatusCode } from '@/utils';
 import { snakeToCamel } from '@/utils/object';
 import { ApiError } from '@/services/errors';
-
-export interface ProjectResponse {
-    id: string;
-    title: string;
-    description: string;
-    status: string;
-    createdAt: number;
-    updatedAt: number;
-}
-
-export interface DocumentResponse {
-    id: string;
-    name: string;
-    url: string;
-    section: string;
-    createdAt: number;
-    updatedAt: number;
-}
-
-export interface ProjectDocumentsResponse {
-    documents: DocumentResponse[];
-}
-
-export interface CommentResponse {
-    id: string;
-    projectId: string;
-    targetId: string;
-    comment: string;
-    commenterId: string;
-    resolved: boolean;
-    createdAt: number;
-    updatedAt: number;
-}
-
-export interface ProjectCommentsResponse {
-    comments: CommentResponse[];
-}
+import type {
+    ProjectResponse,
+    ProjectDocumentsResponse,
+    ProjectCommentsResponse,
+    DocumentResponse,
+    CommentResponse,
+} from '@/types/project';
 
 export async function getProject(
     accessToken: string,
@@ -116,6 +86,7 @@ export enum ProjectStatusEnum {
     Verified = 'verified',
     Declined = 'declined',
     Withdrawn = 'withdrawn',
+    NeedsReview = 'needs review',
 }
 
 export async function updateProjectStatus(

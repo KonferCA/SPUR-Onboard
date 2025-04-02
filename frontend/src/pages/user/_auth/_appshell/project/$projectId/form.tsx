@@ -1,27 +1,31 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import {
+    createFileRoute,
+    redirect,
+    useRouteContext,
+} from '@tanstack/react-router';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
     type AnchorLinkItem,
-    AnchorLinks,
     Button,
     SectionDrawer,
     type DropdownOption,
     type UploadableFile,
     ScrollButton,
 } from '@components';
-import { IoMdArrowRoundBack } from 'react-icons/io';
 import {
+    getProjectDetails,
     getProjectFormQuestions,
     type ProjectDraft,
     saveProjectDraft,
     submitProject,
 } from '@/services/project';
+import { getProjectComments } from '@/services/comment';
 import {
     type GroupedProjectQuestions,
     groupProjectQuestions,
     type SectionMetadata,
     type Question,
-} from '@/config/forms';
+} from '@/config';
 import { cva } from 'class-variance-authority';
 import { sanitizeHtmlId } from '@/utils/html';
 import { QuestionInputs } from '@/components/QuestionInputs/QuestionInputs';
@@ -30,7 +34,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useDebounceFn } from '@/hooks';
 import { useAuth, useNotification } from '@/contexts';
 import { useNavigate } from '@tanstack/react-router';
-import { type ValidationError, ProjectError } from '@/components/ProjectError';
+import type { ProjectResponse, ValidationError } from '@/types/project';
+import { ProjectError } from '@/components/ProjectError';
 import { RecommendedFields } from '@/components/RecommendedFields';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { CollapsibleSection } from '@/components/CollapsibleSection';
@@ -38,9 +43,57 @@ import { AutoSaveIndicator } from '@/components/AutoSaveIndicator';
 import type { RecommendedField } from '@/types';
 import { isValid as isValidDate } from 'date-fns';
 import { scrollToTop } from '@/utils';
+import { ApiError } from '@/services';
+import { useLocation } from '@tanstack/react-router';
+import { useSidebar } from '@/contexts/SidebarContext/SidebarContext';
+import type { FundingStructureModel } from '@/components/FundingStructure';
+import { ProjectStatusEnum } from '@/services/projects';
 
-export const Route = createFileRoute('/user/_auth/project/$projectId/form')({
+export const Route = createFileRoute(
+    '/user/_auth/_appshell/project/$projectId/form'
+)({
     component: ProjectFormPage,
+    beforeLoad: async ({ context, params }) => {
+        if (!context || !context.auth?.accessToken) {
+            throw redirect({
+                to: '/auth',
+                replace: true,
+            });
+        }
+
+        const details = await getProjectDetails(
+            context.auth.accessToken,
+            params.projectId
+        ).catch((e) => {
+            console.error(e);
+            return null;
+        });
+        if (details) {
+            switch (details.status) {
+                case ProjectStatusEnum.NeedsReview:
+                    if (!details.allow_edit) {
+                        throw redirect({
+                            to: `/user/project/${params.projectId}/view`,
+                            replace: true,
+                        });
+                    }
+                    break;
+                case ProjectStatusEnum.Pending:
+                case ProjectStatusEnum.Declined:
+                case ProjectStatusEnum.Withdrawn:
+                case ProjectStatusEnum.Verified:
+                    throw redirect({
+                        to: `/user/project/${params.projectId}/view`,
+                    });
+
+                default:
+                    break;
+            }
+        }
+        return {
+            details,
+        };
+    },
 });
 
 const stepItemStyles = cva(
@@ -57,6 +110,11 @@ const stepItemStyles = cva(
 const questionGroupContainerStyles = cva('');
 const questionGroupQuestionsContainerStyles = cva('space-y-6');
 
+type FundingStructureFieldValue = {
+    value?: string;
+    fundingStructure?: FundingStructureModel;
+};
+
 const isEmptyValue = (value: unknown, type: string): boolean => {
     if (value === null || value === undefined) {
         return true;
@@ -71,12 +129,24 @@ const isEmptyValue = (value: unknown, type: string): boolean => {
             return (value as string).length === 0;
         case 'date':
             return isValidDate(value);
+        case 'fundingstructure':
+            // for fundingstructure fields, check if fundingStructure exists in the value object
+            if (typeof value === 'object' && value !== null) {
+                const typedValue = value as FundingStructureFieldValue;
+                // Check if fundingStructure is undefined or null
+                return !typedValue.fundingStructure;
+            }
+            return true;
         default:
             return false;
     }
 };
 
 function ProjectFormPage() {
+    const projectDetails: ProjectResponse | null = useRouteContext({
+        from: '/user/_auth/_appshell/project/$projectId/form',
+        select: (context) => context.details,
+    });
     const notification = useNotification();
     const { projectId: currentProjectId } = Route.useParams();
     const navigate = useNavigate({
@@ -101,6 +171,25 @@ function ProjectFormPage() {
         refetchOnReconnect: true,
         refetchOnWindowFocus: false,
         refetchOnMount: true,
+    });
+
+    const { data: commentsData, isLoading: loadingComments } = useQuery({
+        queryKey: ['project_review_comments', accessToken, currentProjectId],
+        queryFn: async () => {
+            if (!accessToken) {
+                return;
+            }
+
+            const data = await getProjectComments(
+                accessToken,
+                currentProjectId
+            );
+            return data;
+        },
+        enabled: !!accessToken && !!currentProjectId,
+        refetchOnWindowFocus: false,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
     });
 
     const [groupedQuestions, setGroupedQuestions] = useState<
@@ -130,6 +219,83 @@ function ProjectFormPage() {
         type: 'error' | 'neutral';
     }>({ id: null, type: 'error' });
     const [isMobile, setIsMobile] = useState(false);
+    const [showClearFormModal, setShowClearFormModal] = useState(false);
+    const [showErrorPanel, setShowErrorPanel] = useState(true);
+
+    const location = useLocation();
+    const { updateProjectConfig } = useSidebar();
+
+    const searchParams = useMemo(
+        () => new URLSearchParams(location.search),
+        [location.search]
+    );
+
+    useEffect(() => {
+        if (searchParams.has('section') && groupedQuestions.length > 0) {
+            const sectionParam = searchParams.get('section');
+            const sectionIndex = groupedQuestions.findIndex(
+                (group) =>
+                    group.section.toLowerCase().replace(/\s+/g, '-') ===
+                    sectionParam
+            );
+
+            if (sectionIndex !== -1 && sectionIndex !== currentStep) {
+                setCurrentStep(sectionIndex);
+            }
+        }
+    }, [searchParams, groupedQuestions, currentStep]);
+
+    useEffect(() => {
+        if (groupedQuestions.length > 0) {
+            updateProjectConfig({
+                // pass section names to the sidebar
+                sections: groupedQuestions.map((group) => group.section),
+
+                // handle when a section is clicked in the sidebar
+                sectionClickHandler: (projectId, section, sectionIndex) => {
+                    if (projectId === currentProjectId) {
+                        setCurrentStep(sectionIndex);
+
+                        navigate({
+                            to: `/user/project/${currentProjectId}/form`,
+                            search: {
+                                section: section
+                                    .toLowerCase()
+                                    .replace(/\s+/g, '-'),
+                            },
+                            replace: true,
+                        });
+
+                        scrollToTop();
+                    } else {
+                        navigate({
+                            to: `/user/project/${projectId}/form`,
+                            search: {
+                                section: groupedQuestions[0].section
+                                    .toLowerCase()
+                                    .replace(/\s+/g, '-'),
+                            },
+                            replace: true,
+                        });
+                    }
+                },
+
+                getActiveSection: () => {
+                    if (groupedQuestions.length > 0 && currentStep >= 0) {
+                        return groupedQuestions[currentStep].section;
+                    }
+
+                    return null;
+                },
+            });
+        }
+    }, [
+        groupedQuestions,
+        currentProjectId,
+        currentStep,
+        updateProjectConfig,
+        navigate,
+    ]);
 
     const autosave = useDebounceFn(
         async () => {
@@ -298,8 +464,6 @@ function ProjectFormPage() {
                                             return field;
                                         }
 
-                                        const newValue = value;
-
                                         switch (field.type) {
                                             case 'select':
                                             case 'multiselect': {
@@ -330,7 +494,51 @@ function ProjectFormPage() {
                                                 );
                                                 break;
                                             }
+                                            case 'fundingstructure': {
+                                                const currentFieldValue =
+                                                    field.value as FundingStructureFieldValue;
+                                                if (
+                                                    typeof value === 'string' &&
+                                                    value === 'completed'
+                                                ) {
+                                                    // if it's just the marker value, return a simple object
+                                                    setTimeout(
+                                                        () => autosave(),
+                                                        0
+                                                    );
+                                                    return {
+                                                        ...field,
+                                                        value: {
+                                                            ...currentFieldValue,
+                                                            value: 'completed',
+                                                            fundingStructure:
+                                                                currentFieldValue.fundingStructure,
+                                                        },
+                                                    };
+                                                }
 
+                                                dirtyInputRef.current.set(
+                                                    questionId,
+                                                    {
+                                                        question_id: questionId,
+                                                        answer: JSON.stringify(
+                                                            value
+                                                        ),
+                                                    }
+                                                );
+
+                                                // return the object with both properties
+                                                setTimeout(() => autosave(), 0);
+                                                return {
+                                                    ...field,
+                                                    value: {
+                                                        ...currentFieldValue,
+                                                        value: 'completed', // keep the completed marker
+                                                        fundingStructure:
+                                                            value as FundingStructureModel, // store the actual structure
+                                                    },
+                                                };
+                                            }
                                             default:
                                                 dirtyInputRef.current.set(
                                                     questionId,
@@ -350,7 +558,7 @@ function ProjectFormPage() {
                                             ...field,
                                             value: {
                                                 ...field.value,
-                                                value: newValue,
+                                                value: value,
                                             },
                                         };
                                     }
@@ -365,31 +573,70 @@ function ProjectFormPage() {
     };
 
     const handleNextStep = () => {
-        setCurrentStep((curr) => {
-            if (curr < groupedQuestions.length - 1) {
-                return curr + 1;
-            }
+        if (currentStep < groupedQuestions.length - 1) {
+            const nextStep = currentStep + 1;
+            setCurrentStep(nextStep);
 
-            return curr;
-        });
-        setTimeout(() => {
-            scrollToTop();
-        }, 120);
+            navigate({
+                to: `/user/project/${currentProjectId}/form`,
+                search: {
+                    section: groupedQuestions[nextStep].section
+                        .toLowerCase()
+                        .replace(/\s+/g, '-'),
+                },
+                replace: false,
+            });
+
+            setTimeout(() => {
+                scrollToTop();
+            }, 120);
+        }
     };
 
     const handleBackStep = () => {
-        setCurrentStep((curr) => {
-            if (curr > 0) {
-                return curr - 1;
-            }
+        if (currentStep > 0) {
+            const prevStep = currentStep - 1;
+            setCurrentStep(prevStep);
 
-            return curr;
-        });
+            navigate({
+                to: `/user/project/${currentProjectId}/form`,
+                search: {
+                    section: groupedQuestions[prevStep].section
+                        .toLowerCase()
+                        .replace(/\s+/g, '-'),
+                },
+                replace: false,
+            });
+
+            setTimeout(() => {
+                scrollToTop();
+            }, 120);
+        }
+    };
+
+    const handleStepClick = (stepIndex: number) => {
+        if (stepIndex !== currentStep) {
+            setCurrentStep(stepIndex);
+
+            navigate({
+                to: `/user/project/${currentProjectId}/form`,
+                search: {
+                    section: groupedQuestions[stepIndex].section
+                        .toLowerCase()
+                        .replace(/\s+/g, '-'),
+                },
+                replace: true,
+            });
+
+            setTimeout(() => {
+                scrollToTop();
+            }, 120);
+        }
     };
 
     useEffect(() => {
         const handleResize = () => {
-            setIsMobile(window.innerWidth < 1536);
+            setIsMobile(window.innerWidth < 1024);
         };
         setTimeout(() => {
             scrollToTop();
@@ -402,7 +649,7 @@ function ProjectFormPage() {
     }, []);
 
     useEffect(() => {
-        if (questionData) {
+        if (questionData && !loadingQuestions && !loadingComments) {
             const groups = groupProjectQuestions(questionData);
             const sections = groups.map((g) => {
                 const metadata: SectionMetadata = {
@@ -414,7 +661,7 @@ function ProjectFormPage() {
             setGroupedQuestions(groups);
             setSectionMetadata(sections);
         }
-    }, [questionData]);
+    }, [loadingQuestions, loadingComments, questionData]);
 
     const asideLinks = useMemo<AnchorLinkItem[]>(() => {
         return sectionsMetadata[currentStep]?.subSections.map((name) => ({
@@ -572,6 +819,17 @@ function ProjectFormPage() {
                                     fieldValid = false;
                                 }
                                 break;
+                            case 'fundingstructure':
+                                if (input.required) {
+                                    const typedValue =
+                                        input.value as FundingStructureFieldValue;
+                                    // check if there's a fundingStructure property and it's populated
+                                    // (ex., it's not null or undefined)
+                                    if (!typedValue.fundingStructure) {
+                                        fieldValid = false;
+                                    }
+                                }
+                                break;
                             default:
                                 break;
                         }
@@ -615,6 +873,128 @@ function ProjectFormPage() {
         }
     };
 
+    const clearForm = useCallback(async () => {
+        setGroupedQuestions((prevGroups) => {
+            return prevGroups.map((group) => ({
+                ...group,
+                subSections: group.subSections.map((subsection) => ({
+                    ...subsection,
+                    questions: subsection.questions.map((question) => ({
+                        ...question,
+                        inputFields: question.inputFields.map((field) => {
+                            let resetValue:
+                                | string
+                                | string[]
+                                | null
+                                | Date
+                                | UploadableFile[] = '';
+
+                            switch (field.type) {
+                                case 'textinput':
+                                case 'textarea':
+                                    resetValue = '';
+                                    break;
+                                case 'select':
+                                case 'multiselect':
+                                    resetValue = [];
+                                    break;
+                                case 'date':
+                                    resetValue = null;
+                                    break;
+                                case 'file':
+                                    resetValue = [];
+                                    break;
+                                default:
+                                    resetValue = field.value.value as
+                                        | string
+                                        | string[]
+                                        | UploadableFile[]
+                                        | Date
+                                        | null;
+                                    break;
+                            }
+
+                            return {
+                                ...field,
+                                value: {
+                                    ...field.value,
+                                    value: resetValue,
+                                    files:
+                                        field.type === 'file'
+                                            ? []
+                                            : field.value.files,
+                                },
+                                invalid: false,
+                            };
+                        }),
+                    })),
+                })),
+            }));
+        });
+
+        setValidationErrors([]);
+        setRecommendedFields([]);
+
+        if (accessToken && currentProjectId) {
+            try {
+                setAutosaveStatus('saving');
+
+                const emptyDrafts: ProjectDraft[] = [];
+
+                groupedQuestions.forEach((group) => {
+                    group.subSections.forEach((subsection) => {
+                        subsection.questions.forEach((question) => {
+                            if (
+                                question.inputFields &&
+                                question.inputFields.length > 0
+                            ) {
+                                emptyDrafts.push({
+                                    question_id: question.id,
+                                    answer:
+                                        question.inputFields[0].type ===
+                                        'multiselect'
+                                            ? []
+                                            : '',
+                                });
+                            }
+                        });
+                    });
+                });
+
+                await saveProjectDraft(
+                    accessToken,
+                    currentProjectId,
+                    emptyDrafts
+                );
+                setAutosaveStatus('success');
+
+                notification.push({
+                    message: 'Form has been cleared successfully',
+                    level: 'success',
+                });
+            } catch (error) {
+                console.error('Error clearing form:', error);
+                setAutosaveStatus('error');
+
+                notification.push({
+                    message:
+                        'Form cleared locally, but there was an error saving to the server',
+                    level: 'info',
+                });
+            }
+        } else {
+            notification.push({
+                message: 'Form has been cleared successfully',
+                level: 'success',
+            });
+        }
+
+        dirtyInputRef.current.clear();
+
+        setShowClearFormModal(false);
+        scrollToTop();
+    }, [accessToken, currentProjectId, groupedQuestions, notification]);
+
     const handleSubmitConfirm = async () => {
         try {
             if (!accessToken || !currentProjectId) {
@@ -632,9 +1012,15 @@ function ProjectFormPage() {
             // replace to not let them go back, it causes the creation of a new project
             navigate({ to: '/user/dashboard', replace: true });
         } catch (e) {
+            setShowSubmitModal(false);
+            setShowRecommendedModal(false);
+            let message =
+                'Oops, seems like something went wrong. Please try again later.';
+            if (e instanceof ApiError) {
+                message = (e.body as { message: string }).message;
+            }
             notification.push({
-                message:
-                    'Oops, seems like something went wrong. Please try again later.',
+                message,
                 level: 'error',
             });
             console.error(e);
@@ -782,66 +1168,18 @@ function ProjectFormPage() {
         }
     };
 
-    // Handle subsection link clicks from the navigation pane
-    const handleSubsectionLinkClick = (targetId: string) => {
-        const sectionIndex = currentStep;
-
-        // Find the subsection without the # prefix
-        const subsectionId = targetId.startsWith('#')
-            ? targetId.substring(1)
-            : targetId;
-
-        // Find the first question in this subsection to highlight
-        const subsection = groupedQuestions[sectionIndex]?.subSections.find(
-            (sub) => sanitizeHtmlId(sub.name) === subsectionId
-        );
-
-        if (subsection && subsection.questions.length > 0) {
-            // Set a timeout to allow the scroll to complete first
-            setTimeout(() => {
-                const firstQuestion = subsection.questions[0];
-                setHighlightedQuestionId({
-                    id: firstQuestion.id,
-                    type: 'neutral',
-                });
-                setTimeout(
-                    () =>
-                        setHighlightedQuestionId({ id: null, type: 'neutral' }),
-                    1200
-                );
-            }, 500);
-        }
-    };
-
     // TODO: make a better loading screen
-    if (groupedQuestions.length < 1 || loadingQuestions) return null;
+    if (groupedQuestions.length < 1 || loadingQuestions || loadingComments)
+        return null;
 
     return (
-        <div className="min-h-screen">
-            <div className="fixed top-0 left-0 right-0 z-50">
-                <nav className="bg-white h-16 border-b border-gray-200">
-                    <div className="h-full px-4 flex items-center">
-                        <Link
-                            to="/user/dashboard"
-                            className="transition p-2 rounded-lg hover:bg-gray-100 flex items-center gap-2"
-                        >
-                            <IoMdArrowRoundBack />
-                            <span> Back to dashboard </span>
-                        </Link>
-                    </div>
-                </nav>
-
+        <div className="flex h-screen overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden">
                 <AutoSaveIndicator status={autosaveStatus} />
 
-                <div className="bg-white border-b border-gray-200">
+                <div className="sticky top-0 z-40 mt-2">
                     <div className="relative">
                         <div className="flex items-center py-4">
-                            <div className="hidden md:block absolute left-0">
-                                <h1 className="text-lg font-semibold text-gray-900 pl-6">
-                                    {groupedQuestions[currentStep]?.section}
-                                </h1>
-                            </div>
-
                             <div className="flex-1 flex justify-center overflow-x-auto px-6">
                                 <nav className="relative overflow-x-auto">
                                     <ul className="flex items-center space-x-8 overflow-x-auto">
@@ -852,10 +1190,10 @@ function ProjectFormPage() {
                                                     active: currentStep === idx,
                                                 })}
                                                 onKeyUp={() =>
-                                                    setCurrentStep(idx)
+                                                    handleStepClick(idx)
                                                 }
                                                 onClick={() =>
-                                                    setCurrentStep(idx)
+                                                    handleStepClick(idx)
                                                 }
                                             >
                                                 <span className="text-nowrap">
@@ -873,106 +1211,131 @@ function ProjectFormPage() {
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="pt-52">
-                <div className="hidden 2xl:block fixed w-60 3xl:w-80 max-h-96 overflow-y-auto left-12">
-                    <AnchorLinks
-                        links={asideLinks}
-                        onClick={(link) =>
-                            handleSubsectionLinkClick(link.target)
-                        }
-                    />
-                </div>
-                <div className="hidden 2xl:block fixed w-60 3xl:w-80 right-12">
-                    {validationErrors.length > 0 && (
-                        <ProjectError
-                            errors={validationErrors}
-                            onErrorClick={handleErrorClick}
-                        />
-                    )}
-                </div>
-
-                <form className="space-y-12 p-4 lg:p-0 lg:max-w-4xl lg:mx-auto">
-                    {groupedQuestions[currentStep].subSections.map(
-                        (subsection) => (
-                            <div
-                                id={sanitizeHtmlId(subsection.name)}
-                                key={subsection.name}
-                                className={questionGroupContainerStyles()}
-                            >
-                                <CollapsibleSection title={subsection.name}>
-                                    <div
-                                        className={questionGroupQuestionsContainerStyles()}
-                                    >
-                                        {subsection.questions.map((q) =>
-                                            shouldRenderQuestion(
-                                                q,
-                                                subsection.questions
-                                            ) ? (
-                                                <QuestionInputs
-                                                    key={q.id}
-                                                    question={q}
-                                                    onChange={handleChange}
-                                                    shouldHighlight={
-                                                        q.id ===
-                                                        highlightedQuestionId.id
-                                                            ? highlightedQuestionId.type
-                                                            : false
-                                                    }
-                                                    fileUploadProps={
-                                                        accessToken
-                                                            ? {
-                                                                  projectId:
-                                                                      currentProjectId,
-                                                                  questionId:
-                                                                      q.id,
-                                                                  section:
-                                                                      groupedQuestions[
-                                                                          currentStep
-                                                                      ].section,
-                                                                  subSection:
-                                                                      subsection.name,
-                                                                  accessToken:
-                                                                      accessToken,
-                                                                  enableAutosave: true,
-                                                              }
-                                                            : undefined
-                                                    }
-                                                />
-                                            ) : null
-                                        )}
-                                    </div>
-                                </CollapsibleSection>
-                            </div>
-                        )
-                    )}
-                    <div className="pb-32 flex gap-8">
+                <div className="flex-1 overflow-y-auto">
+                    <div className="flex justify-center">
                         <Button
                             variant="outline"
-                            liquid
-                            type="button"
-                            disabled={currentStep === 0}
-                            onClick={handleBackStep}
+                            size="sm"
+                            className="mt-4"
+                            onClick={() => setShowClearFormModal(true)}
                         >
-                            Back
-                        </Button>
-
-                        <Button
-                            liquid
-                            type="button"
-                            onClick={
-                                currentStep < groupedQuestions.length - 1
-                                    ? handleNextStep
-                                    : handleSubmit
-                            }
-                        >
-                            {currentStep < groupedQuestions.length - 1
-                                ? 'Continue'
-                                : 'Submit'}
+                            Clear Form
                         </Button>
                     </div>
-                </form>
+
+                    <div className="pt-4">
+                        <div className="hidden lg:block fixed right-0 top-32 z-30">
+                            {validationErrors.length > 0 && (
+                                <ProjectError
+                                    errors={validationErrors}
+                                    onErrorClick={handleErrorClick}
+                                    isOpen={showErrorPanel}
+                                    onToggle={() =>
+                                        setShowErrorPanel(!showErrorPanel)
+                                    }
+                                />
+                            )}
+                        </div>
+
+                        <form className="space-y-12 p-4 lg:p-0 lg:max-w-4xl lg:mx-auto">
+                            {groupedQuestions[currentStep].subSections.map(
+                                (subsection) => (
+                                    <div
+                                        id={sanitizeHtmlId(subsection.name)}
+                                        key={subsection.name}
+                                        className={questionGroupContainerStyles()}
+                                    >
+                                        <CollapsibleSection
+                                            title={subsection.name}
+                                        >
+                                            <div
+                                                className={questionGroupQuestionsContainerStyles()}
+                                            >
+                                                {subsection.questions.map(
+                                                    (q) =>
+                                                        shouldRenderQuestion(
+                                                            q,
+                                                            subsection.questions
+                                                        ) ? (
+                                                            <QuestionInputs
+                                                                key={q.id}
+                                                                question={q}
+                                                                onChange={
+                                                                    handleChange
+                                                                }
+                                                                shouldHighlight={
+                                                                    q.id ===
+                                                                    highlightedQuestionId.id
+                                                                        ? highlightedQuestionId.type
+                                                                        : false
+                                                                }
+                                                                comments={
+                                                                    commentsData
+                                                                }
+                                                                projectStatus={
+                                                                    projectDetails?.status
+                                                                }
+                                                                allowEdit={
+                                                                    projectDetails?.allow_edit
+                                                                }
+                                                                fileUploadProps={
+                                                                    accessToken
+                                                                        ? {
+                                                                              projectId:
+                                                                                  currentProjectId,
+                                                                              questionId:
+                                                                                  q.id,
+                                                                              section:
+                                                                                  groupedQuestions[
+                                                                                      currentStep
+                                                                                  ]
+                                                                                      .section,
+                                                                              subSection:
+                                                                                  subsection.name,
+                                                                              accessToken:
+                                                                                  accessToken,
+                                                                              enableAutosave: true,
+                                                                          }
+                                                                        : undefined
+                                                                }
+                                                            />
+                                                        ) : null
+                                                )}
+                                            </div>
+                                        </CollapsibleSection>
+                                    </div>
+                                )
+                            )}
+                            <div className="pb-32 flex gap-8">
+                                <Button
+                                    variant="outline"
+                                    liquid
+                                    type="button"
+                                    disabled={currentStep === 0}
+                                    onClick={handleBackStep}
+                                >
+                                    Back
+                                </Button>
+
+                                <Button
+                                    liquid
+                                    type="button"
+                                    onClick={
+                                        currentStep <
+                                        groupedQuestions.length - 1
+                                            ? handleNextStep
+                                            : handleSubmit
+                                    }
+                                >
+                                    {currentStep < groupedQuestions.length - 1
+                                        ? 'Continue'
+                                        : 'Submit'}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
 
             {/* scroll to top/bottom button */}
@@ -1054,6 +1417,22 @@ function ProjectFormPage() {
                         Once submitted, you won't be able to make changes until
                         the application is either approved or sent back for
                         review.
+                    </p>
+                </div>
+            </ConfirmationModal>
+
+            <ConfirmationModal
+                isOpen={showClearFormModal}
+                onClose={() => setShowClearFormModal(false)}
+                primaryAction={clearForm}
+                title="Clear Form"
+                primaryActionText="Yes, clear everything"
+            >
+                <div className="space-y-4">
+                    <p>Are you sure you want to clear all form entries?</p>
+                    <p className="text-red-500 font-semibold">
+                        This will delete all your entered data including
+                        uploaded files. This action cannot be undone.
                     </p>
                 </div>
             </ConfirmationModal>
