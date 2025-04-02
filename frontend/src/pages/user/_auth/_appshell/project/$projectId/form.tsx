@@ -801,7 +801,7 @@ function ProjectFormPage() {
         }
     };
 
-    const clearForm = useCallback(() => {
+    const clearForm = useCallback(async () => {
         setGroupedQuestions((prevGroups) => {
             return prevGroups.map((group) => ({
                 ...group,
@@ -863,17 +863,65 @@ function ProjectFormPage() {
         setValidationErrors([]);
         setRecommendedFields([]);
 
+        if (accessToken && currentProjectId) {
+            try {
+                setAutosaveStatus('saving');
+
+                const emptyDrafts: ProjectDraft[] = [];
+
+                groupedQuestions.forEach((group) => {
+                    group.subSections.forEach((subsection) => {
+                        subsection.questions.forEach((question) => {
+                            if (
+                                question.inputFields &&
+                                question.inputFields.length > 0
+                            ) {
+                                emptyDrafts.push({
+                                    question_id: question.id,
+                                    answer:
+                                        question.inputFields[0].type ===
+                                        'multiselect'
+                                            ? []
+                                            : '',
+                                });
+                            }
+                        });
+                    });
+                });
+
+                await saveProjectDraft(
+                    accessToken,
+                    currentProjectId,
+                    emptyDrafts
+                );
+                setAutosaveStatus('success');
+
+                notification.push({
+                    message: 'Form has been cleared successfully',
+                    level: 'success',
+                });
+            } catch (error) {
+                console.error('Error clearing form:', error);
+                setAutosaveStatus('error');
+
+                notification.push({
+                    message:
+                        'Form cleared locally, but there was an error saving to the server',
+                    level: 'info',
+                });
+            }
+        } else {
+            notification.push({
+                message: 'Form has been cleared successfully',
+                level: 'success',
+            });
+        }
+
         dirtyInputRef.current.clear();
 
-        notification.push({
-            message: 'Form has been cleared successfully',
-            level: 'success',
-        });
-
         setShowClearFormModal(false);
-
         scrollToTop();
-    }, [notification]);
+    }, [accessToken, currentProjectId, groupedQuestions, notification]);
 
     const handleSubmitConfirm = async () => {
         try {
