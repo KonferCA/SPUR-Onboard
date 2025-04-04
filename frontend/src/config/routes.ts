@@ -5,8 +5,9 @@
  */
 export const AVAILABLE_ROUTES = {
     // main routes
+    '/user/home': true,
     '/user/dashboard': true,
-    '/user/browse': false,
+    '/user/browse': true,
     '/user/resources': false,
 
     // investor routes
@@ -14,7 +15,7 @@ export const AVAILABLE_ROUTES = {
     '/user/investor/statistics': false,
 
     // admin routes
-    '/admin/dashboard': true,
+    '/admin/dashboard': false,
     '/admin/settings/permissions': true,
     '/admin/projects': false,
 
