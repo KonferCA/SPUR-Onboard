@@ -31,7 +31,7 @@ import { Route as UserAuthAppshellSettingsImport } from './pages/user/_auth/_app
 import { Route as UserAuthAppshellProjectsImport } from './pages/user/_auth/_appshell/projects';
 import { Route as UserAuthAppshellHomeImport } from './pages/user/_auth/_appshell/home';
 import { Route as UserAuthAppshellDashboardImport } from './pages/user/_auth/_appshell/dashboard';
-import { Route as AdminAuthAppshellDashboardImport } from './pages/admin/_auth/_appshell/dashboard';
+import { Route as UserAuthAppshellBrowseImport } from './pages/user/_auth/_appshell/browse';
 import { Route as UserAuthAppshellSettingsIndexImport } from './pages/user/_auth/_appshell/settings/index';
 import { Route as AdminAuthAppshellResourcesIndexImport } from './pages/admin/_auth/_appshell/resources/index';
 import { Route as UserAuthAppshellSettingsWalletImport } from './pages/user/_auth/_appshell/settings/wallet';
@@ -167,13 +167,11 @@ const UserAuthAppshellDashboardRoute = UserAuthAppshellDashboardImport.update({
     getParentRoute: () => UserAuthAppshellRoute,
 } as any);
 
-const AdminAuthAppshellDashboardRoute = AdminAuthAppshellDashboardImport.update(
-    {
-        id: '/dashboard',
-        path: '/dashboard',
-        getParentRoute: () => AdminAuthAppshellRoute,
-    } as any
-);
+const UserAuthAppshellBrowseRoute = UserAuthAppshellBrowseImport.update({
+    id: '/browse',
+    path: '/browse',
+    getParentRoute: () => UserAuthAppshellRoute,
+} as any);
 
 const UserAuthAppshellSettingsIndexRoute =
     UserAuthAppshellSettingsIndexImport.update({
@@ -369,12 +367,12 @@ declare module '@tanstack/react-router' {
             preLoaderRoute: typeof UserAuthAppshellImport;
             parentRoute: typeof UserAuthImport;
         };
-        '/admin/_auth/_appshell/dashboard': {
-            id: '/admin/_auth/_appshell/dashboard';
-            path: '/dashboard';
-            fullPath: '/admin/dashboard';
-            preLoaderRoute: typeof AdminAuthAppshellDashboardImport;
-            parentRoute: typeof AdminAuthAppshellImport;
+        '/user/_auth/_appshell/browse': {
+            id: '/user/_auth/_appshell/browse';
+            path: '/browse';
+            fullPath: '/user/browse';
+            preLoaderRoute: typeof UserAuthAppshellBrowseImport;
+            parentRoute: typeof UserAuthAppshellImport;
         };
         '/user/_auth/_appshell/dashboard': {
             id: '/user/_auth/_appshell/dashboard';
@@ -487,7 +485,6 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 interface AdminAuthAppshellRouteChildren {
-    AdminAuthAppshellDashboardRoute: typeof AdminAuthAppshellDashboardRoute;
     AdminAuthAppshellSettingsPermissionsRoute: typeof AdminAuthAppshellSettingsPermissionsRoute;
     AdminAuthAppshellResourcesIndexRoute: typeof AdminAuthAppshellResourcesIndexRoute;
     AdminAuthAppshellProjectsProjectIdDecisionRoute: typeof AdminAuthAppshellProjectsProjectIdDecisionRoute;
@@ -495,7 +492,6 @@ interface AdminAuthAppshellRouteChildren {
 }
 
 const AdminAuthAppshellRouteChildren: AdminAuthAppshellRouteChildren = {
-    AdminAuthAppshellDashboardRoute: AdminAuthAppshellDashboardRoute,
     AdminAuthAppshellSettingsPermissionsRoute:
         AdminAuthAppshellSettingsPermissionsRoute,
     AdminAuthAppshellResourcesIndexRoute: AdminAuthAppshellResourcesIndexRoute,
@@ -556,6 +552,7 @@ const UserAuthAppshellSettingsRouteWithChildren =
     );
 
 interface UserAuthAppshellRouteChildren {
+    UserAuthAppshellBrowseRoute: typeof UserAuthAppshellBrowseRoute;
     UserAuthAppshellDashboardRoute: typeof UserAuthAppshellDashboardRoute;
     UserAuthAppshellHomeRoute: typeof UserAuthAppshellHomeRoute;
     UserAuthAppshellProjectsRoute: typeof UserAuthAppshellProjectsRoute;
@@ -566,6 +563,7 @@ interface UserAuthAppshellRouteChildren {
 }
 
 const UserAuthAppshellRouteChildren: UserAuthAppshellRouteChildren = {
+    UserAuthAppshellBrowseRoute: UserAuthAppshellBrowseRoute,
     UserAuthAppshellDashboardRoute: UserAuthAppshellDashboardRoute,
     UserAuthAppshellHomeRoute: UserAuthAppshellHomeRoute,
     UserAuthAppshellProjectsRoute: UserAuthAppshellProjectsRoute,
@@ -617,7 +615,7 @@ export interface FileRoutesByFullPath {
     '/user': typeof UserAuthAppshellRouteWithChildren;
     '/admin/': typeof AdminIndexRoute;
     '/user/': typeof UserIndexRoute;
-    '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute;
+    '/user/browse': typeof UserAuthAppshellBrowseRoute;
     '/user/dashboard': typeof UserAuthAppshellDashboardRoute;
     '/user/home': typeof UserAuthAppshellHomeRoute;
     '/user/projects': typeof UserAuthAppshellProjectsRoute;
@@ -646,7 +644,7 @@ export interface FileRoutesByTo {
     '/signup': typeof SignupRoute;
     '/admin': typeof AdminAuthAppshellRouteWithChildren;
     '/user': typeof UserAuthAppshellRouteWithChildren;
-    '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute;
+    '/user/browse': typeof UserAuthAppshellBrowseRoute;
     '/user/dashboard': typeof UserAuthAppshellDashboardRoute;
     '/user/home': typeof UserAuthAppshellHomeRoute;
     '/user/projects': typeof UserAuthAppshellProjectsRoute;
@@ -681,7 +679,7 @@ export interface FileRoutesById {
     '/user/': typeof UserIndexRoute;
     '/admin/_auth/_appshell': typeof AdminAuthAppshellRouteWithChildren;
     '/user/_auth/_appshell': typeof UserAuthAppshellRouteWithChildren;
-    '/admin/_auth/_appshell/dashboard': typeof AdminAuthAppshellDashboardRoute;
+    '/user/_auth/_appshell/browse': typeof UserAuthAppshellBrowseRoute;
     '/user/_auth/_appshell/dashboard': typeof UserAuthAppshellDashboardRoute;
     '/user/_auth/_appshell/home': typeof UserAuthAppshellHomeRoute;
     '/user/_auth/_appshell/projects': typeof UserAuthAppshellProjectsRoute;
@@ -714,7 +712,7 @@ export interface FileRouteTypes {
         | '/user'
         | '/admin/'
         | '/user/'
-        | '/admin/dashboard'
+        | '/user/browse'
         | '/user/dashboard'
         | '/user/home'
         | '/user/projects'
@@ -742,7 +740,7 @@ export interface FileRouteTypes {
         | '/signup'
         | '/admin'
         | '/user'
-        | '/admin/dashboard'
+        | '/user/browse'
         | '/user/dashboard'
         | '/user/home'
         | '/user/projects'
@@ -775,7 +773,7 @@ export interface FileRouteTypes {
         | '/user/'
         | '/admin/_auth/_appshell'
         | '/user/_auth/_appshell'
-        | '/admin/_auth/_appshell/dashboard'
+        | '/user/_auth/_appshell/browse'
         | '/user/_auth/_appshell/dashboard'
         | '/user/_auth/_appshell/home'
         | '/user/_auth/_appshell/projects'
@@ -907,7 +905,6 @@ export const routeTree = rootRoute
       "filePath": "admin/_auth/_appshell.tsx",
       "parent": "/admin/_auth",
       "children": [
-        "/admin/_auth/_appshell/dashboard",
         "/admin/_auth/_appshell/settings/permissions",
         "/admin/_auth/_appshell/resources/",
         "/admin/_auth/_appshell/projects/$projectId/decision",
@@ -918,6 +915,7 @@ export const routeTree = rootRoute
       "filePath": "user/_auth/_appshell.tsx",
       "parent": "/user/_auth",
       "children": [
+        "/user/_auth/_appshell/browse",
         "/user/_auth/_appshell/dashboard",
         "/user/_auth/_appshell/home",
         "/user/_auth/_appshell/projects",
@@ -927,9 +925,9 @@ export const routeTree = rootRoute
         "/user/_auth/_appshell/project/$projectId/view"
       ]
     },
-    "/admin/_auth/_appshell/dashboard": {
-      "filePath": "admin/_auth/_appshell/dashboard.tsx",
-      "parent": "/admin/_auth/_appshell"
+    "/user/_auth/_appshell/browse": {
+      "filePath": "user/_auth/_appshell/browse.tsx",
+      "parent": "/user/_auth/_appshell"
     },
     "/user/_auth/_appshell/dashboard": {
       "filePath": "user/_auth/_appshell/dashboard.tsx",
