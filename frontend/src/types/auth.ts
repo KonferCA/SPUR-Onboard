@@ -24,6 +24,15 @@ export interface AuthFormData {
     password: string;
 }
 
+export interface ForgotPasswordData {
+    email: string;
+}
+
+export interface ResetPasswordData {
+    password: string;
+    token: string;
+}
+
 export enum SocialPlatform {
     LinkedIn = 'linkedin',
     Instagram = 'instagram',
@@ -62,11 +71,15 @@ export interface FormErrors {
 }
 
 export interface AuthFormProps {
-    onSubmit: (data: AuthFormData) => Promise<void>;
+    onSubmit: (
+        data: AuthFormData | ForgotPasswordData | ResetPasswordData
+    ) => Promise<void>;
     isLoading: boolean;
     errors: FormErrors;
     onToggleMode: () => void;
-    mode: 'login' | 'register';
+    onRegisterClick?: () => void;
+    mode: 'login' | 'register' | 'forgot-password' | 'reset-password';
+    resetToken?: string;
 }
 
 export interface UserDetailsFormProps {

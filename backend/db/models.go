@@ -370,6 +370,13 @@ type Company struct {
 	GroupType     GroupTypeEnum `json:"group_type"`
 }
 
+type PasswordResetToken struct {
+	ID        string `json:"id"`
+	UserID    string `json:"user_id"`
+	CreatedAt int64  `json:"created_at"`
+	ExpiresAt int64  `json:"expires_at"`
+}
+
 type Project struct {
 	ID                   string        `json:"id"`
 	CompanyID            string        `json:"company_id"`
