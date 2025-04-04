@@ -7,7 +7,6 @@ import {
     FiCreditCard,
     FiBarChart2,
     FiDollarSign,
-    FiTool,
     FiHeadphones,
     FiSearch,
     FiBook,
@@ -118,12 +117,6 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
     ];
 
     const adminItems: MenuItem[] = [
-        {
-            path: '/admin/dashboard',
-            label: 'Admin Dashboard',
-            icon: <FiTool className="w-5 h-5" />,
-            id: 'admin-dashboard',
-        },
         {
             path: '/admin/settings/permissions',
             label: 'Manage Permissions',
