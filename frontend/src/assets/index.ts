@@ -45,3 +45,42 @@ import Blob4SVG from './auth/blob4.svg';
 import MapbaseSVG from './auth/mapbase.svg';
 
 export { Blob1SVG, Blob2SVG, Blob3SVG, Blob4SVG, MapbaseSVG };
+
+/*
+ * Home page assets
+ */
+import CreateProjectImage from '@/assets/home/main/create_project.svg';
+import BrowseInvestImage from '@/assets/home/main/browse_and_invest.svg';
+import HackathonClaimImage from '@/assets/home/main/hackathon_claim.svg';
+import FreelanceApplicationImage from '@/assets/home/main/freelance_application.svg';
+import PitchCompClaimImage from '@/assets/home/main/pitch_comp_claim.svg';
+
+import PencilIcon from '@/assets/home/side/pencil.svg';
+import GrowIcon from '@/assets/home/side/grow.svg';
+import PodiumIcon from '@/assets/home/side/podium.svg';
+import LaptopGuyIcon from '@/assets/home/side/laptop_guy.svg';
+import TrophyIcon from '@/assets/home/side/trophy.svg';
+
+import PencilIconHover from '@/assets/home/side_hovered/pencil.svg';
+import GrowIconHover from '@/assets/home/side_hovered/grow.svg';
+import PodiumIconHover from '@/assets/home/side_hovered/podium.svg';
+import LaptopGuyIconHover from '@/assets/home/side_hovered/laptop_guy.svg';
+import TrophyIconHover from '@/assets/home/side_hovered/trophy.svg';
+
+export {
+    CreateProjectImage,
+    BrowseInvestImage,
+    HackathonClaimImage,
+    FreelanceApplicationImage,
+    PitchCompClaimImage,
+    PencilIcon,
+    GrowIcon,
+    PodiumIcon,
+    LaptopGuyIcon,
+    TrophyIcon,
+    PencilIconHover,
+    GrowIconHover,
+    PodiumIconHover,
+    LaptopGuyIconHover,
+    TrophyIconHover,
+};
