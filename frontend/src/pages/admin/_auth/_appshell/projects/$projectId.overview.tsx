@@ -26,6 +26,7 @@ import { Transaction } from '@mysten/sui/transactions';
 import { SuiClient } from '@mysten/sui/client';
 import { Dialog } from '@headlessui/react';
 import { useRandomId } from '@/hooks';
+import { usePageTitle } from '@/utils';
 
 // interface ProjectParams {
 //   projectId: string
@@ -158,6 +159,9 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
+    // set project overview page title
+    usePageTitle('Project Overview');
+
     const { projectId } = Route.useParams();
     const { accessToken } = useAuth();
     const wallet = useWallet();

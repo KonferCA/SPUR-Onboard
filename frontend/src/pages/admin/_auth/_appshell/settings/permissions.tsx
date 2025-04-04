@@ -9,6 +9,7 @@ import {
     type User,
 } from '@/services/users';
 import { useNotification } from '@/contexts/NotificationContext';
+import { usePageTitle } from '@/utils';
 
 export const Route = createFileRoute(
     '/admin/_auth/_appshell/settings/permissions'
@@ -17,6 +18,9 @@ export const Route = createFileRoute(
 });
 
 function PermissionsPage() {
+    // set permissions page title
+    usePageTitle('Permissions');
+
     const { accessToken, isLoading: authLoading } = useAuth();
     const { push } = useNotification();
     const [selectedRole, setSelectedRole] = useState<string>('all');

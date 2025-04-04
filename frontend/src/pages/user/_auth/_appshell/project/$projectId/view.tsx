@@ -22,6 +22,7 @@ import { ScrollButton } from '@/components';
 import { useLocation } from '@tanstack/react-router';
 import { useSidebar } from '@/contexts/SidebarContext/SidebarContext';
 import { ProjectStatusEnum } from '@/services/projects';
+import { usePageTitle } from '@/utils';
 
 const stepItemStyles = cva(
     'text-lg relative transition text-gray-400 hover:text-button-secondary-100 hover:cursor-pointer py-2',
@@ -75,6 +76,9 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
+    // set project view page title
+    usePageTitle('Project');
+
     const { projectId } = Route.useParams();
     const { accessToken } = useAuth();
     const navigate = useNavigate({

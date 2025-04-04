@@ -5,12 +5,16 @@ import {
     useLocation,
 } from '@tanstack/react-router';
 import { useEffect } from 'react';
+import { usePageTitle } from '@/utils';
 
 export const Route = createFileRoute('/user/_auth/_appshell/settings')({
     component: SettingsLayout,
 });
 
 function SettingsLayout() {
+    // set settings page title
+    usePageTitle('Settings');
+
     const location = useLocation();
     const navigate = useNavigate();
 

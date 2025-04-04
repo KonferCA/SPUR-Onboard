@@ -16,12 +16,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ProfilePictureUpload } from '@/components/ProfilePictureUpload/ProfilePictureUpload';
 import type { SocialLink } from '@/types';
 import { useNotification } from '@/contexts';
+import { usePageTitle } from '@/utils';
 
 export const Route = createFileRoute('/user/_auth/_appshell/settings/profile')({
     component: ProfileSettings,
 });
 
 function ProfileSettings() {
+    // set profile page title
+    usePageTitle('Profile');
+
     const queryClient = useQueryClient();
     const { accessToken, user } = useAuth();
     const [error, setError] = useState<string | null>(null);

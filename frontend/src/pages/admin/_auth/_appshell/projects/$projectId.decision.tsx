@@ -8,6 +8,7 @@ import {
     ProjectStatusEnum,
     updateProjectStatus,
 } from '@/services/projects';
+import { usePageTitle } from '@/utils';
 
 export const Route = createFileRoute(
     '/admin/_auth/_appshell/projects/$projectId/decision'
@@ -16,6 +17,9 @@ export const Route = createFileRoute(
 });
 
 function ProjectDecisionPage() {
+    // set project decision page title
+    usePageTitle('Project Decision');
+
     const { projectId } = Route.useParams();
     const { accessToken } = useAuth();
     const { push } = useNotification();
