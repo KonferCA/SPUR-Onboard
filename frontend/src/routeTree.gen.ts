@@ -16,9 +16,11 @@ import { Route as rootRoute } from './pages/__root';
 import { Route as SignupImport } from './pages/signup';
 import { Route as SignoutImport } from './pages/signout';
 import { Route as SigninImport } from './pages/signin';
+import { Route as ResetPasswordImport } from './pages/reset-password';
 import { Route as RegisterImport } from './pages/register';
 import { Route as LogoutImport } from './pages/logout';
 import { Route as LoginImport } from './pages/login';
+import { Route as ForgotPasswordImport } from './pages/forgot-password';
 import { Route as AuthImport } from './pages/auth';
 import { Route as IndexImport } from './pages/index';
 import { Route as UserIndexImport } from './pages/user/index';
@@ -81,6 +83,12 @@ const SigninRoute = SigninImport.update({
     getParentRoute: () => rootRoute,
 } as any);
 
+const ResetPasswordRoute = ResetPasswordImport.update({
+    id: '/reset-password',
+    path: '/reset-password',
+    getParentRoute: () => rootRoute,
+} as any);
+
 const RegisterRoute = RegisterImport.update({
     id: '/register',
     path: '/register',
@@ -96,6 +104,12 @@ const LogoutRoute = LogoutImport.update({
 const LoginRoute = LoginImport.update({
     id: '/login',
     path: '/login',
+    getParentRoute: () => rootRoute,
+} as any);
+
+const ForgotPasswordRoute = ForgotPasswordImport.update({
+    id: '/forgot-password',
+    path: '/forgot-password',
     getParentRoute: () => rootRoute,
 } as any);
 
@@ -269,6 +283,13 @@ declare module '@tanstack/react-router' {
             preLoaderRoute: typeof AuthImport;
             parentRoute: typeof rootRoute;
         };
+        '/forgot-password': {
+            id: '/forgot-password';
+            path: '/forgot-password';
+            fullPath: '/forgot-password';
+            preLoaderRoute: typeof ForgotPasswordImport;
+            parentRoute: typeof rootRoute;
+        };
         '/login': {
             id: '/login';
             path: '/login';
@@ -288,6 +309,13 @@ declare module '@tanstack/react-router' {
             path: '/register';
             fullPath: '/register';
             preLoaderRoute: typeof RegisterImport;
+            parentRoute: typeof rootRoute;
+        };
+        '/reset-password': {
+            id: '/reset-password';
+            path: '/reset-password';
+            fullPath: '/reset-password';
+            preLoaderRoute: typeof ResetPasswordImport;
             parentRoute: typeof rootRoute;
         };
         '/signin': {
@@ -605,9 +633,11 @@ const UserRouteWithChildren = UserRoute._addFileChildren(UserRouteChildren);
 export interface FileRoutesByFullPath {
     '/': typeof IndexRoute;
     '/auth': typeof AuthRoute;
+    '/forgot-password': typeof ForgotPasswordRoute;
     '/login': typeof LoginRoute;
     '/logout': typeof LogoutRoute;
     '/register': typeof RegisterRoute;
+    '/reset-password': typeof ResetPasswordRoute;
     '/signin': typeof SigninRoute;
     '/signout': typeof SignoutRoute;
     '/signup': typeof SignupRoute;
@@ -636,9 +666,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
     '/': typeof IndexRoute;
     '/auth': typeof AuthRoute;
+    '/forgot-password': typeof ForgotPasswordRoute;
     '/login': typeof LoginRoute;
     '/logout': typeof LogoutRoute;
     '/register': typeof RegisterRoute;
+    '/reset-password': typeof ResetPasswordRoute;
     '/signin': typeof SigninRoute;
     '/signout': typeof SignoutRoute;
     '/signup': typeof SignupRoute;
@@ -665,9 +697,11 @@ export interface FileRoutesById {
     __root__: typeof rootRoute;
     '/': typeof IndexRoute;
     '/auth': typeof AuthRoute;
+    '/forgot-password': typeof ForgotPasswordRoute;
     '/login': typeof LoginRoute;
     '/logout': typeof LogoutRoute;
     '/register': typeof RegisterRoute;
+    '/reset-password': typeof ResetPasswordRoute;
     '/signin': typeof SigninRoute;
     '/signout': typeof SignoutRoute;
     '/signup': typeof SignupRoute;
@@ -702,9 +736,11 @@ export interface FileRouteTypes {
     fullPaths:
         | '/'
         | '/auth'
+        | '/forgot-password'
         | '/login'
         | '/logout'
         | '/register'
+        | '/reset-password'
         | '/signin'
         | '/signout'
         | '/signup'
@@ -732,9 +768,11 @@ export interface FileRouteTypes {
     to:
         | '/'
         | '/auth'
+        | '/forgot-password'
         | '/login'
         | '/logout'
         | '/register'
+        | '/reset-password'
         | '/signin'
         | '/signout'
         | '/signup'
@@ -759,9 +797,11 @@ export interface FileRouteTypes {
         | '__root__'
         | '/'
         | '/auth'
+        | '/forgot-password'
         | '/login'
         | '/logout'
         | '/register'
+        | '/reset-password'
         | '/signin'
         | '/signout'
         | '/signup'
@@ -795,9 +835,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
     IndexRoute: typeof IndexRoute;
     AuthRoute: typeof AuthRoute;
+    ForgotPasswordRoute: typeof ForgotPasswordRoute;
     LoginRoute: typeof LoginRoute;
     LogoutRoute: typeof LogoutRoute;
     RegisterRoute: typeof RegisterRoute;
+    ResetPasswordRoute: typeof ResetPasswordRoute;
     SigninRoute: typeof SigninRoute;
     SignoutRoute: typeof SignoutRoute;
     SignupRoute: typeof SignupRoute;
@@ -808,9 +850,11 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
     IndexRoute: IndexRoute,
     AuthRoute: AuthRoute,
+    ForgotPasswordRoute: ForgotPasswordRoute,
     LoginRoute: LoginRoute,
     LogoutRoute: LogoutRoute,
     RegisterRoute: RegisterRoute,
+    ResetPasswordRoute: ResetPasswordRoute,
     SigninRoute: SigninRoute,
     SignoutRoute: SignoutRoute,
     SignupRoute: SignupRoute,
@@ -830,9 +874,11 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/auth",
+        "/forgot-password",
         "/login",
         "/logout",
         "/register",
+        "/reset-password",
         "/signin",
         "/signout",
         "/signup",
@@ -846,6 +892,9 @@ export const routeTree = rootRoute
     "/auth": {
       "filePath": "auth.tsx"
     },
+    "/forgot-password": {
+      "filePath": "forgot-password.tsx"
+    },
     "/login": {
       "filePath": "login.tsx"
     },
@@ -854,6 +903,9 @@ export const routeTree = rootRoute
     },
     "/register": {
       "filePath": "register.tsx"
+    },
+    "/reset-password": {
+      "filePath": "reset-password.tsx"
     },
     "/signin": {
       "filePath": "signin.tsx"

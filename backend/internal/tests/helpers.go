@@ -63,6 +63,18 @@ Simple helper function that creates a test email token. Remember to call removeT
 if the test doesn't remove it by default, such as the verify email handler.
 */
 func createTestEmailToken(ctx context.Context, userID string, exp time.Time, s *server.Server) (string, error) {
+	// First check if the user exists to avoid foreign key constraint violation
+	var exists bool
+	err := s.DBPool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)", userID).Scan(&exists)
+	if err != nil {
+		return "", fmt.Errorf("error checking if user exists: %w", err)
+	}
+
+	if !exists {
+		return "", fmt.Errorf("user with id %s does not exist", userID)
+	}
+
+	// Now insert the verify email token
 	row := s.DBPool.QueryRow(ctx, `
         INSERT INTO verify_email_tokens (
             user_id, 
@@ -70,8 +82,9 @@ func createTestEmailToken(ctx context.Context, userID string, exp time.Time, s *
         )
         VALUES ($1, $2) RETURNING id;`,
 		userID, exp.Unix())
+
 	var tokenID string
-	err := row.Scan(&tokenID)
+	err = row.Scan(&tokenID)
 	return tokenID, err
 }
 

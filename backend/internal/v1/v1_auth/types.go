@@ -40,3 +40,12 @@ type UserResponse struct {
 	Permissions       uint32  `json:"permissions"`
 	ProfilePictureUrl *string `json:"profile_picture_url"`
 }
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email" validate:"required,email"` // user's email
+}
+
+type ResetPasswordRequest struct {
+	Token    string `json:"token" validate:"required"`                                                          // reset token
+	Password string `json:"password" validate:"required,min=8,contains_upper,contains_number,contains_special"` // new password
+}

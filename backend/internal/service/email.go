@@ -32,6 +32,22 @@ func SendVerficationEmail(ctx context.Context, to string, token string) error {
 }
 
 /*
+SendPasswordResetEmail takes a JWT that is later verified by the reset password route.
+The function requires the FRONTEND_URL env to work.
+It is important to call this function in a go routine to not block.
+*/
+func SendPasswordResetEmail(ctx context.Context, to string, token string) error {
+	url := fmt.Sprintf("%s/reset-password?token=%s", os.Getenv("FRONTEND_URL"), token)
+	buf := bytes.Buffer{}
+	err := views.ResetPasswordEmail(url).Render(ctx, &buf)
+	if err != nil {
+		return err
+	}
+
+	return SendEmail(ctx, "Reset Your Password", os.Getenv("NOREPLY_EMAIL"), []string{to}, buf.String())
+}
+
+/*
 SendEmail tries to send an email from the given email address to all the recipients' addresses.
 The body should be an html body that has already been formatted using a templating system.
 It is important to call this function in a go routine to no block.
