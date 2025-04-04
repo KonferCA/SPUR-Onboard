@@ -137,6 +137,8 @@ const isEmptyValue = (value: unknown, type: string): boolean => {
                 return !typedValue.fundingStructure;
             }
             return true;
+        case 'file':
+            return (value as Array<UploadableFile>).length === 0;
         default:
             return false;
     }
@@ -759,8 +761,6 @@ function ProjectFormPage() {
 
                     question.inputFields.forEach((input) => {
                         let fieldValid = true;
-
-                        input.invalid = false;
 
                         if (
                             !input.required &&
