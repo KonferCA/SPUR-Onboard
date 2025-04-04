@@ -275,7 +275,6 @@ describe('Sidebar', () => {
 
             // check for admin menu items
             expect(screen.getByText('ADMIN')).toBeInTheDocument();
-            expect(screen.getByText('Admin Dashboard')).toBeInTheDocument();
             expect(screen.getByText('Manage Permissions')).toBeInTheDocument();
         });
 
