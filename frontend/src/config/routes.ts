@@ -5,6 +5,7 @@
  */
 export const AVAILABLE_ROUTES = {
     // main routes
+    '/user/home': true,
     '/user/dashboard': true,
     '/user/browse': false,
     '/user/resources': false,
