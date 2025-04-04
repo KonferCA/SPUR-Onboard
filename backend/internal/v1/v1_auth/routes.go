@@ -54,4 +54,6 @@ func SetupAuthRoutes(e *echo.Group, s interfaces.CoreServer) {
 		h.handleResendVerificationEmail,
 		middleware.Auth(s.GetDB(), permissions.PermSubmitProject),
 	)
+	e.POST("/auth/forgot-password", h.handleForgotPassword)
+	e.POST("/auth/reset-password", h.handleResetPassword)
 }

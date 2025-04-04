@@ -74,3 +74,24 @@ func VerifyEmailToken(token string) (*VerifyEmailJWTClaims, error) {
 
 	return &claims, nil
 }
+
+/*
+VerifyResetPasswordToken only verifies the tokens made for password reset.
+*/
+func VerifyResetPasswordToken(token string) (*ResetPasswordJWTClaims, error) {
+	claims := ResetPasswordJWTClaims{}
+	_, err := golangJWT.ParseWithClaims(token, &claims, func(t *golangJWT.Token) (interface{}, error) {
+		if _, ok := t.Method.(*golangJWT.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
+		}
+		return []byte(os.Getenv("JWT_SECRET_RESET_PASSWORD")), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if claims.TokenType != RESET_PASSWORD_TOKEN_TYPE {
+		return nil, fmt.Errorf("Unexpected token type when verifying password reset token: %s", claims.TokenType)
+	}
+
+	return &claims, nil
+}

@@ -148,6 +148,7 @@ vi.mock('@/components/ConfirmationModal', () => ({
 
 // mock for FiIcons
 vi.mock('react-icons/fi', () => ({
+    FiHome: () => <span data-testid="fi-home">HomeIcon</span>,
     FiFolder: () => <span data-testid="fi-folder">FolderIcon</span>,
     FiSettings: () => <span data-testid="fi-settings">SettingsIcon</span>,
     FiUser: () => <span data-testid="fi-user">UserIcon</span>,
@@ -233,6 +234,7 @@ describe('Sidebar', () => {
             render(<Sidebar userPermissions={0} />);
 
             // check for basic user menu items
+            expect(screen.getByText('Home')).toBeInTheDocument();
             expect(screen.getByText('My Projects')).toBeInTheDocument();
             expect(screen.getByText('Browse Projects')).toBeInTheDocument();
             expect(screen.getByText('Resources')).toBeInTheDocument();
@@ -273,7 +275,6 @@ describe('Sidebar', () => {
 
             // check for admin menu items
             expect(screen.getByText('ADMIN')).toBeInTheDocument();
-            expect(screen.getByText('Admin Dashboard')).toBeInTheDocument();
             expect(screen.getByText('Manage Permissions')).toBeInTheDocument();
         });
 

@@ -16,9 +16,11 @@ import { Route as rootRoute } from './pages/__root';
 import { Route as SignupImport } from './pages/signup';
 import { Route as SignoutImport } from './pages/signout';
 import { Route as SigninImport } from './pages/signin';
+import { Route as ResetPasswordImport } from './pages/reset-password';
 import { Route as RegisterImport } from './pages/register';
 import { Route as LogoutImport } from './pages/logout';
 import { Route as LoginImport } from './pages/login';
+import { Route as ForgotPasswordImport } from './pages/forgot-password';
 import { Route as AuthImport } from './pages/auth';
 import { Route as IndexImport } from './pages/index';
 import { Route as UserIndexImport } from './pages/user/index';
@@ -31,7 +33,7 @@ import { Route as UserAuthAppshellSettingsImport } from './pages/user/_auth/_app
 import { Route as UserAuthAppshellProjectsImport } from './pages/user/_auth/_appshell/projects';
 import { Route as UserAuthAppshellHomeImport } from './pages/user/_auth/_appshell/home';
 import { Route as UserAuthAppshellDashboardImport } from './pages/user/_auth/_appshell/dashboard';
-import { Route as AdminAuthAppshellDashboardImport } from './pages/admin/_auth/_appshell/dashboard';
+import { Route as UserAuthAppshellBrowseImport } from './pages/user/_auth/_appshell/browse';
 import { Route as UserAuthAppshellSettingsIndexImport } from './pages/user/_auth/_appshell/settings/index';
 import { Route as AdminAuthAppshellResourcesIndexImport } from './pages/admin/_auth/_appshell/resources/index';
 import { Route as UserAuthAppshellSettingsWalletImport } from './pages/user/_auth/_appshell/settings/wallet';
@@ -81,6 +83,12 @@ const SigninRoute = SigninImport.update({
     getParentRoute: () => rootRoute,
 } as any);
 
+const ResetPasswordRoute = ResetPasswordImport.update({
+    id: '/reset-password',
+    path: '/reset-password',
+    getParentRoute: () => rootRoute,
+} as any);
+
 const RegisterRoute = RegisterImport.update({
     id: '/register',
     path: '/register',
@@ -96,6 +104,12 @@ const LogoutRoute = LogoutImport.update({
 const LoginRoute = LoginImport.update({
     id: '/login',
     path: '/login',
+    getParentRoute: () => rootRoute,
+} as any);
+
+const ForgotPasswordRoute = ForgotPasswordImport.update({
+    id: '/forgot-password',
+    path: '/forgot-password',
     getParentRoute: () => rootRoute,
 } as any);
 
@@ -167,13 +181,11 @@ const UserAuthAppshellDashboardRoute = UserAuthAppshellDashboardImport.update({
     getParentRoute: () => UserAuthAppshellRoute,
 } as any);
 
-const AdminAuthAppshellDashboardRoute = AdminAuthAppshellDashboardImport.update(
-    {
-        id: '/dashboard',
-        path: '/dashboard',
-        getParentRoute: () => AdminAuthAppshellRoute,
-    } as any
-);
+const UserAuthAppshellBrowseRoute = UserAuthAppshellBrowseImport.update({
+    id: '/browse',
+    path: '/browse',
+    getParentRoute: () => UserAuthAppshellRoute,
+} as any);
 
 const UserAuthAppshellSettingsIndexRoute =
     UserAuthAppshellSettingsIndexImport.update({
@@ -271,6 +283,13 @@ declare module '@tanstack/react-router' {
             preLoaderRoute: typeof AuthImport;
             parentRoute: typeof rootRoute;
         };
+        '/forgot-password': {
+            id: '/forgot-password';
+            path: '/forgot-password';
+            fullPath: '/forgot-password';
+            preLoaderRoute: typeof ForgotPasswordImport;
+            parentRoute: typeof rootRoute;
+        };
         '/login': {
             id: '/login';
             path: '/login';
@@ -290,6 +309,13 @@ declare module '@tanstack/react-router' {
             path: '/register';
             fullPath: '/register';
             preLoaderRoute: typeof RegisterImport;
+            parentRoute: typeof rootRoute;
+        };
+        '/reset-password': {
+            id: '/reset-password';
+            path: '/reset-password';
+            fullPath: '/reset-password';
+            preLoaderRoute: typeof ResetPasswordImport;
             parentRoute: typeof rootRoute;
         };
         '/signin': {
@@ -369,12 +395,12 @@ declare module '@tanstack/react-router' {
             preLoaderRoute: typeof UserAuthAppshellImport;
             parentRoute: typeof UserAuthImport;
         };
-        '/admin/_auth/_appshell/dashboard': {
-            id: '/admin/_auth/_appshell/dashboard';
-            path: '/dashboard';
-            fullPath: '/admin/dashboard';
-            preLoaderRoute: typeof AdminAuthAppshellDashboardImport;
-            parentRoute: typeof AdminAuthAppshellImport;
+        '/user/_auth/_appshell/browse': {
+            id: '/user/_auth/_appshell/browse';
+            path: '/browse';
+            fullPath: '/user/browse';
+            preLoaderRoute: typeof UserAuthAppshellBrowseImport;
+            parentRoute: typeof UserAuthAppshellImport;
         };
         '/user/_auth/_appshell/dashboard': {
             id: '/user/_auth/_appshell/dashboard';
@@ -487,7 +513,6 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 interface AdminAuthAppshellRouteChildren {
-    AdminAuthAppshellDashboardRoute: typeof AdminAuthAppshellDashboardRoute;
     AdminAuthAppshellSettingsPermissionsRoute: typeof AdminAuthAppshellSettingsPermissionsRoute;
     AdminAuthAppshellResourcesIndexRoute: typeof AdminAuthAppshellResourcesIndexRoute;
     AdminAuthAppshellProjectsProjectIdDecisionRoute: typeof AdminAuthAppshellProjectsProjectIdDecisionRoute;
@@ -495,7 +520,6 @@ interface AdminAuthAppshellRouteChildren {
 }
 
 const AdminAuthAppshellRouteChildren: AdminAuthAppshellRouteChildren = {
-    AdminAuthAppshellDashboardRoute: AdminAuthAppshellDashboardRoute,
     AdminAuthAppshellSettingsPermissionsRoute:
         AdminAuthAppshellSettingsPermissionsRoute,
     AdminAuthAppshellResourcesIndexRoute: AdminAuthAppshellResourcesIndexRoute,
@@ -556,6 +580,7 @@ const UserAuthAppshellSettingsRouteWithChildren =
     );
 
 interface UserAuthAppshellRouteChildren {
+    UserAuthAppshellBrowseRoute: typeof UserAuthAppshellBrowseRoute;
     UserAuthAppshellDashboardRoute: typeof UserAuthAppshellDashboardRoute;
     UserAuthAppshellHomeRoute: typeof UserAuthAppshellHomeRoute;
     UserAuthAppshellProjectsRoute: typeof UserAuthAppshellProjectsRoute;
@@ -566,6 +591,7 @@ interface UserAuthAppshellRouteChildren {
 }
 
 const UserAuthAppshellRouteChildren: UserAuthAppshellRouteChildren = {
+    UserAuthAppshellBrowseRoute: UserAuthAppshellBrowseRoute,
     UserAuthAppshellDashboardRoute: UserAuthAppshellDashboardRoute,
     UserAuthAppshellHomeRoute: UserAuthAppshellHomeRoute,
     UserAuthAppshellProjectsRoute: UserAuthAppshellProjectsRoute,
@@ -607,9 +633,11 @@ const UserRouteWithChildren = UserRoute._addFileChildren(UserRouteChildren);
 export interface FileRoutesByFullPath {
     '/': typeof IndexRoute;
     '/auth': typeof AuthRoute;
+    '/forgot-password': typeof ForgotPasswordRoute;
     '/login': typeof LoginRoute;
     '/logout': typeof LogoutRoute;
     '/register': typeof RegisterRoute;
+    '/reset-password': typeof ResetPasswordRoute;
     '/signin': typeof SigninRoute;
     '/signout': typeof SignoutRoute;
     '/signup': typeof SignupRoute;
@@ -617,7 +645,7 @@ export interface FileRoutesByFullPath {
     '/user': typeof UserAuthAppshellRouteWithChildren;
     '/admin/': typeof AdminIndexRoute;
     '/user/': typeof UserIndexRoute;
-    '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute;
+    '/user/browse': typeof UserAuthAppshellBrowseRoute;
     '/user/dashboard': typeof UserAuthAppshellDashboardRoute;
     '/user/home': typeof UserAuthAppshellHomeRoute;
     '/user/projects': typeof UserAuthAppshellProjectsRoute;
@@ -638,15 +666,17 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
     '/': typeof IndexRoute;
     '/auth': typeof AuthRoute;
+    '/forgot-password': typeof ForgotPasswordRoute;
     '/login': typeof LoginRoute;
     '/logout': typeof LogoutRoute;
     '/register': typeof RegisterRoute;
+    '/reset-password': typeof ResetPasswordRoute;
     '/signin': typeof SigninRoute;
     '/signout': typeof SignoutRoute;
     '/signup': typeof SignupRoute;
     '/admin': typeof AdminAuthAppshellRouteWithChildren;
     '/user': typeof UserAuthAppshellRouteWithChildren;
-    '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute;
+    '/user/browse': typeof UserAuthAppshellBrowseRoute;
     '/user/dashboard': typeof UserAuthAppshellDashboardRoute;
     '/user/home': typeof UserAuthAppshellHomeRoute;
     '/user/projects': typeof UserAuthAppshellProjectsRoute;
@@ -667,9 +697,11 @@ export interface FileRoutesById {
     __root__: typeof rootRoute;
     '/': typeof IndexRoute;
     '/auth': typeof AuthRoute;
+    '/forgot-password': typeof ForgotPasswordRoute;
     '/login': typeof LoginRoute;
     '/logout': typeof LogoutRoute;
     '/register': typeof RegisterRoute;
+    '/reset-password': typeof ResetPasswordRoute;
     '/signin': typeof SigninRoute;
     '/signout': typeof SignoutRoute;
     '/signup': typeof SignupRoute;
@@ -681,7 +713,7 @@ export interface FileRoutesById {
     '/user/': typeof UserIndexRoute;
     '/admin/_auth/_appshell': typeof AdminAuthAppshellRouteWithChildren;
     '/user/_auth/_appshell': typeof UserAuthAppshellRouteWithChildren;
-    '/admin/_auth/_appshell/dashboard': typeof AdminAuthAppshellDashboardRoute;
+    '/user/_auth/_appshell/browse': typeof UserAuthAppshellBrowseRoute;
     '/user/_auth/_appshell/dashboard': typeof UserAuthAppshellDashboardRoute;
     '/user/_auth/_appshell/home': typeof UserAuthAppshellHomeRoute;
     '/user/_auth/_appshell/projects': typeof UserAuthAppshellProjectsRoute;
@@ -704,9 +736,11 @@ export interface FileRouteTypes {
     fullPaths:
         | '/'
         | '/auth'
+        | '/forgot-password'
         | '/login'
         | '/logout'
         | '/register'
+        | '/reset-password'
         | '/signin'
         | '/signout'
         | '/signup'
@@ -714,7 +748,7 @@ export interface FileRouteTypes {
         | '/user'
         | '/admin/'
         | '/user/'
-        | '/admin/dashboard'
+        | '/user/browse'
         | '/user/dashboard'
         | '/user/home'
         | '/user/projects'
@@ -734,15 +768,17 @@ export interface FileRouteTypes {
     to:
         | '/'
         | '/auth'
+        | '/forgot-password'
         | '/login'
         | '/logout'
         | '/register'
+        | '/reset-password'
         | '/signin'
         | '/signout'
         | '/signup'
         | '/admin'
         | '/user'
-        | '/admin/dashboard'
+        | '/user/browse'
         | '/user/dashboard'
         | '/user/home'
         | '/user/projects'
@@ -761,9 +797,11 @@ export interface FileRouteTypes {
         | '__root__'
         | '/'
         | '/auth'
+        | '/forgot-password'
         | '/login'
         | '/logout'
         | '/register'
+        | '/reset-password'
         | '/signin'
         | '/signout'
         | '/signup'
@@ -775,7 +813,7 @@ export interface FileRouteTypes {
         | '/user/'
         | '/admin/_auth/_appshell'
         | '/user/_auth/_appshell'
-        | '/admin/_auth/_appshell/dashboard'
+        | '/user/_auth/_appshell/browse'
         | '/user/_auth/_appshell/dashboard'
         | '/user/_auth/_appshell/home'
         | '/user/_auth/_appshell/projects'
@@ -797,9 +835,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
     IndexRoute: typeof IndexRoute;
     AuthRoute: typeof AuthRoute;
+    ForgotPasswordRoute: typeof ForgotPasswordRoute;
     LoginRoute: typeof LoginRoute;
     LogoutRoute: typeof LogoutRoute;
     RegisterRoute: typeof RegisterRoute;
+    ResetPasswordRoute: typeof ResetPasswordRoute;
     SigninRoute: typeof SigninRoute;
     SignoutRoute: typeof SignoutRoute;
     SignupRoute: typeof SignupRoute;
@@ -810,9 +850,11 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
     IndexRoute: IndexRoute,
     AuthRoute: AuthRoute,
+    ForgotPasswordRoute: ForgotPasswordRoute,
     LoginRoute: LoginRoute,
     LogoutRoute: LogoutRoute,
     RegisterRoute: RegisterRoute,
+    ResetPasswordRoute: ResetPasswordRoute,
     SigninRoute: SigninRoute,
     SignoutRoute: SignoutRoute,
     SignupRoute: SignupRoute,
@@ -832,9 +874,11 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/auth",
+        "/forgot-password",
         "/login",
         "/logout",
         "/register",
+        "/reset-password",
         "/signin",
         "/signout",
         "/signup",
@@ -848,6 +892,9 @@ export const routeTree = rootRoute
     "/auth": {
       "filePath": "auth.tsx"
     },
+    "/forgot-password": {
+      "filePath": "forgot-password.tsx"
+    },
     "/login": {
       "filePath": "login.tsx"
     },
@@ -856,6 +903,9 @@ export const routeTree = rootRoute
     },
     "/register": {
       "filePath": "register.tsx"
+    },
+    "/reset-password": {
+      "filePath": "reset-password.tsx"
     },
     "/signin": {
       "filePath": "signin.tsx"
@@ -907,7 +957,6 @@ export const routeTree = rootRoute
       "filePath": "admin/_auth/_appshell.tsx",
       "parent": "/admin/_auth",
       "children": [
-        "/admin/_auth/_appshell/dashboard",
         "/admin/_auth/_appshell/settings/permissions",
         "/admin/_auth/_appshell/resources/",
         "/admin/_auth/_appshell/projects/$projectId/decision",
@@ -918,6 +967,7 @@ export const routeTree = rootRoute
       "filePath": "user/_auth/_appshell.tsx",
       "parent": "/user/_auth",
       "children": [
+        "/user/_auth/_appshell/browse",
         "/user/_auth/_appshell/dashboard",
         "/user/_auth/_appshell/home",
         "/user/_auth/_appshell/projects",
@@ -927,9 +977,9 @@ export const routeTree = rootRoute
         "/user/_auth/_appshell/project/$projectId/view"
       ]
     },
-    "/admin/_auth/_appshell/dashboard": {
-      "filePath": "admin/_auth/_appshell/dashboard.tsx",
-      "parent": "/admin/_auth/_appshell"
+    "/user/_auth/_appshell/browse": {
+      "filePath": "user/_auth/_appshell/browse.tsx",
+      "parent": "/user/_auth/_appshell"
     },
     "/user/_auth/_appshell/dashboard": {
       "filePath": "user/_auth/_appshell/dashboard.tsx",
