@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { listProjectsAll } from '@/services/project';
 import type { ExtendedProjectResponse, Project } from '@/types/project';
 import type { CompanyResponse } from '@/services/company';
+import { usePageTitle } from '@/utils';
 
 export const Route = createFileRoute('/user/_auth/_appshell/browse')({
     component: BrowseProjects,
@@ -34,6 +35,9 @@ function BrowseProjects() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Set the page title
+    usePageTitle('Browse');
 
     useEffect(() => {
         async function fetchCompanyAndProjects() {

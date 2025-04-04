@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts';
 import { createProjectComment, getProjectComments } from '@/services/comment';
 import { getLatestProjectSnapshot } from '@/services/project';
 import { SectionedLayout } from '@/templates';
-import { scrollToTop } from '@/utils';
+import { scrollToTop, usePageTitle } from '@/utils';
 import { sanitizeHtmlId } from '@/utils/html';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
@@ -39,6 +39,9 @@ export const Route = createFileRoute('/admin/_auth/projects/$projectId/review')(
 );
 
 function RouteComponent() {
+    // set project review page title
+    usePageTitle('Project Review');
+
     const { projectId } = Route.useParams();
     const navigate = useNavigate();
     const { accessToken } = useAuth();

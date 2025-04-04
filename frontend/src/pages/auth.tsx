@@ -18,6 +18,7 @@ import type {
 } from '@/types/auth';
 import { initialUserProfile } from '@/services/user';
 import { useNotification } from '@/contexts';
+import { usePageTitle } from '@/utils';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
@@ -55,6 +56,17 @@ function AuthPage() {
         }
         return searchParams.form as 'login' | 'register' | 'forgot-password';
     });
+
+    // Set page title based on current mode
+    usePageTitle(
+        mode === 'login'
+            ? 'Login'
+            : mode === 'register'
+              ? 'Register'
+              : mode === 'forgot-password'
+                ? 'Reset Password'
+                : 'Set New Password'
+    );
 
     const [isLoading, setIsLoading] = useState(false);
     const [isResendingVerification, setIsResendingVerification] =

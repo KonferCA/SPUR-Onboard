@@ -7,12 +7,16 @@ import { useWallet } from '@suiet/wallet-kit';
 import { useAuth } from '@/contexts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCompany, updateCompany } from '@/services';
+import { usePageTitle } from '@/utils';
 
 export const Route = createFileRoute('/user/_auth/_appshell/settings/wallet')({
     component: WalletSettings,
 });
 
 function WalletSettings() {
+    // set wallet page title
+    usePageTitle('Wallet');
+
     const [error, setError] = useState<string | null>(null);
     const [copySuccess, setCopySuccess] = useState(false);
     const { connected, address, disconnect } = useWallet();
