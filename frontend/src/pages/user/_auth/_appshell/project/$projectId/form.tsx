@@ -28,6 +28,7 @@ import {
 } from '@/config';
 import { cva } from 'class-variance-authority';
 import { sanitizeHtmlId } from '@/utils/html';
+import { usePageTitle } from '@/utils';
 import { QuestionInputs } from '@/components/QuestionInputs/QuestionInputs';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { useQuery } from '@tanstack/react-query';
@@ -143,6 +144,9 @@ const isEmptyValue = (value: unknown, type: string): boolean => {
 };
 
 function ProjectFormPage() {
+    // set edit project page title
+    usePageTitle('Edit Project');
+
     const projectDetails: ProjectResponse | null = useRouteContext({
         from: '/user/_auth/_appshell/project/$projectId/form',
         select: (context) => context.details,
