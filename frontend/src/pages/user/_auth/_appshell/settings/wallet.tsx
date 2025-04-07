@@ -20,25 +20,27 @@ function WalletSettings() {
     const [error, setError] = useState<string | null>(null);
     const [copySuccess, setCopySuccess] = useState(false);
     const { connected, address, disconnect } = useWallet();
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
     const queryClient = useQueryClient();
 
     // fetch company data
     const { data: company } = useQuery({
         queryKey: ['company'],
         queryFn: () => {
+            const accessToken = getAccessToken();
             if (!accessToken) {
                 throw new Error('No access token');
             }
 
             return getCompany(accessToken);
         },
-        enabled: !!accessToken,
+        enabled: !!getAccessToken(),
     });
 
     // update company mutation
     const { mutate: updateWallet, isLoading: isUpdating } = useMutation({
         mutationFn: async () => {
+            const accessToken = getAccessToken();
             if (!accessToken) {
                 throw new Error('No access token');
             }
@@ -77,6 +79,7 @@ function WalletSettings() {
         try {
             await disconnect();
 
+            const accessToken = getAccessToken();
             // clear wallet address from company when disconnecting
             if (accessToken) {
                 await updateCompany(accessToken, { wallet_address: '' });

@@ -47,11 +47,12 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         useState<UploadableFile | null>(null);
     const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
 
-    const { accessToken, companyId, user } = useAuth();
+    const { getAccessToken, companyId, user } = useAuth();
     const notification = useNotification();
 
     useEffect(() => {
         const initializeMembers = async () => {
+            const accessToken = getAccessToken();
             if (user && accessToken) {
                 try {
                     const userProfile = await getUserProfile(
@@ -97,7 +98,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
         };
 
         initializeMembers();
-    }, [user, accessToken, initialValue, notification.push]);
+    }, [user, getAccessToken, initialValue, notification.push]);
 
     // Add a cleanup effect when forms are closed
     useEffect(() => {
@@ -117,6 +118,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
     };
 
     const saveToDatabase = async (member: LocalTeamMember) => {
+        const accessToken = getAccessToken();
         if (!accessToken || !companyId) {
             // remove member from the list
             setMembers((prev) => prev.filter((m) => m.id !== member.id));
@@ -232,6 +234,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
     };
 
     const removeFromDatabase = async (member: LocalTeamMember) => {
+        const accessToken = getAccessToken();
         if (!accessToken || !companyId) {
             // add the member that was removed
             setMembers((prev) => [...prev, member]);
@@ -379,7 +382,7 @@ export const TeamMembers: React.FC<TeamMembersProps> = ({
             });
 
             // biome-ignore lint/style/noNonNullAssertion:
-            await updateTeamMember(accessToken!, {
+            await updateTeamMember(getAccessToken()!, {
                 // biome-ignore lint/style/noNonNullAssertion:
                 companyId: companyId!,
                 member: updatedMember,

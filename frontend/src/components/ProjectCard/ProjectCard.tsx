@@ -44,7 +44,7 @@ const MobileInfoRow: FC<MobileInfoRowProps> = ({ label, value }) => {
 
 export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
     const navigate = useNavigate();
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
     const { push } = useNotification();
     const [showWithdrawModal, setShowWithdrawModal] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -93,6 +93,7 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
     }, [showOptionsMenu, data.id]);
 
     const handleWithdraw = async () => {
+        const accessToken = getAccessToken();
         if (!accessToken) return;
 
         try {

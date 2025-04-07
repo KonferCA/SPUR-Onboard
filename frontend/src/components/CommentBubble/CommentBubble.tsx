@@ -42,10 +42,11 @@ export const CommentBubble: FC<CommentBubbleProps> = ({ data }) => {
     const [active, setActive] = useState(false);
     const [comment, setComment] = useState(data);
     const notifications = useNotification();
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
 
     const onToggleResolution = useCallback(
         async (comment: Comment) => {
+            const accessToken = getAccessToken();
             if (!accessToken) return;
             const originalResolvedState = comment.resolved;
             try {
@@ -81,7 +82,7 @@ export const CommentBubble: FC<CommentBubbleProps> = ({ data }) => {
                 });
             }
         },
-        [accessToken, notifications.push]
+        [getAccessToken, notifications.push]
     );
 
     return (
