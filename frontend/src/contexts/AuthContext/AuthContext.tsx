@@ -14,6 +14,9 @@ import { snakeToCamel } from '@/utils/object';
 export interface AuthState {
     user: User | null;
     companyId: string | null;
+    /**
+     * @deprecated Use getAccessToken() instead.
+     */
     accessToken: string | null;
     isLoading: boolean;
     setAuth: (
