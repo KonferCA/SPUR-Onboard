@@ -13,7 +13,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({
     onUpload,
 }) => {
-    const { user, accessToken, setUser } = useAuth();
+    const { user, setUser, getAccessToken } = useAuth();
     const { push } = useNotification();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -21,6 +21,7 @@ export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const handleUpload = async (file: File) => {
+        const accessToken = getAccessToken();
         if (!user?.id || !accessToken) return;
 
         const formData = new FormData();
@@ -99,6 +100,7 @@ export const ProfilePictureUpload: FC<ProfilePictureUploadProps> = ({
     };
 
     const handleRemove = async () => {
+        const accessToken = getAccessToken();
         if (!user?.id || !accessToken) return;
 
         try {

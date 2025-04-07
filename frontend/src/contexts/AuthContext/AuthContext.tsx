@@ -24,6 +24,7 @@ export interface AuthState {
     clearAuth: () => Promise<void>;
     setUser: (user: User | null) => void;
     setAccessToken: (token: string | null) => void;
+    getAccessToken: () => string | null;
     setCompanyId: (companyId: string | null) => void;
 }
 
@@ -35,6 +36,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const intervalRef = useRef<number | null>(null);
+    const tokenRef = useRef<string | null>(null);
+
+    const getAccessToken = useCallback(() => {
+        return tokenRef.current;
+    }, []);
+
+    const updateAccessToken = useCallback((token: string | null) => {
+        tokenRef.current = token;
+        setAccessToken(token);
+    }, []);
 
     const setAuth = useCallback(
         (
@@ -43,10 +54,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             newCompanyId: string | null = null
         ) => {
             setUser(newUser);
-            setAccessToken(token);
             setCompanyId(newCompanyId);
+            updateAccessToken(token);
         },
-        []
+        [updateAccessToken]
     );
 
     const clearAuth = useCallback(async () => {
@@ -54,14 +65,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await signout();
         } finally {
             setUser(null);
-            setAccessToken(null);
+            updateAccessToken(null);
             setCompanyId(null);
             if (intervalRef.current !== null) {
                 window.clearInterval(intervalRef.current);
                 intervalRef.current = null;
             }
         }
-    }, []);
+    }, [updateAccessToken]);
 
     useEffect(() => {
         const verifyAuth = async () => {
@@ -69,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const response = await refreshAccessToken();
                 if (response) {
                     setUser(snakeToCamel(response.user) as User);
-                    setAccessToken(response.accessToken);
+                    updateAccessToken(response.accessToken);
                     setCompanyId(response.companyId);
 
                     // Set up token refresh interval
@@ -79,7 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             try {
                                 const response = await refreshAccessToken();
                                 if (response) {
-                                    setAccessToken(response.accessToken);
+                                    // Only update the ref, not the state to avoid re-renders
+                                    tokenRef.current = response.accessToken;
                                 }
                             } catch {
                                 clearAuth();
@@ -100,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 intervalRef.current = null;
             }
         };
-    }, [clearAuth]);
+    }, [clearAuth, updateAccessToken]);
 
     return (
         <AuthContext.Provider
@@ -113,7 +125,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 clearAuth,
                 setCompanyId,
                 setUser,
-                setAccessToken,
+                setAccessToken: updateAccessToken,
+                getAccessToken,
             }}
         >
             {children}
