@@ -17,8 +17,34 @@
 
 ## 🔨 Builds & Deployments
 
+[![Deploy Backend to AWS - Production](https://github.com/KonferCA/SPUR-Onboard/actions/workflows/deploy-aws-production-backend.yml/badge.svg)](https://github.com/KonferCA/SPUR-Onboard/actions/workflows/deploy-aws-production-backend.yml)
+[![Deploy Frontend to AWS - Production](https://github.com/KonferCA/SPUR-Onboard/actions/workflows/deploy-aws-production-frontend.yml/badge.svg)](https://github.com/KonferCA/SPUR-Onboard/actions/workflows/deploy-aws-production-frontend.yml)
+
+[![Deploy Backend to AWS - Staging](https://github.com/KonferCA/SPUR-Onboard/actions/workflows/deploy-aws-staging-backend.yml/badge.svg)](https://github.com/KonferCA/SPUR-Onboard/actions/workflows/deploy-aws-staging-backend.yml)
+[![Deploy Frontend to AWS - Staging](https://github.com/KonferCA/SPUR-Onboard/actions/workflows/deploy-aws-staging-frontend.yml/badge.svg)](https://github.com/KonferCA/SPUR-Onboard/actions/workflows/deploy-aws-staging-frontend.yml)
+
 [![Deploy Backend to AWS - Preview](https://github.com/KonferCA/SPUR-Onboard/actions/workflows/deploy-aws-preview-backend.yml/badge.svg?branch=main)](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-backend.yml)
 [![Deploy Frontend to AWS - Preview](https://github.com/KonferCA/SPUR-Onboard/actions/workflows/deploy-aws-preview-frontend.yml/badge.svg?branch=main)](https://github.com/KonferCA/SPUR/actions/workflows/deploy-aws-preview-frontend.yml)
+
+Deployment overview: `pr` -> `main` -> `staging` -> `production` -> new tag for new version
+
+### Deploy Sandbox Environment
+From `pr-branch` -> `main`
+> [!NOTE]
+> This flow will deploy to the sandbox environment where the database can be reset. This means that migration files can be directly updated.
+> If a merge results badly, it will be caught in this environment without damaging staging and production.
+
+### Deploy Staging Environment
+From `main` -> `staging`
+> [!NOTE]
+> This flow will deploy to the staging environment where the database and environment can't be reset and mimic the production environment.
+> This is where stable features are in the sandbox environment and are ready to be deployed to production. Anything that goes wrong in this
+> environment will be fixed as if it was a problem in production. This ensures data changes are not causing any data loses before going to production.
+
+### Deploy Production Environment
+From `staging` -> `production`
+> [!NOTE]
+> This flow will deploy to production. Before merging, it is CRUCIAL to check that everything is working as expected in the staging environment.
 
 ## ⚡ Quickstart
 >[!NOTE]
