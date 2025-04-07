@@ -31,13 +31,15 @@ function RouteComponent() {
     usePageTitle('Dashboard');
 
     const [filterBy, setFilter] = useState<'all' | 'draft'>('all');
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
     const { data: projects, isLoading } = useQuery({
-        queryKey: ['user_projects', accessToken],
+        queryKey: ['user_projects'],
         queryFn: async () => {
+            const accessToken = getAccessToken();
             if (!accessToken) return;
             return await listProjects(accessToken);
         },
+        enabled: !!getAccessToken(),
         refetchOnWindowFocus: false,
         initialData: [],
     });

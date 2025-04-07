@@ -35,7 +35,7 @@ import type { ProjectResponse } from '@/types/project';
 export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
     const { push } = useNotification();
     const {
         currentProjectId,
@@ -56,13 +56,15 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
     const hasInvestorPerms = isInvestor(userPermissions);
 
     const { data: projects = [], refetch: refetchProjects } = useQuery({
-        queryKey: ['sidebar_projects', accessToken],
+        queryKey: ['sidebar_projects'],
         queryFn: async () => {
+            const accessToken = getAccessToken();
             if (!accessToken) {
                 return [];
             }
             return await listProjects(accessToken);
         },
+        enabled: !!getAccessToken(),
         refetchOnWindowFocus: false,
         initialData: [],
     });

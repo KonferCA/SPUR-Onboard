@@ -17,7 +17,7 @@ export function VerifyEmail({
     onVerified,
     isResending,
 }: VerifyEmailProps) {
-    const { user, accessToken } = useAuth();
+    const { user, getAccessToken } = useAuth();
     const intervalRef = useRef<number | null>(null);
     const [cooldownTime, setCooldownTime] = useState(0);
     const cooldownRef = useRef<number | null>(null);
@@ -26,6 +26,7 @@ export function VerifyEmail({
         // biome-ignore lint/complexity/useOptionalChain: optional chain does not apply here because the check is for truthy values
         if (user && user.emailVerified) return;
 
+        const accessToken = getAccessToken();
         if (accessToken) {
             if (intervalRef.current === null) {
                 intervalRef.current = window.setInterval(async () => {
@@ -45,7 +46,7 @@ export function VerifyEmail({
                 intervalRef.current = null;
             }
         };
-    }, [accessToken, user, onVerified]);
+    }, [getAccessToken, user, onVerified]);
 
     useEffect(() => {
         if (cooldownTime > 0) {

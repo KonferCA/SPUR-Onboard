@@ -59,6 +59,7 @@ describe('CommentBubble', () => {
             setUser: vi.fn(),
             setAccessToken: vi.fn(),
             setCompanyId: vi.fn(),
+            getAccessToken: () => mockAccessToken,
         } as AuthState);
 
         // Setup NotificationContext mock

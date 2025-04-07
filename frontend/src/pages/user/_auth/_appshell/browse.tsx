@@ -31,7 +31,7 @@ const transformToProject = (
 });
 
 function BrowseProjects() {
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -41,6 +41,7 @@ function BrowseProjects() {
 
     useEffect(() => {
         async function fetchCompanyAndProjects() {
+            const accessToken = getAccessToken();
             if (!accessToken) return;
             try {
                 const projectList = await listProjectsAll(accessToken);
@@ -57,9 +58,9 @@ function BrowseProjects() {
             }
         }
         fetchCompanyAndProjects();
-    }, [accessToken]);
+    }, [getAccessToken]);
 
-    if (!accessToken) {
+    if (!getAccessToken()) {
         return null;
     }
 
