@@ -43,9 +43,9 @@ vi.mock('@tanstack/react-query', () => ({
 
 // mock auth context
 vi.mock('@/contexts', () => ({
-    useAuth: () => ({ 
+    useAuth: () => ({
         accessToken: 'test-token',
-        getAccessToken: () => 'test-token'
+        getAccessToken: () => 'test-token',
     }),
 }));
 
