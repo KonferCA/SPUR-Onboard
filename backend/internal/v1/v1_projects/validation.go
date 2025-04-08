@@ -10,6 +10,7 @@ import (
 	"KonferCA/SPUR/db"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -285,61 +286,73 @@ func validateProjectFormAnswers(questions []db.GetQuestionsByProjectRow) (valida
 					})
 					continue
 				}
+
+				const prec = 10
+
+				zero, _ := new(big.Float).SetPrec(prec).SetString("0")
+				hundred, _ := new(big.Float).SetPrec(prec).SetString("100")
+
 				switch fundingModel.Type {
 				case "target":
-					equity, err := strconv.Atoi(fundingModel.EquityPercentage)
-					if err != nil || equity < 1 || equity >= 100 {
+					equity, success := new(big.Float).SetPrec(prec).SetString(fundingModel.EquityPercentage)
+					if !success || !equityCmp(equity, zero, hundred) {
 						validationErrors = append(validationErrors, ValidationError{
 							Question: question.Question,
 							Message:  "Funding structure equity percentage must be 1% to 99%.",
 						})
 					}
-					amount, err := strconv.Atoi(fundingModel.Amount)
-					if err != nil || amount < 0 {
+					amount, success := new(big.Float).SetPrec(prec).SetString(fundingModel.Amount)
+					if !success || amount.Cmp(zero) == -1 {
 						validationErrors = append(validationErrors, ValidationError{
 							Question: question.Question,
 							Message:  "Funding structure target amount can't be less than 0.",
 						})
 					}
 				case "minimum":
-					equity, err := strconv.Atoi(fundingModel.EquityPercentage)
-					if err != nil || equity < 1 || equity >= 100 {
+					var minAmount *big.Float
+					var maxAmount *big.Float
+					var equity *big.Float
+					var success bool
+
+					equity, success = new(big.Float).SetPrec(prec).SetString(fundingModel.EquityPercentage)
+					if !success || !equityCmp(equity, zero, hundred) {
 						validationErrors = append(validationErrors, ValidationError{
 							Question: question.Question,
 							Message:  "Funding structure equity percentage must be 1% to 99%.",
 						})
 					}
-					var minAmount int
-					var maxAmount int
+
 					if fundingModel.MinAmount == nil {
 						validationErrors = append(validationErrors, ValidationError{
 							Question: question.Question,
 							Message:  "Funding structure missing minimum amount.",
 						})
 					} else {
-						minAmount, err = strconv.Atoi(*fundingModel.MinAmount)
-						if err != nil {
+						minAmount, success = new(big.Float).SetPrec(prec).SetString(*fundingModel.MinAmount)
+						if !success {
 							validationErrors = append(validationErrors, ValidationError{
 								Question: question.Question,
 								Message:  "Funding structure minimum amount value is invalid.",
 							})
 						}
 					}
+
 					if fundingModel.MaxAmount == nil {
 						validationErrors = append(validationErrors, ValidationError{
 							Question: question.Question,
 							Message:  "Funding structure missing maximum amount.",
 						})
 					} else {
-						maxAmount, err = strconv.Atoi(*fundingModel.MaxAmount)
-						if err != nil {
+						maxAmount, success = new(big.Float).SetPrec(prec).SetString(*fundingModel.MaxAmount)
+						if !success {
 							validationErrors = append(validationErrors, ValidationError{
 								Question: question.Question,
 								Message:  "Funding structure maximum amount value is invalid.",
 							})
 						}
 					}
-					if minAmount > maxAmount {
+
+					if minAmount.Cmp(maxAmount) == 1 {
 						validationErrors = append(validationErrors, ValidationError{
 							Question: question.Question,
 							Message:  "Funding structure minimum amount can't be greater than maximum amount.",
@@ -353,19 +366,21 @@ func validateProjectFormAnswers(questions []db.GetQuestionsByProjectRow) (valida
 							Message:  "Funding structure tiers missing.",
 						})
 					}
-					totalEquity := 0
+
+					totalEquity := new(big.Float).Copy(zero)
+
 					for i, tier := range fundingModel.Tiers {
-						equity, err := strconv.Atoi(tier.Amount)
-						if err != nil {
+						equity, success := new(big.Float).SetPrec(prec).SetString(tier.EquityPercentage)
+						if !success {
 							validationErrors = append(validationErrors, ValidationError{
 								Question: question.Question,
 								Message:  fmt.Sprintf("Funding structure tier at position %d has invalid equity percentage.", i),
 							})
 						}
-						totalEquity += equity
+						totalEquity = totalEquity.Add(totalEquity, equity)
 					}
 
-					if totalEquity >= 100 {
+					if totalEquity.Cmp(hundred) > 0 {
 						validationErrors = append(validationErrors, ValidationError{
 							Question: question.Question,
 							Message:  "Tiered funding structure added equity percentage can't exceed 100%.",
@@ -377,4 +392,11 @@ func validateProjectFormAnswers(questions []db.GetQuestionsByProjectRow) (valida
 	}
 
 	return validationErrors
+}
+
+// equityCmp does a check against x value be between min (inclusive) and max (exclusive)
+func equityCmp(x, min, max *big.Float) bool {
+	minRes := x.Cmp(min)
+	maxRes := x.Cmp(max)
+	return minRes > -1 && maxRes < 1
 }
