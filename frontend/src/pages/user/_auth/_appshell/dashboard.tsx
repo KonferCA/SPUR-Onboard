@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { cva } from 'class-variance-authority';
 import { useState } from 'react';
+import { usePageTitle } from '@/utils';
 
 export const Route = createFileRoute('/user/_auth/_appshell/dashboard')({
     component: RouteComponent,
@@ -26,14 +27,19 @@ const navButtonStyles = cva(
 );
 
 function RouteComponent() {
+    // set page title
+    usePageTitle('Dashboard');
+
     const [filterBy, setFilter] = useState<'all' | 'draft'>('all');
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
     const { data: projects, isLoading } = useQuery({
-        queryKey: ['user_projects', accessToken],
+        queryKey: ['user_projects'],
         queryFn: async () => {
+            const accessToken = getAccessToken();
             if (!accessToken) return;
             return await listProjects(accessToken);
         },
+        enabled: !!getAccessToken(),
         refetchOnWindowFocus: false,
         initialData: [],
     });

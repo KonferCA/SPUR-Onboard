@@ -22,6 +22,7 @@ import { ScrollButton } from '@/components';
 import { useLocation } from '@tanstack/react-router';
 import { useSidebar } from '@/contexts/SidebarContext/SidebarContext';
 import { ProjectStatusEnum } from '@/services/projects';
+import { usePageTitle } from '@/utils';
 
 const stepItemStyles = cva(
     'text-lg relative transition text-gray-400 hover:text-button-secondary-100 hover:cursor-pointer py-2',
@@ -75,8 +76,11 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
+    // set project view page title
+    usePageTitle('Project');
+
     const { projectId } = Route.useParams();
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
     const navigate = useNavigate({
         from: `/user/project/${projectId}/view`,
     });
@@ -85,8 +89,9 @@ function RouteComponent() {
 
     const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
-        queryKey: ['project_review_questions', accessToken, projectId],
+        queryKey: ['project_review_questions', projectId],
         queryFn: async () => {
+            const accessToken = getAccessToken();
             if (!accessToken) {
                 return;
             }
@@ -97,15 +102,16 @@ function RouteComponent() {
             );
             return snapshot.data;
         },
-        enabled: !!accessToken && !!projectId,
+        enabled: !!getAccessToken() && !!projectId,
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
         refetchOnMount: true,
     });
 
     const { data: commentsData, isLoading: loadingComments } = useQuery({
-        queryKey: ['project_review_comments', accessToken, projectId],
+        queryKey: ['project_review_comments', projectId],
         queryFn: async () => {
+            const accessToken = getAccessToken();
             if (!accessToken) {
                 return;
             }
@@ -113,7 +119,7 @@ function RouteComponent() {
             const data = await getProjectComments(accessToken, projectId);
             return data;
         },
-        enabled: !!accessToken && !!projectId,
+        enabled: !!getAccessToken() && !!projectId,
         refetchOnWindowFocus: false,
         refetchOnMount: true,
         refetchOnReconnect: true,

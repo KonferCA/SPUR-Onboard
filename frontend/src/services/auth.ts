@@ -129,3 +129,79 @@ export async function checkEmailVerifiedStatus(
     const body = await res.json();
     return res.status === HttpStatusCode.OK && body.verified;
 }
+
+/**
+ * Sends a password reset link to the specified email address
+ */
+export async function requestPasswordReset(email: string): Promise<boolean> {
+    const url = getApiUrl('/auth/forgot-password');
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+        });
+
+        if (!res.ok) {
+            throw new ApiError(
+                'Failed to send password reset email',
+                res.status,
+                await res.json().catch(() => ({}))
+            );
+        }
+
+        return true;
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+
+        throw new ApiError('Failed to send password reset email', 500, {
+            message: error instanceof Error ? error.message : 'Unknown error',
+        });
+    }
+}
+
+/**
+ * Resets the password using the provided token
+ */
+export async function resetPassword(
+    token: string,
+    password: string
+): Promise<boolean> {
+    const url = getApiUrl('/auth/reset-password');
+
+    const cleanToken = token.replace(/^['"]|['"]$/g, '');
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token: cleanToken, password }),
+        });
+
+        if (!res.ok) {
+            throw new ApiError(
+                'Failed to reset password',
+                res.status,
+                await res.json().catch(() => ({}))
+            );
+        }
+
+        return true;
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+
+        throw new ApiError('Failed to reset password', 500, {
+            message: error instanceof Error ? error.message : 'Unknown error',
+        });
+    }
+}

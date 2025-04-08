@@ -28,6 +28,7 @@ import {
 } from '@/config';
 import { cva } from 'class-variance-authority';
 import { sanitizeHtmlId } from '@/utils/html';
+import { usePageTitle } from '@/utils';
 import { QuestionInputs } from '@/components/QuestionInputs/QuestionInputs';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
 import { useQuery } from '@tanstack/react-query';
@@ -145,6 +146,9 @@ const isEmptyValue = (value: unknown, type: string): boolean => {
 };
 
 function ProjectFormPage() {
+    // set edit project page title
+    usePageTitle('Edit Project');
+
     const projectDetails: ProjectResponse | null = useRouteContext({
         from: '/user/_auth/_appshell/project/$projectId/form',
         select: (context) => context.details,
@@ -154,11 +158,12 @@ function ProjectFormPage() {
     const navigate = useNavigate({
         from: `/user/project/${currentProjectId}/form`,
     });
-    const { accessToken, companyId } = useAuth();
+    const { getAccessToken, companyId } = useAuth();
     const { data: questionData, isLoading: loadingQuestions } = useQuery({
         //@ts-ignore generic type inference error here (tanstack problem)
-        queryKey: ['projectFormQuestions', accessToken, currentProjectId],
+        queryKey: ['projectFormQuestions', currentProjectId],
         queryFn: async () => {
+            const accessToken = getAccessToken();
             if (!accessToken || !currentProjectId) {
                 return;
             }
@@ -176,8 +181,9 @@ function ProjectFormPage() {
     });
 
     const { data: commentsData, isLoading: loadingComments } = useQuery({
-        queryKey: ['project_review_comments', accessToken, currentProjectId],
+        queryKey: ['project_review_comments', currentProjectId],
         queryFn: async () => {
+            const accessToken = getAccessToken();
             if (!accessToken) {
                 return;
             }
@@ -188,7 +194,7 @@ function ProjectFormPage() {
             );
             return data;
         },
-        enabled: !!accessToken && !!currentProjectId,
+        enabled: !!getAccessToken() && !!currentProjectId,
         refetchOnWindowFocus: false,
         refetchOnMount: true,
         refetchOnReconnect: true,
@@ -301,6 +307,7 @@ function ProjectFormPage() {
 
     const autosave = useDebounceFn(
         async () => {
+            const accessToken = getAccessToken();
             if (!currentProjectId || !accessToken || !companyId || isSaving) {
                 return;
             }
@@ -334,10 +341,11 @@ function ProjectFormPage() {
             }
         },
         1500,
-        [currentProjectId, accessToken, companyId, isSaving]
+        [currentProjectId, getAccessToken, companyId, isSaving]
     );
 
     const handleManualSave = useCallback(async () => {
+        const accessToken = getAccessToken();
         if (!currentProjectId || !accessToken || !companyId || isSaving) {
             return;
         }
@@ -367,7 +375,7 @@ function ProjectFormPage() {
         } finally {
             setIsSaving(false);
         }
-    }, [accessToken, companyId, currentProjectId, isSaving]);
+    }, [getAccessToken, companyId, currentProjectId, isSaving]);
 
     // use the keyboard shortcut hook
     useKeyboardShortcut({ key: 's', ctrlKey: true }, handleManualSave, [
@@ -935,6 +943,7 @@ function ProjectFormPage() {
         setValidationErrors([]);
         setRecommendedFields([]);
 
+        const accessToken = getAccessToken();
         if (accessToken && currentProjectId) {
             try {
                 setAutosaveStatus('saving');
@@ -993,10 +1002,11 @@ function ProjectFormPage() {
 
         setShowClearFormModal(false);
         scrollToTop();
-    }, [accessToken, currentProjectId, groupedQuestions, notification]);
+    }, [getAccessToken, currentProjectId, groupedQuestions, notification]);
 
     const handleSubmitConfirm = async () => {
         try {
+            const accessToken = getAccessToken();
             if (!accessToken || !currentProjectId) {
                 return;
             }
@@ -1280,7 +1290,7 @@ function ProjectFormPage() {
                                                                     projectDetails?.allow_edit
                                                                 }
                                                                 fileUploadProps={
-                                                                    accessToken
+                                                                    getAccessToken()
                                                                         ? {
                                                                               projectId:
                                                                                   currentProjectId,
@@ -1294,7 +1304,8 @@ function ProjectFormPage() {
                                                                               subSection:
                                                                                   subsection.name,
                                                                               accessToken:
-                                                                                  accessToken,
+                                                                                  // biome-ignore lint/style/noNonNullAssertion: assertion that getAccessToken() returns a string done above
+                                                                                  getAccessToken()!,
                                                                               enableAutosave: true,
                                                                           }
                                                                         : undefined

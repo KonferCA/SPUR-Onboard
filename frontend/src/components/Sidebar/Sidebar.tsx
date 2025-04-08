@@ -7,7 +7,6 @@ import {
     FiCreditCard,
     FiBarChart2,
     FiDollarSign,
-    FiTool,
     FiHeadphones,
     FiSearch,
     FiBook,
@@ -17,6 +16,7 @@ import {
     FiX,
     FiEye,
     FiKey,
+    FiHome,
 } from 'react-icons/fi';
 import { IoLogOutOutline } from 'react-icons/io5';
 import { isAdmin, isInvestor } from '@/utils/permissions';
@@ -35,7 +35,7 @@ import type { ProjectResponse } from '@/types/project';
 export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
     const { push } = useNotification();
     const {
         currentProjectId,
@@ -56,13 +56,15 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
     const hasInvestorPerms = isInvestor(userPermissions);
 
     const { data: projects = [], refetch: refetchProjects } = useQuery({
-        queryKey: ['sidebar_projects', accessToken],
+        queryKey: ['sidebar_projects'],
         queryFn: async () => {
+            const accessToken = getAccessToken();
             if (!accessToken) {
                 return [];
             }
             return await listProjects(accessToken);
         },
+        enabled: !!getAccessToken(),
         refetchOnWindowFocus: false,
         initialData: [],
     });
@@ -75,6 +77,12 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
     ];
 
     const userItems: MenuItem[] = [
+        {
+            path: '/user/home',
+            label: 'Home',
+            icon: <FiHome className="w-5 h-5" />,
+            id: 'my-home',
+        },
         {
             path: '/user/dashboard',
             label: 'My Projects',
@@ -111,12 +119,6 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
     ];
 
     const adminItems: MenuItem[] = [
-        {
-            path: '/admin/dashboard',
-            label: 'Admin Dashboard',
-            icon: <FiTool className="w-5 h-5" />,
-            id: 'admin-dashboard',
-        },
         {
             path: '/admin/settings/permissions',
             label: 'Manage Permissions',
@@ -790,11 +792,11 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
             >
                 <div className="relative flex items-center justify-center px-4 mt-6 pb-6 border-b border-gray-200">
                     <a
-                        href="/user/dashboard"
+                        href="/user/home"
                         className="flex items-center justify-center"
                         onClick={(e) => {
                             e.preventDefault();
-                            navigate({ to: '/user/dashboard' });
+                            navigate({ to: '/user/home' });
 
                             if (isMobileDrawerOpen) {
                                 setTimeout(

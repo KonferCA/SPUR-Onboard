@@ -5,6 +5,11 @@ import { useState, useEffect } from 'react';
 import { listProjectsAll } from '@/services/project';
 import type { ExtendedProjectResponse, Project } from '@/types/project';
 import type { CompanyResponse } from '@/services/company';
+import { usePageTitle } from '@/utils';
+
+export const Route = createFileRoute('/user/_auth/_appshell/browse')({
+    component: BrowseProjects,
+});
 
 const transformToProject = (
     project: ExtendedProjectResponse,
@@ -25,21 +30,19 @@ const transformToProject = (
     sections: [],
 });
 
-export const Route = createFileRoute('/admin/_auth/_appshell/dashboard')({
-    component: RouteComponent,
-});
-
-function RouteComponent() {
-    const { accessToken } = useAuth();
+function BrowseProjects() {
+    const { getAccessToken } = useAuth();
     const [projects, setProjects] = useState<Project[]>([]);
-    // const [_, setCompany] = useState<CompanyResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Set the page title
+    usePageTitle('Browse');
+
     useEffect(() => {
         async function fetchCompanyAndProjects() {
+            const accessToken = getAccessToken();
             if (!accessToken) return;
-
             try {
                 const projectList = await listProjectsAll(accessToken);
                 const transformedProjects = projectList.map((project) =>
@@ -54,31 +57,46 @@ function RouteComponent() {
                 setLoading(false);
             }
         }
-
         fetchCompanyAndProjects();
-    }, [accessToken]);
+    }, [getAccessToken]);
 
-    if (!accessToken) {
+    if (!getAccessToken()) {
         return null;
     }
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <div className="text-lg text-gray-600">Loading projects...</div>
+            <div className="flex flex-col justify-between min-h-screen">
+                <div className="p-6 pt-20 max-w-7xl mx-auto w-full">
+                    <div className="flex items-center justify-center h-64">
+                        <div className="text-lg text-gray-600">
+                            Loading projects...
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="px-4 sm:px-6 lg:px-8">
-            <ProjectsTable data={projects} />
-
-            {error && (
-                <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-md">
-                    {error}
+        <div className="flex flex-col justify-between min-h-screen bg-gray-50">
+            <div className="pt-20 max-w-7xl mx-auto w-full">
+                <div className="px-6">
+                    <h1 className="text-4xl font-bold mb-6">
+                        Browse <span className="text-[#F4802F]">Projects</span>
+                    </h1>
                 </div>
-            )}
+
+                <div className="mt-6 bg-white rounded-lg overflow-hidden">
+                    <ProjectsTable data={projects} />
+                </div>
+
+                {error && (
+                    <div className="mt-6 p-4 bg-red-100 text-red-700 rounded-md mx-6">
+                        {error}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

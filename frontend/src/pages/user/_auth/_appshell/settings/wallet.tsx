@@ -1,41 +1,46 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { Button } from '@/components';
-import { SettingsPage } from '@/templates/SettingsPage/SettingsPage';
+import { Button, NotificationBanner } from '@/components';
 import { FiCopy, FiCheck } from 'react-icons/fi';
 import { WalletConnectButton } from '@/components/wallet/WalletConnectButton';
 import { useWallet } from '@suiet/wallet-kit';
 import { useAuth } from '@/contexts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCompany, updateCompany } from '@/services';
+import { usePageTitle } from '@/utils';
 
 export const Route = createFileRoute('/user/_auth/_appshell/settings/wallet')({
     component: WalletSettings,
 });
 
 function WalletSettings() {
+    // set wallet page title
+    usePageTitle('Wallet');
+
     const [error, setError] = useState<string | null>(null);
     const [copySuccess, setCopySuccess] = useState(false);
     const { connected, address, disconnect } = useWallet();
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
     const queryClient = useQueryClient();
 
     // fetch company data
     const { data: company } = useQuery({
         queryKey: ['company'],
         queryFn: () => {
+            const accessToken = getAccessToken();
             if (!accessToken) {
                 throw new Error('No access token');
             }
 
             return getCompany(accessToken);
         },
-        enabled: !!accessToken,
+        enabled: !!getAccessToken(),
     });
 
     // update company mutation
     const { mutate: updateWallet, isLoading: isUpdating } = useMutation({
         mutationFn: async () => {
+            const accessToken = getAccessToken();
             if (!accessToken) {
                 throw new Error('No access token');
             }
@@ -74,6 +79,7 @@ function WalletSettings() {
         try {
             await disconnect();
 
+            const accessToken = getAccessToken();
             // clear wallet address from company when disconnecting
             if (accessToken) {
                 await updateCompany(accessToken, { wallet_address: '' });
@@ -93,14 +99,26 @@ function WalletSettings() {
     const isWalletSaved = company?.wallet_address === address;
 
     return (
-        <SettingsPage title="Wallet" error={error} className="pt-0">
-            <div className="max-w-full sm:max-w-6xl mx-auto">
+        <>
+            <h1 className="text-4xl font-bold mb-6">
+                <span className="text-[#F4802F]">Wallet</span> Settings
+            </h1>
+
+            {error && (
+                <div className="mb-6">
+                    <NotificationBanner message={error} variant="error" />
+                </div>
+            )}
+
+            <hr className="mb-10" />
+
+            <div className="max-w-full mx-auto">
                 {!connected ? (
                     <div className="pb-6">
                         <div className="pb-6 mb-6">
-                            <h1 className="text-2xl sm:text-3xl font-bold mb-3">
+                            <h2 className="text-2xl sm:text-3xl font-bold mb-3">
                                 Connect your wallet
-                            </h1>
+                            </h2>
 
                             <p className="text-gray-600">
                                 Connect your Sui wallet to manage your account
@@ -108,7 +126,7 @@ function WalletSettings() {
                             </p>
                         </div>
 
-                        <div className="border-t border-gray-200 pt-6 -mx-6 px-6 sm:mx-0 sm:px-0 sm:border-t-0 sm:pt-0">
+                        <div className="pt-6">
                             <WalletConnectButton
                                 onWalletConnected={(walletAddress) =>
                                     console.log(
@@ -122,9 +140,9 @@ function WalletSettings() {
                 ) : (
                     <div>
                         <div className="pb-6 mb-6">
-                            <h1 className="text-2xl sm:text-3xl font-bold mb-3">
+                            <h2 className="text-2xl sm:text-3xl font-bold mb-3">
                                 Connected wallet
-                            </h1>
+                            </h2>
 
                             <p className="text-gray-600">
                                 Your wallet is connected and ready to use with
@@ -132,7 +150,7 @@ function WalletSettings() {
                             </p>
                         </div>
 
-                        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-6 overflow-hidden">
+                        <div className="bg-white border-2 border-gray-200 rounded-lg mb-6 overflow-hidden hover:border-[#F4802F] hover:shadow-[0_0_0_1px_#F4802F] transition-all duration-300">
                             <div className="p-4 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
                                 <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
                                     <img
@@ -178,7 +196,7 @@ function WalletSettings() {
                                             <Button
                                                 onClick={handleSaveWallet}
                                                 disabled={isUpdating}
-                                                className="w-full py-2.5 text-base"
+                                                className="w-full py-2.5 text-base bg-[#F4802F] hover:bg-[#E67321] border border-[#F4802F] text-white rounded-lg transition-all duration-300"
                                             >
                                                 {isUpdating
                                                     ? 'Saving...'
@@ -207,6 +225,6 @@ function WalletSettings() {
                     </div>
                 )}
             </div>
-        </SettingsPage>
+        </>
     );
 }

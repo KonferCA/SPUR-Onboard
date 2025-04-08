@@ -5,6 +5,7 @@ import { AuthPage as AuthPageLayout } from '@/components/AuthPage';
 import { UserDetailsForm } from '@/components/UserDetailsForm';
 import { VerifyEmail } from '@/components/VerifyEmail';
 import { register, signin, resendVerificationEmail } from '@/services';
+import { requestPasswordReset, resetPassword } from '@/services/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import type {
@@ -12,9 +13,12 @@ import type {
     UserDetailsData,
     CompanyFormErrors,
     RegistrationStep,
+    ForgotPasswordData,
+    ResetPasswordData,
 } from '@/types/auth';
 import { initialUserProfile } from '@/services/user';
 import { useNotification } from '@/contexts';
+import { usePageTitle } from '@/utils';
 
 function AuthPage() {
     const navigate = useNavigate({ from: '/auth' });
@@ -33,20 +37,44 @@ function AuthPage() {
     const [currentStep, setCurrentStep] =
         useState<RegistrationStep>('login-register');
 
-    const [mode, setMode] = useState<'login' | 'register'>(() => {
+    const [mode, setMode] = useState<
+        'login' | 'register' | 'forgot-password' | 'reset-password'
+    >(() => {
+        // check if we have a reset token in the URL
+        if (searchParams.reset_token) {
+            return 'reset-password';
+        }
+
+        // or use form param or default to login
         if (
-            !searchParams.form &&
-            searchParams.form !== 'login' &&
-            searchParams.form !== 'register'
+            !searchParams.form ||
+            (searchParams.form !== 'login' &&
+                searchParams.form !== 'register' &&
+                searchParams.form !== 'forgot-password')
         ) {
             return 'login';
         }
-        return searchParams.form;
+        return searchParams.form as 'login' | 'register' | 'forgot-password';
     });
+
+    // Set page title based on current mode
+    usePageTitle(
+        mode === 'login'
+            ? 'Login'
+            : mode === 'register'
+              ? 'Register'
+              : mode === 'forgot-password'
+                ? 'Reset Password'
+                : 'Set New Password'
+    );
+
     const [isLoading, setIsLoading] = useState(false);
     const [isResendingVerification, setIsResendingVerification] =
         useState(false);
     const [errors, setErrors] = useState<CompanyFormErrors>({});
+    const [resetToken, _setResetToken] = useState<string | undefined>(
+        searchParams.reset_token as string | undefined
+    );
 
     useEffect(() => {
         if (user) {
@@ -66,19 +94,23 @@ function AuthPage() {
         navigate({ to: '/user/home', replace: true });
     };
 
-    const handleAuthSubmit = async (formData: AuthFormData) => {
+    const handleAuthSubmit = async (
+        data: AuthFormData | ForgotPasswordData | ResetPasswordData
+    ) => {
         setIsLoading(true);
         setErrors({});
 
         try {
             if (mode === 'register') {
+                const formData = data as AuthFormData;
                 const regResp = await register(
                     formData.email,
                     formData.password
                 );
                 setAuth(regResp.user, regResp.accessToken, regResp.companyId);
                 setCurrentStep('verify-email');
-            } else {
+            } else if (mode === 'login') {
+                const formData = data as AuthFormData;
                 const signinResp = await signin(
                     formData.email,
                     formData.password
@@ -94,6 +126,14 @@ function AuthPage() {
                 } else {
                     handleRedirect();
                 }
+            } else if (mode === 'forgot-password') {
+                const formData = data as ForgotPasswordData;
+                await requestPasswordReset(formData.email);
+                // success will be handled by the form component
+            } else if (mode === 'reset-password') {
+                const formData = data as ResetPasswordData;
+                await resetPassword(formData.token, formData.password);
+                // success will be handled by the form component
             }
             // biome-ignore lint/suspicious/noExplicitAny: allow type any for error
         } catch (error: any) {
@@ -104,10 +144,45 @@ function AuthPage() {
                     error.body?.message ||
                     'Authentication failed',
             });
-            clearAuth();
+            if (mode === 'login' || mode === 'register') {
+                clearAuth();
+            }
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleForgotPassword = () => {
+        setMode('forgot-password');
+        setErrors({});
+    };
+
+    const handleLoginMode = () => {
+        setMode('login');
+        setErrors({});
+    };
+
+    const getToggleHandler = () => {
+        if (mode === 'login') {
+            // in login mode, the toggle is used for "Forgot password?" button
+            return handleForgotPassword;
+        }
+        if (mode === 'register') {
+            // from register, "Login here" goes to login
+            return handleLoginMode;
+        }
+        if (mode === 'forgot-password' || mode === 'reset-password') {
+            // from forgot-password/reset-password, "Back to login" goes to login
+            return handleLoginMode;
+        }
+        return handleLoginMode;
+    };
+
+    // this additional prop will only be used for the "Register here" link
+    // in the login form footer
+    const handleRegisterLinkClick = () => {
+        setMode('register');
+        setErrors({});
     };
 
     const handleUserDetailsSubmit = async (formData: UserDetailsData) => {
@@ -202,9 +277,9 @@ function AuthPage() {
                             isLoading={isLoading}
                             errors={errors}
                             mode={mode}
-                            onToggleMode={() =>
-                                setMode(mode === 'login' ? 'register' : 'login')
-                            }
+                            onToggleMode={getToggleHandler()}
+                            onRegisterClick={handleRegisterLinkClick}
+                            resetToken={resetToken}
                         />
                     </AuthPageLayout>
                 );
