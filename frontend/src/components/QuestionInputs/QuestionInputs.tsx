@@ -5,15 +5,18 @@ import {
     Dropdown,
     TeamMembers,
     DateInput,
+    Comments,
 } from '@/components';
 import type { DropdownOption, UploadableFile } from '@/components';
-import type { Question } from '@/config/forms';
+import type { Question } from '@/config';
 import type { FormField } from '@/types';
-import { type FC, useRef, useEffect } from 'react';
+import { type FC, useRef, useEffect, useMemo } from 'react';
 import { cva } from 'class-variance-authority';
 import FundingStructure, {
     type FundingStructureModel,
 } from '../FundingStructure';
+import type { Comment } from '@/services/comment';
+import { ProjectStatusEnum } from '@/services/projects';
 
 const legendStyles = cva('block text-md font-normal', {
     variants: {
@@ -90,13 +93,19 @@ interface QuestionInputsProps {
         enableAutosave?: boolean;
     };
     shouldHighlight?: boolean | 'error' | 'neutral';
+    comments?: Comment[];
+    projectStatus?: string;
+    allowEdit?: boolean;
 }
 
 export const QuestionInputs: FC<QuestionInputsProps> = ({
     question,
     onChange,
     fileUploadProps,
+    comments = [],
     shouldHighlight = false,
+    projectStatus,
+    allowEdit,
 }) => {
     const hasInvalidField = question.inputFields.some((field) => field.invalid);
     const isQuestionRequired = question.inputFields.some(
@@ -106,6 +115,50 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     // references to the first input fields of different types
     const textInputRef = useRef<HTMLInputElement | null>(null);
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+
+    // Determine if this question should be enabled or disabled
+    const shouldDisableInput = useMemo(() => {
+        // Only apply special logic if project status is 'needs review' and allowEdit is true
+        if (projectStatus !== ProjectStatusEnum.NeedsReview || !allowEdit) {
+            return false;
+        }
+
+        // Check if the question has any comments that don't have resolvedBySnapshotId
+        const questionComments = comments.filter(
+            (comment) =>
+                comment.targetId === question.id &&
+                !comment.resolvedBySnapshotId
+        );
+
+        // If this question has comments without resolvedBySnapshotId, ENABLE it
+        if (questionComments.length > 0) {
+            return false;
+        }
+
+        // If this is a conditionally rendered input (has dependentQuestionId),
+        // check if its dependent question has comments (and is therefore enabled)
+        if (question.dependentQuestionId) {
+            const dependentQuestionComments = comments.filter(
+                (comment) =>
+                    comment.targetId === question.dependentQuestionId &&
+                    !comment.resolvedBySnapshotId
+            );
+
+            // If dependent question has comments, enable this question too
+            if (dependentQuestionComments.length > 0) {
+                return false;
+            }
+        }
+
+        // By default, if no rule enables the input, disable it
+        return true;
+    }, [
+        question.id,
+        question.dependentQuestionId,
+        comments,
+        projectStatus,
+        allowEdit,
+    ]);
 
     // auto-focus when highlighted
     useEffect(() => {
@@ -138,6 +191,8 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     return 'Please select an option';
                 case 'date':
                     return 'Please select a date';
+                case 'fundingstructure':
+                    return 'Please choose your funding structure';
                 default:
                     return 'This field is required';
             }
@@ -175,6 +230,9 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
             }
         }
 
+        // Apply disabled state based on our conditions
+        const isDisabled = shouldDisableInput || field.disabled;
+
         switch (field.type) {
             case 'textinput':
                 return (
@@ -186,7 +244,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         }
                         error={errorMessage}
                         required={field.required}
-                        disabled={field.disabled}
+                        disabled={isDisabled}
                         {...inputProps}
                         {...field.props}
                     />
@@ -203,7 +261,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         required={field.required}
                         rows={field.rows || 4}
                         error={errorMessage}
-                        disabled={field.disabled}
+                        disabled={isDisabled}
                         {...inputProps}
                         {...field.props}
                     />
@@ -214,6 +272,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     <FileUpload
                         onFilesChange={(v) => onChange(field.key, field.key, v)}
                         initialFiles={field.value.files || []}
+                        disabled={isDisabled}
                         {...(fileUploadProps && {
                             ...fileUploadProps,
                             questionId: field.key,
@@ -227,9 +286,18 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     <div className="w-full">
                         <FundingStructure
                             value={field.value.fundingStructure}
-                            onChange={(structure) =>
-                                onChange(question.id, field.key, structure)
-                            }
+                            onChange={(structure) => {
+                                onChange(question.id, field.key, structure);
+
+                                if (!field.value.value) {
+                                    onChange(
+                                        question.id,
+                                        field.key,
+                                        'completed'
+                                    );
+                                }
+                            }}
+                            disabled={isDisabled}
                         />
                     </div>
                 );
@@ -263,6 +331,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         }
                         multiple={field.type === 'multiselect'}
                         error={errorMessage}
+                        disabled={isDisabled}
                         {...field.props}
                     />
                 );
@@ -272,6 +341,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                 return (
                     <TeamMembers
                         initialValue={field.value.teamMembers || []}
+                        disabled={isDisabled}
                         {...field.props}
                     />
                 );
@@ -281,7 +351,7 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                     <DateInput
                         value={field.value.value as Date}
                         onChange={(v) => onChange(question.id, field.key, v)}
-                        disabled={field.disabled}
+                        disabled={isDisabled}
                         error={errorMessage}
                         {...field.props}
                     />
@@ -293,46 +363,54 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
     };
 
     return (
-        <fieldset
-            id={question.id}
-            className={fieldsetStyles({
-                highlight: shouldHighlight
-                    ? shouldHighlight === true
-                        ? 'error'
-                        : shouldHighlight
-                    : false,
-            })}
-        >
-            <div className={headerContainerStyles()}>
-                <legend className={legendStyles({ hasError: hasInvalidField })}>
-                    {question.question}
+        <div className="relative">
+            <fieldset
+                id={question.id}
+                className={fieldsetStyles({
+                    highlight: shouldHighlight
+                        ? shouldHighlight === true
+                            ? 'error'
+                            : shouldHighlight
+                        : false,
+                })}
+            >
+                <div className={headerContainerStyles()}>
+                    <legend
+                        className={legendStyles({ hasError: hasInvalidField })}
+                    >
+                        {question.question}
+                        {isQuestionRequired && (
+                            <span
+                                className={requiredIndicatorStyles({
+                                    hasError: hasInvalidField,
+                                })}
+                            >
+                                *
+                            </span>
+                        )}
+                    </legend>
                     {isQuestionRequired && (
                         <span
-                            className={requiredIndicatorStyles({
+                            className={requiredTextStyles({
                                 hasError: hasInvalidField,
                             })}
                         >
-                            *
+                            Required
                         </span>
                     )}
-                </legend>
-                {isQuestionRequired && (
-                    <span
-                        className={requiredTextStyles({
-                            hasError: hasInvalidField,
-                        })}
-                    >
-                        Required
-                    </span>
-                )}
-            </div>
-            <div className="space-y-4">
-                {question.inputFields.map((field, index) => (
-                    <div key={field.key} className="w-full">
-                        {renderInput(field, index === 0)}
-                    </div>
-                ))}
-            </div>
-        </fieldset>
+                </div>
+                <div className="space-y-4">
+                    {question.inputFields.map((field, index) => (
+                        <div key={field.key} className="w-full">
+                            {renderInput(field, index === 0)}
+                        </div>
+                    ))}
+                </div>
+            </fieldset>
+            <Comments
+                comments={comments.filter((c) => c.targetId === question.id)}
+                rootContainerClasses="absolute -right-2 top-0 -translate-y-1/2 translate-x-full"
+            />
+        </div>
     );
 };

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { FiSearch, FiChevronDown, FiMoreVertical } from 'react-icons/fi';
+import { FiSearch, FiChevronDown } from 'react-icons/fi';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     getUsers,
@@ -9,6 +9,7 @@ import {
     type User,
 } from '@/services/users';
 import { useNotification } from '@/contexts/NotificationContext';
+import { usePageTitle } from '@/utils';
 
 export const Route = createFileRoute(
     '/admin/_auth/_appshell/settings/permissions'
@@ -17,7 +18,9 @@ export const Route = createFileRoute(
 });
 
 function PermissionsPage() {
-    const { accessToken, isLoading: authLoading } = useAuth();
+    // set permissions page title
+    usePageTitle('Permissions');
+    const { getAccessToken, isLoading: authLoading } = useAuth();
     const { push } = useNotification();
     const [selectedRole, setSelectedRole] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -63,6 +66,7 @@ function PermissionsPage() {
     };
 
     useEffect(() => {
+        const accessToken = getAccessToken();
         if (authLoading || !accessToken) return;
 
         const token = accessToken;
@@ -93,7 +97,7 @@ function PermissionsPage() {
 
         fetchUsers();
     }, [
-        accessToken,
+        getAccessToken,
         authLoading,
         selectedRole,
         searchQuery,
@@ -106,6 +110,7 @@ function PermissionsPage() {
         userId: string,
         newRole: 'admin' | 'investor' | 'regular'
     ) => {
+        const accessToken = getAccessToken();
         if (!accessToken) return;
 
         const token = accessToken;
@@ -138,6 +143,7 @@ function PermissionsPage() {
     const handleBulkRoleUpdate = async (
         newRole: 'admin' | 'investor' | 'regular'
     ) => {
+        const accessToken = getAccessToken();
         if (selectedUsers.length === 0 || !accessToken) return;
 
         const token = accessToken;
@@ -180,7 +186,7 @@ function PermissionsPage() {
 
     if (authLoading) {
         return (
-            <div className="p-6">
+            <div className="p-4 md:p-6">
                 <div className="flex items-center justify-center h-64">
                     <p className="text-gray-500">Loading...</p>
                 </div>
@@ -188,9 +194,9 @@ function PermissionsPage() {
         );
     }
 
-    if (!accessToken) {
+    if (!getAccessToken()) {
         return (
-            <div className="p-6">
+            <div className="p-4 md:p-6">
                 <div className="flex items-center justify-center h-64">
                     <p className="text-red-500">Not authenticated</p>
                 </div>
@@ -199,81 +205,83 @@ function PermissionsPage() {
     }
 
     return (
-        <div className="p-6">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">
-                    Manage Permissions
+        <div className="p-4 md:p-6 pt-16 md:pt-20 max-w-6xl mx-auto w-full">
+            <div className="mb-6 md:mb-8">
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                    Manage <span className="text-[#F4802F]">Permissions</span>
                 </h1>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="text-lg md:text-xl text-gray-600">
                     Manage user roles and permissions across the platform
                 </p>
             </div>
 
-            {/* Filters and Search */}
-            <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    {/* Role Filter */}
-                    <div className="relative">
-                        <select
-                            value={selectedRole}
-                            onChange={(e) => setSelectedRole(e.target.value)}
-                            className="appearance-none bg-white border border-gray-300 rounded-md py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="all">All roles</option>
-                            <option value="admin">Admin</option>
-                            <option value="investor">Investor</option>
-                            <option value="regular">Regular</option>
-                        </select>
-                        <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    </div>
+            <hr className="mb-6 md:mb-8 border-gray-200" />
 
-                    {/* Date Filter */}
-                    <div className="relative">
-                        <select
-                            value={sortOrder}
-                            onChange={(e) =>
-                                setSortOrder(e.target.value as 'asc' | 'desc')
-                            }
-                            className="appearance-none bg-white border border-gray-300 rounded-md py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="desc">Newest first</option>
-                            <option value="asc">Oldest first</option>
-                        </select>
-                        <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    </div>
+            {/* Filters and Search */}
+            <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                {/* Role Filter */}
+                <div className="relative w-full sm:w-auto">
+                    <select
+                        value={selectedRole}
+                        onChange={(e) => setSelectedRole(e.target.value)}
+                        className="appearance-none w-full sm:w-auto bg-white border border-gray-200 rounded-lg py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-[#F4802F] focus:border-[#F4802F] transition-all duration-300"
+                    >
+                        <option value="all">All roles</option>
+                        <option value="admin">Admin</option>
+                        <option value="investor">Investor</option>
+                        <option value="regular">Regular</option>
+                    </select>
+                    <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                </div>
+
+                {/* Date Filter */}
+                <div className="relative w-full sm:w-auto">
+                    <select
+                        value={sortOrder}
+                        onChange={(e) =>
+                            setSortOrder(e.target.value as 'asc' | 'desc')
+                        }
+                        className="appearance-none w-full sm:w-auto bg-white border border-gray-200 rounded-lg py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-[#F4802F] focus:border-[#F4802F] transition-all duration-300"
+                    >
+                        <option value="desc">Newest first</option>
+                        <option value="asc">Oldest first</option>
+                    </select>
+                    <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 </div>
 
                 {/* Search */}
-                <div className="relative">
+                <div className="relative w-full sm:w-auto sm:ml-auto">
                     <input
                         type="text"
                         placeholder="Search users"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#F4802F] focus:border-[#F4802F] transition-all duration-300"
                     />
                     <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 </div>
             </div>
 
             {/* Role Cards */}
-            <div className="grid grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
                 {Object.entries(roles).map(([key, role]) => (
                     <div
                         key={key}
-                        className="bg-white rounded-lg border border-gray-200 p-4"
+                        className="bg-white rounded-lg border border-gray-200 p-4 md:p-6 hover:border-[#F4802F] hover:shadow-sm transition-all duration-300"
                     >
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-medium">{role.label}</h3>
-                            <span className="text-sm text-gray-500">
+                        <div className="mb-3 md:mb-4">
+                            <h3 className="text-xl md:text-2xl font-medium">
+                                {role.label}
+                            </h3>
+                            <div className="text-xs md:text-sm text-gray-500 mt-1">
                                 {role.count} Users
-                            </span>
+                            </div>
                         </div>
-                        <ul className="space-y-2">
+                        <ul className="space-y-1 md:space-y-2">
                             {role.permissions.map((permission) => (
                                 <li
                                     key={permission}
-                                    className="text-sm text-gray-600"
+                                    className="text-xs md:text-sm text-gray-600"
                                 >
                                     • {permission}
                                 </li>
@@ -284,155 +292,161 @@ function PermissionsPage() {
             </div>
 
             {/* Users Table */}
-            <div className="bg-white rounded-lg border border-gray-200">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead>
-                        <tr>
-                            <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <input
-                                    type="checkbox"
-                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                    checked={
-                                        selectedUsers.length === users.length &&
-                                        users.length > 0
-                                    }
-                                    onChange={(e) =>
-                                        handleSelectAll(e.target.checked)
-                                    }
-                                />
-                            </th>
-                            <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                User
-                            </th>
-                            <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Date Joined
-                            </th>
-                            <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Role
-                            </th>
-                            <th className="px-6 py-3 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider" />
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {isLoading ? (
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead>
                             <tr>
-                                <td
-                                    colSpan={5}
-                                    className="px-6 py-4 text-center text-sm text-gray-500"
-                                >
-                                    Loading...
-                                </td>
+                                <th className="px-3 md:px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <input
+                                        type="checkbox"
+                                        className="rounded border-gray-300 text-[#F4802F] focus:ring-[#F4802F]"
+                                        checked={
+                                            selectedUsers.length ===
+                                                users.length && users.length > 0
+                                        }
+                                        onChange={(e) =>
+                                            handleSelectAll(e.target.checked)
+                                        }
+                                    />
+                                </th>
+                                <th className="px-3 md:px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    User
+                                </th>
+                                <th className="px-3 md:px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Date Joined
+                                </th>
+                                <th className="px-3 md:px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Role
+                                </th>
                             </tr>
-                        ) : users.length === 0 ? (
-                            <tr>
-                                <td
-                                    colSpan={5}
-                                    className="px-6 py-4 text-center text-sm text-gray-500"
-                                >
-                                    No users found
-                                </td>
-                            </tr>
-                        ) : (
-                            users.map((user) => (
-                                <tr key={user.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <input
-                                            type="checkbox"
-                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            checked={selectedUsers.includes(
-                                                user.id
-                                            )}
-                                            onChange={(e) =>
-                                                handleSelectUser(
-                                                    user.id,
-                                                    e.target.checked
-                                                )
-                                            }
-                                        />
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center">
-                                            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium text-gray-600">
-                                                {user.firstName[0]}
-                                                {user.lastName[0]}
-                                            </div>
-                                            <div className="ml-4">
-                                                <div className="text-sm font-medium text-gray-900">
-                                                    {user.firstName}{' '}
-                                                    {user.lastName}
-                                                </div>
-                                                <div className="text-sm text-gray-500">
-                                                    {user.email}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Date(
-                                            user.dateJoined
-                                        ).toLocaleDateString('en-US', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <select
-                                            value={user.role}
-                                            onChange={(e) =>
-                                                handleRoleChange(
-                                                    user.id,
-                                                    e.target.value as
-                                                        | 'admin'
-                                                        | 'investor'
-                                                        | 'regular'
-                                                )
-                                            }
-                                            className="text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                        >
-                                            <option value="regular">
-                                                Regular
-                                            </option>
-                                            <option value="investor">
-                                                Investor
-                                            </option>
-                                            <option value="admin">Admin</option>
-                                        </select>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button
-                                            type="button"
-                                            className="text-gray-400 hover:text-gray-600"
-                                        >
-                                            <FiMoreVertical />
-                                        </button>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {isLoading ? (
+                                <tr>
+                                    <td
+                                        colSpan={5}
+                                        className="px-3 md:px-6 py-4 text-center text-sm text-gray-500"
+                                    >
+                                        Loading...
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : users.length === 0 ? (
+                                <tr>
+                                    <td
+                                        colSpan={5}
+                                        className="px-3 md:px-6 py-4 text-center text-sm text-gray-500"
+                                    >
+                                        No users found
+                                    </td>
+                                </tr>
+                            ) : (
+                                users.map((user) => (
+                                    <tr
+                                        key={user.id}
+                                        className="hover:bg-[rgba(255,194,152,0.1)] transition-colors duration-200"
+                                    >
+                                        <td className="px-3 md:px-6 py-3 whitespace-nowrap">
+                                            <input
+                                                type="checkbox"
+                                                className="rounded border-gray-300 text-[#F4802F] focus:ring-[#F4802F]"
+                                                checked={selectedUsers.includes(
+                                                    user.id
+                                                )}
+                                                onChange={(e) =>
+                                                    handleSelectUser(
+                                                        user.id,
+                                                        e.target.checked
+                                                    )
+                                                }
+                                            />
+                                        </td>
+                                        <td className="px-3 md:px-6 py-3 whitespace-nowrap">
+                                            <div className="flex items-center">
+                                                <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600 border border-gray-200">
+                                                    {user.firstName
+                                                        ? user.firstName[0]
+                                                        : ''}
+                                                    {user.lastName
+                                                        ? user.lastName[0]
+                                                        : ''}
+                                                </div>
+                                                <div className="ml-3">
+                                                    <div className="text-sm font-medium text-gray-900">
+                                                        {user.firstName}{' '}
+                                                        {user.lastName}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500">
+                                                        {user.email}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-3 md:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            {new Date(
+                                                user.dateJoined
+                                            ).toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            })}
+                                        </td>
+                                        <td className="px-3 md:px-6 py-3 whitespace-nowrap">
+                                            <select
+                                                value={user.role}
+                                                onChange={(e) =>
+                                                    handleRoleChange(
+                                                        user.id,
+                                                        e.target.value as
+                                                            | 'admin'
+                                                            | 'investor'
+                                                            | 'regular'
+                                                    )
+                                                }
+                                                className="text-sm border border-gray-200 rounded-md focus:ring-[#F4802F] focus:border-[#F4802F] transition-all duration-300"
+                                            >
+                                                <option value="regular">
+                                                    Regular
+                                                </option>
+                                                <option value="investor">
+                                                    Investor
+                                                </option>
+                                                <option value="admin">
+                                                    Admin
+                                                </option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
 
                 {/* Pagination */}
-                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                    <div className="flex-1 flex justify-between sm:hidden">
+                <div className="bg-white px-3 md:px-6 py-3 flex items-center justify-between border-t border-gray-200">
+                    <div className="flex flex-1 justify-between sm:hidden">
                         <button
                             type="button"
                             onClick={() =>
                                 setCurrentPage((prev) => Math.max(prev - 1, 1))
                             }
                             disabled={currentPage === 1}
-                            className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:border-[#F4802F] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Previous
                         </button>
+                        <span className="mx-2 text-xs text-gray-700">
+                            Page {currentPage} of{' '}
+                            {Math.ceil(totalUsers / ITEMS_PER_PAGE)}
+                        </span>
                         <button
                             type="button"
                             onClick={() => setCurrentPage((prev) => prev + 1)}
                             disabled={
                                 currentPage * ITEMS_PER_PAGE >= totalUsers
                             }
-                            className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="relative inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:border-[#F4802F] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Next
                         </button>
@@ -474,7 +488,7 @@ function PermissionsPage() {
                                         )
                                     }
                                     disabled={currentPage === 1}
-                                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 hover:border-[#F4802F] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Previous
                                 </button>
@@ -490,7 +504,7 @@ function PermissionsPage() {
                                         onClick={() => setCurrentPage(i + 1)}
                                         className={`relative inline-flex items-center px-4 py-2 border ${
                                             currentPage === i + 1
-                                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                                ? 'z-10 bg-[rgba(255,194,152,0.3)] border-[#F4802F] text-[#F4802F]'
                                                 : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
                                         } text-sm font-medium`}
                                     >
@@ -506,7 +520,7 @@ function PermissionsPage() {
                                         currentPage * ITEMS_PER_PAGE >=
                                         totalUsers
                                     }
-                                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 hover:border-[#F4802F] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Next
                                 </button>
@@ -518,29 +532,29 @@ function PermissionsPage() {
 
             {/* Bulk Actions */}
             {selectedUsers.length > 0 && (
-                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-3 bg-white px-6 py-4 rounded-lg shadow-lg border border-gray-200">
-                    <span className="text-sm text-gray-600 mr-2">
+                <div className="fixed bottom-4 md:bottom-6 left-1/2 transform -translate-x-1/2 flex flex-wrap items-center justify-center gap-2 md:gap-3 bg-white px-4 md:px-6 py-3 md:py-4 rounded-lg shadow-lg border border-[#F4802F] max-w-[calc(100%-2rem)] md:max-w-[calc(100%-4rem)]">
+                    <span className="text-xs md:text-sm text-gray-600 mr-1 md:mr-2">
                         {selectedUsers.length} user
                         {selectedUsers.length > 1 ? 's' : ''} selected
                     </span>
                     <button
                         type="button"
                         onClick={() => handleBulkRoleUpdate('admin')}
-                        className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200"
+                        className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-[rgba(255,194,152,0.2)] hover:border-[#F4802F] hover:text-[#F4802F] transition-all duration-300"
                     >
                         Make Admin
                     </button>
                     <button
                         type="button"
                         onClick={() => handleBulkRoleUpdate('investor')}
-                        className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200"
+                        className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-[rgba(255,194,152,0.2)] hover:border-[#F4802F] hover:text-[#F4802F] transition-all duration-300"
                     >
                         Make Investor
                     </button>
                     <button
                         type="button"
                         onClick={() => handleBulkRoleUpdate('regular')}
-                        className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200"
+                        className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-[rgba(255,194,152,0.2)] hover:border-[#F4802F] hover:text-[#F4802F] transition-all duration-300"
                     >
                         Make Regular
                     </button>

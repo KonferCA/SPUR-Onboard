@@ -16,9 +16,11 @@ import { Route as rootRoute } from './pages/__root';
 import { Route as SignupImport } from './pages/signup';
 import { Route as SignoutImport } from './pages/signout';
 import { Route as SigninImport } from './pages/signin';
+import { Route as ResetPasswordImport } from './pages/reset-password';
 import { Route as RegisterImport } from './pages/register';
 import { Route as LogoutImport } from './pages/logout';
 import { Route as LoginImport } from './pages/login';
+import { Route as ForgotPasswordImport } from './pages/forgot-password';
 import { Route as AuthImport } from './pages/auth';
 import { Route as IndexImport } from './pages/index';
 import { Route as UserIndexImport } from './pages/user/index';
@@ -27,19 +29,20 @@ import { Route as UserAuthImport } from './pages/user/_auth';
 import { Route as AdminAuthImport } from './pages/admin/_auth';
 import { Route as UserAuthAppshellImport } from './pages/user/_auth/_appshell';
 import { Route as AdminAuthAppshellImport } from './pages/admin/_auth/_appshell';
-import { Route as UserAuthProjectNewImport } from './pages/user/_auth/project/new';
 import { Route as UserAuthAppshellSettingsImport } from './pages/user/_auth/_appshell/settings';
 import { Route as UserAuthAppshellProjectsImport } from './pages/user/_auth/_appshell/projects';
+import { Route as UserAuthAppshellHomeImport } from './pages/user/_auth/_appshell/home';
 import { Route as UserAuthAppshellDashboardImport } from './pages/user/_auth/_appshell/dashboard';
-import { Route as AdminAuthAppshellDashboardImport } from './pages/admin/_auth/_appshell/dashboard';
+import { Route as UserAuthAppshellBrowseImport } from './pages/user/_auth/_appshell/browse';
 import { Route as UserAuthAppshellSettingsIndexImport } from './pages/user/_auth/_appshell/settings/index';
 import { Route as AdminAuthAppshellResourcesIndexImport } from './pages/admin/_auth/_appshell/resources/index';
-import { Route as UserAuthProjectProjectIdViewImport } from './pages/user/_auth/project/$projectId/view';
-import { Route as UserAuthProjectProjectIdFormImport } from './pages/user/_auth/project/$projectId/form';
 import { Route as UserAuthAppshellSettingsWalletImport } from './pages/user/_auth/_appshell/settings/wallet';
 import { Route as UserAuthAppshellSettingsProfileImport } from './pages/user/_auth/_appshell/settings/profile';
+import { Route as UserAuthAppshellProjectNewImport } from './pages/user/_auth/_appshell/project/new';
 import { Route as AdminAuthProjectsProjectIdReviewImport } from './pages/admin/_auth/projects/$projectId.review';
 import { Route as AdminAuthAppshellSettingsPermissionsImport } from './pages/admin/_auth/_appshell/settings/permissions';
+import { Route as UserAuthAppshellProjectProjectIdViewImport } from './pages/user/_auth/_appshell/project/$projectId/view';
+import { Route as UserAuthAppshellProjectProjectIdFormImport } from './pages/user/_auth/_appshell/project/$projectId/form';
 import { Route as AdminAuthAppshellProjectsProjectIdOverviewImport } from './pages/admin/_auth/_appshell/projects/$projectId.overview';
 import { Route as AdminAuthAppshellProjectsProjectIdDecisionImport } from './pages/admin/_auth/_appshell/projects/$projectId.decision';
 
@@ -80,6 +83,12 @@ const SigninRoute = SigninImport.update({
     getParentRoute: () => rootRoute,
 } as any);
 
+const ResetPasswordRoute = ResetPasswordImport.update({
+    id: '/reset-password',
+    path: '/reset-password',
+    getParentRoute: () => rootRoute,
+} as any);
+
 const RegisterRoute = RegisterImport.update({
     id: '/register',
     path: '/register',
@@ -95,6 +104,12 @@ const LogoutRoute = LogoutImport.update({
 const LoginRoute = LoginImport.update({
     id: '/login',
     path: '/login',
+    getParentRoute: () => rootRoute,
+} as any);
+
+const ForgotPasswordRoute = ForgotPasswordImport.update({
+    id: '/forgot-password',
+    path: '/forgot-password',
     getParentRoute: () => rootRoute,
 } as any);
 
@@ -142,12 +157,6 @@ const AdminAuthAppshellRoute = AdminAuthAppshellImport.update({
     getParentRoute: () => AdminAuthRoute,
 } as any);
 
-const UserAuthProjectNewRoute = UserAuthProjectNewImport.update({
-    id: '/project/new',
-    path: '/project/new',
-    getParentRoute: () => UserAuthRoute,
-} as any);
-
 const UserAuthAppshellSettingsRoute = UserAuthAppshellSettingsImport.update({
     id: '/settings',
     path: '/settings',
@@ -160,19 +169,23 @@ const UserAuthAppshellProjectsRoute = UserAuthAppshellProjectsImport.update({
     getParentRoute: () => UserAuthAppshellRoute,
 } as any);
 
+const UserAuthAppshellHomeRoute = UserAuthAppshellHomeImport.update({
+    id: '/home',
+    path: '/home',
+    getParentRoute: () => UserAuthAppshellRoute,
+} as any);
+
 const UserAuthAppshellDashboardRoute = UserAuthAppshellDashboardImport.update({
     id: '/dashboard',
     path: '/dashboard',
     getParentRoute: () => UserAuthAppshellRoute,
 } as any);
 
-const AdminAuthAppshellDashboardRoute = AdminAuthAppshellDashboardImport.update(
-    {
-        id: '/dashboard',
-        path: '/dashboard',
-        getParentRoute: () => AdminAuthAppshellRoute,
-    } as any
-);
+const UserAuthAppshellBrowseRoute = UserAuthAppshellBrowseImport.update({
+    id: '/browse',
+    path: '/browse',
+    getParentRoute: () => UserAuthAppshellRoute,
+} as any);
 
 const UserAuthAppshellSettingsIndexRoute =
     UserAuthAppshellSettingsIndexImport.update({
@@ -186,20 +199,6 @@ const AdminAuthAppshellResourcesIndexRoute =
         id: '/resources/',
         path: '/resources/',
         getParentRoute: () => AdminAuthAppshellRoute,
-    } as any);
-
-const UserAuthProjectProjectIdViewRoute =
-    UserAuthProjectProjectIdViewImport.update({
-        id: '/project/$projectId/view',
-        path: '/project/$projectId/view',
-        getParentRoute: () => UserAuthRoute,
-    } as any);
-
-const UserAuthProjectProjectIdFormRoute =
-    UserAuthProjectProjectIdFormImport.update({
-        id: '/project/$projectId/form',
-        path: '/project/$projectId/form',
-        getParentRoute: () => UserAuthRoute,
     } as any);
 
 const UserAuthAppshellSettingsWalletRoute =
@@ -216,6 +215,14 @@ const UserAuthAppshellSettingsProfileRoute =
         getParentRoute: () => UserAuthAppshellSettingsRoute,
     } as any);
 
+const UserAuthAppshellProjectNewRoute = UserAuthAppshellProjectNewImport.update(
+    {
+        id: '/project/new',
+        path: '/project/new',
+        getParentRoute: () => UserAuthAppshellRoute,
+    } as any
+);
+
 const AdminAuthProjectsProjectIdReviewRoute =
     AdminAuthProjectsProjectIdReviewImport.update({
         id: '/projects/$projectId/review',
@@ -228,6 +235,20 @@ const AdminAuthAppshellSettingsPermissionsRoute =
         id: '/settings/permissions',
         path: '/settings/permissions',
         getParentRoute: () => AdminAuthAppshellRoute,
+    } as any);
+
+const UserAuthAppshellProjectProjectIdViewRoute =
+    UserAuthAppshellProjectProjectIdViewImport.update({
+        id: '/project/$projectId/view',
+        path: '/project/$projectId/view',
+        getParentRoute: () => UserAuthAppshellRoute,
+    } as any);
+
+const UserAuthAppshellProjectProjectIdFormRoute =
+    UserAuthAppshellProjectProjectIdFormImport.update({
+        id: '/project/$projectId/form',
+        path: '/project/$projectId/form',
+        getParentRoute: () => UserAuthAppshellRoute,
     } as any);
 
 const AdminAuthAppshellProjectsProjectIdOverviewRoute =
@@ -262,6 +283,13 @@ declare module '@tanstack/react-router' {
             preLoaderRoute: typeof AuthImport;
             parentRoute: typeof rootRoute;
         };
+        '/forgot-password': {
+            id: '/forgot-password';
+            path: '/forgot-password';
+            fullPath: '/forgot-password';
+            preLoaderRoute: typeof ForgotPasswordImport;
+            parentRoute: typeof rootRoute;
+        };
         '/login': {
             id: '/login';
             path: '/login';
@@ -281,6 +309,13 @@ declare module '@tanstack/react-router' {
             path: '/register';
             fullPath: '/register';
             preLoaderRoute: typeof RegisterImport;
+            parentRoute: typeof rootRoute;
+        };
+        '/reset-password': {
+            id: '/reset-password';
+            path: '/reset-password';
+            fullPath: '/reset-password';
+            preLoaderRoute: typeof ResetPasswordImport;
             parentRoute: typeof rootRoute;
         };
         '/signin': {
@@ -360,18 +395,25 @@ declare module '@tanstack/react-router' {
             preLoaderRoute: typeof UserAuthAppshellImport;
             parentRoute: typeof UserAuthImport;
         };
-        '/admin/_auth/_appshell/dashboard': {
-            id: '/admin/_auth/_appshell/dashboard';
-            path: '/dashboard';
-            fullPath: '/admin/dashboard';
-            preLoaderRoute: typeof AdminAuthAppshellDashboardImport;
-            parentRoute: typeof AdminAuthAppshellImport;
+        '/user/_auth/_appshell/browse': {
+            id: '/user/_auth/_appshell/browse';
+            path: '/browse';
+            fullPath: '/user/browse';
+            preLoaderRoute: typeof UserAuthAppshellBrowseImport;
+            parentRoute: typeof UserAuthAppshellImport;
         };
         '/user/_auth/_appshell/dashboard': {
             id: '/user/_auth/_appshell/dashboard';
             path: '/dashboard';
             fullPath: '/user/dashboard';
             preLoaderRoute: typeof UserAuthAppshellDashboardImport;
+            parentRoute: typeof UserAuthAppshellImport;
+        };
+        '/user/_auth/_appshell/home': {
+            id: '/user/_auth/_appshell/home';
+            path: '/home';
+            fullPath: '/user/home';
+            preLoaderRoute: typeof UserAuthAppshellHomeImport;
             parentRoute: typeof UserAuthAppshellImport;
         };
         '/user/_auth/_appshell/projects': {
@@ -388,13 +430,6 @@ declare module '@tanstack/react-router' {
             preLoaderRoute: typeof UserAuthAppshellSettingsImport;
             parentRoute: typeof UserAuthAppshellImport;
         };
-        '/user/_auth/project/new': {
-            id: '/user/_auth/project/new';
-            path: '/project/new';
-            fullPath: '/user/project/new';
-            preLoaderRoute: typeof UserAuthProjectNewImport;
-            parentRoute: typeof UserAuthImport;
-        };
         '/admin/_auth/_appshell/settings/permissions': {
             id: '/admin/_auth/_appshell/settings/permissions';
             path: '/settings/permissions';
@@ -409,6 +444,13 @@ declare module '@tanstack/react-router' {
             preLoaderRoute: typeof AdminAuthProjectsProjectIdReviewImport;
             parentRoute: typeof AdminAuthImport;
         };
+        '/user/_auth/_appshell/project/new': {
+            id: '/user/_auth/_appshell/project/new';
+            path: '/project/new';
+            fullPath: '/user/project/new';
+            preLoaderRoute: typeof UserAuthAppshellProjectNewImport;
+            parentRoute: typeof UserAuthAppshellImport;
+        };
         '/user/_auth/_appshell/settings/profile': {
             id: '/user/_auth/_appshell/settings/profile';
             path: '/profile';
@@ -422,20 +464,6 @@ declare module '@tanstack/react-router' {
             fullPath: '/user/settings/wallet';
             preLoaderRoute: typeof UserAuthAppshellSettingsWalletImport;
             parentRoute: typeof UserAuthAppshellSettingsImport;
-        };
-        '/user/_auth/project/$projectId/form': {
-            id: '/user/_auth/project/$projectId/form';
-            path: '/project/$projectId/form';
-            fullPath: '/user/project/$projectId/form';
-            preLoaderRoute: typeof UserAuthProjectProjectIdFormImport;
-            parentRoute: typeof UserAuthImport;
-        };
-        '/user/_auth/project/$projectId/view': {
-            id: '/user/_auth/project/$projectId/view';
-            path: '/project/$projectId/view';
-            fullPath: '/user/project/$projectId/view';
-            preLoaderRoute: typeof UserAuthProjectProjectIdViewImport;
-            parentRoute: typeof UserAuthImport;
         };
         '/admin/_auth/_appshell/resources/': {
             id: '/admin/_auth/_appshell/resources/';
@@ -465,13 +493,26 @@ declare module '@tanstack/react-router' {
             preLoaderRoute: typeof AdminAuthAppshellProjectsProjectIdOverviewImport;
             parentRoute: typeof AdminAuthAppshellImport;
         };
+        '/user/_auth/_appshell/project/$projectId/form': {
+            id: '/user/_auth/_appshell/project/$projectId/form';
+            path: '/project/$projectId/form';
+            fullPath: '/user/project/$projectId/form';
+            preLoaderRoute: typeof UserAuthAppshellProjectProjectIdFormImport;
+            parentRoute: typeof UserAuthAppshellImport;
+        };
+        '/user/_auth/_appshell/project/$projectId/view': {
+            id: '/user/_auth/_appshell/project/$projectId/view';
+            path: '/project/$projectId/view';
+            fullPath: '/user/project/$projectId/view';
+            preLoaderRoute: typeof UserAuthAppshellProjectProjectIdViewImport;
+            parentRoute: typeof UserAuthAppshellImport;
+        };
     }
 }
 
 // Create and export the route tree
 
 interface AdminAuthAppshellRouteChildren {
-    AdminAuthAppshellDashboardRoute: typeof AdminAuthAppshellDashboardRoute;
     AdminAuthAppshellSettingsPermissionsRoute: typeof AdminAuthAppshellSettingsPermissionsRoute;
     AdminAuthAppshellResourcesIndexRoute: typeof AdminAuthAppshellResourcesIndexRoute;
     AdminAuthAppshellProjectsProjectIdDecisionRoute: typeof AdminAuthAppshellProjectsProjectIdDecisionRoute;
@@ -479,7 +520,6 @@ interface AdminAuthAppshellRouteChildren {
 }
 
 const AdminAuthAppshellRouteChildren: AdminAuthAppshellRouteChildren = {
-    AdminAuthAppshellDashboardRoute: AdminAuthAppshellDashboardRoute,
     AdminAuthAppshellSettingsPermissionsRoute:
         AdminAuthAppshellSettingsPermissionsRoute,
     AdminAuthAppshellResourcesIndexRoute: AdminAuthAppshellResourcesIndexRoute,
@@ -540,15 +580,27 @@ const UserAuthAppshellSettingsRouteWithChildren =
     );
 
 interface UserAuthAppshellRouteChildren {
+    UserAuthAppshellBrowseRoute: typeof UserAuthAppshellBrowseRoute;
     UserAuthAppshellDashboardRoute: typeof UserAuthAppshellDashboardRoute;
+    UserAuthAppshellHomeRoute: typeof UserAuthAppshellHomeRoute;
     UserAuthAppshellProjectsRoute: typeof UserAuthAppshellProjectsRoute;
     UserAuthAppshellSettingsRoute: typeof UserAuthAppshellSettingsRouteWithChildren;
+    UserAuthAppshellProjectNewRoute: typeof UserAuthAppshellProjectNewRoute;
+    UserAuthAppshellProjectProjectIdFormRoute: typeof UserAuthAppshellProjectProjectIdFormRoute;
+    UserAuthAppshellProjectProjectIdViewRoute: typeof UserAuthAppshellProjectProjectIdViewRoute;
 }
 
 const UserAuthAppshellRouteChildren: UserAuthAppshellRouteChildren = {
+    UserAuthAppshellBrowseRoute: UserAuthAppshellBrowseRoute,
     UserAuthAppshellDashboardRoute: UserAuthAppshellDashboardRoute,
+    UserAuthAppshellHomeRoute: UserAuthAppshellHomeRoute,
     UserAuthAppshellProjectsRoute: UserAuthAppshellProjectsRoute,
     UserAuthAppshellSettingsRoute: UserAuthAppshellSettingsRouteWithChildren,
+    UserAuthAppshellProjectNewRoute: UserAuthAppshellProjectNewRoute,
+    UserAuthAppshellProjectProjectIdFormRoute:
+        UserAuthAppshellProjectProjectIdFormRoute,
+    UserAuthAppshellProjectProjectIdViewRoute:
+        UserAuthAppshellProjectProjectIdViewRoute,
 };
 
 const UserAuthAppshellRouteWithChildren =
@@ -556,16 +608,10 @@ const UserAuthAppshellRouteWithChildren =
 
 interface UserAuthRouteChildren {
     UserAuthAppshellRoute: typeof UserAuthAppshellRouteWithChildren;
-    UserAuthProjectNewRoute: typeof UserAuthProjectNewRoute;
-    UserAuthProjectProjectIdFormRoute: typeof UserAuthProjectProjectIdFormRoute;
-    UserAuthProjectProjectIdViewRoute: typeof UserAuthProjectProjectIdViewRoute;
 }
 
 const UserAuthRouteChildren: UserAuthRouteChildren = {
     UserAuthAppshellRoute: UserAuthAppshellRouteWithChildren,
-    UserAuthProjectNewRoute: UserAuthProjectNewRoute,
-    UserAuthProjectProjectIdFormRoute: UserAuthProjectProjectIdFormRoute,
-    UserAuthProjectProjectIdViewRoute: UserAuthProjectProjectIdViewRoute,
 };
 
 const UserAuthRouteWithChildren = UserAuthRoute._addFileChildren(
@@ -587,9 +633,11 @@ const UserRouteWithChildren = UserRoute._addFileChildren(UserRouteChildren);
 export interface FileRoutesByFullPath {
     '/': typeof IndexRoute;
     '/auth': typeof AuthRoute;
+    '/forgot-password': typeof ForgotPasswordRoute;
     '/login': typeof LoginRoute;
     '/logout': typeof LogoutRoute;
     '/register': typeof RegisterRoute;
+    '/reset-password': typeof ResetPasswordRoute;
     '/signin': typeof SigninRoute;
     '/signout': typeof SignoutRoute;
     '/signup': typeof SignupRoute;
@@ -597,57 +645,63 @@ export interface FileRoutesByFullPath {
     '/user': typeof UserAuthAppshellRouteWithChildren;
     '/admin/': typeof AdminIndexRoute;
     '/user/': typeof UserIndexRoute;
-    '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute;
+    '/user/browse': typeof UserAuthAppshellBrowseRoute;
     '/user/dashboard': typeof UserAuthAppshellDashboardRoute;
+    '/user/home': typeof UserAuthAppshellHomeRoute;
     '/user/projects': typeof UserAuthAppshellProjectsRoute;
     '/user/settings': typeof UserAuthAppshellSettingsRouteWithChildren;
-    '/user/project/new': typeof UserAuthProjectNewRoute;
     '/admin/settings/permissions': typeof AdminAuthAppshellSettingsPermissionsRoute;
     '/admin/projects/$projectId/review': typeof AdminAuthProjectsProjectIdReviewRoute;
+    '/user/project/new': typeof UserAuthAppshellProjectNewRoute;
     '/user/settings/profile': typeof UserAuthAppshellSettingsProfileRoute;
     '/user/settings/wallet': typeof UserAuthAppshellSettingsWalletRoute;
-    '/user/project/$projectId/form': typeof UserAuthProjectProjectIdFormRoute;
-    '/user/project/$projectId/view': typeof UserAuthProjectProjectIdViewRoute;
     '/admin/resources': typeof AdminAuthAppshellResourcesIndexRoute;
     '/user/settings/': typeof UserAuthAppshellSettingsIndexRoute;
     '/admin/projects/$projectId/decision': typeof AdminAuthAppshellProjectsProjectIdDecisionRoute;
     '/admin/projects/$projectId/overview': typeof AdminAuthAppshellProjectsProjectIdOverviewRoute;
+    '/user/project/$projectId/form': typeof UserAuthAppshellProjectProjectIdFormRoute;
+    '/user/project/$projectId/view': typeof UserAuthAppshellProjectProjectIdViewRoute;
 }
 
 export interface FileRoutesByTo {
     '/': typeof IndexRoute;
     '/auth': typeof AuthRoute;
+    '/forgot-password': typeof ForgotPasswordRoute;
     '/login': typeof LoginRoute;
     '/logout': typeof LogoutRoute;
     '/register': typeof RegisterRoute;
+    '/reset-password': typeof ResetPasswordRoute;
     '/signin': typeof SigninRoute;
     '/signout': typeof SignoutRoute;
     '/signup': typeof SignupRoute;
     '/admin': typeof AdminAuthAppshellRouteWithChildren;
     '/user': typeof UserAuthAppshellRouteWithChildren;
-    '/admin/dashboard': typeof AdminAuthAppshellDashboardRoute;
+    '/user/browse': typeof UserAuthAppshellBrowseRoute;
     '/user/dashboard': typeof UserAuthAppshellDashboardRoute;
+    '/user/home': typeof UserAuthAppshellHomeRoute;
     '/user/projects': typeof UserAuthAppshellProjectsRoute;
-    '/user/project/new': typeof UserAuthProjectNewRoute;
     '/admin/settings/permissions': typeof AdminAuthAppshellSettingsPermissionsRoute;
     '/admin/projects/$projectId/review': typeof AdminAuthProjectsProjectIdReviewRoute;
+    '/user/project/new': typeof UserAuthAppshellProjectNewRoute;
     '/user/settings/profile': typeof UserAuthAppshellSettingsProfileRoute;
     '/user/settings/wallet': typeof UserAuthAppshellSettingsWalletRoute;
-    '/user/project/$projectId/form': typeof UserAuthProjectProjectIdFormRoute;
-    '/user/project/$projectId/view': typeof UserAuthProjectProjectIdViewRoute;
     '/admin/resources': typeof AdminAuthAppshellResourcesIndexRoute;
     '/user/settings': typeof UserAuthAppshellSettingsIndexRoute;
     '/admin/projects/$projectId/decision': typeof AdminAuthAppshellProjectsProjectIdDecisionRoute;
     '/admin/projects/$projectId/overview': typeof AdminAuthAppshellProjectsProjectIdOverviewRoute;
+    '/user/project/$projectId/form': typeof UserAuthAppshellProjectProjectIdFormRoute;
+    '/user/project/$projectId/view': typeof UserAuthAppshellProjectProjectIdViewRoute;
 }
 
 export interface FileRoutesById {
     __root__: typeof rootRoute;
     '/': typeof IndexRoute;
     '/auth': typeof AuthRoute;
+    '/forgot-password': typeof ForgotPasswordRoute;
     '/login': typeof LoginRoute;
     '/logout': typeof LogoutRoute;
     '/register': typeof RegisterRoute;
+    '/reset-password': typeof ResetPasswordRoute;
     '/signin': typeof SigninRoute;
     '/signout': typeof SignoutRoute;
     '/signup': typeof SignupRoute;
@@ -659,21 +713,22 @@ export interface FileRoutesById {
     '/user/': typeof UserIndexRoute;
     '/admin/_auth/_appshell': typeof AdminAuthAppshellRouteWithChildren;
     '/user/_auth/_appshell': typeof UserAuthAppshellRouteWithChildren;
-    '/admin/_auth/_appshell/dashboard': typeof AdminAuthAppshellDashboardRoute;
+    '/user/_auth/_appshell/browse': typeof UserAuthAppshellBrowseRoute;
     '/user/_auth/_appshell/dashboard': typeof UserAuthAppshellDashboardRoute;
+    '/user/_auth/_appshell/home': typeof UserAuthAppshellHomeRoute;
     '/user/_auth/_appshell/projects': typeof UserAuthAppshellProjectsRoute;
     '/user/_auth/_appshell/settings': typeof UserAuthAppshellSettingsRouteWithChildren;
-    '/user/_auth/project/new': typeof UserAuthProjectNewRoute;
     '/admin/_auth/_appshell/settings/permissions': typeof AdminAuthAppshellSettingsPermissionsRoute;
     '/admin/_auth/projects/$projectId/review': typeof AdminAuthProjectsProjectIdReviewRoute;
+    '/user/_auth/_appshell/project/new': typeof UserAuthAppshellProjectNewRoute;
     '/user/_auth/_appshell/settings/profile': typeof UserAuthAppshellSettingsProfileRoute;
     '/user/_auth/_appshell/settings/wallet': typeof UserAuthAppshellSettingsWalletRoute;
-    '/user/_auth/project/$projectId/form': typeof UserAuthProjectProjectIdFormRoute;
-    '/user/_auth/project/$projectId/view': typeof UserAuthProjectProjectIdViewRoute;
     '/admin/_auth/_appshell/resources/': typeof AdminAuthAppshellResourcesIndexRoute;
     '/user/_auth/_appshell/settings/': typeof UserAuthAppshellSettingsIndexRoute;
     '/admin/_auth/_appshell/projects/$projectId/decision': typeof AdminAuthAppshellProjectsProjectIdDecisionRoute;
     '/admin/_auth/_appshell/projects/$projectId/overview': typeof AdminAuthAppshellProjectsProjectIdOverviewRoute;
+    '/user/_auth/_appshell/project/$projectId/form': typeof UserAuthAppshellProjectProjectIdFormRoute;
+    '/user/_auth/_appshell/project/$projectId/view': typeof UserAuthAppshellProjectProjectIdViewRoute;
 }
 
 export interface FileRouteTypes {
@@ -681,9 +736,11 @@ export interface FileRouteTypes {
     fullPaths:
         | '/'
         | '/auth'
+        | '/forgot-password'
         | '/login'
         | '/logout'
         | '/register'
+        | '/reset-password'
         | '/signin'
         | '/signout'
         | '/signup'
@@ -691,54 +748,60 @@ export interface FileRouteTypes {
         | '/user'
         | '/admin/'
         | '/user/'
-        | '/admin/dashboard'
+        | '/user/browse'
         | '/user/dashboard'
+        | '/user/home'
         | '/user/projects'
         | '/user/settings'
-        | '/user/project/new'
         | '/admin/settings/permissions'
         | '/admin/projects/$projectId/review'
+        | '/user/project/new'
         | '/user/settings/profile'
         | '/user/settings/wallet'
-        | '/user/project/$projectId/form'
-        | '/user/project/$projectId/view'
         | '/admin/resources'
         | '/user/settings/'
         | '/admin/projects/$projectId/decision'
-        | '/admin/projects/$projectId/overview';
+        | '/admin/projects/$projectId/overview'
+        | '/user/project/$projectId/form'
+        | '/user/project/$projectId/view';
     fileRoutesByTo: FileRoutesByTo;
     to:
         | '/'
         | '/auth'
+        | '/forgot-password'
         | '/login'
         | '/logout'
         | '/register'
+        | '/reset-password'
         | '/signin'
         | '/signout'
         | '/signup'
         | '/admin'
         | '/user'
-        | '/admin/dashboard'
+        | '/user/browse'
         | '/user/dashboard'
+        | '/user/home'
         | '/user/projects'
-        | '/user/project/new'
         | '/admin/settings/permissions'
         | '/admin/projects/$projectId/review'
+        | '/user/project/new'
         | '/user/settings/profile'
         | '/user/settings/wallet'
-        | '/user/project/$projectId/form'
-        | '/user/project/$projectId/view'
         | '/admin/resources'
         | '/user/settings'
         | '/admin/projects/$projectId/decision'
-        | '/admin/projects/$projectId/overview';
+        | '/admin/projects/$projectId/overview'
+        | '/user/project/$projectId/form'
+        | '/user/project/$projectId/view';
     id:
         | '__root__'
         | '/'
         | '/auth'
+        | '/forgot-password'
         | '/login'
         | '/logout'
         | '/register'
+        | '/reset-password'
         | '/signin'
         | '/signout'
         | '/signup'
@@ -750,30 +813,33 @@ export interface FileRouteTypes {
         | '/user/'
         | '/admin/_auth/_appshell'
         | '/user/_auth/_appshell'
-        | '/admin/_auth/_appshell/dashboard'
+        | '/user/_auth/_appshell/browse'
         | '/user/_auth/_appshell/dashboard'
+        | '/user/_auth/_appshell/home'
         | '/user/_auth/_appshell/projects'
         | '/user/_auth/_appshell/settings'
-        | '/user/_auth/project/new'
         | '/admin/_auth/_appshell/settings/permissions'
         | '/admin/_auth/projects/$projectId/review'
+        | '/user/_auth/_appshell/project/new'
         | '/user/_auth/_appshell/settings/profile'
         | '/user/_auth/_appshell/settings/wallet'
-        | '/user/_auth/project/$projectId/form'
-        | '/user/_auth/project/$projectId/view'
         | '/admin/_auth/_appshell/resources/'
         | '/user/_auth/_appshell/settings/'
         | '/admin/_auth/_appshell/projects/$projectId/decision'
-        | '/admin/_auth/_appshell/projects/$projectId/overview';
+        | '/admin/_auth/_appshell/projects/$projectId/overview'
+        | '/user/_auth/_appshell/project/$projectId/form'
+        | '/user/_auth/_appshell/project/$projectId/view';
     fileRoutesById: FileRoutesById;
 }
 
 export interface RootRouteChildren {
     IndexRoute: typeof IndexRoute;
     AuthRoute: typeof AuthRoute;
+    ForgotPasswordRoute: typeof ForgotPasswordRoute;
     LoginRoute: typeof LoginRoute;
     LogoutRoute: typeof LogoutRoute;
     RegisterRoute: typeof RegisterRoute;
+    ResetPasswordRoute: typeof ResetPasswordRoute;
     SigninRoute: typeof SigninRoute;
     SignoutRoute: typeof SignoutRoute;
     SignupRoute: typeof SignupRoute;
@@ -784,9 +850,11 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
     IndexRoute: IndexRoute,
     AuthRoute: AuthRoute,
+    ForgotPasswordRoute: ForgotPasswordRoute,
     LoginRoute: LoginRoute,
     LogoutRoute: LogoutRoute,
     RegisterRoute: RegisterRoute,
+    ResetPasswordRoute: ResetPasswordRoute,
     SigninRoute: SigninRoute,
     SignoutRoute: SignoutRoute,
     SignupRoute: SignupRoute,
@@ -806,9 +874,11 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/auth",
+        "/forgot-password",
         "/login",
         "/logout",
         "/register",
+        "/reset-password",
         "/signin",
         "/signout",
         "/signup",
@@ -822,6 +892,9 @@ export const routeTree = rootRoute
     "/auth": {
       "filePath": "auth.tsx"
     },
+    "/forgot-password": {
+      "filePath": "forgot-password.tsx"
+    },
     "/login": {
       "filePath": "login.tsx"
     },
@@ -830,6 +903,9 @@ export const routeTree = rootRoute
     },
     "/register": {
       "filePath": "register.tsx"
+    },
+    "/reset-password": {
+      "filePath": "reset-password.tsx"
     },
     "/signin": {
       "filePath": "signin.tsx"
@@ -866,10 +942,7 @@ export const routeTree = rootRoute
       "filePath": "user/_auth.tsx",
       "parent": "/user",
       "children": [
-        "/user/_auth/_appshell",
-        "/user/_auth/project/new",
-        "/user/_auth/project/$projectId/form",
-        "/user/_auth/project/$projectId/view"
+        "/user/_auth/_appshell"
       ]
     },
     "/admin/": {
@@ -884,7 +957,6 @@ export const routeTree = rootRoute
       "filePath": "admin/_auth/_appshell.tsx",
       "parent": "/admin/_auth",
       "children": [
-        "/admin/_auth/_appshell/dashboard",
         "/admin/_auth/_appshell/settings/permissions",
         "/admin/_auth/_appshell/resources/",
         "/admin/_auth/_appshell/projects/$projectId/decision",
@@ -895,17 +967,26 @@ export const routeTree = rootRoute
       "filePath": "user/_auth/_appshell.tsx",
       "parent": "/user/_auth",
       "children": [
+        "/user/_auth/_appshell/browse",
         "/user/_auth/_appshell/dashboard",
+        "/user/_auth/_appshell/home",
         "/user/_auth/_appshell/projects",
-        "/user/_auth/_appshell/settings"
+        "/user/_auth/_appshell/settings",
+        "/user/_auth/_appshell/project/new",
+        "/user/_auth/_appshell/project/$projectId/form",
+        "/user/_auth/_appshell/project/$projectId/view"
       ]
     },
-    "/admin/_auth/_appshell/dashboard": {
-      "filePath": "admin/_auth/_appshell/dashboard.tsx",
-      "parent": "/admin/_auth/_appshell"
+    "/user/_auth/_appshell/browse": {
+      "filePath": "user/_auth/_appshell/browse.tsx",
+      "parent": "/user/_auth/_appshell"
     },
     "/user/_auth/_appshell/dashboard": {
       "filePath": "user/_auth/_appshell/dashboard.tsx",
+      "parent": "/user/_auth/_appshell"
+    },
+    "/user/_auth/_appshell/home": {
+      "filePath": "user/_auth/_appshell/home.tsx",
       "parent": "/user/_auth/_appshell"
     },
     "/user/_auth/_appshell/projects": {
@@ -921,10 +1002,6 @@ export const routeTree = rootRoute
         "/user/_auth/_appshell/settings/"
       ]
     },
-    "/user/_auth/project/new": {
-      "filePath": "user/_auth/project/new.tsx",
-      "parent": "/user/_auth"
-    },
     "/admin/_auth/_appshell/settings/permissions": {
       "filePath": "admin/_auth/_appshell/settings/permissions.tsx",
       "parent": "/admin/_auth/_appshell"
@@ -933,6 +1010,10 @@ export const routeTree = rootRoute
       "filePath": "admin/_auth/projects/$projectId.review.tsx",
       "parent": "/admin/_auth"
     },
+    "/user/_auth/_appshell/project/new": {
+      "filePath": "user/_auth/_appshell/project/new.tsx",
+      "parent": "/user/_auth/_appshell"
+    },
     "/user/_auth/_appshell/settings/profile": {
       "filePath": "user/_auth/_appshell/settings/profile.tsx",
       "parent": "/user/_auth/_appshell/settings"
@@ -940,14 +1021,6 @@ export const routeTree = rootRoute
     "/user/_auth/_appshell/settings/wallet": {
       "filePath": "user/_auth/_appshell/settings/wallet.tsx",
       "parent": "/user/_auth/_appshell/settings"
-    },
-    "/user/_auth/project/$projectId/form": {
-      "filePath": "user/_auth/project/$projectId/form.tsx",
-      "parent": "/user/_auth"
-    },
-    "/user/_auth/project/$projectId/view": {
-      "filePath": "user/_auth/project/$projectId/view.tsx",
-      "parent": "/user/_auth"
     },
     "/admin/_auth/_appshell/resources/": {
       "filePath": "admin/_auth/_appshell/resources/index.tsx",
@@ -964,6 +1037,14 @@ export const routeTree = rootRoute
     "/admin/_auth/_appshell/projects/$projectId/overview": {
       "filePath": "admin/_auth/_appshell/projects/$projectId.overview.tsx",
       "parent": "/admin/_auth/_appshell"
+    },
+    "/user/_auth/_appshell/project/$projectId/form": {
+      "filePath": "user/_auth/_appshell/project/$projectId/form.tsx",
+      "parent": "/user/_auth/_appshell"
+    },
+    "/user/_auth/_appshell/project/$projectId/view": {
+      "filePath": "user/_auth/_appshell/project/$projectId/view.tsx",
+      "parent": "/user/_auth/_appshell"
     }
   }
 }

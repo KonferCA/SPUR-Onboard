@@ -10,8 +10,11 @@ import {
     getFilteredRowModel,
     type SortingState,
 } from '@tanstack/react-table';
-import type { Project } from '@/services/project';
+import type { Project } from '@/types/project';
 import { format, isValid, parseISO } from 'date-fns';
+import { ProjectStatusEnum } from '@/services/projects';
+import { useAuth } from '@/contexts/AuthContext';
+import { FiSearch } from 'react-icons/fi';
 
 const columnHelper = createColumnHelper<Project>();
 
@@ -21,6 +24,7 @@ const STATUS_MAPPING = {
     verified: 'approved',
     declined: 'rejected',
     withdrawn: 'withdrew',
+    needsReview: 'needs review',
 } as const;
 
 const StatusButton = ({
@@ -35,10 +39,10 @@ const StatusButton = ({
     <button
         type="button"
         onClick={onClick}
-        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+        className={`px-6 py-3 text-sm font-medium transition-colors
             ${
                 isActive
-                    ? 'bg-gray-900 text-white'
+                    ? 'bg-[#F4802F] text-white rounded-lg'
                     : 'text-gray-500 hover:text-gray-700'
             }`}
     >
@@ -61,7 +65,7 @@ const FilterDropdown = ({
         <select
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="rounded-md border border-gray-300 py-2 px-3 text-sm bg-white"
+            className="rounded-lg border border-gray-300 py-2 px-4 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all duration-300"
         >
             <option value="">{label}</option>
             {options.map((option) => (
@@ -80,13 +84,17 @@ const SearchInput = ({
     value: string;
     onChange: (value: string) => void;
 }) => (
-    <div className="relative rounded-md shadow-sm max-w-sm">
+    <div className="relative rounded-lg max-w-sm">
+        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+            <FiSearch className="w-5 h-5" />
+        </span>
+
         <input
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Search projects..."
-            className="block w-full rounded-md border border-gray-300 px-4 py-2 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
+            placeholder="Search Projects"
+            className="block w-full rounded-lg border border-gray-300 pl-10 pr-4 py-2 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 sm:text-sm transition-all duration-300"
         />
     </div>
 );
@@ -150,17 +158,19 @@ const columns = [
             if (!mappedStatus) return null;
 
             return (
-                <div className="">
+                <div>
                     <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium capitalize
                         ${
                             mappedStatus === 'submitted'
-                                ? 'bg-yellow-100 text-yellow-800'
+                                ? 'bg-gray-100 text-gray-800'
                                 : mappedStatus === 'approved'
                                   ? 'bg-green-100 text-green-800'
                                   : mappedStatus === 'rejected'
                                     ? 'bg-red-100 text-red-800'
-                                    : 'bg-gray-100 text-gray-800'
+                                    : mappedStatus === 'needs review'
+                                      ? 'bg-purple-100 text-purple-800'
+                                      : 'bg-gray-100 text-gray-800'
                         }`}
                     >
                         {mappedStatus.replace('_', ' ')}
@@ -207,73 +217,44 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
         year: '',
     });
 
+    const { user } = useAuth();
+
+    const isAdmin = useMemo(() => {
+        return user?.permissions === 1346;
+    }, [user]);
+
     const statusOptions = [
         { label: 'Submitted', value: 'submitted' },
         { label: 'Approved', value: 'approved' },
         { label: 'Withdrew', value: 'withdrew' },
         { label: 'Rejected', value: 'rejected' },
+        { label: 'Needs Review', value: 'needs review' },
     ];
 
     const filterOptions = useMemo(
         () => ({
-            company_stage: [
-                ...new Set(data.map((item) => item.company_stage)),
-            ].filter((stage): stage is string => stage !== null),
-            industry: [...new Set(data.map((item) => item.industry))].filter(
-                (industry): industry is string => industry !== null
-            ),
-            status: [
-                ...new Set(
-                    data.map((item) => {
-                        const mappedStatus =
-                            STATUS_MAPPING[
-                                item.status as keyof typeof STATUS_MAPPING
-                            ];
-                        return mappedStatus;
-                    })
-                ),
-            ].filter(
-                (
-                    status
-                ): status is NonNullable<
-                    (typeof STATUS_MAPPING)[keyof typeof STATUS_MAPPING]
-                > => status !== null
-            ),
-            year: [
-                ...new Set(
-                    data.map((item) => formatDate(item.founded_date, 'yyyy'))
-                ),
-            ].filter((x) => x !== 'N/A'),
+            company_stage: [],
+            industry: [],
+            status: [],
+            year: [],
         }),
-        [data]
+        []
     );
 
     const filteredData = useMemo(() => {
-        return data.filter((item) => {
-            const mappedStatus =
-                STATUS_MAPPING[item.status as keyof typeof STATUS_MAPPING];
-            const matchesSelectedStatus =
-                selectedStatus === 'submitted'
-                    ? mappedStatus === 'submitted'
-                    : selectedStatus === 'approved'
-                      ? mappedStatus === 'approved'
-                      : selectedStatus === 'rejected'
-                        ? mappedStatus === 'rejected'
-                        : selectedStatus === 'withdrew'
-                          ? mappedStatus === 'withdrew'
-                          : true;
+        const mapStatus = (status: string) => {
+            switch (status) {
+                case ProjectStatusEnum.Pending:
+                    return 'submitted';
+                default:
+                    return status;
+            }
+        };
 
-            return (
-                matchesSelectedStatus &&
-                (!filters.company_stage ||
-                    item.company_stage === filters.company_stage) &&
-                (!filters.industry || item.industry === filters.industry) &&
-                (!filters.status || mappedStatus === filters.status) &&
-                (!filters.year ||
-                    formatDate(item.founded_date, 'yyyy') === filters.year)
-            );
+        return data.filter((item) => {
+            return selectedStatus === mapStatus(item.status);
         });
-    }, [data, filters, selectedStatus]);
+    }, [data, selectedStatus]);
 
     const table = useReactTable({
         data: filteredData,
@@ -295,30 +276,39 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
     });
 
     const handleRowClick = (projectId: string) => {
-        navigate({ to: `/admin/projects/${projectId}/overview` });
+        navigate({ to: `/user/projects/${projectId}/view` });
     };
 
     return (
-        <div className="space-y-4">
-            <div className="flex space-x-4">
-                {statusOptions.map((status) => (
-                    <StatusButton
-                        key={status.value}
-                        label={status.label}
-                        isActive={selectedStatus === status.value}
-                        onClick={() => setSelectedStatus(status.value)}
+        <div className="p-6 space-y-4 bg-gray-50">
+            {!isAdmin && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                    {statusOptions.map((status) => (
+                        <StatusButton
+                            key={status.value}
+                            label={status.label}
+                            isActive={selectedStatus === status.value}
+                            onClick={() => setSelectedStatus(status.value)}
+                        />
+                    ))}
+
+                    <div className="flex-grow" />
+
+                    <SearchInput
+                        value={globalFilter}
+                        onChange={setGlobalFilter}
                     />
-                ))}
+                </div>
+            )}
 
-                <div className="flex-grow" />
+            {isAdmin && (
+                <div className="flex flex-wrap gap-4 items-center mb-6">
+                    <div className="text-sm font-medium text-gray-700">
+                        Filters
+                    </div>
 
-                <SearchInput value={globalFilter} onChange={setGlobalFilter} />
-            </div>
-
-            <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap gap-4">
                     <FilterDropdown
-                        label="Company Stage"
+                        label="Stage"
                         options={filterOptions.company_stage}
                         value={filters.company_stage}
                         onChange={(value) =>
@@ -337,14 +327,6 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
                         }
                     />
                     <FilterDropdown
-                        label="Status"
-                        options={filterOptions.status}
-                        value={filters.status}
-                        onChange={(value) =>
-                            setFilters((prev) => ({ ...prev, status: value }))
-                        }
-                    />
-                    <FilterDropdown
                         label="Year Founded"
                         options={filterOptions.year}
                         value={filters.year}
@@ -352,60 +334,79 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
                             setFilters((prev) => ({ ...prev, year: value }))
                         }
                     />
+                    <FilterDropdown
+                        label="Date submitted"
+                        options={filterOptions.status}
+                        value={filters.status}
+                        onChange={(value) =>
+                            setFilters((prev) => ({ ...prev, status: value }))
+                        }
+                    />
                 </div>
-            </div>
+            )}
 
-            <div className="mt-8">
+            <div className="border-t border-gray-200 my-6" />
+
+            <div>
                 <div className="overflow-x-auto">
                     <div className="inline-block w-full align-middle">
-                        <div className="overflow-hidden border border-gray-200 rounded-lg">
-                            <div className="min-w-[1200px] max-w-full">
-                                <table className="w-full table-fixed divide-y divide-gray-300">
-                                    <thead className="bg-gray-50">
-                                        {table
-                                            .getHeaderGroups()
-                                            .map((headerGroup) => (
-                                                <tr key={headerGroup.id}>
-                                                    {headerGroup.headers.map(
-                                                        (header) => (
-                                                            <th
-                                                                key={header.id}
-                                                                className="py-3.5 px-3 text-left text-sm font-semibold text-gray-900"
-                                                                onKeyUp={header.column.getToggleSortingHandler()}
-                                                                onClick={header.column.getToggleSortingHandler()}
-                                                                style={{
-                                                                    cursor: 'pointer',
-                                                                }}
-                                                            >
-                                                                <div className="flex items-center gap-2">
-                                                                    {flexRender(
-                                                                        header
-                                                                            .column
-                                                                            .columnDef
-                                                                            .header,
-                                                                        header.getContext()
-                                                                    )}
-                                                                    {header.column.getIsSorted() && (
-                                                                        <span>
-                                                                            {header.column.getIsSorted() ===
-                                                                            'asc'
-                                                                                ? '↑'
-                                                                                : '↓'}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </th>
-                                                        )
-                                                    )}
-                                                </tr>
-                                            ))}
-                                    </thead>
+                        <div className="overflow-hidden">
+                            <table className="w-full table-fixed divide-y divide-gray-200">
+                                <thead>
+                                    {table
+                                        .getHeaderGroups()
+                                        .map((headerGroup) => (
+                                            <tr key={headerGroup.id}>
+                                                {headerGroup.headers.map(
+                                                    (header) => (
+                                                        <th
+                                                            key={header.id}
+                                                            className="py-4 px-4 text-left text-sm font-medium text-gray-600"
+                                                            onKeyUp={header.column.getToggleSortingHandler()}
+                                                            onClick={header.column.getToggleSortingHandler()}
+                                                            style={{
+                                                                cursor: 'pointer',
+                                                            }}
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                {flexRender(
+                                                                    header
+                                                                        .column
+                                                                        .columnDef
+                                                                        .header,
+                                                                    header.getContext()
+                                                                )}
+                                                                {header.column.getIsSorted() && (
+                                                                    <span className="text-gray-400">
+                                                                        {header.column.getIsSorted() ===
+                                                                        'asc'
+                                                                            ? '↑'
+                                                                            : '↓'}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </th>
+                                                    )
+                                                )}
+                                            </tr>
+                                        ))}
+                                </thead>
 
-                                    <tbody className="divide-y divide-gray-200 bg-white">
-                                        {table.getRowModel().rows.map((row) => (
+                                <tbody className="divide-y divide-gray-200 bg-white">
+                                    {table.getRowModel().rows.length === 0 ? (
+                                        <tr>
+                                            <td
+                                                colSpan={columns.length}
+                                                className="py-10 px-4 text-center text-gray-500"
+                                            >
+                                                No projects found
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        table.getRowModel().rows.map((row) => (
                                             <tr
                                                 key={row.id}
-                                                className="hover:bg-gray-50 cursor-pointer"
+                                                className="hover:bg-[rgba(255,194,152,0.15)] cursor-pointer border-b border-gray-200 transition-colors duration-300"
                                                 onKeyUp={() =>
                                                     handleRowClick(
                                                         row.original.id
@@ -422,7 +423,7 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
                                                     .map((cell) => (
                                                         <td
                                                             key={cell.id}
-                                                            className="whitespace-nowrap py-4 px-3 text-sm text-gray-500"
+                                                            className="whitespace-nowrap py-5 px-4 text-sm text-gray-700"
                                                         >
                                                             {flexRender(
                                                                 cell.column
@@ -433,10 +434,10 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = ({
                                                         </td>
                                                     ))}
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>

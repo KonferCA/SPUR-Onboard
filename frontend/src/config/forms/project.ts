@@ -3,7 +3,7 @@ import type {
     ConditionType,
     ProjectQuestion,
     ProjectQuestionsData,
-} from '@/services/project';
+} from '@/types/project';
 import type { FormField, FormFieldType } from '@/types';
 import { createZodSchema } from '@/utils/form-validation';
 

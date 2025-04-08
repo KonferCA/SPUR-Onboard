@@ -1,105 +1,12 @@
 import { getApiUrl, HttpStatusCode } from '@utils';
 import { ApiError } from './errors';
 import { snakeToCamel } from '@/utils/object';
-import type { TeamMember } from '@/types';
-
-// interface CompanyResponse {
-//     ID: string;
-//     Name: string;
-//     Industry: string | null;
-//     FoundedDate: string | null;
-//     CompanyStage: string | null;
-// }
-
-// Backend response interface
-export interface ProjectResponse {
-    id: string;
-    title: string;
-    description: string;
-    status: string;
-    createdAt: number;
-    updatedAt: number;
-}
-
-export interface ExtendedProjectResponse extends ProjectResponse {
-    companyName: string;
-    documentCount: number;
-    teamMemberCount: number;
-}
-
-export interface ConditionType {
-    conditionTypeEnum: string;
-    valid: boolean;
-}
-
-export interface ProjectQuestion {
-    id: string;
-    question: string;
-    section: string;
-    subSection: string;
-    sectionOrder: number;
-    subSectionOrder: number;
-    questionOrder: number;
-    inputType: string;
-    options: string[] | null;
-    required: boolean;
-    validations: string[] | null;
-    conditionType: ConditionType;
-    conditionValue: string | null;
-    dependentQuestionId: string | null;
-    questionGroupId: string | null;
-    placeholder: string | null;
-    description: string | null;
-    disabled: boolean;
-    answer: string;
-    choices: string[];
-    // inputProps is a base64 encoded json
-    inputProps?: string | null;
-}
-
-// Frontend interfaces
-export interface ProjectQuestionsData {
-    questions: ProjectQuestion[];
-    documents?: ProjectDocument[];
-    teamMembers?: TeamMember[];
-}
-
-export interface ProjectDocument {
-    id: string;
-    projectId: string;
-    questionId: string;
-    section: string;
-    subSection: string;
-    name: string;
-    url: string;
-    mimeType: string;
-    size: number;
-    createdAt: number;
-    updatedAt: number;
-}
-
-export interface ProjectSection {
-    id: string;
-    title: string;
-    questions: {
-        question: string;
-        answer: string;
-    }[];
-}
-
-export interface Project {
-    id: string;
-    title: string;
-    description: string | null;
-    status: string;
-    created_at: string;
-    updated_at: string;
-    industry: string | null;
-    company_stage: string | null;
-    founded_date: string | null;
-    documents: ProjectDocument[];
-    sections: ProjectSection[];
-}
+import type { ProjectSnapshot } from '@/types/projects';
+import type {
+    ProjectResponse,
+    ProjectQuestionsData,
+    ExtendedProjectResponse,
+} from '@/types/project';
 
 /*
  * Get project questions for the project submission form
@@ -132,24 +39,6 @@ export async function getProjectFormQuestions(
     const data = await response.json();
     return snakeToCamel(data) as ProjectQuestionsData;
 }
-
-// Transform backend response to frontend format
-// biome-ignore lint/suspicious/noExplicitAny:
-const transformProject = (data: any): Project => {
-    return {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        status: data.status,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        industry: null,
-        company_stage: null,
-        founded_date: null,
-        documents: [], // todo: implement when backend supports
-        sections: data.Sections || [],
-    };
-};
 
 export async function createProject(
     accessToken: string
@@ -217,8 +106,8 @@ export async function listProjectsAll(accessToken: string) {
 export async function getProjectDetails(
     accessToken: string,
     id: string
-): Promise<Project> {
-    const url = `${getApiUrl()}/projects/${id}`.replace(/([^:]\/)\/+/g, '$1');
+): Promise<ProjectResponse> {
+    const url = getApiUrl(`/project/${id}`);
 
     const response = await fetch(url, {
         method: 'GET',
@@ -228,17 +117,16 @@ export async function getProjectDetails(
         },
     });
 
+    const data = await response.json();
     if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
         throw new ApiError(
             'Failed to fetch project details',
             response.status,
-            errorData || {}
+            data || {}
         );
     }
 
-    const data = await response.json();
-    return transformProject(data);
+    return data;
 }
 
 export interface ProjectDraft {
@@ -340,6 +228,35 @@ export async function submitProject(accessToken: string, projectId: string) {
 
     const json = await res.json();
     if (res.status !== HttpStatusCode.OK) {
-        throw new Error(`Failed to submit project: ${json.message}`);
+        throw new ApiError('Failed to submit project', res.status, json);
     }
+}
+
+/*
+ * getLatestProjectSnapshot tries to get the latest project snapshot.
+ * This function throws an ApiError for any status code that is not 200.
+ */
+export async function getLatestProjectSnapshot(
+    accessToken: string,
+    projectId: string
+): Promise<ProjectSnapshot> {
+    const url = getApiUrl(`/project/${projectId}/snapshots/latest`);
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+    const json = await res.json();
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to get project snapshot', res.status, json);
+    }
+
+    // The data field is a base64 encoded json and it should be of type ProjectQuestionsData
+    const decoded = window.atob(json.data);
+    const parsed = JSON.parse(decoded);
+    // transformation snakeToCamel is necessary because the function groupProjectQuestions expects camel casing
+    json.data = snakeToCamel(parsed);
+
+    return json as ProjectSnapshot;
 }

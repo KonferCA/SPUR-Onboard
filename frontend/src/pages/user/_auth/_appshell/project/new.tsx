@@ -7,11 +7,12 @@ import { useNavigate } from '@tanstack/react-router';
 
 const NewProjectPage = () => {
     const navigate = useNavigate();
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
     const hasTriggeredFetchRef = useRef(false);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: lint has problem with navigate not being in the list of dependencies but the function never changes so it is ok to leave it out
     useEffect(() => {
+        const accessToken = getAccessToken();
         if (!accessToken || hasTriggeredFetchRef.current) return;
 
         // create project on mount
@@ -23,7 +24,7 @@ const NewProjectPage = () => {
         hasTriggeredFetchRef.current = true;
 
         newProject();
-    }, [accessToken]);
+    }, [getAccessToken]);
 
     return (
         <div className="min-h-screen flex items-center justify-center">
@@ -32,6 +33,6 @@ const NewProjectPage = () => {
     );
 };
 
-export const Route = createFileRoute('/user/_auth/project/new')({
+export const Route = createFileRoute('/user/_auth/_appshell/project/new')({
     component: React.memo(NewProjectPage),
 });

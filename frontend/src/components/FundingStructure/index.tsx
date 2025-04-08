@@ -35,6 +35,7 @@ interface ValidationErrors {
 interface FundingStructureProps {
     value?: FundingStructureModel;
     onChange: (value: FundingStructureModel) => void;
+    disabled?: boolean;
 }
 
 const errorTextStyle = 'text-xs text-red-500 mt-1';
@@ -190,6 +191,7 @@ const EquityProgressBar: FC<{
 export const FundingStructure: FC<FundingStructureProps> = ({
     value,
     onChange,
+    disabled = false,
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isAnimatingOut, setIsAnimatingOut] = useState(false);
@@ -226,71 +228,32 @@ export const FundingStructure: FC<FundingStructureProps> = ({
         target: Partial<FundingStructureModel>;
         minimum: Partial<FundingStructureModel>;
         tiered: Partial<FundingStructureModel>;
-    }>(() => {
-        // Try to load from localStorage on initial render
-        try {
-            const savedState = localStorage.getItem(
-                'fundingStructureTabStates'
-            );
-            return savedState
-                ? JSON.parse(savedState)
-                : {
-                      target: {
-                          type: 'target',
-                          amount: '',
-                          equityPercentage: '',
-                          limitInvestors: false,
-                      },
-                      minimum: {
-                          type: 'minimum',
-                          amount: '',
-                          equityPercentage: '',
-                          minAmount: '',
-                          maxAmount: '',
-                          limitInvestors: false,
-                      },
-                      tiered: {
-                          type: 'tiered',
-                          limitInvestors: false,
-                          tiers: [
-                              {
-                                  id: Date.now().toString(),
-                                  amount: '',
-                                  equityPercentage: '',
-                              },
-                          ],
-                      },
-                  };
-        } catch (e) {
-            // Fallback to default state if localStorage fails
-            return {
-                target: {
-                    type: 'target',
+    }>({
+        target: {
+            type: 'target',
+            amount: '',
+            equityPercentage: '',
+            limitInvestors: false,
+        },
+        minimum: {
+            type: 'minimum',
+            amount: '',
+            equityPercentage: '',
+            minAmount: '',
+            maxAmount: '',
+            limitInvestors: false,
+        },
+        tiered: {
+            type: 'tiered',
+            limitInvestors: false,
+            tiers: [
+                {
+                    id: Date.now().toString(),
                     amount: '',
                     equityPercentage: '',
-                    limitInvestors: false,
                 },
-                minimum: {
-                    type: 'minimum',
-                    amount: '',
-                    equityPercentage: '',
-                    minAmount: '',
-                    maxAmount: '',
-                    limitInvestors: false,
-                },
-                tiered: {
-                    type: 'tiered',
-                    limitInvestors: false,
-                    tiers: [
-                        {
-                            id: Date.now().toString(),
-                            amount: '',
-                            equityPercentage: '',
-                        },
-                    ],
-                },
-            };
-        }
+            ],
+        },
     });
 
     // When structure type changes, update current structure from tabStates
@@ -338,19 +301,6 @@ export const FundingStructure: FC<FundingStructureProps> = ({
             }
         }
     }, [structureType, tabStates, currentStructure]); // Include necessary dependencies
-
-    // Save tab states to localStorage whenever they change
-    useEffect(() => {
-        try {
-            localStorage.setItem(
-                'fundingStructureTabStates',
-                JSON.stringify(tabStates)
-            );
-        } catch (e) {
-            // Silent fail if localStorage is not available
-            console.warn('Failed to save tab states to localStorage', e);
-        }
-    }, [tabStates]);
 
     // Check if we're in mobile view
     useEffect(() => {
@@ -635,7 +585,10 @@ export const FundingStructure: FC<FundingStructureProps> = ({
             [structureType]: { ...updatedStructure },
         }));
 
+        // pass the updated structure to the parent component
         onChange(updatedStructure as FundingStructureModel);
+
+        // ensure we close the modal after saving
         handleCloseModal();
 
         // If on mobile and not on the last step, go to next step instead of saving
@@ -2259,43 +2212,6 @@ export const FundingStructure: FC<FundingStructureProps> = ({
         }
     };
 
-    // if we already have a value, show it
-    const renderExistingValue = () => {
-        if (!value) return null;
-
-        let structureInfo = '';
-
-        switch (value.type) {
-            case 'target':
-                structureInfo = `Target funding: $${value.amount} CAD for ${value.equityPercentage}% equity`;
-                break;
-            case 'minimum':
-                structureInfo = `Minimum funding: $${value.minAmount || 0} to $${value.maxAmount || 0} CAD for ${value.equityPercentage}% equity`;
-                break;
-            case 'tiered':
-                structureInfo = `Tiered funding: ${value.tiers?.length || 0} tiers for total ${(value.tiers || []).reduce((sum, tier) => sum + (Number.parseFloat(tier.equityPercentage) || 0), 0)}% equity`;
-                break;
-        }
-
-        return (
-            <div className="rounded-md border border-gray-300 p-4 mb-4">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h3 className="text-md font-medium">
-                            {value.type.charAt(0).toUpperCase() +
-                                value.type.slice(1)}{' '}
-                            Funding Structure
-                        </h3>
-                        <p className="text-sm text-gray-600">{structureInfo}</p>
-                    </div>
-                    <Button onClick={handleOpenModal} variant="secondary">
-                        Edit
-                    </Button>
-                </div>
-            </div>
-        );
-    };
-
     const renderModal = () => {
         if (!isModalOpen) return null;
 
@@ -2446,43 +2362,64 @@ export const FundingStructure: FC<FundingStructureProps> = ({
     if (!value) {
         return (
             <React.Fragment key="funding-structure-empty">
-                <div>
-                    <div className="text-center">
-                        <Button
-                            onClick={handleOpenModal}
-                            type="button"
-                            variant="primary"
-                            liquid={true}
-                            className="bg-[#0e3450] hover:bg-[#154261] text-white"
-                        >
-                            Choose funding
-                        </Button>
-                    </div>
-
+                <div className="text-center">
+                    <Button
+                        onClick={handleOpenModal}
+                        type="button"
+                        variant="primary"
+                        liquid={true}
+                        disabled={disabled}
+                    >
+                        Choose funding
+                    </Button>
                     {renderModal()}
                 </div>
             </React.Fragment>
         );
     }
 
+    // Generate the funding details text
+    let fundingDetails = '';
+    switch (value.type) {
+        case 'target':
+            fundingDetails = `$${formatNumberWithCommas(value.amount)} for ${value.equityPercentage}% equity`;
+            break;
+        case 'minimum':
+            fundingDetails = `$${formatNumberWithCommas(value.minAmount || '0')} to $${formatNumberWithCommas(value.maxAmount || '0')} for ${value.equityPercentage}% equity`;
+            break;
+        case 'tiered':
+            fundingDetails = `${value.tiers?.length || 0} tiers for ${(value.tiers || []).reduce((sum, tier) => sum + (Number.parseFloat(tier.equityPercentage) || 0), 0)}% equity`;
+            break;
+    }
+
     return (
         <React.Fragment key="funding-structure-with-value">
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                <div className="flex justify-between items-start">
-                    <h3 className="text-lg font-medium text-gray-900 mb-3">
-                        Funding Structure
-                    </h3>
-                    <button
-                        onClick={handleOpenModal}
-                        type="button"
-                        className="px-4 py-2 rounded-md text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors duration-150 text-sm font-medium"
-                    >
-                        Edit
-                    </button>
+            <div className="rounded-md bg-white flex items-center justify-between py-2.5 px-3 border border-gray-100 shadow-sm">
+                <div className="flex items-center">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-700">
+                            {value.type === 'target'
+                                ? 'Target'
+                                : value.type === 'minimum'
+                                  ? 'Min/Max'
+                                  : 'Tiered'}{' '}
+                            funding:
+                        </span>
+                        <span className="text-sm text-gray-600">
+                            {fundingDetails}
+                        </span>
+                    </div>
                 </div>
-                {renderExistingValue()}
-                {renderModal()}
+                <Button
+                    onClick={handleOpenModal}
+                    variant="secondary"
+                    size="sm"
+                    disabled={disabled}
+                >
+                    Edit
+                </Button>
             </div>
+            {renderModal()}
         </React.Fragment>
     );
 };

@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"KonferCA/SPUR/internal/permissions"
@@ -488,4 +489,177 @@ Handle incoming logout requests. This will empty out the refresh token cookie.
 func (h *Handler) handleLogout(c echo.Context) error {
 	unsetRefreshTokenCookie(c)
 	return v1_common.Success(c, http.StatusOK, "Successfully logged out.")
+}
+
+/*
+helper function that sends a password reset email.
+keep in mind that we don't reveal if the email exists or not for security reasons.
+*/
+func sendPasswordResetEmail(email string, queries *db.Queries) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	// find user by email
+	user, err := queries.GetUserByEmail(ctx, email)
+	if err != nil {
+		// if user doesn't exist, just return without error to prevent email enumeration
+		log.Info().Str("email", email).Msg("Password reset requested for non-existent email.")
+		return
+	}
+
+	// check if a token already exists
+	exists, err := queries.ExistsPasswordResetTokenByUserID(ctx, user.ID)
+	if err != nil {
+		log.Error().Err(err).Str("user_id", user.ID).Str("email", email).Msg("Failed to check existing password reset token.")
+		return
+	}
+
+	if exists {
+		// remove existing token
+		err := queries.RemovePasswordResetTokenByUserID(ctx, user.ID)
+		if err != nil {
+			log.Error().Err(err).Str("user_id", user.ID).Str("email", email).Msg("Failed to remove existing password reset token.")
+			return
+		}
+	}
+
+	// create a new token valid for 1 hour
+	exp := time.Now().Add(time.Hour).UTC()
+	tokenID, err := queries.NewPasswordResetToken(ctx, db.NewPasswordResetTokenParams{
+		UserID:    user.ID,
+		ExpiresAt: exp.Unix(),
+	})
+	if err != nil {
+		log.Error().Err(err).Str("user_id", user.ID).Str("email", email).Msg("Failed to create password reset token.")
+		return
+	}
+
+	// generate jwt for password reset
+	resetToken, err := jwt.GenerateResetPasswordToken(email, tokenID, exp)
+	if err != nil {
+		log.Error().Err(err).Str("user_id", user.ID).Str("email", email).Msg("Failed to generate password reset token.")
+		return
+	}
+
+	// send email
+	err = service.SendPasswordResetEmail(ctx, email, resetToken)
+	if err != nil {
+		log.Error().Err(err).Str("user_id", user.ID).Str("email", email).Msg("Failed to send password reset email.")
+		return
+	}
+
+	log.Info().Str("user_id", user.ID).Str("email", email).Msg("Password reset email sent.")
+}
+
+/*
+this handler is responsible for initiating the password reset flow.
+it accepts an email address and sends a password reset link if the user exists.
+for security reasons, it always returns a success response regardless of whether
+the email exists or not to prevent email enumeration attacks.
+*/
+func (h *Handler) handleForgotPassword(c echo.Context) error {
+	var req ForgotPasswordRequest
+	if err := c.Bind(&req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
+	}
+	if err := c.Validate(&req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
+	}
+
+	// send password reset email in a goroutine to avoid blocking
+	go sendPasswordResetEmail(req.Email, h.server.GetQueries())
+
+	// always return success even if the email doesn't exist
+	// this prevents email enumeration attacks
+	return v1_common.Success(c, http.StatusOK, "If the email exists in our system, a password reset link will be sent.")
+}
+
+/*
+this handler is responsible for handling the actual password reset.
+it verifies the token and changes the user's password if the token is valid.
+*/
+func (h *Handler) handleResetPassword(c echo.Context) error {
+	logger := middleware.GetLogger(c)
+
+	var req ResetPasswordRequest
+	if err := c.Bind(&req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
+	}
+	if err := c.Validate(&req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Minute)
+	defer cancel()
+
+	// verify the token
+	claims, err := jwt.VerifyResetPasswordToken(req.Token)
+	if err != nil {
+		logger.Error(err, "Failed to verify password reset token")
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid or expired token", nil)
+	}
+
+	// get the token from the database
+	token, err := h.server.GetQueries().GetPasswordResetTokenByID(ctx, claims.ID)
+	if err != nil {
+		logger.Error(err, "Failed to get password reset token from database")
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid or expired token", nil)
+	}
+
+	// start a transaction
+	tx, err := h.server.GetDB().Begin(ctx)
+	if err != nil {
+		logger.Error(err, "Failed to start transaction")
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to reset password", err)
+	}
+	defer tx.Rollback(ctx)
+
+	q := h.server.GetQueries().WithTx(tx)
+
+	// get the user
+	user, err := q.GetUserByID(ctx, token.UserID)
+	if err != nil {
+		logger.Error(err, "Failed to get user data")
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to reset password", err)
+	}
+
+	// check if the email matches
+	if strings.ToLower(user.Email) != strings.ToLower(claims.Email) {
+		logger.Error(err, "Email mismatch in password reset token")
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid token", nil)
+	}
+
+	// hash the new password
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		logger.Error(err, "Failed to hash password")
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to reset password", err)
+	}
+
+	// update the user's password and create a new token salt
+	err = q.UpdateUserPassword(ctx, db.UpdateUserPasswordParams{
+		Password: string(passwordHash),
+		ID:       user.ID,
+	})
+	if err != nil {
+		logger.Error(err, "Failed to update user password")
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to reset password", err)
+	}
+
+	// remove the token
+	err = q.RemovePasswordResetTokenByID(ctx, token.ID)
+	if err != nil {
+		logger.Error(err, "Failed to remove password reset token")
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to reset password", err)
+	}
+
+	// commit the transaction
+	if err = tx.Commit(ctx); err != nil {
+		logger.Error(err, "Failed to commit transaction")
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to reset password", err)
+	}
+
+	logger.Info(fmt.Sprintf("Password reset successful for user: %s", user.Email))
+
+	return v1_common.Success(c, http.StatusOK, "Password reset successful")
 }

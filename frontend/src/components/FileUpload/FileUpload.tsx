@@ -1,8 +1,5 @@
-import {
-    type ProjectDocument,
-    uploadDocument,
-    removeDocument,
-} from '@/services/project';
+import { uploadDocument, removeDocument } from '@/services/project';
+import type { ProjectDocument } from '@/types/project';
 import { useState, useRef } from 'react';
 import { FiUpload, FiX, FiLoader, FiCheck } from 'react-icons/fi';
 import { useDebounceFn, useRandomId } from '@/hooks';
@@ -45,6 +42,7 @@ export interface FileUploadProps {
     enableAutosave?: boolean;
     limit?: number;
     accept?: string;
+    disabled?: boolean;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
@@ -62,6 +60,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
     accept = '.pdf,.png,.jpeg,.jpg',
     enableAutosave = false,
     limit = Number.POSITIVE_INFINITY,
+    disabled = false,
 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [uploadedFiles, setUploadedFiles] =
@@ -150,7 +149,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
     const handleDragIn = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        setIsDragging(true);
+        if (!disabled && !isProcessing) {
+            setIsDragging(true);
+        }
     };
 
     const handleDragOut = (e: React.DragEvent) => {
@@ -164,6 +165,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(false);
+
+        if (disabled || isProcessing) {
+            return;
+        }
 
         const files = Array.from(e.dataTransfer.files);
         handleFiles(files);
@@ -271,8 +276,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
                         <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="mt-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
-                            disabled={isProcessing}
+                            className={`mt-2 px-4 py-2 ${disabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-md text-sm`}
+                            disabled={isProcessing || disabled}
                         >
                             Select File
                         </button>
@@ -286,7 +291,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                     accept={accept}
                     className="hidden"
                     multiple
-                    disabled={isProcessing}
+                    disabled={isProcessing || disabled}
                 />
             </div>
 
@@ -318,8 +323,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
                             <button
                                 type="button"
                                 onClick={() => removeFile(file)}
-                                className="text-gray-400 hover:text-gray-600"
-                                disabled={isProcessing}
+                                className={`text-gray-400 ${disabled ? 'cursor-not-allowed' : 'hover:text-gray-600'}`}
+                                disabled={isProcessing || disabled}
                             >
                                 <FiX />
                             </button>
