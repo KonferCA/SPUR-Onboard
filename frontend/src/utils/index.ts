@@ -7,3 +7,5 @@ export {
 } from './scroll';
 
 export { getApiUrl, HttpStatusCode } from './api';
+
+export * from './usePageTitle';

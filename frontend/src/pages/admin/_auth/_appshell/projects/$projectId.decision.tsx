@@ -8,6 +8,7 @@ import {
     ProjectStatusEnum,
     updateProjectStatus,
 } from '@/services/projects';
+import { usePageTitle } from '@/utils';
 
 export const Route = createFileRoute(
     '/admin/_auth/_appshell/projects/$projectId/decision'
@@ -16,8 +17,11 @@ export const Route = createFileRoute(
 });
 
 function ProjectDecisionPage() {
+    // set project decision page title
+    usePageTitle('Project Decision');
+
     const { projectId } = Route.useParams();
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
     const { push } = useNotification();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
@@ -27,6 +31,7 @@ function ProjectDecisionPage() {
 
     useEffect(() => {
         async function loadProject() {
+            const accessToken = getAccessToken();
             if (!accessToken || !projectId) return;
 
             try {
@@ -44,9 +49,10 @@ function ProjectDecisionPage() {
         }
 
         loadProject();
-    }, [accessToken, projectId, push]);
+    }, [getAccessToken, projectId, push]);
 
     const handleSubmit = async () => {
+        const accessToken = getAccessToken();
         if (!selectedStatus || !accessToken || !projectId) return;
 
         try {

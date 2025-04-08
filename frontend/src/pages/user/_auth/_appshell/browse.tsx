@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { listProjectsAll } from '@/services/project';
 import type { ExtendedProjectResponse, Project } from '@/types/project';
 import type { CompanyResponse } from '@/services/company';
+import { usePageTitle } from '@/utils';
 
 export const Route = createFileRoute('/user/_auth/_appshell/browse')({
     component: BrowseProjects,
@@ -30,13 +31,17 @@ const transformToProject = (
 });
 
 function BrowseProjects() {
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Set the page title
+    usePageTitle('Browse');
+
     useEffect(() => {
         async function fetchCompanyAndProjects() {
+            const accessToken = getAccessToken();
             if (!accessToken) return;
             try {
                 const projectList = await listProjectsAll(accessToken);
@@ -53,9 +58,9 @@ function BrowseProjects() {
             }
         }
         fetchCompanyAndProjects();
-    }, [accessToken]);
+    }, [getAccessToken]);
 
-    if (!accessToken) {
+    if (!getAccessToken()) {
         return null;
     }
 

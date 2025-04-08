@@ -16,14 +16,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ProfilePictureUpload } from '@/components/ProfilePictureUpload/ProfilePictureUpload';
 import type { SocialLink } from '@/types';
 import { useNotification } from '@/contexts';
+import { usePageTitle } from '@/utils';
 
 export const Route = createFileRoute('/user/_auth/_appshell/settings/profile')({
     component: ProfileSettings,
 });
 
 function ProfileSettings() {
+    // set profile page title
+    usePageTitle('Profile');
+
     const queryClient = useQueryClient();
-    const { accessToken, user } = useAuth();
+    const { getAccessToken, user } = useAuth();
     const [error, setError] = useState<string | null>(null);
     const [socials, setSocials] = useState<SocialLink[]>([]);
     const notification = useNotification();
@@ -32,11 +36,12 @@ function ProfileSettings() {
     const { data: profile, isLoading } = useQuery({
         queryKey: ['profile', user?.id],
         queryFn: () => {
+            const accessToken = getAccessToken();
             if (!accessToken || !user?.id)
                 throw new Error('No access token or user ID');
             return getUserProfile(accessToken, user.id);
         },
-        enabled: !!accessToken && !!user?.id, // only run query if we have a token and user ID
+        enabled: !!getAccessToken() && !!user?.id, // only run query if we have a token and user ID
     });
 
     useEffect(() => {
@@ -48,6 +53,7 @@ function ProfileSettings() {
     // update profile mutation
     const { mutate: updateProfile, isLoading: isUpdating } = useMutation({
         mutationFn: (data: UpdateProfileRequest) => {
+            const accessToken = getAccessToken();
             if (!accessToken || !user?.id) {
                 throw new Error('No access token or user ID');
             }
@@ -99,7 +105,7 @@ function ProfileSettings() {
         }
     };
 
-    if (!accessToken || !user) {
+    if (!getAccessToken() || !user) {
         return (
             <div>
                 <div className="flex items-center justify-center h-64">

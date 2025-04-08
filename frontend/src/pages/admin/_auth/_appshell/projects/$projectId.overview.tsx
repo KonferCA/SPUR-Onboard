@@ -26,6 +26,7 @@ import { Transaction } from '@mysten/sui/transactions';
 import { SuiClient } from '@mysten/sui/client';
 import { Dialog } from '@headlessui/react';
 import { useRandomId } from '@/hooks';
+import { usePageTitle } from '@/utils';
 
 // interface ProjectParams {
 //   projectId: string
@@ -158,8 +159,11 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
+    // set project overview page title
+    usePageTitle('Project Overview');
+
     const { projectId } = Route.useParams();
-    const { accessToken } = useAuth();
+    const { getAccessToken } = useAuth();
     const wallet = useWallet();
     const [company, setCompany] = useState<CompanyResponse | null>(null);
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -227,6 +231,7 @@ function RouteComponent() {
 
     useEffect(() => {
         async function fetchData() {
+            const accessToken = getAccessToken();
             if (!accessToken || !projectId) return;
 
             try {
@@ -429,7 +434,7 @@ function RouteComponent() {
         }
 
         fetchData();
-    }, [accessToken, projectId]);
+    }, [getAccessToken, projectId]);
 
     if (loading) {
         return <div>Loading...</div>;
