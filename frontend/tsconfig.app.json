@@ -23,7 +23,7 @@
             "@services": ["./src/services/index"]
         },
 
-        "moduleResolution": "Bundler",
+        "moduleResolution": "bundler",
         "allowImportingTsExtensions": true,
         "isolatedModules": true,
         "moduleDetection": "force",
@@ -38,5 +38,5 @@
     },
 
     "include": ["src"],
-    "exclude": ["node_moddules"]
+    "exclude": ["node_modules"]
 }
