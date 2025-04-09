@@ -300,6 +300,7 @@ func validateProjectFormAnswers(questions []db.GetQuestionsByProjectRow) (valida
 							Question: question.Question,
 							Message:  "Funding structure equity percentage must be 1% to 99%.",
 						})
+						continue
 					}
 					amount, success := new(big.Float).SetPrec(prec).SetString(fundingModel.Amount)
 					if !success || amount.Cmp(zero) == -1 {
@@ -320,6 +321,7 @@ func validateProjectFormAnswers(questions []db.GetQuestionsByProjectRow) (valida
 							Question: question.Question,
 							Message:  "Funding structure equity percentage must be 1% to 99%.",
 						})
+						continue
 					}
 
 					if fundingModel.MinAmount == nil {
@@ -327,6 +329,7 @@ func validateProjectFormAnswers(questions []db.GetQuestionsByProjectRow) (valida
 							Question: question.Question,
 							Message:  "Funding structure missing minimum amount.",
 						})
+						continue
 					} else {
 						minAmount, success = new(big.Float).SetPrec(prec).SetString(*fundingModel.MinAmount)
 						if !success {
@@ -342,6 +345,7 @@ func validateProjectFormAnswers(questions []db.GetQuestionsByProjectRow) (valida
 							Question: question.Question,
 							Message:  "Funding structure missing maximum amount.",
 						})
+						continue
 					} else {
 						maxAmount, success = new(big.Float).SetPrec(prec).SetString(*fundingModel.MaxAmount)
 						if !success {
