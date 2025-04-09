@@ -49,6 +49,7 @@ import { useLocation } from '@tanstack/react-router';
 import { useSidebar } from '@/contexts/SidebarContext/SidebarContext';
 import type { FundingStructureModel } from '@/components/FundingStructure';
 import { ProjectStatusEnum } from '@/services/projects';
+import { validateFundingStructure } from '@/utils/form-validation';
 
 export const Route = createFileRoute(
     '/user/_auth/_appshell/project/$projectId/form'
@@ -835,6 +836,10 @@ function ProjectFormPage() {
                                     // (ex., it's not null or undefined)
                                     if (!typedValue.fundingStructure) {
                                         fieldValid = false;
+                                    } else {
+                                        fieldValid = validateFundingStructure(
+                                            typedValue.fundingStructure
+                                        );
                                     }
                                 }
                                 break;
