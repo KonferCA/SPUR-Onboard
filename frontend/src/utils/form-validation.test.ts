@@ -448,8 +448,9 @@ describe('validateFundingStructure', () => {
             amount: '100000',
             equityPercentage: '10',
             limitInvestors: false,
-        } as FundingStructureModel;
+        };
 
+        //@ts-ignore: the type is invalid and the function should be able to handle it
         expect(validateFundingStructure(unknownType)).toBe(false);
     });
 });

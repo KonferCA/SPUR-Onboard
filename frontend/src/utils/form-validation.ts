@@ -193,7 +193,6 @@ export function validateFundingStructure(
         case 'target': {
             // Validate equity percentage must be 1% to 99%
             try {
-                const equity = new Decimal(input.equityPercentage);
                 if (!isValidEquity(input.equityPercentage)) {
                     return false;
                 }
@@ -215,7 +214,6 @@ export function validateFundingStructure(
         case 'minimum': {
             // Validate equity percentage must be 1% to 99%
             try {
-                const equity = new Decimal(input.equityPercentage);
                 if (!isValidEquity(input.equityPercentage)) {
                     return false;
                 }
