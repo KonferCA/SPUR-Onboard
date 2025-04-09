@@ -23,7 +23,7 @@ const (
 const (
 	PermAdmin = PermIsAdmin | PermViewAllProjects | PermReviewProjects |
 		PermManageUsers | PermManagePermissions | PermCommentOnProjects |
-		PermManageInvestments
+		PermManageInvestments | PermSubmitProject
 
 	PermStartupOwner = PermSubmitProject | PermCommentOnProjects | PermManageDocuments |
 		PermManageTeam
