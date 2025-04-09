@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Link } from '@tanstack/react-router';
+import { usePageTitle } from '@/utils';
 
 import {
     CreateProjectImage,
@@ -73,6 +74,8 @@ const cards = [
 ];
 
 const HomePage: React.FC = () => {
+    usePageTitle();
+
     const cardClassName =
         'group block p-6 rounded-lg border-2 border-gray-200 hover:border-[#F4802F] hover:shadow-[0_0_0_1px_#F4802F] transition-all duration-300 relative overflow-hidden h-60 bg-white hover:bg-[rgba(255,194,152,0.25)]';
     const disabledCardClassName =

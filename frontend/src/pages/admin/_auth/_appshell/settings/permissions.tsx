@@ -9,6 +9,7 @@ import {
     type User,
 } from '@/services/users';
 import { useNotification } from '@/contexts/NotificationContext';
+import { usePageTitle } from '@/utils';
 
 export const Route = createFileRoute(
     '/admin/_auth/_appshell/settings/permissions'
@@ -17,7 +18,9 @@ export const Route = createFileRoute(
 });
 
 function PermissionsPage() {
-    const { accessToken, isLoading: authLoading } = useAuth();
+    // set permissions page title
+    usePageTitle('Permissions');
+    const { getAccessToken, isLoading: authLoading } = useAuth();
     const { push } = useNotification();
     const [selectedRole, setSelectedRole] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -63,6 +66,7 @@ function PermissionsPage() {
     };
 
     useEffect(() => {
+        const accessToken = getAccessToken();
         if (authLoading || !accessToken) return;
 
         const token = accessToken;
@@ -93,7 +97,7 @@ function PermissionsPage() {
 
         fetchUsers();
     }, [
-        accessToken,
+        getAccessToken,
         authLoading,
         selectedRole,
         searchQuery,
@@ -106,6 +110,7 @@ function PermissionsPage() {
         userId: string,
         newRole: 'admin' | 'investor' | 'regular'
     ) => {
+        const accessToken = getAccessToken();
         if (!accessToken) return;
 
         const token = accessToken;
@@ -138,6 +143,7 @@ function PermissionsPage() {
     const handleBulkRoleUpdate = async (
         newRole: 'admin' | 'investor' | 'regular'
     ) => {
+        const accessToken = getAccessToken();
         if (selectedUsers.length === 0 || !accessToken) return;
 
         const token = accessToken;
@@ -188,7 +194,7 @@ function PermissionsPage() {
         );
     }
 
-    if (!accessToken) {
+    if (!getAccessToken()) {
         return (
             <div className="p-4 md:p-6">
                 <div className="flex items-center justify-center h-64">
