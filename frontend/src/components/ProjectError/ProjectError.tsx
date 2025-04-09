@@ -28,6 +28,7 @@ export const ProjectError: React.FC<ProjectErrorProps> = ({
         e: React.MouseEvent
     ) => {
         e.preventDefault();
+
         onErrorClick(
             error.section,
             sanitizeHtmlId(error.subsection),
@@ -63,18 +64,18 @@ export const ProjectError: React.FC<ProjectErrorProps> = ({
     return (
         <div
             className={`fixed right-0 top-32 z-30 transform-gpu transition-all duration-300 ease-out ${
-                isOpen ? 'translate-x-0' : 'translate-x-[calc(100%-40px)]'
+                isOpen ? 'translate-x-0' : 'translate-x-full'
             }`}
         >
             <button
                 onClick={onToggle}
-                className={`absolute -left-10 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-l-lg border border-red-300 bg-red-50 text-red-600 shadow-lg hover:bg-red-100 transition-all ${
+                className={`absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-l-lg border border-red-300 bg-red-50 text-red-600 shadow-lg hover:bg-red-100 transition-all ${
                     isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
                 }`}
                 type="button"
             >
                 <MdChevronLeft className="text-2xl" />
-                <span className="absolute -top-2 -right-2 bg-white text-red-500 rounded-full w-6 h-6 text-xs flex items-center justify-center shadow-sm border border-red-200">
+                <span className="absolute -top-2 -left-2 bg-white text-red-500 rounded-full w-6 h-6 text-xs flex items-center justify-center shadow-sm border border-red-200">
                     {errors.length}
                 </span>
             </button>

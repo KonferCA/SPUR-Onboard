@@ -1063,6 +1063,16 @@ function ProjectFormPage() {
         if (sectionIndex !== -1) {
             setCurrentStep(sectionIndex);
 
+            navigate({
+                to: `/user/project/${currentProjectId}/form`,
+                search: {
+                    section: groupedQuestions[sectionIndex].section
+                        .toLowerCase()
+                        .replace(/\s+/g, '-'),
+                },
+                replace: true,
+            });
+
             // delay to allow the step change to render
             setTimeout(() => {
                 const subsectionElement = document.getElementById(subsectionId);
@@ -1103,10 +1113,6 @@ function ProjectFormPage() {
 
                 if (isTargetInView) {
                     // if already in view, highlight immediately
-                    setHighlightedQuestionId({
-                        id: targetQuestionId,
-                        type: highlightType,
-                    });
                     setHighlightedQuestionId({
                         id: targetQuestionId,
                         type: highlightType,
