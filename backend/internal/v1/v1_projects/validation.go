@@ -445,9 +445,40 @@ func validateTieredFunding(question db.GetQuestionsByProjectRow, model db.Fundin
 		if !success {
 			errors = append(errors, ValidationError{
 				Question: question.Question,
-				Message:  fmt.Sprintf("Funding structure tier at position %d has invalid equity percentage.", i),
+				Message:  fmt.Sprintf("Funding structure tier at position %d has invalid equity percentage: not a correct decimal number.", i),
 			})
+			continue
 		}
+
+		// Validate the equity at each tier to be in acceptable range
+		if !equityCmp(equity, zero, hundred) {
+			errors = append(errors, ValidationError{
+				Question: question.Question,
+				Message:  fmt.Sprintf("Funding structure tier at position %d has invalid equity percentage: equity must be greater than 0% but less than 100%.", i),
+			})
+			continue
+		}
+
+		// Validate the amount at each tier to be non-negative
+		amount, success := new(big.Float).SetPrec(10).SetString(tier.Amount)
+		if !success {
+			errors = append(errors, ValidationError{
+				Question: question.Question,
+				Message:  fmt.Sprintf("Funding structure tier at position %d has invalid amount: not a correct decimal number", i),
+			})
+			continue
+		}
+
+		if !greaterThan(amount, zero) {
+			errors = append(errors, ValidationError{
+				Question: question.Question,
+				Message:  fmt.Sprintf("Funding structure tier at position %d has invalid amount: the value must be greater than 0.", i),
+			})
+			continue
+		}
+
+		// Add tier equity to total equity
+		// Action performed last after making sure that both equity and amount are valid
 		totalEquity = totalEquity.Add(totalEquity, equity)
 	}
 
