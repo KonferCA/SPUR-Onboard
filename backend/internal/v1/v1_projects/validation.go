@@ -462,7 +462,7 @@ func validateTieredFunding(question db.GetQuestionsByProjectRow, model db.Fundin
 	return errors
 }
 
-// equityCmp does a check against x value be between min (inclusive) and max (exclusive)
+// equityCmp does a check against x value to be between min (inclusive) and max (exclusive)
 func equityCmp(x, min, max *big.Float) bool {
 	minRes := x.Cmp(min)
 	maxRes := x.Cmp(max)
