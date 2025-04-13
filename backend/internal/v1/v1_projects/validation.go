@@ -464,7 +464,15 @@ func validateTieredFunding(question db.GetQuestionsByProjectRow, model db.Fundin
 
 // equityCmp does a check against x value to be between min (inclusive) and max (exclusive)
 func equityCmp(x, min, max *big.Float) bool {
-	minRes := x.Cmp(min)
-	maxRes := x.Cmp(max)
-	return minRes > -1 && maxRes < 1
+	return greaterThan(x, min) && lessThan(x, max)
+}
+
+// greaterThan is a helper function that checks if a is greater than b.
+func greaterThan(a, b *big.Float) bool {
+	return a.Cmp(b) == 1
+}
+
+// lessThan is a helper function that checks if a is less than b.
+func lessThan(a, b *big.Float) bool {
+	return a.Cmp(b) == -1
 }
