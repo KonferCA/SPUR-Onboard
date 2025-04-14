@@ -136,14 +136,14 @@ func TestEquityCmp(t *testing.T) {
 			x:        "0",
 			min:      "0",
 			max:      "100",
-			expected: true,
+			expected: false,
 		},
 		{
 			name:     "Equity equal to max",
 			x:        "100",
 			min:      "0",
 			max:      "100",
-			expected: true, // Actually true based on implementation
+			expected: false,
 		},
 		{
 			name:     "Equity below min",
@@ -178,23 +178,167 @@ func TestEquityCmp(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Convert string values to big.Float for comparison
-			x, _ := new(big.Float).SetPrec(10).SetString(tc.x)
-			min, _ := new(big.Float).SetPrec(10).SetString(tc.min)
-			max, _ := new(big.Float).SetPrec(10).SetString(tc.max)
+			x, _ := new(big.Float).SetPrec(precision).SetString(tc.x)
+			min, _ := new(big.Float).SetPrec(precision).SetString(tc.min)
+			max, _ := new(big.Float).SetPrec(precision).SetString(tc.max)
 
 			result := equityCmp(x, min, max)
-			assert.Equal(t, tc.expected, result)
+			assert.Equal(t, tc.expected, result, "For equity value %s", tc.x)
+		})
+	}
+}
+
+func TestGreaterThan(t *testing.T) {
+	testCases := []struct {
+		name     string
+		a        string
+		b        string
+		expected bool
+	}{
+		{
+			name:     "a > b",
+			a:        "10",
+			b:        "5",
+			expected: true,
+		},
+		{
+			name:     "a = b",
+			a:        "5",
+			b:        "5",
+			expected: false,
+		},
+		{
+			name:     "a < b",
+			a:        "3",
+			b:        "5",
+			expected: false,
+		},
+		{
+			name:     "Decimal a > b",
+			a:        "5.1",
+			b:        "5.0",
+			expected: true,
+		},
+		{
+			name:     "Large number a > b",
+			a:        "1000000.01",
+			b:        "1000000.00",
+			expected: true,
+		},
+		{
+			name:     "Negative a > negative b",
+			a:        "-1",
+			b:        "-2",
+			expected: true,
+		},
+		{
+			name:     "Negative a < positive b",
+			a:        "-1",
+			b:        "1",
+			expected: false,
+		},
+		{
+			name:     "Zero a = zero b",
+			a:        "0",
+			b:        "0",
+			expected: false,
+		},
+		{
+			name:     "99.99 > 100",
+			a:        "99.99",
+			b:        "100",
+			expected: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Convert string values to big.Float for comparison
+			a, _ := new(big.Float).SetPrec(precision).SetString(tc.a)
+			b, _ := new(big.Float).SetPrec(precision).SetString(tc.b)
+
+			result := greaterThan(a, b)
+			assert.Equal(t, tc.expected, result, "For a=%s, b=%s", tc.a, tc.b)
+		})
+	}
+}
+
+func TestLessThan(t *testing.T) {
+	testCases := []struct {
+		name     string
+		a        string
+		b        string
+		expected bool
+	}{
+		{
+			name:     "a < b",
+			a:        "5",
+			b:        "10",
+			expected: true,
+		},
+		{
+			name:     "a = b",
+			a:        "5",
+			b:        "5",
+			expected: false,
+		},
+		{
+			name:     "a > b",
+			a:        "7",
+			b:        "5",
+			expected: false,
+		},
+		{
+			name:     "Decimal a < b",
+			a:        "5.0",
+			b:        "5.1",
+			expected: true,
+		},
+		{
+			name:     "Large number a < b",
+			a:        "1000000.00",
+			b:        "1000000.001",
+			expected: true,
+		},
+		{
+			name:     "Negative a < negative b",
+			a:        "-3",
+			b:        "-2",
+			expected: true,
+		},
+		{
+			name:     "Negative a < positive b",
+			a:        "-1",
+			b:        "1",
+			expected: true,
+		},
+		{
+			name:     "Zero a = zero b",
+			a:        "0",
+			b:        "0",
+			expected: false,
+		},
+		{
+			name:     "99.99 < 100",
+			a:        "99.99",
+			b:        "100",
+			expected: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Convert string values to big.Float for comparison
+			a, _ := new(big.Float).SetPrec(precision).SetString(tc.a)
+			b, _ := new(big.Float).SetPrec(precision).SetString(tc.b)
+
+			result := lessThan(a, b)
+			assert.Equal(t, tc.expected, result, "For a=%s, b=%s", tc.a, tc.b)
 		})
 	}
 }
 
 func TestValidateFundingStructure(t *testing.T) {
-	// Define common components for the test cases
-	const prec = 10
-	// These precision values match what's used in the actual validation function
-	_, _ = new(big.Float).SetPrec(prec).SetString("0")
-	_, _ = new(big.Float).SetPrec(prec).SetString("100")
-
 	// Helper function to create a mock question
 	createFundingQuestion := func(answer string) db.GetQuestionsByProjectRow {
 		return db.GetQuestionsByProjectRow{

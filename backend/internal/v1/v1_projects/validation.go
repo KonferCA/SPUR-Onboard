@@ -17,6 +17,10 @@ import (
 	"strings"
 )
 
+const (
+	precision = big.MaxPrec
+)
+
 /*
  * validationType defines a single validation rule.
  * Each validation has:
@@ -323,9 +327,8 @@ func validateFundingStructure(question db.GetQuestionsByProjectRow) []Validation
 		})
 	}
 
-	const prec = 10
-	zero, _ := new(big.Float).SetPrec(prec).SetString("0")
-	hundred, _ := new(big.Float).SetPrec(prec).SetString("100")
+	zero, _ := new(big.Float).SetPrec(precision).SetString("0")
+	hundred, _ := new(big.Float).SetPrec(precision).SetString("100")
 
 	// Validate based on funding type
 	switch fundingModel.Type {
@@ -346,7 +349,7 @@ func validateTargetFunding(question db.GetQuestionsByProjectRow, model db.Fundin
 	var errors []ValidationError
 
 	// Validate equity percentage
-	equity, success := new(big.Float).SetPrec(10).SetString(model.EquityPercentage)
+	equity, success := new(big.Float).SetPrec(precision).SetString(model.EquityPercentage)
 	if !success || !equityCmp(equity, zero, hundred) {
 		return append(errors, ValidationError{
 			Question: question.Question,
@@ -355,7 +358,7 @@ func validateTargetFunding(question db.GetQuestionsByProjectRow, model db.Fundin
 	}
 
 	// Validate amount
-	amount, success := new(big.Float).SetPrec(10).SetString(model.Amount)
+	amount, success := new(big.Float).SetPrec(precision).SetString(model.Amount)
 	if !success || amount.Cmp(zero) == -1 {
 		errors = append(errors, ValidationError{
 			Question: question.Question,
@@ -372,7 +375,7 @@ func validateMinimumFunding(question db.GetQuestionsByProjectRow, model db.Fundi
 	var errors []ValidationError
 
 	// Validate equity percentage
-	equity, success := new(big.Float).SetPrec(10).SetString(model.EquityPercentage)
+	equity, success := new(big.Float).SetPrec(precision).SetString(model.EquityPercentage)
 	if !success || !equityCmp(equity, zero, hundred) {
 		return append(errors, ValidationError{
 			Question: question.Question,
@@ -389,7 +392,7 @@ func validateMinimumFunding(question db.GetQuestionsByProjectRow, model db.Fundi
 		})
 	}
 
-	minAmount, success = new(big.Float).SetPrec(10).SetString(*model.MinAmount)
+	minAmount, success = new(big.Float).SetPrec(equity.Prec()).SetString(*model.MinAmount)
 	if !success {
 		errors = append(errors, ValidationError{
 			Question: question.Question,
@@ -406,7 +409,7 @@ func validateMinimumFunding(question db.GetQuestionsByProjectRow, model db.Fundi
 		})
 	}
 
-	maxAmount, success = new(big.Float).SetPrec(10).SetString(*model.MaxAmount)
+	maxAmount, success = new(big.Float).SetPrec(precision).SetString(*model.MaxAmount)
 	if !success {
 		errors = append(errors, ValidationError{
 			Question: question.Question,
@@ -441,7 +444,7 @@ func validateTieredFunding(question db.GetQuestionsByProjectRow, model db.Fundin
 	// Calculate total equity
 	totalEquity := new(big.Float).Copy(zero)
 	for i, tier := range model.Tiers {
-		equity, success := new(big.Float).SetPrec(10).SetString(tier.EquityPercentage)
+		equity, success := new(big.Float).SetPrec(precision).SetString(tier.EquityPercentage)
 		if !success {
 			errors = append(errors, ValidationError{
 				Question: question.Question,
@@ -454,13 +457,17 @@ func validateTieredFunding(question db.GetQuestionsByProjectRow, model db.Fundin
 		if !equityCmp(equity, zero, hundred) {
 			errors = append(errors, ValidationError{
 				Question: question.Question,
-				Message:  fmt.Sprintf("Funding structure tier at position %d has invalid equity percentage: equity must be greater than 0% but less than 100%.", i),
+				Message: fmt.Sprintf(
+					// NOTE: %% escapes the % symbol in the string
+					"Funding structure tier at position %d has invalid equity percentage: equity must be greater than 0%% but less than 100%%.",
+					i,
+				),
 			})
 			continue
 		}
 
 		// Validate the amount at each tier to be non-negative
-		amount, success := new(big.Float).SetPrec(10).SetString(tier.Amount)
+		amount, success := new(big.Float).SetPrec(precision).SetString(tier.Amount)
 		if !success {
 			errors = append(errors, ValidationError{
 				Question: question.Question,
@@ -493,7 +500,7 @@ func validateTieredFunding(question db.GetQuestionsByProjectRow, model db.Fundin
 	return errors
 }
 
-// equityCmp does a check against x value to be between min (inclusive) and max (exclusive)
+// equityCmp does a check against x value to be between min (exclusive) and max (exclusive)
 func equityCmp(x, min, max *big.Float) bool {
 	return greaterThan(x, min) && lessThan(x, max)
 }
@@ -505,5 +512,7 @@ func greaterThan(a, b *big.Float) bool {
 
 // lessThan is a helper function that checks if a is less than b.
 func lessThan(a, b *big.Float) bool {
+	res := a.Cmp(b)
+	fmt.Printf("less than: %d\n", res)
 	return a.Cmp(b) == -1
 }
