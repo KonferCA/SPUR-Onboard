@@ -373,8 +373,9 @@ type Company struct {
 type PasswordResetToken struct {
 	ID        string `json:"id"`
 	UserID    string `json:"user_id"`
-	CreatedAt int64  `json:"created_at"`
+	Token     string `json:"token"`
 	ExpiresAt int64  `json:"expires_at"`
+	CreatedAt int64  `json:"created_at"`
 }
 
 type Project struct {
