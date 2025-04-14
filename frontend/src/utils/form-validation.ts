@@ -153,20 +153,22 @@ export function validateSocialLink(
 }
 
 /**
- * Validates if a string represents a valid equity percentage (between 0 and 100, inclusive)
+ * Validates if a string represents a valid equity percentage (between 0 and 100, exclusive)
  *
  * @param equityStr - The equity percentage as a string
- * @returns True if the equity is valid (0-100 inclusive), false otherwise
+ * @returns True if the equity is valid (0-100 exclusive), false otherwise
  *
  * Uses Decimal.js to avoid floating point precision errors
  */
 export function isValidEquity(equityStr: string): boolean {
     const zero = new Decimal(0);
     const hundred = new Decimal(100);
-
     try {
         const equity = new Decimal(equityStr);
-        return equity.comparedTo(zero) >= 0 && equity.comparedTo(hundred) < 1;
+        return (
+            equity.comparedTo(zero) === 1 && // greater than 0
+            equity.comparedTo(hundred) === -1 // less than 100
+        );
     } catch (error) {
         return false;
     }
@@ -186,105 +188,131 @@ export function isValidEquity(equityStr: string): boolean {
 export function validateFundingStructure(
     input: FundingStructureModel
 ): boolean {
-    const zero = new Decimal(0);
-    const hundred = new Decimal(100);
-
     switch (input.type) {
         case 'target': {
-            // Validate equity percentage must be 1% to 99%
-            try {
-                if (!isValidEquity(input.equityPercentage)) {
-                    return false;
-                }
-            } catch (error) {
-                return false;
-            }
-
-            // Validate amount can't be less than 0
-            try {
-                const amount = new Decimal(input.amount);
-                if (amount.comparedTo(zero) < 0) {
-                    return false;
-                }
-            } catch (error) {
-                return false;
-            }
-            break;
+            return validateTargetFunding(input);
         }
         case 'minimum': {
-            // Validate equity percentage must be 1% to 99%
-            try {
-                if (!isValidEquity(input.equityPercentage)) {
-                    return false;
-                }
-            } catch (error) {
-                return false;
-            }
-
-            // Validate minAmount
-            if (!input.minAmount) {
-                return false;
-            }
-
-            let minAmount: Decimal;
-            try {
-                minAmount = new Decimal(input.minAmount);
-                if (minAmount.comparedTo(zero) < 0) {
-                    return false;
-                }
-            } catch (error) {
-                return false;
-            }
-
-            // Validate maxAmount
-            if (!input.maxAmount) {
-                return false;
-            }
-
-            let maxAmount: Decimal;
-            try {
-                maxAmount = new Decimal(input.maxAmount);
-                if (maxAmount.comparedTo(zero) < 0) {
-                    return false;
-                }
-            } catch (error) {
-                return false;
-            }
-
-            // Validate minAmount can't be greater than maxAmount
-            if (minAmount.comparedTo(maxAmount) > 0) {
-                return false;
-            }
-            break;
+            return validateMinimumFunding(input);
         }
         case 'tiered': {
-            // Validate tiers exist
-            if (!input.tiers || input.tiers.length === 0) {
-                return false;
-            }
-
-            // Calculate total equity
-            let totalEquity = new Decimal(0);
-
-            // Validate each tier
-            for (const tier of input.tiers) {
-                try {
-                    const equity = new Decimal(tier.equityPercentage);
-                    totalEquity = totalEquity.plus(equity);
-                } catch (error) {
-                    return false;
-                }
-            }
-
-            // Tiered funding structure added equity percentage can't exceed 100%
-            if (totalEquity.comparedTo(hundred) > 0) {
-                return false;
-            }
-            break;
+            return validateTieredFunding(input);
         }
         default:
             return false;
     }
+}
 
+export function validateTargetFunding(input: FundingStructureModel): boolean {
+    const zero = new Decimal(0);
+
+    // Validate equity percentage must be 1% to 99%
+    try {
+        if (!isValidEquity(input.equityPercentage)) {
+            return false;
+        }
+    } catch (error) {
+        return false;
+    }
+
+    // Validate amount can't be 0 or less
+    try {
+        const amount = new Decimal(input.amount);
+        if (amount.comparedTo(zero) < 1) {
+            return false;
+        }
+    } catch (error) {
+        return false;
+    }
+
+    return true;
+}
+
+export function validateMinimumFunding(input: FundingStructureModel): boolean {
+    const zero = new Decimal(0);
+
+    // Validate equity percentage must be 1% to 99%
+    try {
+        if (!isValidEquity(input.equityPercentage)) {
+            return false;
+        }
+    } catch (error) {
+        return false;
+    }
+
+    // Validate minAmount
+    if (!input.minAmount) {
+        return false;
+    }
+
+    let minAmount: Decimal;
+    try {
+        minAmount = new Decimal(input.minAmount);
+        if (minAmount.comparedTo(zero) < 1) {
+            // min amount is less than or equal to 0
+            return false;
+        }
+    } catch (error) {
+        return false;
+    }
+
+    // Validate maxAmount
+    if (!input.maxAmount) {
+        return false;
+    }
+
+    let maxAmount: Decimal;
+    try {
+        maxAmount = new Decimal(input.maxAmount);
+        if (maxAmount.comparedTo(zero) < 1) {
+            // max amount is less than or equal to 0
+            return false;
+        }
+    } catch (error) {
+        return false;
+    }
+
+    // Validate minAmount can't be greater than maxAmount
+    if (minAmount.comparedTo(maxAmount) > 0) {
+        return false;
+    }
+    return true;
+}
+
+export function validateTieredFunding(input: FundingStructureModel): boolean {
+    const zero = new Decimal(0);
+    const hundred = new Decimal(100);
+
+    // Validate tiers exist
+    if (!input.tiers || input.tiers.length === 0) {
+        return false;
+    }
+
+    // Calculate total equity
+    let totalEquity = new Decimal(0);
+
+    // Validate each tier
+    for (const tier of input.tiers) {
+        try {
+            const equity = new Decimal(tier.equityPercentage);
+            if (!isValidEquity(tier.equityPercentage)) {
+                return false;
+            }
+
+            const amount = new Decimal(tier.amount);
+            // amount has to be greater than 0
+            if (amount.comparedTo(zero) < 1) {
+                return false;
+            }
+            totalEquity = totalEquity.plus(equity);
+        } catch (error) {
+            return false;
+        }
+    }
+
+    // Tiered funding structure added equity percentage can't exceed 100%
+    if (totalEquity.comparedTo(hundred) > 0) {
+        return false;
+    }
     return true;
 }

@@ -278,7 +278,7 @@ describe('validateSocialLink', () => {
 
 describe('isValidEquity', () => {
     it('should return true for valid equity values', () => {
-        const validEquities = ['0', '1', '50', '99', '100', '0.5', '99.99'];
+        const validEquities = ['1', '50', '99', '0.5', '99.99'];
 
         validEquities.forEach((equity) => {
             expect(isValidEquity(equity)).toBe(true);
@@ -286,7 +286,16 @@ describe('isValidEquity', () => {
     });
 
     it('should return false for invalid equity values', () => {
-        const invalidEquities = ['-1', '101', 'abc', '100.1', '', undefined];
+        const invalidEquities = [
+            '0',
+            '-1',
+            '101',
+            'abc',
+            '100',
+            '100.1',
+            '',
+            undefined,
+        ];
 
         invalidEquities.forEach((equity) => {
             // @ts-ignore - testing with undefined
