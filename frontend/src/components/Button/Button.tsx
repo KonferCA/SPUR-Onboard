@@ -19,7 +19,7 @@ const iconSizeClasses = {
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     size?: keyof typeof sizeClasses;
     liquid?: boolean;
-    variant?: 'primary' | 'secondary' | 'outline';
+    variant?: 'primary' | 'secondary' | 'outline' | 'dark';
     icon?: ReactNode;
     isLoading?: boolean;
     fullWidth?: boolean;
@@ -53,6 +53,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-400',
             outline:
                 'border-2 border-button-primary-100 text-button-primary-100 hover:bg-button-primary-25 focus:ring-button-primary-200',
+            dark: 'bg-[#154261] text-white hover:bg-[#11334e] focus:ring-blue-500',
         };
 
         // loading spinner size classes

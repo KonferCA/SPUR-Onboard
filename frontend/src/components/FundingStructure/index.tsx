@@ -1,9 +1,7 @@
 import { Dialog } from '@headlessui/react';
 import { type FC, useState, useRef, useEffect, useCallback } from 'react';
-import { Button } from '@/components';
 import { Switch } from '@headlessui/react';
-import { FiX, FiRefreshCw } from 'react-icons/fi';
-import React from 'react';
+import { FiX, FiRefreshCw, FiDollarSign } from 'react-icons/fi';
 
 // funding structure models
 export interface FundingStructureModel {
@@ -58,25 +56,15 @@ const EquityProgressBar: FC<{
     showTiers?: boolean;
 }> = ({ percentageUsed, tiers = [], showTiers = false }) => {
     const clampedPercentage = Math.min(100, Math.max(0, percentageUsed));
-    const [showTooltip, setShowTooltip] = useState(false);
     const barRef = useRef<HTMLDivElement>(null);
     const isOverallocated = percentageUsed > 100;
-
-    const handleMouseEnter = () => {
-        setShowTooltip(true);
-    };
-
-    const handleMouseLeave = () => {
-        setShowTooltip(false);
-    };
-
-    // Colors for tiers - using site color scheme
+    // colors for tiers - using site color scheme
     const tierColors = [
-        { bg: '#F4802F', pattern: '#D2691F' }, // primary orange - first tier
-        { bg: '#154261', pattern: '#1C262D' }, // secondary blue - second tier
-        { bg: '#1F2937', pattern: '#111827' }, // gray-800/900 - third tier
-        { bg: '#4B5563', pattern: '#374151' }, // gray-600/700 - fourth tier
-        { bg: '#71717A', pattern: '#52525B' }, // zinc-500/600 - fifth tier
+        { bg: '#F4802F', pattern: '#D2691F' },
+        { bg: '#154261', pattern: '#1C262D' },
+        { bg: '#1F2937', pattern: '#111827' },
+        { bg: '#4B5563', pattern: '#374151' },
+        { bg: '#71717A', pattern: '#52525B' },
     ];
 
     const renderBar = () => {
@@ -153,37 +141,9 @@ const EquityProgressBar: FC<{
             <div
                 ref={barRef}
                 className={`h-8 w-full bg-gray-200 rounded-md overflow-hidden relative cursor-pointer ${isOverallocated ? 'border-2 border-red-500' : ''}`}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
             >
                 {renderBar()}
             </div>
-
-            {showTooltip && (
-                <div
-                    className="absolute left-0 bg-white shadow-md border border-gray-200 rounded p-2 text-sm"
-                    style={{
-                        top: '100%',
-                        marginTop: '4px',
-                        zIndex: 9999,
-                        maxWidth: '260px',
-                    }}
-                >
-                    {isOverallocated ? (
-                        <span className="text-red-600">
-                            {clampedPercentage}% exceeds 100% equity
-                        </span>
-                    ) : (
-                        <span>
-                            <span className="font-medium">
-                                {clampedPercentage}%
-                            </span>{' '}
-                            equity of your company will be divided among
-                            investors
-                        </span>
-                    )}
-                </div>
-            )}
         </div>
     );
 };
@@ -222,7 +182,6 @@ export const FundingStructure: FC<FundingStructureProps> = ({
     const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
     const [currentStep, setCurrentStep] = useState<number>(1);
     const [isMobileView, setIsMobileView] = useState<boolean>(false);
-    const [showTooltip, setShowTooltip] = useState(false);
 
     const [tabStates, setTabStates] = useState<{
         target: Partial<FundingStructureModel>;
@@ -406,7 +365,7 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                     } = {};
 
                     // First check individual tiers
-                    currentStructure.tiers.forEach((tier) => {
+                    for (const tier of currentStructure.tiers) {
                         const tierError: {
                             amount?: string;
                             equityPercentage?: string;
@@ -436,7 +395,7 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                         if (tierError.amount || tierError.equityPercentage) {
                             tierErrors[tier.id] = tierError;
                         }
-                    });
+                    }
 
                     if (Object.keys(tierErrors).length > 0) {
                         errors.tiers = tierErrors;
@@ -780,73 +739,31 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                         <div className="flex flex-col">
                             {/* Funding type tabs */}
                             <div className="flex mb-4 gap-1 overflow-x-auto pb-1">
-                                <Button
+                                <button
+                                    type="button"
                                     onClick={() => setStructureType('target')}
-                                    variant="secondary"
-                                    size="sm"
                                     className={`${structureType === 'target' ? '!bg-[#ffc199] !border-2 !border-[#f3a266] !text-[#b74d06] hover:!bg-[#ffb684]' : ''} focus:!outline-none focus:!ring-0 active:!outline-none touch-action-manipulation`}
                                 >
                                     Close on min
-                                </Button>
-                                <Button
+                                </button>
+                                <button
+                                    type="button"
                                     onClick={() => setStructureType('minimum')}
-                                    variant="secondary"
-                                    size="sm"
                                     className={`${structureType === 'minimum' ? '!bg-[#ffc199] !border-2 !border-[#f3a266] !text-[#b74d06] hover:!bg-[#ffb684]' : ''} focus:!outline-none focus:!ring-0 active:!outline-none touch-action-manipulation`}
                                 >
                                     Close on max
-                                </Button>
-                                <Button
+                                </button>
+                                <button
+                                    type="button"
                                     onClick={() => setStructureType('tiered')}
-                                    variant="secondary"
-                                    size="sm"
                                     className={`${structureType === 'tiered' ? '!bg-[#ffc199] !border-2 !border-[#f3a266] !text-[#b74d06] hover:!bg-[#ffb684]' : ''} focus:!outline-none focus:!ring-0 active:!outline-none touch-action-manipulation`}
                                 >
                                     Tiered
-                                </Button>
+                                </button>
                             </div>
 
                             {/* Info icon with tooltip and equity indicator */}
                             <div className="flex items-center mb-4 relative">
-                                <button
-                                    type="button"
-                                    className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 mr-2 cursor-pointer"
-                                    onClick={() => setShowTooltip(!showTooltip)}
-                                    onKeyDown={(e) => {
-                                        if (
-                                            e.key === 'Enter' ||
-                                            e.key === ' '
-                                        ) {
-                                            setShowTooltip(!showTooltip);
-                                        }
-                                    }}
-                                    aria-label="Toggle tooltip"
-                                >
-                                    ?
-                                </button>
-                                <span className="text-sm text-gray-600">
-                                    Close on{' '}
-                                    {structureType === 'target'
-                                        ? 'min'
-                                        : structureType === 'minimum'
-                                          ? 'max'
-                                          : 'tiered'}
-                                </span>
-
-                                {/* Tooltip that cpomes up when question mark is clicked */}
-                                {showTooltip && (
-                                    <div className="absolute top-full left-0 mt-1 p-2 bg-white border border-gray-200 rounded shadow-md z-10 max-w-xs">
-                                        <p className="text-xs text-gray-600">
-                                            {structureType === 'target'
-                                                ? 'When your target funding amount is hit, the fund pool will close and you will receive funding.'
-                                                : structureType === 'minimum'
-                                                  ? "Set a minimum and maximum funding amount. Once the minimum is hit, you'll receive funding."
-                                                  : 'Create multiple funding tiers with different equity percentages.'}
-                                        </p>
-                                    </div>
-                                )}
-
-                                {/* Equity left indicator */}
                                 <div
                                     className={`ml-auto py-1 px-4 rounded-full text-sm font-medium ${
                                         getRemainingEquityPercentage() < 0
@@ -1318,15 +1235,14 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                                         )}
 
                                         <div className="flex justify-end mt-4 mb-8">
-                                            <Button
+                                            <button
                                                 onClick={handleAddTier}
                                                 disabled={
                                                     currentStructure.tiers &&
                                                     currentStructure.tiers
                                                         .length >= 5
                                                 }
-                                                variant="primary"
-                                                size="sm"
+                                                type="button"
                                                 className={
                                                     currentStructure.tiers &&
                                                     currentStructure.tiers
@@ -1340,7 +1256,7 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                                                     5
                                                     ? '+ Add Tier (Max 5)'
                                                     : '+ Add Tier'}
-                                            </Button>
+                                            </button>
                                         </div>
                                     </div>
                                 )}
@@ -2082,14 +1998,13 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                         </div>
 
                         <div className="flex justify-end mt-4 mb-8">
-                            <Button
+                            <button
                                 onClick={handleAddTier}
                                 disabled={
                                     currentStructure.tiers &&
                                     currentStructure.tiers.length >= 5
                                 }
-                                variant="primary"
-                                size="sm"
+                                type="button"
                                 className={
                                     currentStructure.tiers &&
                                     currentStructure.tiers.length >= 5
@@ -2101,7 +2016,7 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                                 currentStructure.tiers.length >= 5
                                     ? '+ Add Tier (Max 5)'
                                     : '+ Add Tier'}
-                            </Button>
+                            </button>
                         </div>
 
                         {shouldShowError('equity') &&
@@ -2242,31 +2157,23 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                                         Add Funding Structure
                                     </h2>
                                     <div className="flex space-x-2">
-                                        <Button
+                                        <button
+                                            type="button"
                                             onClick={handleResetTab}
                                             className="text-gray-400 hover:text-gray-500 h-8 w-8 p-0 flex items-center justify-center"
-                                            variant="secondary"
                                             title={`Reset ${structureType === 'target' ? 'Target' : structureType === 'minimum' ? 'Min/Max' : 'Tiered'} Tab`}
-                                            icon={
-                                                <FiRefreshCw className="translate-y-[3px]" />
-                                            }
                                         >
-                                            <span className="sr-only">
-                                                Reset
-                                            </span>
-                                        </Button>
-                                        <Button
+                                            <FiRefreshCw className="translate-y-[3px]" />
+                                        </button>
+                                        <button
+                                            type="button"
                                             onClick={handleCloseModal}
                                             className="text-gray-400 hover:text-gray-500 h-8 w-8 p-0 flex items-center justify-center"
-                                            variant="secondary"
                                         >
                                             <span className="text-2xl leading-none">
                                                 &times;
                                             </span>
-                                            <span className="sr-only">
-                                                Close
-                                            </span>
-                                        </Button>
+                                        </button>
                                     </div>
                                 </div>
 
@@ -2276,36 +2183,33 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                                 {!isMobileView && (
                                     <div className="flex justify-between items-center my-4">
                                         <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-                                            <Button
+                                            <button
+                                                type="button"
                                                 onClick={() =>
                                                     setStructureType('target')
                                                 }
-                                                variant="secondary"
-                                                size="sm"
                                                 className={`${structureType === 'target' ? '!bg-[#ffc199] !border-2 !border-[#f3a266] !text-[#b74d06] hover:!bg-[#ffb684]' : ''} focus:!outline-none focus:!ring-0 active:!outline-none touch-action-manipulation`}
                                             >
                                                 Close on minimum
-                                            </Button>
-                                            <Button
+                                            </button>
+                                            <button
+                                                type="button"
                                                 onClick={() =>
                                                     setStructureType('minimum')
                                                 }
-                                                variant="secondary"
-                                                size="sm"
                                                 className={`${structureType === 'minimum' ? '!bg-[#ffc199] !border-2 !border-[#f3a266] !text-[#b74d06] hover:!bg-[#ffb684]' : ''} focus:!outline-none focus:!ring-0 active:!outline-none touch-action-manipulation`}
                                             >
                                                 Close on maximum
-                                            </Button>
-                                            <Button
+                                            </button>
+                                            <button
+                                                type="button"
                                                 onClick={() =>
                                                     setStructureType('tiered')
                                                 }
-                                                variant="secondary"
-                                                size="sm"
                                                 className={`${structureType === 'tiered' ? '!bg-[#ffc199] !border-2 !border-[#f3a266] !text-[#b74d06] hover:!bg-[#ffb684]' : ''} focus:!outline-none focus:!ring-0 active:!outline-none touch-action-manipulation`}
                                             >
                                                 Tiered
-                                            </Button>
+                                            </button>
                                         </div>
                                         <div
                                             className={`py-1 px-4 rounded-full text-sm font-medium ${
@@ -2335,21 +2239,21 @@ export const FundingStructure: FC<FundingStructureProps> = ({
                             {/* Fixed footer */}
                             <div className="flex-shrink-0 p-6 pt-2 border-t">
                                 <div className="flex flex-col gap-2">
-                                    <Button
+                                    <button
+                                        type="button"
                                         onClick={handleSaveChanges}
                                         disabled={hasValidationErrors()}
-                                        liquid
-                                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                                        className="w-full inline-flex items-center justify-center rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed gap-2 px-4 py-2 text-sm sm:px-6 sm:py-3 sm:text-base bg-orange-500 hover:bg-orange-600 text-white"
                                     >
                                         Save Changes
-                                    </Button>
-                                    <Button
+                                    </button>
+                                    <button
+                                        type="button"
                                         onClick={handleCloseModal}
-                                        variant="secondary"
-                                        liquid
+                                        className="w-full inline-flex items-center justify-center rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed gap-2 px-4 py-2 text-sm sm:px-6 sm:py-3 sm:text-base bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-400"
                                     >
                                         Cancel
-                                    </Button>
+                                    </button>
                                 </div>
                             </div>
                         </Dialog.Panel>
@@ -2361,20 +2265,28 @@ export const FundingStructure: FC<FundingStructureProps> = ({
 
     if (!value) {
         return (
-            <React.Fragment key="funding-structure-empty">
-                <div className="text-center">
-                    <Button
-                        onClick={handleOpenModal}
-                        type="button"
-                        variant="primary"
-                        liquid={true}
-                        disabled={disabled}
-                    >
-                        Choose funding
-                    </Button>
-                    {renderModal()}
-                </div>
-            </React.Fragment>
+            <div className="w-full space-y-3">
+                {/* Use the descriptive text as the primary title */}
+                <p className="text-lg font-normal text-gray-900">
+                    Select how much funding you need and the type of
+                    distribution structure you'd like to offer to your
+                    investors.
+                </p>
+
+                {/* Replaced Button component with standard button to match FileUpload style */}
+                <button
+                    type="button"
+                    onClick={handleOpenModal}
+                    disabled={disabled}
+                    className={`w-full flex items-center justify-center px-4 py-2 text-base bg-[#154261] text-white rounded-md cursor-pointer hover:bg-[#11334e] ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                    <FiDollarSign className="mr-2 w-4 h-4" />{' '}
+                    {/* Adjusted icon size to match FileUpload */}
+                    Choose funding
+                </button>
+
+                {renderModal()}
+            </div>
         );
     }
 
@@ -2393,34 +2305,30 @@ export const FundingStructure: FC<FundingStructureProps> = ({
     }
 
     return (
-        <React.Fragment key="funding-structure-with-value">
-            <div className="rounded-md bg-white flex items-center justify-between py-2.5 px-3 border border-gray-100 shadow-sm">
-                <div className="flex items-center">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-700">
-                            {value.type === 'target'
-                                ? 'Target'
-                                : value.type === 'minimum'
-                                  ? 'Min/Max'
-                                  : 'Tiered'}{' '}
-                            funding:
-                        </span>
-                        <span className="text-sm text-gray-600">
-                            {fundingDetails}
-                        </span>
-                    </div>
+        <div className="rounded-md bg-white flex items-center justify-between py-2.5 px-3 border border-gray-100 shadow-sm">
+            <div className="flex items-center">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">
+                        {value.type === 'target'
+                            ? 'Target'
+                            : value.type === 'minimum'
+                              ? 'Min/Max'
+                              : 'Tiered'}{' '}
+                        funding:
+                    </span>
+                    <span className="text-sm text-gray-600">
+                        {fundingDetails}
+                    </span>
                 </div>
-                <Button
-                    onClick={handleOpenModal}
-                    variant="secondary"
-                    size="sm"
-                    disabled={disabled}
-                >
-                    Edit
-                </Button>
             </div>
-            {renderModal()}
-        </React.Fragment>
+            <button
+                onClick={handleOpenModal}
+                type="button"
+                className={`inline-flex items-center justify-center rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed gap-2 px-3 py-1.5 text-sm sm:px-4 sm:py-2 bg-[#154261] text-white hover:bg-[#11334e] focus:ring-blue-500 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+                Edit
+            </button>
+        </div>
     );
 };
 

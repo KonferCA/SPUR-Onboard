@@ -1,13 +1,22 @@
 import type { ExtendedProjectResponse } from '@/types/project';
 import { formatUnixTimestamp } from '@/utils/date';
 import { Badge, Button, Card } from '@components';
+import type { BadgeProps } from '@/components';
 import { type ReactNode, useNavigate } from '@tanstack/react-router';
 import { type FC, useState, useEffect } from 'react';
 import { ProjectStatusEnum, updateProjectStatus } from '@/services/projects';
 import { WithdrawProjectModal } from '../WithdrawProjectModal/WithdrawProjectModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotification } from '@/contexts/NotificationContext';
-import { FiMoreVertical } from 'react-icons/fi';
+import {
+    FiMoreVertical,
+    FiTrash2,
+    FiCheckCircle,
+    FiXCircle,
+    FiAlertCircle,
+    FiSlash,
+    FiFileText,
+} from 'react-icons/fi';
 import clsx from 'clsx';
 
 export interface ProjectCardProps {
@@ -26,9 +35,11 @@ interface MobileInfoRowProps {
 
 const InfoSection: FC<InfoSectionProps> = ({ label, children }) => {
     return (
-        <div className="flex flex-col items-start gap-3">
-            <p className="text-gray-400">{label}</p>
-            <div>{children}</div>
+        <div className="flex flex-col items-start gap-1">
+            <p className="text-base text-gray-500">{label}</p>
+            <div className="text-base font-medium text-gray-900">
+                {children}
+            </div>
         </div>
     );
 };
@@ -158,7 +169,7 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
 
     return (
         <>
-            <Card>
+            <Card className="bg-white border-none">
                 <div className="flex justify-between items-center">
                     <div className="h-full">
                         <h1
@@ -176,8 +187,10 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                         {canWithdraw && (
                             <Button
                                 variant="outline"
+                                className="border-red-500 text-red-500 hover:bg-red-50 flex items-center gap-1.5"
                                 onClick={() => setShowWithdrawModal(true)}
                             >
+                                <FiTrash2 className="w-4 h-4" />
                                 Withdraw
                             </Button>
                         )}
@@ -194,6 +207,7 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                             </Button>
                         ) : (
                             <Button
+                                className="bg-gray-800 text-white hover:bg-gray-700"
                                 onClick={() =>
                                     navigate({
                                         to: `/user/project/${data.id}/view`,
@@ -227,8 +241,9 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                                             setShowOptionsMenu(false);
                                             setShowWithdrawModal(true);
                                         }}
-                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 flex items-center gap-1.5"
                                     >
+                                        <FiTrash2 className="w-4 h-4" />
                                         Withdraw
                                     </button>
                                 )}
@@ -247,19 +262,56 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                     </div>
                 </div>
 
-                <div className="h-[1px] bg-gray-300 my-4" />
+                <div className="h-[1px] bg-gray-200 my-4" />
 
-                <div className="hidden lg:flex items-center justify-between">
+                <div className="hidden lg:grid lg:grid-cols-5 lg:gap-4 items-center">
+                    <InfoSection label="Company name">
+                        {data.companyName || 'N/A'}
+                    </InfoSection>
+
                     <InfoSection label="Status">
-                        <Badge
-                            capitalizeText
-                            text={data.status}
-                            variant={
-                                data.status === ProjectStatusEnum.NeedsReview
-                                    ? 'warning'
-                                    : 'default'
+                        {(() => {
+                            let variant: BadgeProps['variant'] = 'default';
+                            let icon: ReactNode = (
+                                <FiFileText className="w-4 h-4" />
+                            );
+                            // Determine variant and icon based on status
+                            switch (data.status) {
+                                case ProjectStatusEnum.Verified:
+                                    variant = 'success';
+                                    icon = (
+                                        <FiCheckCircle className="w-4 h-4" />
+                                    );
+                                    break;
+                                case ProjectStatusEnum.Declined:
+                                    variant = 'error';
+                                    icon = <FiXCircle className="w-4 h-4" />;
+                                    break;
+                                case ProjectStatusEnum.NeedsReview:
+                                    variant = 'warning';
+                                    // make warning icon slightly larger to match text size
+                                    icon = (
+                                        <FiAlertCircle className="w-5 h-5" />
+                                    );
+                                    break;
+                                case ProjectStatusEnum.Withdrawn:
+                                    variant = 'withdrawn';
+                                    icon = <FiSlash className="w-4 h-4" />;
+                                    break;
+                                default: // Submitted/Pending
+                                    variant = 'default';
+                                    icon = <FiFileText className="w-4 h-4" />;
+                                    break;
                             }
-                        />
+                            return (
+                                <Badge
+                                    capitalizeText
+                                    text={data.status}
+                                    variant={variant}
+                                    icon={icon}
+                                />
+                            );
+                        })()}
                     </InfoSection>
 
                     <InfoSection label="Date Submitted">
@@ -280,7 +332,54 @@ export const ProjectCard: FC<ProjectCardProps> = ({ data }) => {
                         label="Status"
                         value={
                             <div className="flex justify-end">
-                                <Badge text={data.status} />
+                                {(() => {
+                                    // Same logic for mobile view
+                                    let variant: BadgeProps['variant'] =
+                                        'default';
+                                    let icon: ReactNode = (
+                                        <FiFileText className="w-4 h-4" />
+                                    );
+                                    switch (data.status) {
+                                        case ProjectStatusEnum.Verified:
+                                            variant = 'success';
+                                            icon = (
+                                                <FiCheckCircle className="w-4 h-4" />
+                                            );
+                                            break;
+                                        case ProjectStatusEnum.Declined:
+                                            variant = 'error';
+                                            icon = (
+                                                <FiXCircle className="w-4 h-4" />
+                                            );
+                                            break;
+                                        case ProjectStatusEnum.NeedsReview:
+                                            variant = 'warning';
+                                            icon = (
+                                                <FiAlertCircle className="w-5 h-5" />
+                                            );
+                                            break;
+                                        case ProjectStatusEnum.Withdrawn:
+                                            variant = 'withdrawn';
+                                            icon = (
+                                                <FiSlash className="w-4 h-4" />
+                                            );
+                                            break;
+                                        default:
+                                            variant = 'default';
+                                            icon = (
+                                                <FiFileText className="w-4 h-4" />
+                                            );
+                                            break;
+                                    }
+                                    return (
+                                        <Badge
+                                            text={data.status}
+                                            capitalizeText
+                                            variant={variant}
+                                            icon={icon}
+                                        />
+                                    );
+                                })()}
                             </div>
                         }
                     />
