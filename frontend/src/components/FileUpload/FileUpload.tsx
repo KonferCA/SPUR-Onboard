@@ -62,11 +62,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
     limit = Number.POSITIVE_INFINITY,
     disabled = false,
 }) => {
-    const [isDragging, setIsDragging] = useState(false);
     const [uploadedFiles, setUploadedFiles] =
         useState<UploadableFile[]>(initialFiles);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const pendingChangesRef = useRef<{
         adds: UploadableFile[];
@@ -84,7 +82,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
             if (!enableAutosave || !projectId || !accessToken) return;
 
             setIsProcessing(true);
-            setError(null);
 
             try {
                 // Handle removals
@@ -131,7 +128,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
                     );
                 }
             } catch (e) {
-                setError('Failed to save file changes. Please try again.');
+                console.error(
+                    'Failed to save file changes. Please try again.',
+                    e
+                );
             } finally {
                 setIsProcessing(false);
             }
@@ -139,40 +139,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
         500,
         [projectId, questionId, section, subSection, accessToken]
     );
-
-    // handle drag events
-    const handleDrag = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-    };
-
-    const handleDragIn = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!disabled && !isProcessing) {
-            setIsDragging(true);
-        }
-    };
-
-    const handleDragOut = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-    };
-
-    // handle file drop
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-
-        if (disabled || isProcessing) {
-            return;
-        }
-
-        const files = Array.from(e.dataTransfer.files);
-        handleFiles(files);
-    };
 
     // handle file selection
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -236,9 +202,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
     };
 
     const formatFileSize = (bytes: number) => {
-        if (bytes < 1024) return bytes + ' B';
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     };
 
     return (
@@ -248,54 +214,34 @@ const FileUpload: React.FC<FileUploadProps> = ({
                     <label htmlFor={inputID}>{label}</label>
                 </div>
             )}
-            <div
-                className={`border-2 border-dashed rounded-lg p-6 ${
-                    isDragging
-                        ? 'border-blue-500 bg-blue-50'
-                        : error
-                          ? 'border-red-300 bg-red-50'
-                          : 'border-gray-300'
-                }`}
-                onDragEnter={handleDragIn}
-                onDragLeave={handleDragOut}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-            >
+            <div className="w-full">
                 {children || (
-                    <div className="text-center">
-                        <div className="flex items-center justify-center gap-3">
-                            <FiUpload className="text-gray-400 text-2xl" />
-                            <h3 className="text-sm font-medium">
-                                Drag and drop here
-                            </h3>
-                        </div>
-                        {error && (
-                            <p className="text-sm text-red-500 mt-2">{error}</p>
-                        )}
-                        <p className="text-sm text-gray-500 mt-2">or</p>
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className={`mt-2 px-4 py-2 ${disabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-md text-sm`}
-                            disabled={isProcessing || disabled}
-                        >
-                            Select File
-                        </button>
-                    </div>
+                    <button
+                        type="button"
+                        onClick={() =>
+                            !disabled &&
+                            !isProcessing &&
+                            fileInputRef.current?.click()
+                        }
+                        disabled={disabled || isProcessing}
+                        className={`w-full flex items-center justify-center px-4 py-2 text-base bg-[#154261] text-white rounded-md cursor-pointer hover:bg-[#11334e] ${isProcessing || disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        <FiUpload className="mr-2 w-4 h-4" />
+                        Choose File
+                    </button>
                 )}
-                <input
-                    id={inputID}
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileSelect}
-                    accept={accept}
-                    className="hidden"
-                    multiple
-                    disabled={isProcessing || disabled}
-                />
             </div>
+            <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={handleFileSelect}
+                multiple
+                accept={accept}
+                id={inputID}
+                disabled={disabled || isProcessing}
+            />
 
-            {/* File list */}
             {uploadedFiles.length > 0 && (
                 <div className="mt-4 space-y-2">
                     {uploadedFiles.map((file) => (

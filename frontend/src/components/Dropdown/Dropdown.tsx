@@ -57,12 +57,14 @@ const Dropdown: React.FC<DropdownProps> = ({
 
         if (!Array.isArray(value) && value?.label) {
             return (
-                <span className="block truncate text-base">{value.label}</span>
+                <span className="block truncate text-base text-gray-900">
+                    {value.label}
+                </span>
             );
         }
 
         return (
-            <span className="block truncate text-base text-gray-400">
+            <span className="block truncate text-base text-gray-700">
                 {placeholder}
             </span>
         );
