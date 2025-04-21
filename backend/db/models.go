@@ -373,8 +373,9 @@ type Company struct {
 type PasswordResetToken struct {
 	ID        string `json:"id"`
 	UserID    string `json:"user_id"`
-	CreatedAt int64  `json:"created_at"`
+	Token     string `json:"token"`
 	ExpiresAt int64  `json:"expires_at"`
+	CreatedAt int64  `json:"created_at"`
 }
 
 type Project struct {
@@ -385,6 +386,7 @@ type Project struct {
 	Status               ProjectStatus `json:"status"`
 	CreatedAt            int64         `json:"created_at"`
 	UpdatedAt            int64         `json:"updated_at"`
+	Featured             bool          `json:"featured"`
 	LastSnapshotID       pgtype.UUID   `json:"last_snapshot_id"`
 	OriginalSubmissionAt *int64        `json:"original_submission_at"`
 	AllowEdit            bool          `json:"allow_edit"`
