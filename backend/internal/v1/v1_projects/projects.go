@@ -109,6 +109,7 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
 		Title:       project.Title,
 		Description: description,
 		Status:      project.Status,
+		Featured:    project.Featured,
 		CreatedAt:   project.CreatedAt,
 		UpdatedAt:   project.UpdatedAt,
 	})
@@ -129,44 +130,45 @@ func (h *Handler) handleCreateProject(c echo.Context) error {
  * - requires authenticated user
  * - filters results based on user permissions
  */
-func (h *Handler) handleGetProjects(c echo.Context) error {
-	user, err := getUserFromContext(c)
-	if err != nil {
-		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
-	}
+// func (h *Handler) handleGetProjects(c echo.Context) error {
+// 	user, err := getUserFromContext(c)
+// 	if err != nil {
+// 		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+// 	}
 
-	// Get company owned by user
-	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
-	if err != nil {
-		return v1_common.Fail(c, 404, "Company not found", err)
-	}
+// 	// Get company owned by user
+// 	company, err := h.server.GetQueries().GetCompanyByUserID(c.Request().Context(), user.ID)
+// 	if err != nil {
+// 		return v1_common.Fail(c, 404, "Company not found", err)
+// 	}
 
-	// Get all projects for this company
-	projects, err := h.server.GetQueries().GetProjectsByCompanyID(c.Request().Context(), company.ID)
-	if err != nil {
-		return v1_common.Fail(c, 500, "Failed to fetch projects", err)
-	}
+// 	// Get all projects for this company
+// 	projects, err := h.server.GetQueries().GetProjectsByCompanyID(c.Request().Context(), company.ID)
+// 	if err != nil {
+// 		return v1_common.Fail(c, 500, "Failed to fetch projects", err)
+// 	}
 
-	// Convert to response format
-	response := make([]ProjectResponse, len(projects))
-	for i, project := range projects {
-		description := ""
-		if project.Description != nil {
-			description = *project.Description
-		}
+// 	// Convert to response format
+// 	response := make([]ProjectResponse, len(projects))
+// 	for i, project := range projects {
+// 		description := ""
+// 		if project.Description != nil {
+// 			description = *project.Description
+// 		}
 
-		response[i] = ProjectResponse{
-			ID:          project.ID,
-			Title:       project.Title,
-			Description: description,
-			Status:      project.Status,
-			CreatedAt:   project.CreatedAt,
-			UpdatedAt:   project.UpdatedAt,
-		}
-	}
+// response[i] = ProjectResponse{
+//     ID:          project.ID,
+//     Title:       project.Title,
+//     Description: description,
+//     Status:      project.Status,
+//     Featured:    project.Featured,
+//     CreatedAt:   project.CreatedAt,
+//     UpdatedAt:   project.UpdatedAt,
+// }
+// 	}
 
-	return c.JSON(200, response)
-}
+// 	return c.JSON(200, response)
+// }
 
 /*
  * handleGetProject retrieves detailed information for a single project.
@@ -237,6 +239,7 @@ func (h *Handler) handleGetProject(c echo.Context) error {
 		Description: description,
 		Status:      project.Status,
 		AllowEdit:   project.AllowEdit,
+		Featured:    project.Featured,
 		CreatedAt:   project.CreatedAt,
 		UpdatedAt:   project.UpdatedAt,
 	})
@@ -683,4 +686,94 @@ func (h *Handler) handleGetLatestProjectSnapshot(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, snapshot)
+}
+
+func (h *Handler) handleSetProjectFeatured(c echo.Context) error {
+	user, err := getUserFromContext(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	if !permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermIsAdmin) {
+		return v1_common.NewForbiddenError("only admins can mark projects as featured")
+	}
+
+	projectID := c.Param("id")
+	if projectID == "" {
+		return v1_common.Fail(c, http.StatusBadRequest, "Project ID is required", nil)
+	}
+
+	if _, err := uuid.Parse(projectID); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid project ID format", err)
+	}
+
+	var req FeaturedProjectRequest
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request body", err)
+	}
+
+	err = h.server.GetQueries().UpdateProjectFeaturedStatus(c.Request().Context(), db.UpdateProjectFeaturedStatusParams{
+		ID:       projectID,
+		Featured: req.Featured,
+	})
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return v1_common.Fail(c, http.StatusNotFound, "Project not found", err)
+		}
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to update project featured status", err)
+	}
+
+	return v1_common.Success(c, http.StatusOK, fmt.Sprintf("Project %s as featured",
+		map[bool]string{true: "marked", false: "unmarked"}[req.Featured]))
+}
+
+func (h *Handler) handleGetFeaturedProjects(c echo.Context) error {
+	var req GetFeaturedProjectsRequest
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request parameters", err)
+	}
+
+	limit := 5
+	if req.Limit > 0 {
+		limit = req.Limit
+	}
+
+	projects, err := h.server.GetQueries().GetFeaturedProjects(c.Request().Context(), int32(limit))
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to fetch featured projects", err)
+	}
+
+	response := make([]ExtendedProjectResponse, 0, len(projects))
+	for _, project := range projects {
+		description := ""
+		if project.Description != nil {
+			description = *project.Description
+		}
+
+		companyName := ""
+		if project.CompanyName != nil {
+			companyName = *project.CompanyName
+		}
+
+		response = append(response, ExtendedProjectResponse{
+			ProjectResponse: ProjectResponse{
+				ID:          project.ID,
+				Title:       project.Title,
+				Description: description,
+				Status:      project.Status,
+				AllowEdit:   project.AllowEdit,
+				CreatedAt:   project.CreatedAt,
+				UpdatedAt:   project.UpdatedAt,
+				Featured:    project.Featured,
+			},
+			CompanyName:     companyName,
+			DocumentCount:   project.DocumentCount,
+			TeamMemberCount: project.TeamMemberCount,
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"projects": response,
+	})
 }
