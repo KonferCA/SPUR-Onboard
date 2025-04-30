@@ -26,9 +26,16 @@ FROM password_reset_tokens
 WHERE id = $1
 `
 
-func (q *Queries) GetPasswordResetTokenByID(ctx context.Context, id string) (PasswordResetToken, error) {
+type GetPasswordResetTokenByIDRow struct {
+	ID        string `json:"id"`
+	UserID    string `json:"user_id"`
+	CreatedAt int64  `json:"created_at"`
+	ExpiresAt int64  `json:"expires_at"`
+}
+
+func (q *Queries) GetPasswordResetTokenByID(ctx context.Context, id string) (GetPasswordResetTokenByIDRow, error) {
 	row := q.db.QueryRow(ctx, getPasswordResetTokenByID, id)
-	var i PasswordResetToken
+	var i GetPasswordResetTokenByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
