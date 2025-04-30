@@ -855,4 +855,166 @@ func TestProjectEndpoints(t *testing.T) {
 		assert.NotNil(t, getCommentResp["resolved_by_snapshot_id"])
 		assert.Equal(t, snapshotID, getCommentResp["resolved_by_snapshot_id"])
 	})
+
+	t.Run("Popular Projects", func(t *testing.T) {
+		projects := make([]string, 5)
+		comments := make([]int, 5)
+		documents := make([]int, 5)
+		teamMembers := make([]int, 5)
+
+		// project 0: high comments (highest weight)
+		comments[0] = 5
+		documents[0] = 1
+		teamMembers[0] = 1
+
+		// project 1: high documents (second highest weight)
+		comments[1] = 1
+		documents[1] = 5
+		teamMembers[1] = 1
+
+		// project 2: high team members (lowest weight)
+		comments[2] = 1
+		documents[2] = 1
+		teamMembers[2] = 6
+
+		// project 3: balanced but lower overall
+		comments[3] = 2
+		documents[3] = 2
+		teamMembers[3] = 2
+
+		// project 4: mo engagement
+		comments[4] = 0
+		documents[4] = 0
+		teamMembers[4] = 1
+
+		for i := range projects {
+			projectID := createAndFillTestProject(t, s, accessToken, companyID)
+			projects[i] = projectID
+
+			submitProject(t, s, accessToken, projectID)
+
+			for j := 0; j < teamMembers[i]; j++ {
+				_, err := s.DBPool.Exec(ctx, `
+				INSERT INTO team_members (
+					company_id, first_name, last_name, title, linkedin_url,
+					commitment_type, introduction, industry_experience, detailed_biography
+				) VALUES (
+					$1, $2, $3, 'Team Member', 'https://linkedin.com/test',
+					'Full-time', 'Intro text', 'Experience text', 'Bio text'
+				)
+			`, companyID, fmt.Sprintf("First%d%d", i, j), fmt.Sprintf("Last%d%d", i, j))
+				assert.NoError(t, err)
+			}
+
+			for j := 0; j < documents[i]; j++ {
+				_, err := s.DBPool.Exec(ctx, `
+				INSERT INTO project_documents (
+					project_id, question_id, name, url, section, sub_section, mime_type, size
+				) VALUES (
+					$1, $2, $3, 'https://example.com/doc', 'Test', 'Sub-Test', 'application/pdf', 1024
+				)
+			`, projectID, testQuestionIds[0], fmt.Sprintf("Document %d-%d", i, j))
+				assert.NoError(t, err)
+			}
+
+			for j := 0; j < comments[i]; j++ {
+				commentBody := fmt.Sprintf(`{
+				"comment": "Test comment %d-%d",
+				"target_id": "%s"
+			}`, i, j, projectID)
+
+				req := httptest.NewRequest(http.MethodPost,
+					fmt.Sprintf("/api/v1/project/%s/comments", projectID),
+					strings.NewReader(commentBody))
+				req.Header.Set("Authorization", "Bearer "+accessToken)
+				req.Header.Set("Content-Type", "application/json")
+				rec := httptest.NewRecorder()
+				s.GetEcho().ServeHTTP(rec, req)
+
+				assert.Equal(t, http.StatusCreated, rec.Code, "Should be able to create test comment")
+			}
+
+			if i%2 == 0 {
+				_, err := s.DBPool.Exec(ctx, "UPDATE projects SET status = 'verified' WHERE id = $1", projectID)
+				assert.NoError(t, err)
+			}
+
+			if i == 0 {
+				recentTimestamp := time.Now().Unix()
+				_, err := s.DBPool.Exec(ctx, "UPDATE projects SET updated_at = $1 WHERE id = $2", recentTimestamp, projectID)
+				assert.NoError(t, err)
+			}
+		}
+
+		t.Run("Get Popular Projects - Public Access", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/project/popular?limit=5", nil)
+			rec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusOK, rec.Code, "Popular projects endpoint should be accessible without authentication")
+
+			var resp struct {
+				Projects []struct {
+					ID              string  `json:"id"`
+					Title           string  `json:"title"`
+					Status          string  `json:"status"`
+					PopularityScore float64 `json:"popularity_score"`
+				} `json:"projects"`
+			}
+
+			err := json.NewDecoder(rec.Body).Decode(&resp)
+			assert.NoError(t, err)
+
+			assert.NotEmpty(t, resp.Projects, "Response should contain projects")
+			assert.LessOrEqual(t, len(resp.Projects), 5, "Response should respect the limit parameter")
+
+			for i := 0; i < len(resp.Projects)-1; i++ {
+				assert.GreaterOrEqual(t,
+					resp.Projects[i].PopularityScore,
+					resp.Projects[i+1].PopularityScore,
+					"Projects should be ordered by descending popularity score")
+			}
+
+			assert.Equal(t, projects[0], resp.Projects[0].ID,
+				"First project should be the one with highest comment count plus recency bonus")
+
+			for _, p := range resp.Projects {
+				assert.Contains(t, []string{"verified", "pending"}, p.Status,
+					"Only verified and pending projects should be included")
+			}
+
+			for _, p := range resp.Projects {
+				assert.Greater(t, p.PopularityScore, 0.0,
+					"Each project should have a positive popularity score")
+			}
+		})
+
+		t.Run("Get Popular Projects - Limit Parameter", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/project/popular?limit=2", nil)
+			rec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			var resp struct {
+				Projects []struct {
+					ID              string  `json:"id"`
+					PopularityScore float64 `json:"popularity_score"`
+				} `json:"projects"`
+			}
+
+			err := json.NewDecoder(rec.Body).Decode(&resp)
+			assert.NoError(t, err)
+
+			assert.Equal(t, 2, len(resp.Projects), "Response should contain exactly 2 projects as requested")
+		})
+
+		t.Run("Get Popular Projects - Invalid Limit", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/project/popular?limit=1000", nil)
+			rec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusBadRequest, rec.Code, "Should reject invalid limit parameter")
+		})
+	})
 }
