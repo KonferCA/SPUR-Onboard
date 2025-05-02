@@ -12,12 +12,12 @@ export const Route = createFileRoute('/user/_auth/_appshell/dashboard')({
 });
 
 const navButtonStyles = cva(
-    'py-2 px-4 rounded-md text-gray-500 transition-all',
+    'py-2 px-4 rounded-md text-sm font-medium transition-all',
     {
         variants: {
             active: {
-                true: 'bg-[#FFC298] text-button-primary-text-100 border-2 border-[#F4802F]',
-                false: 'hover:bg-gray-100',
+                true: 'bg-[#F4802F] text-white',
+                false: 'text-gray-500 hover:bg-gray-100',
             },
         },
         defaultVariants: {
@@ -50,7 +50,7 @@ function RouteComponent() {
     };
 
     return (
-        <div className="flex flex-col h-full p-6">
+        <div className="flex flex-col h-full p-6 bg-[#f6f6f6]">
             <div className="mb-6">
                 <nav className="flex justify-between items-center">
                     <div>
@@ -89,7 +89,7 @@ function RouteComponent() {
                 </nav>
             </div>
 
-            <div className="h-[1px] bg-gray-300 mb-6" />
+            <div className="h-[1px] bg-gray-200 mb-6" />
 
             <div className="flex-1">
                 <main>
