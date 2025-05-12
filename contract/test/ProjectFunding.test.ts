@@ -1,15 +1,14 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-// import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers"; // Likely unnecessary with ethers v6 types
-import type { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers"; // Explicit type import if needed, check if error persists
-import type { SpurCoin, ProjectFunding } from "../typechain-types"; // use type imports
+import type { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers"; 
+import type { SpurCoin, ProjectFunding } from "../typechain-types"; 
 
 // helper function to parse ether amounts
 const parseEther = ethers.parseEther;
 // helper function to format ether amounts
 const formatEther = ethers.formatEther;
 
-describe("ProjectFunding Contract", () => { // use arrow function
+describe("ProjectFunding Contract", () => {
   // declare variables to hold contract instances and signers
   let spurCoin: SpurCoin;
   let projectFunding: ProjectFunding;
@@ -22,7 +21,7 @@ describe("ProjectFunding Contract", () => { // use arrow function
   const initialSpurCoinSupply = parseEther("1000000"); // 1 million spurcoin
 
   // before each test, deploy new contract instances
-  beforeEach(async () => { // use arrow function
+  beforeEach(async () => {
     // get signers provided by hardhat
     [owner, creator, depositor, recipient, otherAccount] = await ethers.getSigners();
 
@@ -30,13 +29,13 @@ describe("ProjectFunding Contract", () => { // use arrow function
     const SpurCoinFactory = await ethers.getContractFactory("SpurCoin");
     spurCoin = await SpurCoinFactory.connect(owner).deploy(owner.address, initialSpurCoinSupply);
     await spurCoin.waitForDeployment();
-    const spurCoinAddress = spurCoin.target; // use .target for address in ethers v6
+    const spurCoinAddress = spurCoin.target;
 
     // deploy projectfunding, linking it to the deployed spurcoin
     const ProjectFundingFactory = await ethers.getContractFactory("ProjectFunding");
     projectFunding = await ProjectFundingFactory.connect(owner).deploy(spurCoinAddress);
     await projectFunding.waitForDeployment();
-    const projectFundingAddress = projectFunding.target; // use .target for address in ethers v6
+    const projectFundingAddress = projectFunding.target;
 
     // distribute some spurcoin to the creator and depositor for testing
     await spurCoin.connect(owner).transfer(creator.address, parseEther("10000"));
@@ -45,7 +44,7 @@ describe("ProjectFunding Contract", () => { // use arrow function
 
   // --- test suite starts here ---
 
-  it("should deploy contracts successfully and set initial state", async () => { // use arrow function
+  it("should deploy contracts successfully and set initial state", async () => {
     expect(spurCoin.target).to.be.properAddress;
     expect(projectFunding.target).to.be.properAddress;
     // use connect(null) or provider for static calls if needed, checking spurCoin() is a view function
@@ -100,10 +99,9 @@ describe("ProjectFunding Contract", () => { // use arrow function
     });
 
      it("should fail if recipient address is zero", async () => {
-        // const zeroAddress = ethers.constants.AddressZero; // ethers v5 style
         const zeroAddress = ethers.ZeroAddress; // ethers v6 style
         await expect(projectFunding.connect(creator).createProject(zeroAddress, "invalid project"))
-            .to.be.revertedWith("invalid recipient address"); // check require message
+            .to.be.revertedWith("invalid recipient address");
     });
   });
 
@@ -142,9 +140,7 @@ describe("ProjectFunding Contract", () => { // use arrow function
     it("should fail if depositor has not approved the contract", async () => {
         // depositor tries to deposit without approving first
         await expect(projectFunding.connect(depositor).deposit(projectId, depositAmount))
-            .to.be.reverted; // ethers v6 default revert check, could be more specific with erc20 error
-            // specific check for ERC20InsufficientAllowance might look like:
-            // .to.be.revertedWithCustomError(spurCoin, "ERC20InsufficientAllowance"); // needs abi
+            .to.be.reverted;
     });
 
     it("should fail if depositing to a non-existent project", async () => {
