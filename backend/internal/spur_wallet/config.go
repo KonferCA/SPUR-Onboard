@@ -23,14 +23,17 @@ func NewSpurWalletConfig() (*SpurWalletConfig, error) {
 		return nil, fmt.Errorf("SPUR_WALLET_ADDRESS environment variable is required")
 	}
 
-	if !walletAddressPattern.MatchString(address) {
+	// normalize the address before validation and storage
+	normalizedAddress := NormalizeWalletAddress(address)
+
+	if !walletAddressPattern.MatchString(normalizedAddress) {
 		return nil, fmt.Errorf("invalid SPUR wallet address format: %s", address)
 	}
 
-	log.Info().Str("address", address).Msg("SPUR wallet configured")
+	log.Info().Str("address", normalizedAddress).Msg("SPUR wallet configured")
 
 	return &SpurWalletConfig{
-		Address: address,
+		Address: normalizedAddress,
 	}, nil
 }
 

@@ -9,15 +9,29 @@ import (
 
 func TestNewSpurWalletConfig(t *testing.T) {
 	tests := []struct {
-		name        string
-		envValue    string
-		expectError bool
-		errorMsg    string
+		name         string
+		envValue     string
+		expectError  bool
+		errorMsg     string
+		expectedAddr string
 	}{
 		{
-			name:        "valid wallet address",
-			envValue:    "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-			expectError: false,
+			name:         "valid wallet address",
+			envValue:     "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+			expectError:  false,
+			expectedAddr: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+		},
+		{
+			name:         "uppercase address gets normalized",
+			envValue:     "0X1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF",
+			expectError:  false,
+			expectedAddr: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+		},
+		{
+			name:         "address without 0x prefix gets normalized",
+			envValue:     "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+			expectError:  false,
+			expectedAddr: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
 		},
 		{
 			name:        "missing environment variable",
@@ -41,13 +55,12 @@ func TestNewSpurWalletConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Set up environment
+			// clean up environment
+			defer os.Unsetenv("SPUR_WALLET_ADDRESS")
+
 			if tt.envValue != "" {
 				os.Setenv("SPUR_WALLET_ADDRESS", tt.envValue)
-			} else {
-				os.Unsetenv("SPUR_WALLET_ADDRESS")
 			}
-			defer os.Unsetenv("SPUR_WALLET_ADDRESS")
 
 			config, err := NewSpurWalletConfig()
 
@@ -58,7 +71,7 @@ func TestNewSpurWalletConfig(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, config)
-				assert.Equal(t, tt.envValue, config.GetAddress())
+				assert.Equal(t, tt.expectedAddr, config.Address)
 			}
 		})
 	}

@@ -10,7 +10,7 @@ func FormatWalletAddress(address string) string {
 	if len(address) < 16 {
 		return address
 	}
-	return fmt.Sprintf("%s...%s", address[:8], address[len(address)-8:])
+	return address[:8] + "..." + address[len(address)-8:]
 }
 
 // NormalizeWalletAddress normalizes a wallet address by converting to lowercase and ensuring 0x prefix
