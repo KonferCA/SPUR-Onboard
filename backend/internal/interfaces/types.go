@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/spur_wallet"
 	"KonferCA/SPUR/storage"
 )
 
@@ -23,6 +24,7 @@ Example:
 	func SetupRoutes(e *echo.Group, s CoreServer) {
 	    // Use s.GetQueries() for database access
 	    // Use s.GetStorage() for file operations
+	    // Use s.GetSpurWallet() for SPUR wallet operations
 	    // etc.
 	}
 */
@@ -31,4 +33,5 @@ type CoreServer interface {
 	GetQueries() *db.Queries
 	GetStorage() *storage.Storage
 	GetEcho() *echo.Echo
+	GetSpurWallet() *spur_wallet.SpurWalletConfig
 }
