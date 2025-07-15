@@ -212,6 +212,70 @@ func AllInputTypeEnumValues() []InputTypeEnum {
 	}
 }
 
+type InvestmentStatus string
+
+const (
+	InvestmentStatusCommitted            InvestmentStatus = "committed"
+	InvestmentStatusWaitingForTransfer   InvestmentStatus = "waiting_for_transfer"
+	InvestmentStatusTransferredToSpur    InvestmentStatus = "transferred_to_spur"
+	InvestmentStatusTransferredToCompany InvestmentStatus = "transferred_to_company"
+)
+
+func (e *InvestmentStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = InvestmentStatus(s)
+	case string:
+		*e = InvestmentStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for InvestmentStatus: %T", src)
+	}
+	return nil
+}
+
+type NullInvestmentStatus struct {
+	InvestmentStatus InvestmentStatus `json:"investment_status"`
+	Valid            bool             `json:"valid"` // Valid is true if InvestmentStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullInvestmentStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.InvestmentStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.InvestmentStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullInvestmentStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.InvestmentStatus), nil
+}
+
+func (e InvestmentStatus) Valid() bool {
+	switch e {
+	case InvestmentStatusCommitted,
+		InvestmentStatusWaitingForTransfer,
+		InvestmentStatusTransferredToSpur,
+		InvestmentStatusTransferredToCompany:
+		return true
+	}
+	return false
+}
+
+func AllInvestmentStatusValues() []InvestmentStatus {
+	return []InvestmentStatus{
+		InvestmentStatusCommitted,
+		InvestmentStatusWaitingForTransfer,
+		InvestmentStatusTransferredToSpur,
+		InvestmentStatusTransferredToCompany,
+	}
+}
+
 type ProjectStatus string
 
 const (
@@ -370,11 +434,23 @@ type Company struct {
 	GroupType     GroupTypeEnum `json:"group_type"`
 }
 
+type InvestmentIntention struct {
+	ID              string           `json:"id"`
+	ProjectID       string           `json:"project_id"`
+	InvestorID      string           `json:"investor_id"`
+	IntendedAmount  pgtype.Numeric   `json:"intended_amount"`
+	Status          InvestmentStatus `json:"status"`
+	TransactionHash *string          `json:"transaction_hash"`
+	CreatedAt       int64            `json:"created_at"`
+	UpdatedAt       int64            `json:"updated_at"`
+}
+
 type PasswordResetToken struct {
 	ID        string `json:"id"`
 	UserID    string `json:"user_id"`
-	CreatedAt int64  `json:"created_at"`
+	Token     string `json:"token"`
 	ExpiresAt int64  `json:"expires_at"`
+	CreatedAt int64  `json:"created_at"`
 }
 
 type Project struct {
