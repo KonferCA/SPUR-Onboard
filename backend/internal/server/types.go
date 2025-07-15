@@ -1,6 +1,7 @@
 package server
 
 import (
+	"KonferCA/SPUR/internal/spur_wallet"
 	"KonferCA/SPUR/storage"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -8,9 +9,10 @@ import (
 )
 
 type Server struct {
-	DBPool  *pgxpool.Pool
-	Echo    *echo.Echo
-	Storage *storage.Storage
+	DBPool     *pgxpool.Pool
+	Echo       *echo.Echo
+	Storage    *storage.Storage
+	SpurWallet *spur_wallet.SpurWalletConfig
 }
 
 /*

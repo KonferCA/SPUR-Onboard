@@ -2,6 +2,7 @@ package server
 
 import (
 	"KonferCA/SPUR/db"
+	"KonferCA/SPUR/internal/spur_wallet"
 	"KonferCA/SPUR/storage"
 	"fmt"
 	"os"
@@ -15,6 +16,9 @@ Initializes a new Server instance and creates a connection pool to the database.
 The database connection string can be controlled by setting the following env variables:
 
 DB_HOST DB_PORT DB_USER DB_PASSWORD DB_NAME DB_SSLMODE
+
+Additionally, the following env variables are required for SPUR wallet operations:
+SPUR_WALLET_ADDRESS
 */
 func New() (*Server, error) {
 	connStr := fmt.Sprintf(
@@ -36,15 +40,21 @@ func New() (*Server, error) {
 		return nil, err
 	}
 
+	spurWallet, err := spur_wallet.NewSpurWalletConfig()
+	if err != nil {
+		return nil, err
+	}
+
 	e := echo.New()
 
 	// set the global error handler for all incoming requests
 	e.HTTPErrorHandler = errorHandler
 
 	s := Server{
-		DBPool:  pool,
-		Echo:    e,
-		Storage: store,
+		DBPool:     pool,
+		Echo:       e,
+		Storage:    store,
+		SpurWallet: spurWallet,
 	}
 
 	s.setupMiddlewares()
@@ -83,6 +93,14 @@ returns the root echo instance.
 */
 func (s *Server) GetEcho() *echo.Echo {
 	return s.Echo
+}
+
+/*
+Implement the CoreServer interface GetSpurWallet method that simply
+returns the SPUR wallet configuration instance.
+*/
+func (s *Server) GetSpurWallet() *spur_wallet.SpurWalletConfig {
+	return s.SpurWallet
 }
 
 /*
