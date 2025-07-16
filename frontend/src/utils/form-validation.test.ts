@@ -127,7 +127,7 @@ describe('createZodSchema', () => {
         expect(schemas).toHaveLength(1);
 
         // Test valid wallet address
-        const validAddress = '0x' + '1'.repeat(64);
+        const validAddress = '0x' + '1'.repeat(40);
         const validationResult = schemas[0].safeParse(validAddress);
         expect(validationResult.success).toBe(true);
 
@@ -137,7 +137,7 @@ describe('createZodSchema', () => {
         expect(invalidValidationResult).toBeDefined();
         expect(invalidValidationResult.success).toBe(false);
         expect(invalidValidationResult.error?.errors[0].message).toBe(
-            'Must be a valid wallet address'
+            'Must be a valid Ethereum wallet address'
         );
     });
 
