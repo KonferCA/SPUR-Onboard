@@ -15,8 +15,8 @@ import (
 )
 
 /*
-walletAddressPattern is a regular expression pattern for validating cryptocurrency wallet addresses.
-It matches the format: 0x followed by 64 hexadecimal characters.
+walletAddressPattern is a regular expression pattern for validating Ethereum wallet addresses.
+It matches the format: 0x followed by 40 hexadecimal characters (20 bytes).
 
 linkedinURLPattern is a regular expression pattern for validating LinkedIn profile URLs.
 It matches URLs that start with http:// or https:// and contain linkedin.com domain.
@@ -26,7 +26,7 @@ numberPattern is a regular expression pattern for validating the presence of at 
 specialCharPattern is a regular expression pattern for validating the presence of at least one special character.
 */
 var (
-	walletAddressPattern = regexp.MustCompile("^0x[0-9a-fA-F]{64}$")
+	walletAddressPattern = regexp.MustCompile("^0x[0-9a-fA-F]{40}$")
 	linkedInURLPattern   = regexp.MustCompile(`^https?:\/\/(www\.)?linkedin\.com\/.*$`)
 	upperCasePattern     = regexp.MustCompile(`[A-Z]`)
 	numberPattern        = regexp.MustCompile(`[0-9]`)
@@ -130,8 +130,8 @@ func validateS3URL(fl validator.FieldLevel) bool {
 }
 
 /*
-validateWalletAddress verifies that a field contains a valid cryptocurrency wallet address.
-The address must be either empty (optional field) or match the format: 0x followed by 64 hexadecimal characters.
+validateWalletAddress verifies that a field contains a valid Ethereum wallet address.
+The address must be either empty (optional field) or match the format: 0x followed by 40 hexadecimal characters (20 bytes).
 
 Returns true if the address is empty or matches the required format, false otherwise.
 */

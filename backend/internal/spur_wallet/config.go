@@ -8,8 +8,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// walletAddressPattern matches the existing validation pattern from middleware
-var walletAddressPattern = regexp.MustCompile("^0x[0-9a-fA-F]{64}$")
+// walletAddressPattern matches Ethereum address format (20 bytes = 40 hex characters)
+var walletAddressPattern = regexp.MustCompile("^0x[0-9a-fA-F]{40}$")
 
 // SpurWalletConfig holds configuration for SPUR wallet operations
 type SpurWalletConfig struct {

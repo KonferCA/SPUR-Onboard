@@ -78,8 +78,8 @@ func TestTransactionEndpoints(t *testing.T) {
 				req: v1_transactions.CreateTransactionRequest{
 					ProjectID:   projectID,
 					TxHash:      "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-					FromAddress: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-					ToAddress:   "0x0987654321fedcba0987654321fedcba0987654321fedcba0987654321fedcba",
+					FromAddress: "0x742d35cc6935c90532c1cf5efd6d93caeb696323",
+					ToAddress:   "0x690b9a9e9aa1c9db991c7721a92d351db4fac990",
 					ValueAmount: "1.5",
 				},
 				wantCode:  http.StatusCreated,

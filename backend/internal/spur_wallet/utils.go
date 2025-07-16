@@ -2,6 +2,7 @@ package spur_wallet
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -30,14 +31,17 @@ func NormalizeWalletAddress(address string) string {
 	return normalized
 }
 
-// IsValidTransactionHash validates a transaction hash format (similar to wallet address but may have different length)
+// transactionHashPattern matches transaction hash format (32 bytes = 64 hex characters)
+var transactionHashPattern = regexp.MustCompile("^0x[0-9a-fA-F]{64}$")
+
+// IsValidTransactionHash validates a transaction hash format (32 bytes = 64 hex characters)
 func IsValidTransactionHash(hash string) bool {
 	if hash == "" {
 		return false
 	}
 
-	// Transaction hashes are typically 64 hex characters with 0x prefix
-	return walletAddressPattern.MatchString(hash)
+	// Transaction hashes are 64 hex characters with 0x prefix (32 bytes)
+	return transactionHashPattern.MatchString(hash)
 }
 
 // SpurWalletOperations provides common operations for SPUR wallet management

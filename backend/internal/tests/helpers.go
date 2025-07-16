@@ -113,7 +113,7 @@ func createTestCompany(ctx context.Context, s *server.Server, userID string) (st
 			owner_id
 		)
 		VALUES ($1, $2, $3, $4, $5)`,
-		companyID, "Test Company", "0x123", "https://linkedin.com/test", userID)
+		companyID, "Test Company", "0x742d35cc6935c90532c1cf5efd6d93caeb696323", "https://linkedin.com/test", userID)
 
 	return companyID, err
 }
