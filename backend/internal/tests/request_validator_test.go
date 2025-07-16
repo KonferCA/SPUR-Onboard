@@ -74,7 +74,7 @@ func TestRequestValidator(t *testing.T) {
 			},
 			expectError:  true,
 			errorField:   "WalletAddress",
-			errorMessage: "WalletAddress must be a valid SUI wallet address",
+			errorMessage: "WalletAddress must be a valid Ethereum wallet address",
 		},
 		{
 			name: "invalid linkedin url",
