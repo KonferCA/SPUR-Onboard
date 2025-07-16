@@ -14,8 +14,8 @@ func TestFormatWalletAddress(t *testing.T) {
 	}{
 		{
 			name:     "normal wallet address",
-			address:  "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-			expected: "0x123456...90abcdef",
+			address:  "0x742d35cc6935c90532c1cf5efd6d93caeb696323",
+			expected: "0x742d35...eb696323",
 		},
 		{
 			name:     "short address",
@@ -45,13 +45,13 @@ func TestNormalizeWalletAddress(t *testing.T) {
 	}{
 		{
 			name:     "uppercase address with 0x prefix",
-			address:  "0x1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF",
-			expected: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+			address:  "0x742D35CC6935C90532C1CF5EFD6D93CAEB696323",
+			expected: "0x742d35cc6935c90532c1cf5efd6d93caeb696323",
 		},
 		{
 			name:     "address without 0x prefix",
-			address:  "1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF",
-			expected: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+			address:  "742D35CC6935C90532C1CF5EFD6D93CAEB696323",
+			expected: "0x742d35cc6935c90532c1cf5efd6d93caeb696323",
 		},
 		{
 			name:     "empty address",
@@ -60,8 +60,8 @@ func TestNormalizeWalletAddress(t *testing.T) {
 		},
 		{
 			name:     "already normalized",
-			address:  "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-			expected: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+			address:  "0x742d35cc6935c90532c1cf5efd6d93caeb696323",
+			expected: "0x742d35cc6935c90532c1cf5efd6d93caeb696323",
 		},
 	}
 
@@ -110,13 +110,13 @@ func TestIsValidTransactionHash(t *testing.T) {
 }
 
 func TestSpurWalletOperations(t *testing.T) {
-	spurAddress := "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+	spurAddress := "0x742d35cc6935c90532c1cf5efd6d93caeb696323"
 	config := &SpurWalletConfig{Address: spurAddress}
 	ops := NewSpurWalletOperations(config)
 
 	t.Run("GetFormattedAddress", func(t *testing.T) {
 		formatted := ops.GetFormattedAddress()
-		assert.Equal(t, "0x123456...90abcdef", formatted)
+		assert.Equal(t, "0x742d35...eb696323", formatted)
 	})
 
 	t.Run("ValidateTransferToSpur - valid", func(t *testing.T) {
@@ -126,7 +126,7 @@ func TestSpurWalletOperations(t *testing.T) {
 	})
 
 	t.Run("ValidateTransferToSpur - wrong address", func(t *testing.T) {
-		wrongAddress := "0x9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba"
+		wrongAddress := "0x690b9a9e9aa1c9db991c7721a92d351db4fac990"
 		txHash := "0x9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba"
 		err := ops.ValidateTransferToSpur(wrongAddress, txHash)
 		assert.Error(t, err)

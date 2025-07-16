@@ -171,7 +171,7 @@ func TestBindAndValidate(t *testing.T) {
                 "name": "test",
                 "email": "test@example.com",
                 "permissions": ` + fmt.Sprint(permissions.PermStartupOwner) + `,
-                "wallet_address": "0x1234567890123456789012345678901234567890123456789012345678901234",
+                "wallet_address": "0x742d35cc6935c90532c1cf5efd6d93caeb696323",
                 "linkedin_url": "https://linkedin.com/in/test"
             }`,
 			expectError: false,
