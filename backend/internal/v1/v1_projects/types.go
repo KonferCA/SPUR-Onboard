@@ -20,10 +20,10 @@ type ProjectResponse struct {
 	Description string           `json:"description"`
 	Status      db.ProjectStatus `json:"status"`
 	AllowEdit   bool             `json:"allow_edit"`
+	Featured    bool             `json:"featured"`
 	CreatedAt   int64            `json:"created_at"`
 	UpdatedAt   int64            `json:"updated_at"`
 }
-
 type ExtendedProjectResponse struct {
 	ProjectResponse
 	CompanyName     string `json:"company_name"`
@@ -147,4 +147,12 @@ type SaveProjectDraftRequest struct {
 
 type UpdateProjectStatusRequest struct {
 	Status db.ProjectStatus `json:"status" validate:"required,oneof=draft pending verified declined withdrawn"`
+}
+
+type FeaturedProjectRequest struct {
+	Featured bool `json:"featured" validate:"required"`
+}
+
+type GetFeaturedProjectsRequest struct {
+	Limit int `query:"limit" validate:"omitempty,min=1,max=50"`
 }

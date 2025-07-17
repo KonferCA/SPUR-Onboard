@@ -33,7 +33,7 @@ INSERT INTO projects (
     updated_at
 ) VALUES (
     $1, $2, $3, $4, $5, $6
-) RETURNING id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at, allow_edit
+) RETURNING id, company_id, title, description, status, created_at, updated_at, featured, last_snapshot_id, original_submission_at, allow_edit
 `
 
 type CreateProjectParams struct {
@@ -63,6 +63,7 @@ func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (P
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Featured,
 		&i.LastSnapshotID,
 		&i.OriginalSubmissionAt,
 		&i.AllowEdit,
@@ -313,6 +314,93 @@ func (q *Queries) GetCompanyByUserID(ctx context.Context, ownerID string) (Compa
 	return i, err
 }
 
+const getFeaturedProjects = `-- name: GetFeaturedProjects :many
+SELECT 
+    p.id, 
+    p.company_id, 
+    COALESCE(
+        (SELECT pa.answer 
+         FROM project_answers pa
+         JOIN project_questions pq ON pa.question_id = pq.id
+         WHERE pa.project_id = p.id AND pq.question_key = 'company_name' AND pa.answer != ''
+         LIMIT 1),
+        p.title
+    ) as title,
+    p.description, 
+    p.status, 
+    p.allow_edit,
+    p.featured,
+    p.created_at, 
+    p.updated_at,
+    c.name as company_name,
+    COUNT(d.id) as document_count,
+    COUNT(t.id) as team_member_count
+FROM 
+    projects p
+LEFT JOIN 
+    project_documents d ON d.project_id = p.id
+LEFT JOIN 
+    team_members t ON t.company_id = p.company_id
+LEFT JOIN 
+    companies c ON c.id = p.company_id
+WHERE 
+    p.featured = true
+GROUP BY 
+    p.id, c.name
+ORDER BY 
+    p.updated_at DESC
+LIMIT 
+    $1
+`
+
+type GetFeaturedProjectsRow struct {
+	ID              string        `json:"id"`
+	CompanyID       string        `json:"company_id"`
+	Title           string        `json:"title"`
+	Description     *string       `json:"description"`
+	Status          ProjectStatus `json:"status"`
+	AllowEdit       bool          `json:"allow_edit"`
+	Featured        bool          `json:"featured"`
+	CreatedAt       int64         `json:"created_at"`
+	UpdatedAt       int64         `json:"updated_at"`
+	CompanyName     *string       `json:"company_name"`
+	DocumentCount   int64         `json:"document_count"`
+	TeamMemberCount int64         `json:"team_member_count"`
+}
+
+func (q *Queries) GetFeaturedProjects(ctx context.Context, limit int32) ([]GetFeaturedProjectsRow, error) {
+	rows, err := q.db.Query(ctx, getFeaturedProjects, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFeaturedProjectsRow
+	for rows.Next() {
+		var i GetFeaturedProjectsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CompanyID,
+			&i.Title,
+			&i.Description,
+			&i.Status,
+			&i.AllowEdit,
+			&i.Featured,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.CompanyName,
+			&i.DocumentCount,
+			&i.TeamMemberCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getNewProjectsAnyStatus = `-- name: GetNewProjectsAnyStatus :many
 SELECT 
     p.id, 
@@ -532,7 +620,7 @@ func (q *Queries) GetProjectAnswers(ctx context.Context, projectID string) ([]Ge
 }
 
 const getProjectByID = `-- name: GetProjectByID :one
-SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at, allow_edit FROM projects 
+SELECT id, company_id, title, description, status, created_at, updated_at, featured, last_snapshot_id, original_submission_at, allow_edit FROM projects 
 WHERE id = $1 
   AND (company_id = $2 OR $3 & 1 = 1) -- Check for PermViewAllProjects (1 << 0)
 LIMIT 1
@@ -555,6 +643,7 @@ func (q *Queries) GetProjectByID(ctx context.Context, arg GetProjectByIDParams) 
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Featured,
 		&i.LastSnapshotID,
 		&i.OriginalSubmissionAt,
 		&i.AllowEdit,
@@ -563,7 +652,7 @@ func (q *Queries) GetProjectByID(ctx context.Context, arg GetProjectByIDParams) 
 }
 
 const getProjectByIDAsAdmin = `-- name: GetProjectByIDAsAdmin :one
-SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at, allow_edit FROM projects
+SELECT id, company_id, title, description, status, created_at, updated_at, featured, last_snapshot_id, original_submission_at, allow_edit FROM projects
 WHERE id = $1
 LIMIT 1
 `
@@ -579,6 +668,7 @@ func (q *Queries) GetProjectByIDAsAdmin(ctx context.Context, id string) (Project
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Featured,
 		&i.LastSnapshotID,
 		&i.OriginalSubmissionAt,
 		&i.AllowEdit,
@@ -896,7 +986,7 @@ func (q *Queries) GetProjectQuestions(ctx context.Context) ([]GetProjectQuestion
 }
 
 const getProjectsByCompanyID = `-- name: GetProjectsByCompanyID :many
-SELECT id, company_id, title, description, status, created_at, updated_at, last_snapshot_id, original_submission_at, allow_edit FROM projects 
+SELECT id, company_id, title, description, status, created_at, updated_at, featured, last_snapshot_id, original_submission_at, allow_edit FROM projects 
 WHERE company_id = $1 
 ORDER BY created_at DESC
 `
@@ -918,6 +1008,7 @@ func (q *Queries) GetProjectsByCompanyID(ctx context.Context, companyID string) 
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Featured,
 			&i.LastSnapshotID,
 			&i.OriginalSubmissionAt,
 			&i.AllowEdit,
@@ -1476,6 +1567,24 @@ func (q *Queries) UpdateProjectComment(ctx context.Context, arg UpdateProjectCom
 		&i.ResolvedBySnapshotID,
 	)
 	return i, err
+}
+
+const updateProjectFeaturedStatus = `-- name: UpdateProjectFeaturedStatus :exec
+UPDATE projects 
+SET 
+    featured = $2, 
+    updated_at = extract(epoch from now())
+WHERE id = $1
+`
+
+type UpdateProjectFeaturedStatusParams struct {
+	ID       string `json:"id"`
+	Featured bool   `json:"featured"`
+}
+
+func (q *Queries) UpdateProjectFeaturedStatus(ctx context.Context, arg UpdateProjectFeaturedStatusParams) error {
+	_, err := q.db.Exec(ctx, updateProjectFeaturedStatus, arg.ID, arg.Featured)
+	return err
 }
 
 const updateProjectStatus = `-- name: UpdateProjectStatus :exec
