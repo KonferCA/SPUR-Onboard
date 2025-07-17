@@ -71,8 +71,8 @@ export function createZodSchema(
                 return zod
                     .string()
                     .regex(
-                        /^0x[0-9a-fA-F]{64}$/,
-                        'Must be a valid wallet address'
+                        /^0x[0-9a-fA-F]{40}$/,
+                        'Must be a valid Ethereum wallet address'
                     );
             default:
                 throw new Error(`Invalid validation type: ${rule}`);
