@@ -44,7 +44,8 @@ func (c *SpurWalletConfig) GetAddress() string {
 
 // IsSpurWallet checks if the given address is the SPUR wallet address
 func (c *SpurWalletConfig) IsSpurWallet(address string) bool {
-	return c.Address == address
+	normalizedAddress := NormalizeWalletAddress(address)
+	return c.Address == normalizedAddress
 }
 
 // ValidateWalletAddress validates a wallet address using the same pattern as middleware
