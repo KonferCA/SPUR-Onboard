@@ -8,10 +8,11 @@ import (
 
 // FormatWalletAddress formats a wallet address for display, showing first 8 and last 8 characters
 func FormatWalletAddress(address string) string {
-	if len(address) < 16 {
-		return address
+	normalized := NormalizeWalletAddress(address)
+	if len(normalized) < 16 || !walletAddressPattern.MatchString(normalized) {
+		return address // return original if invalid
 	}
-	return address[:8] + "..." + address[len(address)-8:]
+	return normalized[:8] + "..." + normalized[len(normalized)-8:]
 }
 
 // NormalizeWalletAddress normalizes a wallet address by converting to lowercase and ensuring 0x prefix
@@ -23,9 +24,11 @@ func NormalizeWalletAddress(address string) string {
 	// Convert to lowercase
 	normalized := strings.ToLower(address)
 
-	// Ensure 0x prefix
+	// Ensure 0x prefix only if it's not already there AND the rest looks like hex
 	if !strings.HasPrefix(normalized, "0x") {
-		normalized = "0x" + normalized
+		if regexp.MustCompile("^[0-9a-f]+$").MatchString(normalized) {
+			normalized = "0x" + normalized
+		}
 	}
 
 	return normalized
@@ -51,6 +54,9 @@ type SpurWalletOperations struct {
 
 // NewSpurWalletOperations creates a new instance of SPUR wallet operations
 func NewSpurWalletOperations(config *SpurWalletConfig) *SpurWalletOperations {
+	if config == nil {
+		return nil
+	}
 	return &SpurWalletOperations{config: config}
 }
 
@@ -62,7 +68,7 @@ func (s *SpurWalletOperations) GetFormattedAddress() string {
 // ValidateTransferToSpur validates that a transaction is a valid transfer to the SPUR wallet
 func (s *SpurWalletOperations) ValidateTransferToSpur(toAddress, txHash string) error {
 	if !s.config.IsSpurWallet(toAddress) {
-		return fmt.Errorf("transaction to address %s is not to SPUR wallet %s", toAddress, s.config.Address)
+		return fmt.Errorf("transaction to address %s is not to SPUR wallet", FormatWalletAddress(toAddress))
 	}
 
 	if !IsValidTransactionHash(txHash) {

@@ -63,6 +63,11 @@ func TestNormalizeWalletAddress(t *testing.T) {
 			address:  "0x742d35cc6935c90532c1cf5efd6d93caeb696323",
 			expected: "0x742d35cc6935c90532c1cf5efd6d93caeb696323",
 		},
+		{
+			name:     "invalid hex - doesn't add prefix",
+			address:  "notvalidhex",
+			expected: "notvalidhex",
+		},
 	}
 
 	for _, tt := range tests {
@@ -107,6 +112,20 @@ func TestIsValidTransactionHash(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestNewSpurWalletOperations(t *testing.T) {
+	t.Run("with valid config", func(t *testing.T) {
+		config := &SpurWalletConfig{Address: "0x742d35cc6935c90532c1cf5efd6d93caeb696323"}
+		ops := NewSpurWalletOperations(config)
+		assert.NotNil(t, ops)
+		assert.Equal(t, config, ops.config)
+	})
+
+	t.Run("with nil config", func(t *testing.T) {
+		ops := NewSpurWalletOperations(nil)
+		assert.Nil(t, ops)
+	})
 }
 
 func TestSpurWalletOperations(t *testing.T) {
