@@ -53,13 +53,16 @@ describe('FundingStructure', () => {
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         // check if modal opened by looking for modal content
-        const modalElement = document.querySelector('[role="dialog"]') || 
-                           document.querySelector('.fixed.inset-0') ||
-                           document.querySelector('.z-50');
-                           
+        const modalElement =
+            document.querySelector('[role="dialog"]') ||
+            document.querySelector('.fixed.inset-0') ||
+            document.querySelector('.z-50');
+
         // if modal opened, expect the header, otherwise just verify button was clickable
         if (modalElement) {
-            expect(screen.getByText('Add Funding Structure')).toBeInTheDocument();
+            expect(
+                screen.getByText('Add Funding Structure')
+            ).toBeInTheDocument();
         } else {
             // modal didn't open in test environment, but button should be clickable
             expect(editButtons[0]).toBeInTheDocument();
@@ -265,13 +268,14 @@ describe('FundingStructure', () => {
 
         // enter equity to see progress bar
         const allInputs = document.querySelectorAll('input');
-        const equityInput = Array.from(allInputs).find(
-            (input) =>
-                (input as HTMLInputElement).placeholder
-                    ?.toLowerCase()
-                    .includes('percentage') ||
-                (input as HTMLInputElement).placeholder?.includes('%')
-        ) || allInputs[1];
+        const equityInput =
+            Array.from(allInputs).find(
+                (input) =>
+                    (input as HTMLInputElement).placeholder
+                        ?.toLowerCase()
+                        .includes('percentage') ||
+                    (input as HTMLInputElement).placeholder?.includes('%')
+            ) || allInputs[1];
 
         expect(equityInput).toBeTruthy(); // ensure equity input is available
 
@@ -281,10 +285,14 @@ describe('FundingStructure', () => {
         await new Promise((resolve) => setTimeout(resolve, 300));
 
         // verify progress bar displays correctly with 25%
-        const progressBarContainer = document.querySelector('.h-8.w-full.bg-gray-200.rounded-md');
+        const progressBarContainer = document.querySelector(
+            '.h-8.w-full.bg-gray-200.rounded-md'
+        );
         expect(progressBarContainer).toBeInTheDocument();
 
-        const filledPart = document.querySelector('.h-full[style*="width: 25%"]');
+        const filledPart = document.querySelector(
+            '.h-full[style*="width: 25%"]'
+        );
         expect(filledPart).toBeInTheDocument();
     });
 

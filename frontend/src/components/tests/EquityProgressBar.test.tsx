@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FundingStructure } from '@/components/FundingStructure';
 
@@ -22,14 +22,15 @@ describe('EquityProgressBar', () => {
 
         // enter 25% equity to see progress bar
         const allInputs = document.querySelectorAll('input');
-        const equityInput = Array.from(allInputs).find(
-            (input) =>
-                (input as HTMLInputElement).placeholder
-                    ?.toLowerCase()
-                    .includes('percentage') ||
-                (input as HTMLInputElement).placeholder?.includes('%') ||
-                (input as HTMLInputElement).placeholder?.includes('equity')
-        ) || allInputs[1];
+        const equityInput =
+            Array.from(allInputs).find(
+                (input) =>
+                    (input as HTMLInputElement).placeholder
+                        ?.toLowerCase()
+                        .includes('percentage') ||
+                    (input as HTMLInputElement).placeholder?.includes('%') ||
+                    (input as HTMLInputElement).placeholder?.includes('equity')
+            ) || allInputs[1];
 
         if (equityInput) {
             await userEvent.clear(equityInput);
@@ -39,11 +40,13 @@ describe('EquityProgressBar', () => {
         }
 
         // check for progress bar
-        const progressBarContainer = document.querySelector(
-            '.h-8.w-full.bg-gray-200.rounded-md'
-        ) || document.querySelector('.h-8[class*="bg-gray-200"]') || 
-        document.querySelector('[class*="h-8"][class*="w-full"][class*="bg-gray-200"]');
-        
+        const progressBarContainer =
+            document.querySelector('.h-8.w-full.bg-gray-200.rounded-md') ||
+            document.querySelector('.h-8[class*="bg-gray-200"]') ||
+            document.querySelector(
+                '[class*="h-8"][class*="w-full"][class*="bg-gray-200"]'
+            );
+
         expect(progressBarContainer).toBeInTheDocument();
 
         // look for filled part with 25% width
@@ -68,14 +71,15 @@ describe('EquityProgressBar', () => {
 
         // enter 60% equity to test different percentage
         const allInputs = document.querySelectorAll('input');
-        const equityInput = Array.from(allInputs).find(
-            (input) =>
-                (input as HTMLInputElement).placeholder
-                    ?.toLowerCase()
-                    .includes('percentage') ||
-                (input as HTMLInputElement).placeholder?.includes('%') ||
-                (input as HTMLInputElement).placeholder?.includes('equity')
-        ) || allInputs[1];
+        const equityInput =
+            Array.from(allInputs).find(
+                (input) =>
+                    (input as HTMLInputElement).placeholder
+                        ?.toLowerCase()
+                        .includes('percentage') ||
+                    (input as HTMLInputElement).placeholder?.includes('%') ||
+                    (input as HTMLInputElement).placeholder?.includes('equity')
+            ) || allInputs[1];
 
         if (equityInput) {
             await userEvent.clear(equityInput);
@@ -106,14 +110,15 @@ describe('EquityProgressBar', () => {
 
         // enter 30% equity
         const allInputs = document.querySelectorAll('input');
-        const equityInput = Array.from(allInputs).find(
-            (input) =>
-                (input as HTMLInputElement).placeholder
-                    ?.toLowerCase()
-                    .includes('percentage') ||
-                (input as HTMLInputElement).placeholder?.includes('%') ||
-                (input as HTMLInputElement).placeholder?.includes('equity')
-        ) || allInputs[1];
+        const equityInput =
+            Array.from(allInputs).find(
+                (input) =>
+                    (input as HTMLInputElement).placeholder
+                        ?.toLowerCase()
+                        .includes('percentage') ||
+                    (input as HTMLInputElement).placeholder?.includes('%') ||
+                    (input as HTMLInputElement).placeholder?.includes('equity')
+            ) || allInputs[1];
 
         if (equityInput) {
             await userEvent.clear(equityInput);
@@ -123,10 +128,12 @@ describe('EquityProgressBar', () => {
         }
 
         // get the progress bar container to hover over
-        const progressBarContainer = document.querySelector(
-            '.h-8.w-full.bg-gray-200.rounded-md'
-        ) || document.querySelector('.h-8[class*="bg-gray-200"]') || 
-        document.querySelector('[class*="h-8"][class*="w-full"][class*="bg-gray-200"]');
+        const progressBarContainer =
+            document.querySelector('.h-8.w-full.bg-gray-200.rounded-md') ||
+            document.querySelector('.h-8[class*="bg-gray-200"]') ||
+            document.querySelector(
+                '[class*="h-8"][class*="w-full"][class*="bg-gray-200"]'
+            );
 
         expect(progressBarContainer).toBeInTheDocument();
 
@@ -147,7 +154,9 @@ describe('EquityProgressBar', () => {
         // if no tooltip appears, just check that the 30% value is reflected somewhere in the UI
         if (elementsWithText.length === 0) {
             // fallback: check that the progress bar itself shows 30% width
-            const progressBar30 = document.querySelector('.h-full[style*="width: 30%"]');
+            const progressBar30 = document.querySelector(
+                '.h-full[style*="width: 30%"]'
+            );
             expect(progressBar30).toBeInTheDocument();
         } else {
             expect(elementsWithText.length).toBeGreaterThan(0);
@@ -241,13 +250,14 @@ describe('EquityProgressBar', () => {
         expect(allInputs.length).toBeGreaterThanOrEqual(2); // should have at least 2 inputs for tiered structure
 
         // enter some equity in the first tier to trigger the progress bar
-        const equityInput = Array.from(allInputs).find(
-            (input) =>
-                (input as HTMLInputElement).placeholder
-                    ?.toLowerCase()
-                    .includes('percentage') ||
-                (input as HTMLInputElement).placeholder?.includes('%')
-        ) || allInputs[1];
+        const equityInput =
+            Array.from(allInputs).find(
+                (input) =>
+                    (input as HTMLInputElement).placeholder
+                        ?.toLowerCase()
+                        .includes('percentage') ||
+                    (input as HTMLInputElement).placeholder?.includes('%')
+            ) || allInputs[1];
 
         if (equityInput) {
             await userEvent.clear(equityInput);
@@ -257,11 +267,13 @@ describe('EquityProgressBar', () => {
         }
 
         // check for progress bar
-        const progressBar = document.querySelector(
-            '.h-8.w-full.bg-gray-200.rounded-md'
-        ) || document.querySelector('.h-8[class*="bg-gray-200"]') || 
-        document.querySelector('[class*="h-8"][class*="w-full"][class*="bg-gray-200"]');
-        
+        const progressBar =
+            document.querySelector('.h-8.w-full.bg-gray-200.rounded-md') ||
+            document.querySelector('.h-8[class*="bg-gray-200"]') ||
+            document.querySelector(
+                '[class*="h-8"][class*="w-full"][class*="bg-gray-200"]'
+            );
+
         expect(progressBar).toBeInTheDocument();
 
         // check that we have tier inputs and progress bar system
@@ -284,14 +296,15 @@ describe('EquityProgressBar', () => {
 
         // enter 0% equity (leave equity input empty, should default to 0%)
         const allInputs = document.querySelectorAll('input');
-        const equityInput = Array.from(allInputs).find(
-            (input) =>
-                (input as HTMLInputElement).placeholder
-                    ?.toLowerCase()
-                    .includes('percentage') ||
-                (input as HTMLInputElement).placeholder?.includes('%') ||
-                (input as HTMLInputElement).placeholder?.includes('equity')
-        ) || allInputs[1];
+        const equityInput =
+            Array.from(allInputs).find(
+                (input) =>
+                    (input as HTMLInputElement).placeholder
+                        ?.toLowerCase()
+                        .includes('percentage') ||
+                    (input as HTMLInputElement).placeholder?.includes('%') ||
+                    (input as HTMLInputElement).placeholder?.includes('equity')
+            ) || allInputs[1];
 
         if (equityInput) {
             await userEvent.clear(equityInput);
@@ -301,11 +314,13 @@ describe('EquityProgressBar', () => {
         }
 
         // progress bar should exist but be empty
-        const progressBarContainer = document.querySelector(
-            '.h-8.w-full.bg-gray-200.rounded-md'
-        ) || document.querySelector('.h-8[class*="bg-gray-200"]') || 
-        document.querySelector('[class*="h-8"][class*="w-full"][class*="bg-gray-200"]');
-        
+        const progressBarContainer =
+            document.querySelector('.h-8.w-full.bg-gray-200.rounded-md') ||
+            document.querySelector('.h-8[class*="bg-gray-200"]') ||
+            document.querySelector(
+                '[class*="h-8"][class*="w-full"][class*="bg-gray-200"]'
+            );
+
         expect(progressBarContainer).toBeInTheDocument();
 
         // should have 0% width or very minimal width
@@ -329,14 +344,15 @@ describe('EquityProgressBar', () => {
 
         // first enter 10% equity
         const allInputs = document.querySelectorAll('input');
-        const equityInput = Array.from(allInputs).find(
-            (input) =>
-                (input as HTMLInputElement).placeholder
-                    ?.toLowerCase()
-                    .includes('percentage') ||
-                (input as HTMLInputElement).placeholder?.includes('%') ||
-                (input as HTMLInputElement).placeholder?.includes('equity')
-        ) || allInputs[1];
+        const equityInput =
+            Array.from(allInputs).find(
+                (input) =>
+                    (input as HTMLInputElement).placeholder
+                        ?.toLowerCase()
+                        .includes('percentage') ||
+                    (input as HTMLInputElement).placeholder?.includes('%') ||
+                    (input as HTMLInputElement).placeholder?.includes('equity')
+            ) || allInputs[1];
 
         if (equityInput) {
             // start with 10%
@@ -346,7 +362,9 @@ describe('EquityProgressBar', () => {
             await new Promise((resolve) => setTimeout(resolve, 300));
 
             // verify 10% is shown
-            const initialPart = document.querySelector('.h-full[style*="width: 10%"]');
+            const initialPart = document.querySelector(
+                '.h-full[style*="width: 10%"]'
+            );
             expect(initialPart).toBeInTheDocument();
 
             // change to 75%
