@@ -12,7 +12,7 @@ describe('Test Badge Component', () => {
         render(<Badge text="warning" variant="warning" />);
         const badge = screen.getByText('warning').parentElement;
         expect(badge).toHaveClass(
-            'text-yellow-700 bg-yellow-200 border-yellow-200'
+            'bg-yellow-100 text-amber-700 border border-amber-200'
         );
     });
 
