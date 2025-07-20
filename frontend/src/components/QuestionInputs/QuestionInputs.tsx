@@ -10,7 +10,7 @@ import {
 import type { DropdownOption, UploadableFile } from '@/components';
 import type { Question } from '@/config';
 import type { FormField } from '@/types';
-import { type FC, useRef, useEffect, useMemo } from 'react';
+import { type FC, useRef, useEffect, useMemo, useState } from 'react';
 import { cva } from 'class-variance-authority';
 import FundingStructure, {
     type FundingStructureModel,
@@ -18,7 +18,7 @@ import FundingStructure, {
 import type { Comment } from '@/services/comment';
 import { ProjectStatusEnum } from '@/services/projects';
 
-const legendStyles = cva('block text-md font-normal', {
+const legendStyles = cva('block text-lg font-normal', {
     variants: {
         hasError: {
             true: 'text-red-600',
@@ -69,6 +69,8 @@ const fieldsetStyles = cva('space-y-4 rounded-lg p-3 mb-2', {
 
 const headerContainerStyles = cva('flex justify-between items-center mb-1');
 
+const MOBILE_BREAKPOINT = 1375;
+
 interface QuestionInputsProps {
     question: Question;
     onChange: (
@@ -98,6 +100,9 @@ interface QuestionInputsProps {
     allowEdit?: boolean;
 }
 
+const isFundingStructureField = (field: FormField) =>
+    field.type === 'fundingstructure';
+
 export const QuestionInputs: FC<QuestionInputsProps> = ({
     question,
     onChange,
@@ -112,9 +117,26 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
         (field) => field.required
     );
 
+    const isFundingStructureQuestion = question.inputFields.some(
+        isFundingStructureField
+    );
+
     // references to the first input fields of different types
     const textInputRef = useRef<HTMLInputElement | null>(null);
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+
+    // State to track mobile view
+    const [isMobileView, setIsMobileView] = useState(false);
+
+    // Effect to check screen size on mount and resize
+    useEffect(() => {
+        const checkScreenSize = () => {
+            setIsMobileView(window.innerWidth < MOBILE_BREAKPOINT);
+        };
+        checkScreenSize(); // Initial check
+        window.addEventListener('resize', checkScreenSize);
+        return () => window.removeEventListener('resize', checkScreenSize); // Cleanup
+    }, []);
 
     // Determine if this question should be enabled or disabled
     const shouldDisableInput = useMemo(() => {
@@ -374,31 +396,36 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
                         : false,
                 })}
             >
-                <div className={headerContainerStyles()}>
-                    <legend
-                        className={legendStyles({ hasError: hasInvalidField })}
-                    >
-                        {question.question}
-                        {isQuestionRequired && (
-                            <span
-                                className={requiredIndicatorStyles({
-                                    hasError: hasInvalidField,
-                                })}
-                            >
-                                *
-                            </span>
-                        )}
-                    </legend>
-                    {isQuestionRequired && (
-                        <span
-                            className={requiredTextStyles({
+                {/* Only show the standard question header if it's NOT a funding structure question */}
+                {!isFundingStructureQuestion && (
+                    <div className={headerContainerStyles()}>
+                        <legend
+                            className={legendStyles({
                                 hasError: hasInvalidField,
                             })}
                         >
-                            Required
-                        </span>
-                    )}
-                </div>
+                            {question.question}
+                            {isQuestionRequired && (
+                                <span
+                                    className={requiredIndicatorStyles({
+                                        hasError: hasInvalidField,
+                                    })}
+                                >
+                                    *
+                                </span>
+                            )}
+                        </legend>
+                        {isQuestionRequired && (
+                            <span
+                                className={requiredTextStyles({
+                                    hasError: hasInvalidField,
+                                })}
+                            >
+                                Required
+                            </span>
+                        )}
+                    </div>
+                )}
                 <div className="space-y-4">
                     {question.inputFields.map((field, index) => (
                         <div key={field.key} className="w-full">
@@ -409,7 +436,11 @@ export const QuestionInputs: FC<QuestionInputsProps> = ({
             </fieldset>
             <Comments
                 comments={comments.filter((c) => c.targetId === question.id)}
-                rootContainerClasses="absolute -right-2 top-0 -translate-y-1/2 translate-x-full"
+                rootContainerClasses={
+                    isMobileView
+                        ? 'relative z-auto mt-2 w-full' // Below input on mobile (default z-index)
+                        : 'absolute z-20 -right-2 top-0 -translate-y-1/2 translate-x-full' // Right side on desktop (below drawer)
+                }
             />
         </div>
     );

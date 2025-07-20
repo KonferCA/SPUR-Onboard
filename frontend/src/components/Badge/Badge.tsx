@@ -1,29 +1,45 @@
 import { cva } from 'class-variance-authority';
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 
 export interface BadgeProps {
     text: string;
-    variant?: 'info' | 'warning' | 'error' | 'default';
+    variant?:
+        | 'info'
+        | 'warning'
+        | 'error'
+        | 'default'
+        | 'success'
+        | 'withdrawn';
     capitalizeText?: boolean;
+    icon?: ReactNode;
 }
 
 const badgeStyles = cva(
-    'rounded-full border border-gray-300 px-2 py-1 min-w-20 flex items-center justify-center',
+    'rounded-full px-3 py-1.5 text-sm font-medium flex items-center gap-1.5',
     {
         variants: {
             variant: {
-                default: '',
+                default: 'bg-gray-100 text-gray-800 border border-gray-200',
                 info: '',
-                warning: 'text-yellow-700 bg-yellow-200 border-yellow-200',
-                error: '',
+                warning: 'bg-yellow-100 text-amber-700 border border-amber-200',
+                error: 'bg-red-100 text-red-800 border border-red-200',
+                success: 'bg-green-100 text-green-800 border border-green-200',
+                withdrawn:
+                    'bg-slate-100 text-slate-800 border border-slate-200',
             },
         },
     }
 );
 
-export const Badge: FC<BadgeProps> = ({ text, variant, capitalizeText }) => {
+export const Badge: FC<BadgeProps> = ({
+    text,
+    variant,
+    capitalizeText,
+    icon,
+}) => {
     return (
         <div className={badgeStyles({ variant })}>
+            {icon}
             <span className={capitalizeText ? 'capitalize' : ''}>{text}</span>
         </div>
     );
