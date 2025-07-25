@@ -3,6 +3,7 @@ package middleware
 import (
 	"KonferCA/SPUR/db"
 	"KonferCA/SPUR/internal/permissions"
+	"KonferCA/SPUR/internal/spur_wallet"
 	"KonferCA/SPUR/internal/v1/v1_common"
 	"fmt"
 	"os"
@@ -15,8 +16,8 @@ import (
 )
 
 /*
-walletAddressPattern is a regular expression pattern for validating cryptocurrency wallet addresses.
-It matches the format: 0x followed by 64 hexadecimal characters.
+walletAddressPattern is a regular expression pattern for validating Ethereum wallet addresses.
+It matches the format: 0x followed by 40 hexadecimal characters (20 bytes).
 
 linkedinURLPattern is a regular expression pattern for validating LinkedIn profile URLs.
 It matches URLs that start with http:// or https:// and contain linkedin.com domain.
@@ -26,7 +27,7 @@ numberPattern is a regular expression pattern for validating the presence of at 
 specialCharPattern is a regular expression pattern for validating the presence of at least one special character.
 */
 var (
-	walletAddressPattern = regexp.MustCompile("^0x[0-9a-fA-F]{64}$")
+	walletAddressPattern = regexp.MustCompile("^0x[0-9a-fA-F]{40}$")
 	linkedInURLPattern   = regexp.MustCompile(`^https?:\/\/(www\.)?linkedin\.com\/.*$`)
 	upperCasePattern     = regexp.MustCompile(`[A-Z]`)
 	numberPattern        = regexp.MustCompile(`[0-9]`)
@@ -46,6 +47,7 @@ NewRequestValidator creates and initializes a new CustomValidator with registere
   - valid_permissions: Validates user permissions
   - s3_url: Validates S3 bucket URLs
   - wallet_address: Validates cryptocurrency wallet addresses
+  - transaction_hash: Validates transaction hashes (64 hex characters)
   - linkedin_url: Validates LinkedIn profile URLs
   - project_status: Validates project status values
   - contains_upper: Validates the presence of at least one uppercase letter
@@ -60,6 +62,7 @@ func NewRequestValidator() *CustomValidator {
 	v.RegisterValidation("valid_permissions", validatePermissions)
 	v.RegisterValidation("s3_url", validateS3URL)
 	v.RegisterValidation("wallet_address", validateWalletAddress)
+	v.RegisterValidation("transaction_hash", validateTransactionHash)
 	v.RegisterValidation("linkedin_url", validateLinkedInURL)
 	v.RegisterValidation("project_status", validateProjectStatus)
 	v.RegisterValidation("social_platform", validateSocialPlatform)
@@ -130,8 +133,8 @@ func validateS3URL(fl validator.FieldLevel) bool {
 }
 
 /*
-validateWalletAddress verifies that a field contains a valid cryptocurrency wallet address.
-The address must be either empty (optional field) or match the format: 0x followed by 64 hexadecimal characters.
+validateWalletAddress verifies that a field contains a valid Ethereum wallet address.
+The address must be either empty (optional field) or match the format: 0x followed by 40 hexadecimal characters (20 bytes).
 
 Returns true if the address is empty or matches the required format, false otherwise.
 */
@@ -226,6 +229,23 @@ func validateContainsSpecialChar(fl validator.FieldLevel) bool {
 }
 
 /*
+validateTransactionHash verifies that a field contains a valid transaction hash.
+The hash must be either empty (optional field) or match the format: 0x followed by 64 hexadecimal characters (32 bytes).
+
+Returns true if the hash is empty or matches the required format, false otherwise.
+*/
+func validateTransactionHash(fl validator.FieldLevel) bool {
+	hash := fl.Field().String()
+
+	// hash is an optional field - return true on empty str
+	if hash == "" {
+		return true
+	}
+
+	return spur_wallet.IsValidTransactionHash(hash)
+}
+
+/*
 formatValidationErrors converts validator.ValidationErrors into a human-readable string.
 It processes each validation error and formats it according to the validation tag that failed.
 
@@ -267,7 +287,9 @@ func formatErrorMessage(field, tag, param string) string {
 	case "s3_url":
 		return fmt.Sprintf("%s must be a valid S3 URL", field)
 	case "wallet_address":
-		return fmt.Sprintf("%s must be a valid SUI wallet address", field)
+		return fmt.Sprintf("%s must be a valid Ethereum wallet address", field)
+	case "transaction_hash":
+		return fmt.Sprintf("%s must be a valid transaction hash", field)
 	case "linkedin_url":
 		return fmt.Sprintf("%s must be a valid LinkedIn URL", field)
 	case "project_status":

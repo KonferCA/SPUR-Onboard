@@ -39,6 +39,9 @@ jobs:
       - name: Run migrations
         run: goose -dir .sqlc/migrations postgres "postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable" up
       - name: Run tests
+        env:
+          SPUR_WALLET_ADDRESS: "0x742d35cc6935c90532c1cf5efd6d93caeb696323"
+          APP_ENV: "test"
         run: |
           # run tests and capture output
           go test -v -coverprofile=coverage.out ./...

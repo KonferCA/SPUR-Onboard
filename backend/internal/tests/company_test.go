@@ -95,7 +95,7 @@ func TestCompanyEndpoints(t *testing.T) {
 				userID: ownerID.String(),
 				request: map[string]interface{}{
 					"name":           "Test Company",
-					"wallet_address": "0x1234567890123456789012345678901234567890123456789012345678901234",
+					"wallet_address": "0x742d35cc6935c90532c1cf5efd6d93caeb696323",
 					"linkedin_url":   "https://linkedin.com/company/test",
 					"date_founded":   time.Now().Unix(),
 					"stages":         []string{"Ideation"},
@@ -121,7 +121,7 @@ func TestCompanyEndpoints(t *testing.T) {
 				userID: otherOwnerID.String(),
 				request: map[string]interface{}{
 					"name":           "Bad LinkedIn",
-					"wallet_address": "0x1234567890123456789012345678901234567890123456789012345678901234",
+					"wallet_address": "0x742d35cc6935c90532c1cf5efd6d93caeb696323",
 					"linkedin_url":   "https://invalid.com",
 					"date_founded":   time.Now().Unix(),
 					"stages":         []string{"Ideation"},
@@ -265,7 +265,7 @@ func TestCompanyEndpoints(t *testing.T) {
 				userID: ownerID.String(),
 				request: map[string]interface{}{
 					"name":           "Updated Company",
-					"wallet_address": "0x9876543210987654321098765432109876543210987654321098765432109876",
+					"wallet_address": "0x690b9a9e9aa1c9db991c7721a92d351db4fac990",
 					"linkedin_url":   "https://linkedin.com/company/updated",
 					"date_founded":   time.Now().Unix(),
 					"stages":         []string{"Growth"},
