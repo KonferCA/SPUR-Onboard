@@ -43,9 +43,10 @@ func TestAuthEndpoints(t *testing.T) {
 	// Create test user with permissions
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("TestPassword123!"), bcrypt.DefaultCost)
 	userID := uuid.New()
+	uniqueEmail := fmt.Sprintf("test-%s@example.com", uuid.New().String())
 	testUser := db.User{
 		ID:            userID.String(),
-		Email:         "test@example.com",
+		Email:         uniqueEmail,
 		Password:      string(hashedPassword),
 		Permissions:   int32(permissions.PermSubmitProject | permissions.PermManageTeam),
 		EmailVerified: true,
@@ -78,7 +79,7 @@ func TestAuthEndpoints(t *testing.T) {
 			{
 				name: "Valid Login",
 				payload: v1_auth.AuthRequest{
-					Email:    "test@example.com",
+					Email:    uniqueEmail,
 					Password: "TestPassword123!",
 				},
 				expectedStatus: http.StatusOK,
@@ -87,7 +88,7 @@ func TestAuthEndpoints(t *testing.T) {
 			{
 				name: "Invalid Password",
 				payload: v1_auth.AuthRequest{
-					Email:    "test@example.com",
+					Email:    uniqueEmail,
 					Password: "WrongPassword123!",
 				},
 				expectedStatus: http.StatusUnauthorized,
@@ -132,7 +133,7 @@ func TestAuthEndpoints(t *testing.T) {
 			{
 				name: "Password Missing Uppercase",
 				payload: v1_auth.AuthRequest{
-					Email:    "test@example.com",
+					Email:    uniqueEmail,
 					Password: "password123!",
 				},
 				expectedStatus: http.StatusBadRequest,
@@ -147,7 +148,7 @@ func TestAuthEndpoints(t *testing.T) {
 			{
 				name: "Password Missing Number",
 				payload: v1_auth.AuthRequest{
-					Email:    "test@example.com",
+					Email:    uniqueEmail,
 					Password: "Password!",
 				},
 				expectedStatus: http.StatusBadRequest,
@@ -162,7 +163,7 @@ func TestAuthEndpoints(t *testing.T) {
 			{
 				name: "Password Missing Special Character",
 				payload: v1_auth.AuthRequest{
-					Email:    "test@example.com",
+					Email:    uniqueEmail,
 					Password: "Password123",
 				},
 				expectedStatus: http.StatusBadRequest,
@@ -177,7 +178,7 @@ func TestAuthEndpoints(t *testing.T) {
 			{
 				name: "Password Too Short",
 				payload: v1_auth.AuthRequest{
-					Email:    "test@example.com",
+					Email:    uniqueEmail,
 					Password: "Pas1!",
 				},
 				expectedStatus: http.StatusBadRequest,
