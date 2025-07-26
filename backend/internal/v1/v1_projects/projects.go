@@ -684,3 +684,66 @@ func (h *Handler) handleGetLatestProjectSnapshot(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, snapshot)
 }
+
+/*
+ * handleGetPopularProjects retrieves projects ordered by their popularity score.
+ *
+ * The popularity score is calculated based on:
+ * - User engagement (comment activity) - highest weight (2x)
+ * - Content richness (document count) - second highest weight (1.5x)
+ * - Team size (team member count) - weight (1x)
+ * - Recency bonus - additional points for recent activity
+ *   - 10 points for projects updated within the last week
+ *   - 5 points for projects updated within the last month
+ *
+ * parameters:
+ * - limit: Maximum number of projects to return (default: 10, max: 50)
+ *
+ * security:
+ * - Public endpoint (no authentication required)
+ * - Returns only verified and pending projects
+ *
+ * returns:
+ * - Array of PopularProjectResponse objects ordered by popularity score (highest first)
+ */
+
+func (h *Handler) handleGetPopularProjects(c echo.Context) error {
+	var req GetPopularProjectsRequest
+	if err := v1_common.BindandValidate(c, &req); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid request parameters", err)
+	}
+
+	limit := 10
+	if req.Limit > 0 {
+		limit = req.Limit
+	}
+
+	projects, err := h.server.GetQueries().GetPopularProjects(c.Request().Context(), int32(limit))
+	if err != nil {
+		return v1_common.Fail(c, http.StatusInternalServerError, "Failed to fetch popular projects", err)
+	}
+
+	response := make([]PopularProjectResponse, 0, len(projects))
+	for _, project := range projects {
+		description := ""
+		if project.Description != nil {
+			description = *project.Description
+		}
+
+		response = append(response, PopularProjectResponse{
+			ProjectResponse: ProjectResponse{
+				ID:          project.ID,
+				Title:       project.Title,
+				Description: description,
+				Status:      project.Status,
+				CreatedAt:   project.CreatedAt,
+				UpdatedAt:   project.UpdatedAt,
+			},
+			PopularityScore: project.PsPopularityScore,
+		})
+	}
+
+	return c.JSON(http.StatusOK, GetPopularProjectsResponse{
+		Projects: response,
+	})
+}
