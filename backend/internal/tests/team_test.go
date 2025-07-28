@@ -299,11 +299,16 @@ func TestTeamEndpoints(t *testing.T) {
 	t.Run("Team Member Access Tests", func(t *testing.T) {
 		// Create test member user
 		memberUserID := uuid.New().String()
-		memberSalt := []byte("member-salt")
+		uniqueMemberEmail := fmt.Sprintf("member-%s@test.com", uuid.New().String())
 		_, err = s.GetDB().Exec(ctx, `
 			INSERT INTO users (id, email, password, permissions, email_verified, token_salt)
-			VALUES ($1, $2, $3, $4, $5, $6)
-		`, memberUserID, "member@test.com", "hashedpass", int32(permissions.PermInvestor), true, memberSalt)
+			VALUES ($1, $2, $3, $4, $5, gen_random_bytes(32))
+		`, memberUserID, uniqueMemberEmail, "hashedpass", int32(permissions.PermInvestor), true)
+		require.NoError(t, err)
+
+		// Get the generated salt and generate token for member
+		var memberSalt []byte
+		err = s.GetDB().QueryRow(ctx, "SELECT token_salt FROM users WHERE id = $1", memberUserID).Scan(&memberSalt)
 		require.NoError(t, err)
 
 		// Generate token for member

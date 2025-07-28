@@ -53,10 +53,10 @@ func TestCompanyEndpoints(t *testing.T) {
 	adminID := uuid.New()
 
 	testUsers := []testUser{
-		{ownerID, "owner@test.com", permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
-		{otherOwnerID, "other@test.com", permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
-		{investorID, "investor@test.com", permissions.PermInvestor, nil, ""},
-		{adminID, "admin@test.com", permissions.PermAdmin | permissions.PermManageUsers | permissions.PermViewAllProjects | permissions.PermManageTeam, nil, ""},
+		{ownerID, fmt.Sprintf("owner-%s@test.com", uuid.New().String()), permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
+		{otherOwnerID, fmt.Sprintf("other-%s@test.com", uuid.New().String()), permissions.PermStartupOwner | permissions.PermSubmitProject | permissions.PermManageTeam, nil, ""},
+		{investorID, fmt.Sprintf("investor-%s@test.com", uuid.New().String()), permissions.PermInvestor, nil, ""},
+		{adminID, fmt.Sprintf("admin-%s@test.com", uuid.New().String()), permissions.PermAdmin | permissions.PermManageUsers | permissions.PermViewAllProjects | permissions.PermManageTeam, nil, ""},
 	}
 
 	for i := range testUsers {
@@ -346,6 +346,9 @@ func TestCompanyEndpoints(t *testing.T) {
 		}
 	})
 
+	// Clean up in proper order due to foreign key constraints
+	_, err = s.GetDB().Exec(ctx, "DELETE FROM projects")
+	require.NoError(t, err)
 	_, err = s.GetDB().Exec(ctx, "DELETE FROM companies")
 	require.NoError(t, err)
 	_, err = s.GetDB().Exec(ctx, "DELETE FROM users")

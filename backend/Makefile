@@ -11,7 +11,7 @@ POSTGRESQL_VERSION ?= 16
 .PHONY: query seed
 
 dev:
-	@VERSION=dev APP_ENV=development air
+	@VERSION=dev APP_ENV=development SPUR_WALLET_ADDRESS=0x000000000000000000000000000000000000dEaD air
 up:
 	@goose -dir .sqlc/migrations postgres "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" up --allow-missing
 up-strict:
