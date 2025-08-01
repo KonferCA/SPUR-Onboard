@@ -169,3 +169,70 @@ pnpm i
 ```console
 pnpm dev
 ```
+
+---
+
+## SpurCoin Development [Blockchain]
+
+SPUR includes a blockchain-based funding system using SpurCoin (ERC20 token) and smart contracts for project funding.
+
+### Getting Started
+
+> From your terminal, navigate to the spurcoin path of your clone
+```console
+cd spurcoin
+```
+
+> Install dependencies using pnpm
+```console
+pnpm install
+```
+
+> Configure backend environment
+```console
+# Edit .env with your specific configuration if needed
+```
+
+> Start local blockchain
+```console
+pnpm node
+```
+
+> If needs, deploy contracts
+```console
+cd spurcoin
+pnpm deploy:local
+```
+
+> Update contract addresses
+```console
+# Update .env file in backend/ with new deployed addresses
+# Or use the defaults provided by setup_env.sh
+```
+
+#### Testing & Development
+
+> Run contract tests
+```console
+pnpm test
+```
+
+> Compile contracts
+```console
+pnpm compile
+```
+
+> Access blockchain config from frontend
+```console
+# GET /api/v1/blockchain/config
+# Returns contract addresses and RPC URL
+```
+
+#### Scripts
+
+- `pnpm compile` - Compile smart contracts
+- `pnpm test` - Run contract test suite  
+- `pnpm deploy:local` - Deploy to local Hardhat network
+- `pnpm deploy:sepolia` - Deploy to Sepolia testnet
+- `pnpm node` - Start local blockchain
+- `pnpm clean` - Clean build artifacts

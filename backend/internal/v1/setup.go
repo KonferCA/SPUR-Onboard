@@ -3,6 +3,7 @@ package v1
 import (
 	"KonferCA/SPUR/internal/interfaces"
 	"KonferCA/SPUR/internal/v1/v1_auth"
+	"KonferCA/SPUR/internal/v1/v1_common"
 	"KonferCA/SPUR/internal/v1/v1_companies"
 	"KonferCA/SPUR/internal/v1/v1_health"
 	"KonferCA/SPUR/internal/v1/v1_investment_intentions"
@@ -24,4 +25,5 @@ func SetupRoutes(s interfaces.CoreServer) {
 	v1_teams.SetupRoutes(g, s)
 	v1_transactions.SetupTransactionRoutes(g, s)
 	v1_users.SetupUserRoutes(g, s)
+	v1_common.SetupBlockchainRoutes(g, s)
 }

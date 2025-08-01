@@ -3,7 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "coverage": "npx hardhat coverage",
+    "deploy:local": "npx hardhat run scripts/deploy.ts --network hardhat",
+    "deploy:sepolia": "npx hardhat run scripts/deploy.ts --network sepolia",
+    "node": "npx hardhat node",
+    "clean": "npx hardhat clean"
   },
   "keywords": [],
   "author": "",
