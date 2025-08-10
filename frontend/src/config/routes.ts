@@ -8,6 +8,9 @@ export const AVAILABLE_ROUTES = {
     '/user/home': true,
     '/user/dashboard': true,
     '/user/browse': true,
+    '/user/project': true,
+    '/browse': true,
+    '/project': true,
     '/user/resources': false,
 
     // investor routes
