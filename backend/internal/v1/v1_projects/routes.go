@@ -15,10 +15,14 @@ import (
 func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 	h := &Handler{server: s}
 
-	// 5 request per minute, get block for 15 minutes, and ban up to 1 hour after four blocks.
+	// 5 request per minute
 	maxRequests := 5
 	if os.Getenv("APP_ENV") == common.TEST_ENV {
 		maxRequests = 5000
+	}
+
+	if os.Getenv("APP_ENV") == common.DEVELOPMENT_ENV {
+		maxRequests = 100
 	}
 
 	publicProjectsLimiter := middleware.NewRateLimiter(&middleware.RateLimiterConfig{
