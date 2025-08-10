@@ -236,6 +236,25 @@ export async function submitProject(accessToken: string, projectId: string) {
  * getLatestProjectSnapshot tries to get the latest project snapshot.
  * This function throws an ApiError for any status code that is not 200.
  */
+/*
+ * Get latest/public projects without authentication
+ */
+export async function getLatestProjects(): Promise<ExtendedProjectResponse[]> {
+    const url = getApiUrl('/project/latest');
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    const body = await res.json();
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to get latest projects', res.status, body);
+    }
+
+    return snakeToCamel(body.projects || []) as ExtendedProjectResponse[];
+}
+
 export async function getLatestProjectSnapshot(
     accessToken: string,
     projectId: string
