@@ -461,6 +461,7 @@ type Project struct {
 	Status               ProjectStatus `json:"status"`
 	CreatedAt            int64         `json:"created_at"`
 	UpdatedAt            int64         `json:"updated_at"`
+	Featured             bool          `json:"featured"`
 	LastSnapshotID       pgtype.UUID   `json:"last_snapshot_id"`
 	OriginalSubmissionAt *int64        `json:"original_submission_at"`
 	AllowEdit            bool          `json:"allow_edit"`

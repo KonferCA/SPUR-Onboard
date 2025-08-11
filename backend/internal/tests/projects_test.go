@@ -855,4 +855,118 @@ func TestProjectEndpoints(t *testing.T) {
 		assert.NotNil(t, getCommentResp["resolved_by_snapshot_id"])
 		assert.Equal(t, snapshotID, getCommentResp["resolved_by_snapshot_id"])
 	})
+
+	t.Run("Featured Projects", func(t *testing.T) {
+		// feature a project as admin
+		featuredReq := map[string]interface{}{"featured": true}
+		featuredJSON, err := json.Marshal(featuredReq)
+		require.NoError(t, err)
+
+		req := httptest.NewRequest(http.MethodPut,
+			fmt.Sprintf("/api/v1/project/%s/featured", projectID),
+			bytes.NewReader(featuredJSON))
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusOK, rec.Code, "Admin should be able to set featured status")
+
+		ctx := context.Background()
+		var featured bool
+		row := s.GetDB().QueryRow(ctx, "SELECT featured FROM projects WHERE id = $1", projectID)
+		err = row.Scan(&featured)
+		assert.NoError(t, err)
+		assert.True(t, featured, "Project should be marked as featured in the database")
+
+		// getting featured projects (public)
+		t.Run("Get Featured Projects - Public Access", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/project/featured", nil)
+			rec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusOK, rec.Code, "Featured projects endpoint should be accessible without authentication")
+
+			var resp struct {
+				Projects []struct {
+					ID          string `json:"id"`
+					Title       string `json:"title"`
+					Featured    bool   `json:"featured"`
+					CompanyName string `json:"company_name"`
+				} `json:"projects"`
+			}
+
+			err := json.NewDecoder(rec.Body).Decode(&resp)
+			assert.NoError(t, err)
+
+			assert.NotEmpty(t, resp.Projects, "Response should contain projects")
+
+			found := false
+			for _, p := range resp.Projects {
+				if p.ID == projectID {
+					found = true
+					assert.True(t, p.Featured, "Project should be marked as featured")
+					break
+				}
+			}
+			assert.True(t, found, "Featured project should be in the response")
+		})
+
+		t.Run("Get Featured Projects - Limit Parameter", func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/api/v1/project/featured?limit=1", nil)
+			rec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusOK, rec.Code)
+
+			var resp struct {
+				Projects []struct {
+					ID string `json:"id"`
+				} `json:"projects"`
+			}
+
+			err := json.NewDecoder(rec.Body).Decode(&resp)
+			assert.NoError(t, err)
+
+			assert.LessOrEqual(t, len(resp.Projects), 1, "Response should respect the limit parameter")
+		})
+
+		// test attempt to feature a project (admin)
+		t.Run("Non-Admin Cannot Set Featured Status", func(t *testing.T) {
+			_, regularEmail, regularPassword, err := createTestUser(ctx, s, 0)
+			assert.NoError(t, err)
+			defer removeTestUser(ctx, regularEmail, s)
+
+			regularToken := loginAndGetToken(t, s, regularEmail, regularPassword)
+			require.NotEmpty(t, regularToken)
+
+			// feature a project
+			featuredReq := map[string]interface{}{"featured": true}
+			featuredJSON, _ := json.Marshal(featuredReq)
+
+			req := httptest.NewRequest(http.MethodPut,
+				fmt.Sprintf("/api/v1/project/%s/featured", projectID),
+				bytes.NewReader(featuredJSON))
+			req.Header.Set("Authorization", "Bearer "+regularToken)
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+			s.GetEcho().ServeHTTP(rec, req)
+
+			assert.Equal(t, http.StatusForbidden, rec.Code, "Non-admin users should not be able to set featured status")
+		})
+
+		// unfeature the project
+		unfeaturedReq := map[string]interface{}{"featured": false}
+		unfeaturedJSON, _ := json.Marshal(unfeaturedReq)
+
+		req = httptest.NewRequest(http.MethodPut,
+			fmt.Sprintf("/api/v1/project/%s/featured", projectID),
+			bytes.NewReader(unfeaturedJSON))
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		req.Header.Set("Content-Type", "application/json")
+		rec = httptest.NewRecorder()
+		s.GetEcho().ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusOK, rec.Code, "Should be able to unfeature a project")
+	})
 }
