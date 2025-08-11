@@ -5,33 +5,40 @@ import {
     FaGlobe,
     FaLinkedin,
 } from 'react-icons/fa';
-import { FiHeart, FiShare2, FiUsers } from 'react-icons/fi';
+import { FiHeart, FiShare2, FiUsers, FiX } from 'react-icons/fi';
 import { RiTwitterXLine } from 'react-icons/ri';
 import type { ProjectCardData } from '@/components/browse/BrowseComponents';
+import { getProjectTeam, getProjectAnswers } from '@/services/project';
+import { getProjectDocuments } from '@/services/projects';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts';
 
-// TODO: grab images from API : mock data for now
-const generateCarouselImages = (projectId: string) => [
-    {
-        id: 1,
-        url: `https://picsum.photos/800/400?random=${projectId}1`,
-        alt: 'Project Dashboard',
-    },
-    {
-        id: 2,
-        url: `https://picsum.photos/800/400?random=${projectId}2`,
-        alt: 'Analytics View',
-    },
-    {
-        id: 3,
-        url: `https://picsum.photos/800/400?random=${projectId}3`,
-        alt: 'Team Collaboration',
-    },
-    {
-        id: 4,
-        url: `https://picsum.photos/800/400?random=${projectId}4`,
-        alt: 'Project Overview',
-    },
-];
+interface ProjectAnswer {
+    question: string;
+    answer: string;
+}
+
+interface TeamMember {
+    id: string;
+    firstName: string;
+    lastName: string;
+    title: string;
+    socialLinks?: Array<{
+        platform: string;
+        urlOrHandle: string;
+    }>;
+    personalWebsite?: string;
+    isAccountOwner: boolean;
+    commitmentType: string;
+    introduction: string;
+    industryExperience: string;
+    detailedBiography: string;
+    previousWork?: string;
+    resumeExternalUrl?: string;
+    resumeInternalUrl?: string;
+    createdAt: number;
+    updatedAt: number;
+}
 
 interface ProjectDetailContentProps {
     project: ProjectCardData;
@@ -49,7 +56,71 @@ export function ProjectDetailContent({
     showActionButtons = true,
 }: ProjectDetailContentProps) {
     const [currentSlide, setCurrentSlide] = useState(0);
-    const carouselImages = generateCarouselImages(project.id);
+    const [showTeamModal, setShowTeamModal] = useState(false);
+
+    const { getAccessToken } = useAuth();
+    const accessToken = getAccessToken();
+
+    const { data: documentsData } = useQuery({
+        queryKey: ['project_documents', project.id],
+        queryFn: async () => {
+            try {
+                if (!accessToken) {
+                    return null;
+                }
+
+                return await getProjectDocuments(accessToken, project.id);
+            } catch (err) {
+                console.warn('Failed to fetch project documents:', err);
+
+                return null;
+            }
+        },
+        refetchOnWindowFocus: false,
+        enabled: !!accessToken,
+    });
+
+    const projectImages =
+        documentsData?.documents?.filter(
+            (doc) =>
+                doc.url &&
+                (doc.url.toLowerCase().includes('.jpg') ||
+                    doc.url.toLowerCase().includes('.jpeg') ||
+                    doc.url.toLowerCase().includes('.png'))
+        ) || [];
+
+    const carouselImages = projectImages.map((doc, index) => ({
+        id: index + 1,
+        url: doc.url,
+        alt: doc.name || `Project Image ${index + 1}`,
+    }));
+
+    const { data: teamData, isLoading: teamLoading } = useQuery({
+        queryKey: ['project_team', project.id],
+        queryFn: async () => {
+            return await getProjectTeam(project.id, accessToken || undefined);
+        },
+        refetchOnWindowFocus: false,
+    });
+
+    const { data: projectAnswers } = useQuery({
+        queryKey: ['project_answers', project.id],
+        queryFn: async () => {
+            try {
+                if (!accessToken) {
+                    return [];
+                }
+                return await getProjectAnswers(project.id, accessToken);
+            } catch (err) {
+                console.warn('Failed to fetch project answers:', err);
+                return [];
+            }
+        },
+        refetchOnWindowFocus: false,
+        enabled: !!accessToken,
+    });
+
+    const teamMembers = teamData?.teamMembers || [];
 
     const nextSlide = () => {
         setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
@@ -61,26 +132,30 @@ export function ProjectDetailContent({
         );
     };
 
-    const currentImage = carouselImages[currentSlide];
+    const currentImage =
+        carouselImages.length > 0 ? carouselImages[currentSlide] : null;
 
-    // generate mock company details based on project data
-    const idHash = project.id
-        .split('')
-        .reduce((a, b) => a + b.charCodeAt(0), 0);
-    const foundedYear = 2020 + (idHash % 4); // 2020-2023
-    const teamSize = 2 + (idHash % 20); // 2-21 people
-    const totalInvestors = idHash % 10; // 0-9 investors
-    const maxInvestors = totalInvestors + 3 + (idHash % 5); // max investors
+    const getAnswerByKey = (key: string) => {
+        return projectAnswers?.find((answer: ProjectAnswer) =>
+            answer.question?.includes(key)
+        )?.answer;
+    };
 
-    // generate valuation
-    const valuationAmounts = [
-        '$500,000',
-        '$1,000,000',
-        '$2,500,000',
-        '$5,000,000',
-    ];
+    const teamSize = teamMembers?.length || 0;
 
-    const valuation = valuationAmounts[idHash % valuationAmounts.length];
+    const foundingDateAnswer =
+        getAnswerByKey('founding') || getAnswerByKey('founded');
+    const foundedYear = foundingDateAnswer
+        ? new Date(foundingDateAnswer).getFullYear()
+        : null;
+
+    const industries =
+        getAnswerByKey('industry') || getAnswerByKey('industries');
+    const companyMission = getAnswerByKey('mission') || project.description;
+    const fundingStage = project.fundStage || getAnswerByKey('funding');
+    const valuation = getAnswerByKey('valuation');
+    const totalInvestors = getAnswerByKey('investors');
+    const maxInvestors = getAnswerByKey('max_investors');
 
     return (
         <>
@@ -106,42 +181,69 @@ export function ProjectDetailContent({
                 <div className="lg:col-span-2">
                     <div className="relative bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
                         <div className="relative h-96 bg-gray-100">
-                            <img
-                                src={currentImage.url}
-                                alt={currentImage.alt}
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
+                            {carouselImages.length > 0 && currentImage ? (
+                                <>
+                                    <img
+                                        src={currentImage.url}
+                                        alt={currentImage.alt}
+                                        className="w-full h-full object-cover"
+                                    />
 
-                        <button
-                            type="button"
-                            onClick={prevSlide}
-                            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all"
-                        >
-                            <FaChevronLeft className="w-5 h-5" />
-                        </button>
+                                    {carouselImages.length > 1 && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={prevSlide}
+                                                className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all"
+                                            >
+                                                <FaChevronLeft className="w-5 h-5" />
+                                            </button>
 
-                        <button
-                            type="button"
-                            onClick={nextSlide}
-                            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all"
-                        >
-                            <FaChevronRight className="w-5 h-5" />
-                        </button>
+                                            <button
+                                                type="button"
+                                                onClick={nextSlide}
+                                                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all"
+                                            >
+                                                <FaChevronRight className="w-5 h-5" />
+                                            </button>
 
-                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                            {carouselImages.map((image, idx) => (
-                                <button
-                                    key={image.id}
-                                    type="button"
-                                    onClick={() => setCurrentSlide(idx)}
-                                    className={`w-2 h-2 rounded-full transition-all ${
-                                        idx === currentSlide
-                                            ? 'bg-gray-800 w-6'
-                                            : 'bg-gray-400'
-                                    }`}
-                                />
-                            ))}
+                                            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                                                {carouselImages.map(
+                                                    (image, idx) => (
+                                                        <button
+                                                            key={image.id}
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setCurrentSlide(
+                                                                    idx
+                                                                )
+                                                            }
+                                                            className={`w-2 h-2 rounded-full transition-all ${
+                                                                idx ===
+                                                                currentSlide
+                                                                    ? 'bg-gray-800 w-6'
+                                                                    : 'bg-gray-400'
+                                                            }`}
+                                                        />
+                                                    )
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="flex items-center justify-center h-full">
+                                    <div className="text-center">
+                                        <p className="text-gray-500 text-lg">
+                                            No images to show
+                                        </p>
+                                        <p className="text-gray-400 text-sm mt-2">
+                                            This project has not uploaded any
+                                            featured images
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -151,26 +253,13 @@ export function ProjectDetailContent({
                         </h2>
 
                         <div className="space-y-4 text-gray-600">
-                            {/* DUMMY DESC */}
-                            <p>
-                                {project.description ||
-                                    `${project.name} is an innovative platform that revolutionizes the way teams collaborate and manage projects. Our cutting-edge solution combines artificial intelligence with intuitive design to deliver exceptional user experiences.`}
-                            </p>
-                            {/* TODO: pull this content from the project description */}
-                            <p>
-                                We're passionate about building tools that
-                                empower teams to achieve more together. Our
-                                platform offers advanced analytics, seamless
-                                integrations, and enterprise-grade security to
-                                help businesses scale efficiently while
-                                maintaining the highest standards of quality.
-                            </p>
-                            <p>
-                                Join thousands of satisfied customers who have
-                                transformed their workflow with {project.name}.
-                                Experience the future of productivity and
-                                collaboration today.
-                            </p>
+                            {companyMission && <p>{companyMission}</p>}
+
+                            {industries && (
+                                <p>
+                                    <strong>Industry:</strong> {industries}
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -271,30 +360,36 @@ export function ProjectDetailContent({
                                 Funding details
                             </h4>
                             <div className="space-y-3">
-                                <div className="flex justify-between">
-                                    <span className="text-sm text-gray-500">
-                                        Fund Stage
-                                    </span>
-                                    <span className="text-sm font-medium">
-                                        {project.fundStage}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm text-gray-500">
-                                        Total Raised
-                                    </span>
-                                    <span className="text-sm font-medium text-green-600">
-                                        {project.fundingRaised} {project.status}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm text-gray-500">
-                                        Valuation
-                                    </span>
-                                    <span className="text-sm font-medium text-green-600">
-                                        {valuation}
-                                    </span>
-                                </div>
+                                {fundingStage && (
+                                    <div className="flex justify-between">
+                                        <span className="text-sm text-gray-500">
+                                            Fund Stage
+                                        </span>
+                                        <span className="text-sm font-medium">
+                                            {fundingStage}
+                                        </span>
+                                    </div>
+                                )}
+                                {project.fundingRaised && (
+                                    <div className="flex justify-between">
+                                        <span className="text-sm text-gray-500">
+                                            Total Raised
+                                        </span>
+                                        <span className="text-sm font-medium text-green-600">
+                                            {project.fundingRaised}
+                                        </span>
+                                    </div>
+                                )}
+                                {valuation && (
+                                    <div className="flex justify-between">
+                                        <span className="text-sm text-gray-500">
+                                            Valuation
+                                        </span>
+                                        <span className="text-sm font-medium text-green-600">
+                                            {valuation}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -303,36 +398,42 @@ export function ProjectDetailContent({
                                 Company details
                             </h4>
                             <div className="space-y-3">
-                                <div className="flex justify-between">
-                                    <span className="text-sm text-gray-500">
-                                        Founded
-                                    </span>
-                                    <span className="text-sm font-medium">
-                                        {foundedYear}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm text-gray-500">
-                                        Team Size
-                                    </span>
-                                    <span className="text-sm font-medium">
-                                        {teamSize}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm text-gray-500">
-                                        Total Investors
-                                    </span>
-                                    <span className="text-sm font-medium">
-                                        {totalInvestors} / {maxInvestors}
-                                    </span>
-                                </div>
+                                {foundedYear && (
+                                    <div className="flex justify-between">
+                                        <span className="text-sm text-gray-500">
+                                            Founded
+                                        </span>
+                                        <span className="text-sm font-medium">
+                                            {foundedYear}
+                                        </span>
+                                    </div>
+                                )}
+                                {teamSize > 0 && (
+                                    <div className="flex justify-between">
+                                        <span className="text-sm text-gray-500">
+                                            Team Size
+                                        </span>
+                                        <span className="text-sm font-medium">
+                                            {teamSize}
+                                        </span>
+                                    </div>
+                                )}
+                                {totalInvestors && maxInvestors && (
+                                    <div className="flex justify-between">
+                                        <span className="text-sm text-gray-500">
+                                            Total Investors
+                                        </span>
+                                        <span className="text-sm font-medium">
+                                            {totalInvestors} / {maxInvestors}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        {/* TODO: create modal popup for team details */}
                         <button
                             type="button"
+                            onClick={() => setShowTeamModal(true)}
                             className="w-full py-2.5 border-2 border-button-primary-100 text-button-primary-100 rounded-lg font-medium hover:bg-button-primary-25 transition-colors flex items-center justify-center gap-2"
                         >
                             <FiUsers className="w-5 h-5" />
@@ -341,6 +442,127 @@ export function ProjectDetailContent({
                     </div>
                 </div>
             </div>
+
+            {showTeamModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div
+                        className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
+                        onClick={() => setShowTeamModal(false)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setShowTeamModal(false);
+                            }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                    />
+
+                    <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-lg">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-2xl font-bold text-gray-900">
+                                    Meet the Team
+                                </h2>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setShowTeamModal(false)}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    <FiX className="w-6 h-6" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            {teamLoading && (
+                                <div className="text-center py-8">
+                                    <p className="text-gray-600">
+                                        Loading team members...
+                                    </p>
+                                </div>
+                            )}
+
+                            {!teamLoading && teamMembers.length === 0 && (
+                                <div className="text-center py-8">
+                                    <p className="text-gray-600">
+                                        No team members found
+                                    </p>
+                                </div>
+                            )}
+
+                            {!teamLoading && teamMembers.length > 0 && (
+                                <div className="space-y-6">
+                                    {teamMembers.map((member: TeamMember) => {
+                                        const name =
+                                            `${member.firstName || ''} ${member.lastName || ''}`.trim();
+                                        const avatar = `https://i.pravatar.cc/150?u=${member.id}`;
+
+                                        const linkedinUrl =
+                                            member.socialLinks?.find(
+                                                (link) =>
+                                                    link.platform === 'linkedin'
+                                            )?.urlOrHandle;
+                                        const twitterUrl =
+                                            member.socialLinks?.find(
+                                                (link) =>
+                                                    link.platform === 'twitter'
+                                            )?.urlOrHandle;
+
+                                        return (
+                                            <div
+                                                key={member.id}
+                                                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <img
+                                                        src={avatar}
+                                                        alt={name}
+                                                        className="w-12 h-12 rounded-full object-cover"
+                                                    />
+                                                    <div>
+                                                        <h3 className="font-semibold text-lg text-gray-900">
+                                                            {name}
+                                                        </h3>
+                                                        <p className="text-sm text-gray-600">
+                                                            {member.title}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-3">
+                                                    {linkedinUrl && (
+                                                        <a
+                                                            href={linkedinUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-gray-600 hover:text-blue-600 transition-colors"
+                                                        >
+                                                            <FaLinkedin className="w-5 h-5" />
+                                                        </a>
+                                                    )}
+
+                                                    {twitterUrl && (
+                                                        <a
+                                                            href={twitterUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-gray-600 hover:text-blue-400 transition-colors"
+                                                        >
+                                                            <RiTwitterXLine className="w-5 h-5" />
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
