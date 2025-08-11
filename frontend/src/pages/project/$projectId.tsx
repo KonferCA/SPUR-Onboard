@@ -98,7 +98,7 @@ function PublicProjectDetail() {
                                     className="w-10 h-10"
                                 />
                                 <span className="ml-2 text-xl font-bold tracking-wider">
-                                    SPUR
+                                    ONBOARD
                                 </span>
                             </div>
 
