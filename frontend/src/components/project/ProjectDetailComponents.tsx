@@ -145,34 +145,6 @@ export function ProjectDetailContent({
                         </div>
                     </div>
 
-                    {showActionButtons && (
-                        <div className="flex gap-4 mb-8">
-                            <button
-                                type="button"
-                                onClick={onLike}
-                                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                                <FiHeart
-                                    className={`w-5 h-5 ${
-                                        isLiked
-                                            ? 'fill-red-500 text-red-500'
-                                            : ''
-                                    }`}
-                                />
-                                Like
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={onShare}
-                                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                                <FiShare2 className="w-5 h-5" />
-                                Share
-                            </button>
-                        </div>
-                    )}
-
                     <div className="bg-white rounded-lg p-6 border border-gray-200">
                         <h2 className="text-xl font-bold mb-4">
                             About {project.name}
@@ -204,6 +176,34 @@ export function ProjectDetailContent({
                 </div>
 
                 <div className="lg:col-span-1">
+                    {showActionButtons && (
+                        <div className="flex gap-4 mb-6">
+                            <button
+                                type="button"
+                                onClick={onLike}
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                                <FiHeart
+                                    className={`w-5 h-5 ${
+                                        isLiked
+                                            ? 'fill-red-500 text-red-500'
+                                            : ''
+                                    }`}
+                                />
+                                Like
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={onShare}
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                                <FiShare2 className="w-5 h-5" />
+                                Share
+                            </button>
+                        </div>
+                    )}
+
                     <div className="bg-white rounded-lg border border-gray-200 p-6">
                         <h3 className="text-lg font-semibold mb-4">
                             Company Profile
