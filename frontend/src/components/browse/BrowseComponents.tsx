@@ -231,7 +231,7 @@ export function ProjectCard({
     // determine navigation path based on current location
     const isAuthenticatedPage = location.pathname.startsWith('/user/');
     const projectPath = isAuthenticatedPage
-        ? `/user/project/${project.id}`
+        ? `/user/project-detail/${project.id}`
         : `/project/${project.id}`;
 
     return (
