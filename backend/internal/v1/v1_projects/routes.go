@@ -61,6 +61,7 @@ func SetupRoutes(g *echo.Group, s interfaces.CoreServer) {
 
 	// Dynamic :id routes
 	project.GET("/:id", h.handleGetProject)
+	project.GET("/:id/team", h.handleGetProjectTeam)
 	projectSubmitGroup.POST("/:id/submit", h.handleSubmitProject)
 
 	// Project answers - require project submission permission
