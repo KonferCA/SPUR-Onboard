@@ -412,3 +412,69 @@ WHERE id = $2;
 -- name: CountUnresolvedProjectComments :one
 SELECT COUNT(*) FROM project_comments
 WHERE project_id = $1 AND resolved = false;
+
+-- name: GetPopularProjects :many
+WITH project_data AS (
+    SELECT 
+        p.id,
+        p.company_id,
+        COALESCE(
+            (SELECT pa.answer 
+            FROM project_answers pa
+            JOIN project_questions pq ON pa.question_id = pq.id
+            WHERE pa.project_id = p.id AND pq.question_key = 'company_name' AND pa.answer != ''
+            LIMIT 1),
+            p.title
+        ) as title,
+        p.description,
+        p.status,
+        p.created_at,
+        p.updated_at,
+        COUNT(d.id) as document_count,
+        COUNT(t.id) as team_member_count,
+        COUNT(pc.id) as comment_count
+    FROM 
+        projects p
+    LEFT JOIN 
+        project_documents d ON d.project_id = p.id
+    LEFT JOIN 
+        project_comments pc ON pc.project_id = p.id
+    LEFT JOIN 
+        team_members t ON t.company_id = p.company_id
+    WHERE 
+        p.status IN ('verified', 'pending')
+    GROUP BY 
+        p.id
+),
+popularity_scores AS (
+    SELECT 
+        pd.*,
+        -- calculate popularity score using comment count, document count, team size and recency
+        -- todo: implement a more sophisticated scoring algorithm (inclusive of page views, etc.)
+        (pd.comment_count * 2.0)::float + 
+        (pd.document_count * 1.5)::float + 
+        pd.team_member_count::float +
+        CASE 
+            WHEN pd.updated_at > extract(epoch from (now() - interval '7 days')) THEN 10.0
+            WHEN pd.updated_at > extract(epoch from (now() - interval '30 days')) THEN 5.0
+            ELSE 0.0
+        END::float as popularity_score
+    FROM 
+        project_data pd
+)
+SELECT 
+    ps.id,
+    ps.company_id,
+    ps.title,
+    ps.description,
+    ps.status,
+    ps.created_at,
+    ps.updated_at,
+    ps.document_count,
+    ps.team_member_count,
+    ps.popularity_score::float
+FROM 
+    popularity_scores ps
+ORDER BY 
+    ps.popularity_score DESC
+LIMIT $1;
