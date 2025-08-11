@@ -1,15 +1,11 @@
 import { useState } from 'react';
 import { createFileRoute, useParams, Link } from '@tanstack/react-router';
 import { usePageTitle } from '@/utils';
-import { FiHeart, FiArrowLeft } from 'react-icons/fi';
-import { LogoSVG } from '@/assets';
 import { useQuery } from '@tanstack/react-query';
 import { getLatestProjects } from '@/services/project';
-import {
-    transformProjectData,
-    SearchHeader,
-} from '@/components/browse/BrowseComponents';
+import { transformProjectData } from '@/components/browse/BrowseComponents';
 import { ProjectDetailContent } from '@/components/project/ProjectDetailComponents';
+import { cva } from 'class-variance-authority';
 
 export const Route = createFileRoute(
     '/user/_auth/_appshell/project-detail/$projectId'
@@ -17,11 +13,28 @@ export const Route = createFileRoute(
     component: AuthProjectDetail,
 });
 
+const navButtonStyles = cva(
+    'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+    {
+        variants: {
+            active: {
+                true: 'bg-button-primary-100 text-white shadow-sm',
+                false: 'text-gray-500 hover:text-gray-700',
+            },
+        },
+        defaultVariants: {
+            active: false,
+        },
+    }
+);
+
 function AuthProjectDetail() {
     const { projectId } = useParams({
         from: '/user/_auth/_appshell/project-detail/$projectId',
     });
-    const [searchQuery, setSearchQuery] = useState('');
+    const [activeTab, setActiveTab] = useState<'overview' | 'details'>(
+        'overview'
+    );
     const [isLiked, setIsLiked] = useState(false);
 
     const {
@@ -95,56 +108,54 @@ function AuthProjectDetail() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+            <header className="mt-6">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         <div className="flex items-center gap-8">
-                            <div className="flex items-center">
-                                <img
-                                    src={LogoSVG}
-                                    alt="SPUR"
-                                    className="w-10 h-10"
-                                />
-                                <span className="ml-2 text-xl font-bold tracking-wider">
-                                    SPUR
-                                </span>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    className={navButtonStyles({
+                                        active: activeTab === 'overview',
+                                    })}
+                                    onClick={() => setActiveTab('overview')}
+                                >
+                                    Overview
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className={navButtonStyles({
+                                        active: activeTab === 'details',
+                                    })}
+                                    onClick={() => setActiveTab('details')}
+                                >
+                                    Details
+                                </button>
                             </div>
-
-                            <Link
-                                to="/user/browse"
-                                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                            >
-                                <FiArrowLeft className="w-4 h-4" />
-                                Back to Browse
-                            </Link>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            <SearchHeader
-                                searchQuery={searchQuery}
-                                setSearchQuery={setSearchQuery}
-                            />
-
-                            <Link
-                                to="/user/liked"
-                                className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 transition-colors"
-                            >
-                                <FiHeart className="w-5 h-5" />
-                                Liked Projects
-                            </Link>
                         </div>
                     </div>
                 </div>
             </header>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <ProjectDetailContent
-                    project={project}
-                    onLike={handleLike}
-                    onShare={handleShare}
-                    isLiked={isLiked}
-                    showActionButtons={true}
-                />
+                {activeTab === 'overview' && (
+                    <ProjectDetailContent
+                        project={project}
+                        onLike={handleLike}
+                        onShare={handleShare}
+                        isLiked={isLiked}
+                        showActionButtons={true}
+                    />
+                )}
+
+                {activeTab === 'details' && (
+                    <div className="bg-white rounded-lg p-6 shadow-sm">
+                        <h1 className="text-2xl font-bold text-gray-900">
+                            Project Details
+                        </h1>
+                    </div>
+                )}
             </div>
         </div>
     );
