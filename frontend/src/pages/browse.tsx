@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { usePageTitle } from '@/utils';
 import { FiHeart, FiX, FiRefreshCw } from 'react-icons/fi';
+import { LogoSVG } from '@/assets';
 import {
     useBrowseProjects,
     ProjectCard,
@@ -9,12 +10,12 @@ import {
     categories,
 } from '@/components/browse/BrowseComponents';
 
-export const Route = createFileRoute('/user/_auth/_appshell/browse')({
-    component: BrowseProjectsAuth,
+export const Route = createFileRoute('/browse')({
+    component: BrowseProjects,
 });
 
-function BrowseProjectsAuth() {
-    usePageTitle('Projects Marketplace');
+function BrowseProjects() {
+    usePageTitle('Browse Projects');
 
     const {
         selectedCategories,
@@ -34,14 +35,22 @@ function BrowseProjectsAuth() {
     } = useBrowseProjects();
 
     return (
-        <div className="flex flex-col justify-between min-h-screen bg-gray-50">
-            <div className="pt-20 max-w-7xl mx-auto w-full">
-                <div className="px-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <h1 className="text-4xl font-bold">
-                            <span className="text-[#F4802F]">Projects</span>{' '}
-                            Marketplace
-                        </h1>
+        <div className="min-h-screen bg-gray-50">
+            <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-16">
+                        <div className="flex items-center gap-8">
+                            <div className="flex items-center">
+                                <img
+                                    src={LogoSVG}
+                                    alt="SPUR"
+                                    className="w-10 h-10"
+                                />
+                                <span className="ml-2 text-xl font-bold tracking-wider">
+                                    ONBOARD
+                                </span>
+                            </div>
+                        </div>
 
                         <div className="flex items-center gap-4">
                             <SearchHeader
@@ -67,7 +76,9 @@ function BrowseProjectsAuth() {
                         </div>
                     </div>
                 </div>
+            </header>
 
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {isLoading && (
                     <div className="flex justify-center items-center py-12">
                         <div className="text-lg text-gray-600">
@@ -77,11 +88,10 @@ function BrowseProjectsAuth() {
                 )}
 
                 {!isLoading && featuredProjects.length > 0 && (
-                    <section className="mb-12 px-6">
+                    <section className="mb-12">
                         <h2 className="text-2xl font-bold mb-6">
                             Featured Projects
                         </h2>
-
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {featuredProjects.map((project) => (
                                 <ProjectCard
@@ -94,9 +104,10 @@ function BrowseProjectsAuth() {
                     </section>
                 )}
 
-                <section className="px-6">
+                <section>
                     <h2 className="text-2xl font-bold mb-6">All Projects</h2>
 
+                    {/* Filters */}
                     <div className="mb-6">
                         <div className="flex items-center gap-3 mb-4 flex-wrap">
                             <span className="text-sm font-medium text-gray-700">
@@ -290,7 +301,6 @@ function BrowseProjectsAuth() {
                                             ? 'No projects found matching your search.'
                                             : 'No projects available.'}
                                     </div>
-
                                     {searchQuery && (
                                         <button
                                             type="button"

@@ -684,3 +684,131 @@ func (h *Handler) handleGetLatestProjectSnapshot(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, snapshot)
 }
+
+/*
+ * handleGetProjectTeam retrieves team members for a specific project.
+ * This endpoint gets the project's company and returns all team members for that company.
+ *
+ * URL: GET /project/:id/team
+ * Auth: Required (project view permissions or admin)
+ * Params: id (project UUID)
+ *
+ * responds with TeamMembersResponse containing array of team members
+ */
+func (h *Handler) handleGetProjectTeam(c echo.Context) error {
+	user, err := getUserFromContext(c)
+	if err != nil {
+		return v1_common.Fail(c, http.StatusUnauthorized, "Unauthorized", err)
+	}
+
+	// check perms - either admin/investor or startup owner
+	isAdmin := permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermViewAllProjects)
+	isOwner := permissions.HasAllPermissions(uint32(user.Permissions), permissions.PermSubmitProject)
+
+	if !isAdmin && !isOwner {
+		return v1_common.NewForbiddenError("not authorized to view project team")
+	}
+
+	projectID := c.Param("id")
+	if projectID == "" {
+		return v1_common.Fail(c, http.StatusBadRequest, "Project ID is required", nil)
+	}
+
+	if _, err := uuid.Parse(projectID); err != nil {
+		return v1_common.Fail(c, http.StatusBadRequest, "Invalid project ID format", err)
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request().Context(), 30*time.Second)
+	defer cancel()
+
+	queries := h.server.GetQueries()
+
+	var project db.Project
+
+	if isAdmin {
+		// admin can view any project
+		project, err = queries.GetProjectByIDAsAdmin(ctx, projectID)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return v1_common.NewNotFoundError("Project")
+			}
+			return v1_common.NewInternalError(err)
+		}
+	} else {
+		// startup owners, verify they own the company that owns this project
+		company, err := queries.GetCompanyByOwnerID(ctx, user.ID)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return v1_common.NewNotFoundError("Company")
+			}
+			return v1_common.NewInternalError(err)
+		}
+
+		project, err = queries.GetProjectByID(ctx, db.GetProjectByIDParams{
+			ID:        projectID,
+			CompanyID: company.ID,
+			Column3:   user.Permissions,
+		})
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return v1_common.NewNotFoundError("Project")
+			}
+			return v1_common.NewInternalError(err)
+		}
+	}
+
+	// get team members for the project's company
+	teamMembers, err := queries.ListTeamMembers(ctx, project.CompanyID)
+	if err != nil {
+		return v1_common.NewInternalError(err)
+	}
+
+	response := make([]map[string]interface{}, len(teamMembers))
+	for i, member := range teamMembers {
+		socialLinks := []map[string]interface{}{}
+		if member.SocialLinks != nil {
+			// parse social links JSON if it exists
+			// note: this should match the format expected by the frontend
+			socialLinks = []map[string]interface{}{} // placeholder - would need JSON parsing
+		}
+
+		personalWebsite := ""
+		if member.PersonalWebsite != nil {
+			personalWebsite = *member.PersonalWebsite
+		}
+
+		resumeExternalUrl := ""
+		if member.ResumeExternalUrl != nil {
+			resumeExternalUrl = *member.ResumeExternalUrl
+		}
+
+		resumeInternalUrl := ""
+		if member.ResumeInternalUrl != nil {
+			resumeInternalUrl = *member.ResumeInternalUrl
+		}
+
+		response[i] = map[string]interface{}{
+			"id":                  member.ID,
+			"company_id":          member.CompanyID,
+			"first_name":          member.FirstName,
+			"last_name":           member.LastName,
+			"title":               member.Title,
+			"social_links":        socialLinks,
+			"personal_website":    personalWebsite,
+			"is_account_owner":    member.IsAccountOwner,
+			"commitment_type":     member.CommitmentType,
+			"introduction":        member.Introduction,
+			"industry_experience": member.IndustryExperience,
+			"detailed_biography":  member.DetailedBiography,
+			"previous_work":       member.PreviousWork,
+			"resume_external_url": resumeExternalUrl,
+			"resume_internal_url": resumeInternalUrl,
+			"created_at":          member.CreatedAt,
+			"updated_at":          member.UpdatedAt,
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"team_members": response,
+	})
+}

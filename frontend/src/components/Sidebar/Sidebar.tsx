@@ -790,7 +790,7 @@ export const Sidebar = ({ userPermissions, user, onLogout }: SidebarProps) => {
                         : '',
                 }}
             >
-                <div className="relative flex items-center justify-center px-4 mt-6 pb-6 border-b border-gray-200">
+                <div className="relative flex items-center justify-center px-4 mt-6 pb-6">
                     <a
                         href="/user/home"
                         className="flex items-center justify-center"

@@ -236,6 +236,25 @@ export async function submitProject(accessToken: string, projectId: string) {
  * getLatestProjectSnapshot tries to get the latest project snapshot.
  * This function throws an ApiError for any status code that is not 200.
  */
+/*
+ * Get latest/public projects without authentication
+ */
+export async function getLatestProjects(): Promise<ExtendedProjectResponse[]> {
+    const url = getApiUrl('/project/latest');
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    const body = await res.json();
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to get latest projects', res.status, body);
+    }
+
+    return snakeToCamel(body.projects || []) as ExtendedProjectResponse[];
+}
+
 export async function getLatestProjectSnapshot(
     accessToken: string,
     projectId: string
@@ -259,4 +278,93 @@ export async function getLatestProjectSnapshot(
     json.data = snakeToCamel(parsed);
 
     return json as ProjectSnapshot;
+}
+
+/*
+ * Get team members for a specific project
+ */
+export async function getProjectTeam(projectId: string, accessToken?: string) {
+    const url = getApiUrl(`/project/${projectId}/team`);
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+    };
+
+    if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    const res = await fetch(url, {
+        method: 'GET',
+        headers,
+    });
+
+    const body = await res.json();
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to get project team', res.status, body);
+    }
+
+    const teamMembers = (body.team_members || []).map(
+        (member: {
+            id: string;
+            first_name: string;
+            last_name: string;
+            title: string;
+            social_links?: Array<{ platform: string; url_or_handle: string }>;
+            personal_website?: string;
+            is_account_owner: boolean;
+            commitment_type: string;
+            introduction: string;
+            industry_experience: string;
+            detailed_biography: string;
+            previous_work?: string;
+            resume_external_url?: string;
+            resume_internal_url?: string;
+            created_at: number;
+            updated_at: number;
+        }) => ({
+            id: member.id,
+            firstName: member.first_name,
+            lastName: member.last_name,
+            title: member.title,
+            socialLinks: member.social_links || [],
+            personalWebsite: member.personal_website,
+            isAccountOwner: member.is_account_owner,
+            commitmentType: member.commitment_type,
+            introduction: member.introduction,
+            industryExperience: member.industry_experience,
+            detailedBiography: member.detailed_biography,
+            previousWork: member.previous_work,
+            resumeExternalUrl: member.resume_external_url,
+            resumeInternalUrl: member.resume_internal_url,
+            createdAt: member.created_at,
+            updatedAt: member.updated_at,
+        })
+    );
+
+    return { teamMembers };
+}
+
+/*
+ * Get project answers for detailed company information
+ */
+export async function getProjectAnswers(
+    projectId: string,
+    accessToken: string
+) {
+    const url = getApiUrl(`/project/${projectId}/answers`);
+
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    const body = await res.json();
+    if (res.status !== HttpStatusCode.OK) {
+        throw new ApiError('Failed to get project answers', res.status, body);
+    }
+
+    return body.answers || [];
 }
