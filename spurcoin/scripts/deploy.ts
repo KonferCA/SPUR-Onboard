@@ -1,8 +1,12 @@
-import { ethers } from "hardhat";
+import hre from "hardhat";
+import fs from "node:fs";
+import path from "node:path";
+
+const { ethers } = hre;
 
 async function main() {
   // get the deployer's address
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await (hre as any).ethers.getSigners();
   console.log("deploying contracts with the account:", deployer.address);
 
   // --- deploy spurcoin --- 
@@ -19,7 +23,7 @@ async function main() {
 
   // wait for the deployment transaction to be mined
   await spurCoin.waitForDeployment();
-  const spurCoinAddress = await spurCoin.getAddress();
+  const spurCoinAddress = (spurCoin as any).target as string;
   console.log(`spurcoin deployed to: ${spurCoinAddress}`);
 
   // --- deploy projectfunding ---
@@ -32,10 +36,42 @@ async function main() {
 
   // wait for the deployment transaction to be mined
   await projectFunding.waitForDeployment();
-  const projectFundingAddress = await projectFunding.getAddress();
+  const projectFundingAddress = (projectFunding as any).target as string;
   console.log(`projectfunding deployed to: ${projectFundingAddress}`);
 
+  // --- deploy SpurRegistry ---
+  console.log("deploying spurregistry...");
+  const SpurRegistryFactory = await ethers.getContractFactory("SpurRegistry");
+  const registry = await SpurRegistryFactory.deploy(
+    deployer.address,
+    deployer.address, // initial platform wallet is deployer by default
+    spurCoinAddress,
+    projectFundingAddress
+  );
+  await registry.waitForDeployment();
+  const registryAddress = (registry as any).target as string;
+  console.log(`spurregistry deployed to: ${registryAddress}`);
+
   console.log("\ndeployment complete!");
+  console.log("\nexport these envs for backend:");
+  console.log(`export BLOCKCHAIN_RPC_URL=http://127.0.0.1:8545`);
+  console.log(`export SPUR_REGISTRY_ADDRESS=${registryAddress}`);
+
+  // write deployments file for tooling
+  try {
+    const outDir = path.join(process.cwd(), "deployments");
+    fs.mkdirSync(outDir, { recursive: true });
+    const outPath = path.join(outDir, "local.json");
+    const payload = {
+      SpurCoin: spurCoinAddress,
+      ProjectFunding: projectFundingAddress,
+      SpurRegistry: registryAddress,
+    };
+    fs.writeFileSync(outPath, JSON.stringify(payload, null, 2), "utf-8");
+    console.log(`wrote deployments to: ${outPath}`);
+  } catch (e) {
+    console.warn("warning: failed to write deployments file:", e);
+  }
 }
 
 // standard hardhat pattern to run the main function and handle errors

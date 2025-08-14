@@ -1,0 +1,9 @@
+{
+  "name": "spur-onboard",
+  "private": true,
+  "scripts": {
+    "stack:up": "node scripts/dev-stack.mjs"
+  }
+}
+
+
