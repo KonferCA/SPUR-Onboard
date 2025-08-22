@@ -21,9 +21,8 @@ import {
     getProjectComments,
     getProjectDocuments,
 } from '@/services/projects';
-import { useWallet } from '@suiet/wallet-kit';
-import { Transaction } from '@mysten/sui/transactions';
-import { SuiClient } from '@mysten/sui/client';
+import { useEvmWallet } from '@/contexts/EvmWalletProvider';
+import { erc20Abi } from 'viem';
 import { Dialog } from '@headlessui/react';
 import { useRandomId } from '@/hooks';
 import { usePageTitle } from '@/utils';
@@ -164,7 +163,7 @@ function RouteComponent() {
 
     const { projectId } = Route.useParams();
     const { getAccessToken } = useAuth();
-    const wallet = useWallet();
+    const evm = useEvmWallet();
     const [company, setCompany] = useState<CompanyResponse | null>(null);
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
     const [projectStats, setProjectStats] = useState<ProjectStats | null>(null);
@@ -173,54 +172,51 @@ function RouteComponent() {
     const [isSendingFunds, setIsSendingFunds] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const handleFundProject = async (amount: string) => {
-        if (!wallet.connected) {
+    const handleFundProject = async (amountSmallestOf9: string) => {
+        if (!evm.connected || !evm.address) {
             alert('Please connect your wallet first');
+            return;
+        }
+        if (!company?.wallet_address) {
+            alert("Company hasn't set up their wallet address");
             return;
         }
 
         try {
             setIsSendingFunds(true);
 
-            const client = new SuiClient({
-                url: 'https://fullnode.testnet.sui.io:443',
-            });
-            const coins = await client.getCoins({
-                owner: wallet.account?.address || '',
-                coinType:
-                    '0x341290ce77d8cdd37c0ea13807e1cd6f4070a42c286adfc5340f438b7e8a1684::spurcoin::SPURCOIN',
-            });
+            // Get on-chain config for SpurCoin address
+            const res = await fetch('/api/v1/blockchain/config');
+            if (!res.ok) throw new Error('Failed to load blockchain config');
+            const cfg = await res.json();
+            const spurCoinAddress = cfg?.spurcoin_address as string;
+            if (!spurCoinAddress) throw new Error('Missing SpurCoin address');
 
-            if (!coins.data || coins.data.length === 0) {
-                alert('No SPUR coins found in wallet');
-                return;
-            }
+            // Read decimals
+            const decimals = (await evm.publicClient?.readContract({
+                address: spurCoinAddress as `0x${string}`,
+                abi: erc20Abi,
+                functionName: 'decimals',
+            })) as number;
+            if (decimals == null) throw new Error('Failed to read token decimals');
 
-            const coinToUse = coins.data[0];
-            const tx = new Transaction();
-            tx.setGasBudget(100000000);
+            // Convert provided smallest-of-9 units into token decimals
+            const base = BigInt(amountSmallestOf9 || '0');
+            const scale = decimals > 9 ? 10n ** BigInt(decimals - 9) : 1n;
+            const value = base * scale;
 
-            // amount is now in MIST (smallest unit)
-            const splitCoinTx = tx.splitCoins(
-                tx.object(coinToUse.coinObjectId),
-                [tx.pure.u64(amount)]
-            );
-
-            tx.transferObjects(
-                [splitCoinTx],
-                tx.pure.address(company?.wallet_address || '')
-            );
-
-            if (wallet.account?.address) {
-                tx.setSender(wallet.account.address);
-            }
-
-            const resData = await wallet.signAndExecuteTransaction({
-                transaction: tx,
+            // Execute ERC-20 transfer to the company's wallet for now
+            const hash = await evm.walletClient?.writeContract({
+                account: evm.address,
+                address: spurCoinAddress as `0x${string}`,
+                abi: erc20Abi,
+                functionName: 'transfer',
+                args: [company.wallet_address as `0x${string}`, value],
+                chain: null,
             });
 
-            console.log('Transaction successful:', resData);
-            alert('Funding successful!');
+            console.log('Transaction sent:', hash);
+            alert('Funding transaction submitted');
         } catch (error) {
             console.error('Transaction failed:', error);
             alert('Failed to send funds. Please try again.');
@@ -450,10 +446,10 @@ function RouteComponent() {
             <div className="flex items-center w-full justify-between">
                 <h1 className="text-2xl font-bold">Project overview</h1>
                 <div className="flex gap-4">
-                    {!wallet.connected ? (
+                    {!evm.connected ? (
                         <button
                             type="button"
-                            onClick={() => wallet.select('Suiet')}
+                            onClick={() => evm.connect()}
                             className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 flex items-center gap-2"
                         >
                             Connect Wallet

@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Button, NotificationBanner } from '@/components';
 import { FiCopy, FiCheck } from 'react-icons/fi';
 import { WalletConnectButton } from '@/components/wallet/WalletConnectButton';
-import { useWallet } from '@suiet/wallet-kit';
+import { useEvmWallet } from '@/contexts/EvmWalletProvider';
 import { useAuth } from '@/contexts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCompany, updateCompany } from '@/services';
@@ -19,7 +19,7 @@ function WalletSettings() {
 
     const [error, setError] = useState<string | null>(null);
     const [copySuccess, setCopySuccess] = useState(false);
-    const { connected, address, disconnect } = useWallet();
+    const { connected, address, disconnect } = useEvmWallet();
     const { getAccessToken } = useAuth();
     const queryClient = useQueryClient();
 
@@ -120,10 +120,7 @@ function WalletSettings() {
                                 Connect your wallet
                             </h2>
 
-                            <p className="text-gray-600">
-                                Connect your Sui wallet to manage your account
-                                and participate in projects.
-                            </p>
+                            <p className="text-gray-600">Connect your wallet to manage your account and participate in projects.</p>
                         </div>
 
                         <div className="pt-6">
@@ -152,18 +149,10 @@ function WalletSettings() {
 
                         <div className="bg-white border-2 border-gray-200 rounded-lg mb-6 overflow-hidden hover:border-[#F4802F] hover:shadow-[0_0_0_1px_#F4802F] transition-all duration-300">
                             <div className="p-4 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-                                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <img
-                                        src="/sui-logo.svg"
-                                        alt="Sui"
-                                        className="w-9 h-9"
-                                    />
-                                </div>
+                                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0" />
 
                                 <div className="min-w-0 flex-1 w-full text-center sm:text-left">
-                                    <h3 className="text-xl font-semibold mb-3">
-                                        Sui wallet
-                                    </h3>
+                                    <h3 className="text-xl font-semibold mb-3">Connected wallet</h3>
 
                                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2 flex items-center">
                                         <p className="text-gray-700 text-sm font-mono truncate mr-2">

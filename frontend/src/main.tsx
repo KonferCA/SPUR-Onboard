@@ -1,8 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
-import { WalletProvider } from '@suiet/wallet-kit';
-import '@suiet/wallet-kit/style.css';
+import { EvmWalletProvider } from '@/contexts/EvmWalletProvider';
 
 import { AuthProvider, NotificationProvider, useAuth } from '@/contexts';
 
@@ -45,11 +44,11 @@ if (rootElement && !rootElement.innerHTML) {
         <StrictMode>
             <NotificationProvider>
                 <QueryClientProvider client={queryClient}>
-                    <WalletProvider>
+                    <EvmWalletProvider>
                         <AuthProvider>
                             <Router />
                         </AuthProvider>
-                    </WalletProvider>
+                    </EvmWalletProvider>
                 </QueryClientProvider>
             </NotificationProvider>
         </StrictMode>
